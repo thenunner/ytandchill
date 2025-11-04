@@ -6,6 +6,17 @@ YouTube channel downloader and video library manager. Monitor channels, queue do
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Unraid-lightgrey.svg)
 
+## FAQ
+
+For common issues, error messages, and troubleshooting help, see the **[FAQ (Frequently Asked Questions)](FAQ.md)**.
+
+Common topics covered:
+- YouTube cookies and authentication (including detailed export instructions)
+- Common yt-dlp errors (geo-blocking, bot detection, etc.)
+- Download failures and performance issues
+- Account safety and recommendations
+- Storage and backup
+
 ## Features
 
 - **Channel Management**: Subscribe to YouTube channels and automatically track new uploads
@@ -255,17 +266,6 @@ docker-compose build
 - `PLATFORM-GUIDE.md` - Detailed platform-specific instructions
 - `UNRAID-SETUP.md` - Detailed Unraid Docker instructions
 - `FAQ.md` - Frequently asked questions and common issues
-
-## FAQ
-
-For common issues, error messages, and troubleshooting help, see the **[FAQ (Frequently Asked Questions)](FAQ.md)**.
-
-Common topics covered:
-- YouTube cookies and authentication
-- Common yt-dlp errors (geo-blocking, bot detection, etc.)
-- Download failures and performance issues
-- Account safety and recommendations
-- Storage and backup
 
 ## Troubleshooting
 

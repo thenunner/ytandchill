@@ -59,6 +59,41 @@ YT and Chill requires cookies in **Netscape HTTP Cookie File format**. This is t
 
 The file must be named `cookies.txt` and placed in the project root directory.
 
+### How do I properly export cookies from YouTube?
+
+**Best Practice Method (Recommended):**
+
+1. **Choose a browser you don't normally use** (e.g., if you use Chrome daily, use Edge or Firefox for this)
+2. **Open ONE incognito/private window** in that browser
+   - Chrome/Edge: Ctrl+Shift+N (Windows) or Cmd+Shift+N (Mac)
+   - Firefox: Ctrl+Shift+P (Windows) or Cmd+Shift+P (Mac)
+3. **Important:** Make sure ONLY ONE incognito tab is open
+4. **Go to YouTube and log in** with your disposable YouTube account (NOT your personal account)
+5. **In the same tab**, navigate to `https://www.youtube.com/robots.txt`
+   - This ensures the cookies are associated with the youtube.com domain properly
+6. **Install the cookie export extension** (if not already installed):
+   - Chrome/Edge: "Get cookies.txt LOCALLY"
+   - Firefox: "cookies.txt"
+7. **Click the extension icon** and export cookies for the current site
+8. **Save the file as `cookies.txt`**
+9. **Close the incognito window immediately** after exporting
+10. **Place `cookies.txt` in your YT and Chill directory**:
+    - Native install: Project root directory
+    - Docker/Unraid: `/mnt/user/appdata/ytandchill/`
+
+**Why this method works best:**
+- Incognito mode ensures clean cookies without interference from other sessions
+- Using a separate browser prevents conflicts with your daily browsing
+- Only one tab prevents duplicate or conflicting cookie entries
+- The robots.txt page ensures you're on the base youtube.com domain
+- Closing immediately after export keeps the cookies fresh and unmodified
+
+**Common mistakes to avoid:**
+- ❌ Having multiple incognito tabs open (creates cookie conflicts)
+- ❌ Using your main browser you browse with daily
+- ❌ Exporting from a tab other than robots.txt
+- ❌ Using your personal YouTube account (use disposable account instead)
+
 ## Common yt-dlp Errors
 
 ### Error: "Video unavailable" or "This video is not available"
