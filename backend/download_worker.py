@@ -214,6 +214,10 @@ class DownloadWorker:
             if self.current_download and self.current_download.get('timed_out'):
                 raise Exception('Download timed out - no progress for too long')
 
+            # Check if queue was paused during download
+            if self.paused:
+                raise Exception('Download paused by user')
+
             if d['status'] == 'downloading':
                 # Update last activity time
                 if self.current_download:
@@ -237,13 +241,15 @@ class DownloadWorker:
                             if progress_milestone > last_logged_progress[0] and progress_milestone % 10 == 0:
                                 speed_mbps = (d.get('speed', 0) or 0) / (1024 * 1024)
                                 eta_min = (d.get('eta', 0) or 0) / 60
-                                # Only log if we have meaningful download speed (at least 1 KB/s)
-                                if d.get('speed') and d.get('speed') > 1024:
+                                # Only log if we have actual download progress (not just initial metadata)
+                                # Require: actual bytes downloaded AND meaningful speed (at least 10 KB/s)
+                                if downloaded > 0 and d.get('speed') and d.get('speed') > 10240:
                                     logger.info(f'Download progress: {video.title[:50]} - {progress_milestone}% ({speed_mbps:.2f} MB/s, ETA: {eta_min:.1f}min)')
                                     last_logged_progress[0] = progress_milestone
 
                         temp_queue_item.speed_bps = d.get('speed', 0) or 0
                         temp_queue_item.eta_seconds = d.get('eta', 0) or 0
+                        temp_queue_item.total_bytes = total  # Store file size
                         temp_session.commit()
                     temp_session.close()
                 except Exception as progress_error:
@@ -320,6 +326,19 @@ class DownloadWorker:
                     # Removed print - using logger instead
                     cancelled = True
                     break
+
+                if 'paused' in error_str.lower():
+                    logger.info(f'Download paused for {video.yt_id} at {queue_item.progress_pct:.1f}%')
+                    # Keep video in queued status but preserve progress
+                    # The .part file remains on disk, yt-dlp will auto-resume from this point
+                    video.status = 'queued'
+                    # Keep progress_pct and total_bytes so UI shows "Paused at X%"
+                    # Only reset speed and ETA since those are no longer valid
+                    queue_item.speed_bps = 0
+                    queue_item.eta_seconds = 0
+                    session.commit()
+                    self.current_download = None
+                    return  # Exit download, .part file preserved for resume
 
                 logger.error(f'Download attempt {attempt} failed for {video.yt_id}: {error_str}')
                 # Removed print - using logger instead

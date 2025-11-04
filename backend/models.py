@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Float, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime, timezone
@@ -78,6 +78,7 @@ class QueueItem(Base):
     progress_pct = Column(Float, default=0.0)
     speed_bps = Column(Float, default=0.0)
     eta_seconds = Column(Integer, default=0)
+    total_bytes = Column(BigInteger, default=0)  # File size in bytes
     log = Column(Text)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

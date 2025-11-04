@@ -111,6 +111,16 @@ export default function Queue() {
     return `${mb.toFixed(1)} MB/s`;
   };
 
+  const formatFileSize = (bytes) => {
+    if (!bytes || bytes === 0) return 'Unknown';
+    const mb = bytes / (1024 * 1024);
+    if (mb < 1024) {
+      return `${mb.toFixed(1)} MB`;
+    }
+    const gb = mb / 1024;
+    return `${gb.toFixed(2)} GB`;
+  };
+
   const formatTime = (seconds) => {
     if (!seconds || seconds <= 0) return 'N/A';
     const mins = Math.floor(seconds / 60);
@@ -305,6 +315,7 @@ export default function Queue() {
                   <div className="flex items-center gap-4 text-xs text-text-secondary">
                     <span>{(currentDownload.progress_pct || 0).toFixed(1)}%</span>
                     <span>{formatBytes(currentDownload.speed_bps)}</span>
+                    <span>Size: {formatFileSize(currentDownload.total_bytes)}</span>
                     <span>ETA: {formatTime(currentDownload.eta_seconds)}</span>
                   </div>
                 </div>
