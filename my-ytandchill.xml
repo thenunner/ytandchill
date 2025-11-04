@@ -14,7 +14,7 @@
   <WebUI>http://[IP]:[PORT:4099]</WebUI>
   <TemplateURL/>
   <Icon>https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/youtube.png</Icon>
-  <ExtraParams>--rm</ExtraParams>
+  <ExtraParams></ExtraParams>
   <PostArgs/>
   <CPUset/>
   <DateInstalled/>
