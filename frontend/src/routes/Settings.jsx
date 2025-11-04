@@ -239,7 +239,10 @@ export default function Settings() {
             <span className="text-sm text-text-secondary">Logging level</span>
             <div className="flex items-center gap-3 flex-1">
               {/* Slider with labels */}
-              <div className="flex flex-col gap-1.5 flex-1 max-w-sm">
+              <div
+                className="flex flex-col gap-1.5 flex-1 max-w-sm"
+                title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+              >
                 <input
                   type="range"
                   min="0"
@@ -249,11 +252,11 @@ export default function Settings() {
                   className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
                 />
                 <div className="flex justify-between text-xs font-mono">
-                  <span className={logLevel === 'DEBUG' ? 'text-green-500 font-bold' : 'text-white'} title="Most verbose - shows all internal operations and API calls">DEBUG</span>
-                  <span className={logLevel === 'INFO' ? 'text-green-500 font-bold' : 'text-white'} title="General information - shows major operations and status updates">INFO</span>
-                  <span className={logLevel === 'API' ? 'text-green-500 font-bold' : 'text-white'} title="API only - shows only YouTube API calls and external requests">API</span>
-                  <span className={logLevel === 'WARNING' ? 'text-green-500 font-bold' : 'text-white'} title="Warnings only - shows potential issues that don't stop operations">WARNING</span>
-                  <span className={logLevel === 'ERROR' ? 'text-green-500 font-bold' : 'text-white'} title="Errors only - shows only critical failures">ERROR</span>
+                  <span className={logLevel === 'DEBUG' ? 'text-green-500 font-bold' : 'text-white'}>DEBUG</span>
+                  <span className={logLevel === 'INFO' ? 'text-green-500 font-bold' : 'text-white'}>INFO</span>
+                  <span className={logLevel === 'API' ? 'text-green-500 font-bold' : 'text-white'}>API</span>
+                  <span className={logLevel === 'WARNING' ? 'text-green-500 font-bold' : 'text-white'}>WARNING</span>
+                  <span className={logLevel === 'ERROR' ? 'text-green-500 font-bold' : 'text-white'}>ERROR</span>
                 </div>
               </div>
               {/* Save Button */}
