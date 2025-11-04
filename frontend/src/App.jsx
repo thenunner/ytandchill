@@ -1,7 +1,7 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useQueue, useHealth } from './api/queries';
+import { useQueue, useHealth, useLogs } from './api/queries';
 import { useNotification } from './contexts/NotificationContext';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
 import ChannelLibrary from './routes/ChannelLibrary';
@@ -12,13 +12,16 @@ import Ignored from './routes/Ignored';
 import Queue from './routes/Queue';
 import Settings from './routes/Settings';
 import Player from './routes/Player';
+import LogsWindow from './components/LogsWindow';
 
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const { data: queueData } = useQueue();
   const { data: health } = useHealth();
+  const { data: logsData } = useLogs(500);
   const { notification } = useNotification();
+  const [logsPopped, setLogsPopped] = useState(false);
 
   // Handle new queue structure
   const queue = queueData?.queue_items || queueData || [];
@@ -288,10 +291,18 @@ function App() {
           <Route path="/needs-work" element={<NeedsWork />} />
           <Route path="/ignored" element={<Ignored />} />
           <Route path="/queue" element={<Queue />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route path="/settings" element={<Settings logsPopped={logsPopped} setLogsPopped={setLogsPopped} />} />
           <Route path="/player/:videoId" element={<Player />} />
         </Routes>
       </main>
+
+      {/* Popped-out Logs Window - Persists across all pages */}
+      {logsPopped && (
+        <LogsWindow
+          logsData={logsData}
+          onClose={() => setLogsPopped(false)}
+        />
+      )}
     </div>
   );
 }

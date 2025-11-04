@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels, useVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import LogsWindow from '../components/LogsWindow';
 
-export default function Settings() {
+export default function Settings({ logsPopped, setLogsPopped }) {
   const { data: settings, isLoading } = useSettings();
   const { data: health } = useHealth();
   const { data: logsData } = useLogs(500);
@@ -21,7 +20,6 @@ export default function Settings() {
   const [youtubeApiKey, setYoutubeApiKey] = useState('');
   const [logLevel, setLogLevel] = useState('INFO');
   const [showLogs, setShowLogs] = useState(false);
-  const [logsPopped, setLogsPopped] = useState(false);
 
   // Auto-scroll to bottom of logs when they update
   useEffect(() => {
@@ -252,19 +250,28 @@ export default function Settings() {
               >
                 {updateSettings.isPending ? 'Saving...' : 'Save Settings'}
               </button>
-              {/* View Log Button */}
-              <button
-                onClick={() => setShowLogs(!showLogs)}
-                className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
-              >
-                {showLogs ? 'Hide Logs' : 'View Logs'}
-              </button>
+              {/* View Log Button or Popped-out indicator */}
+              {logsPopped ? (
+                <button
+                  onClick={() => setLogsPopped(false)}
+                  className="btn bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap py-1.5 text-sm font-bold"
+                >
+                  Logs Popped Out (Click to Close)
+                </button>
+              ) : (
+                <button
+                  onClick={() => setShowLogs(!showLogs)}
+                  className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+                >
+                  {showLogs ? 'Hide Logs' : 'View Logs'}
+                </button>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Log Viewer Card - Collapsible (only show if not popped out) */}
+      {/* Log Viewer Card - Collapsible (hide if popped out) */}
       {!logsPopped && (
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
@@ -325,14 +332,5 @@ export default function Settings() {
       </div>
       )}
     </div>
-
-      {/* Popped-out Logs Window */}
-      {logsPopped && (
-        <LogsWindow
-          logsData={logsData}
-          onClose={() => setLogsPopped(false)}
-        />
-      )}
-    </>
   );
 }
