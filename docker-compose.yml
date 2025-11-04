@@ -1,0 +1,31 @@
+services:
+  ytandchill:
+    build: .
+    image: ytandchill:latest
+    container_name: ytandchill
+    networks:
+      - tarantino
+    ports:
+      - "${PORT:-4099}:4099"
+    environment:
+      - PORT=4099
+    volumes:
+      # Database and config
+      - /mnt/user/appdata/ytandchill/data:/app/data
+      # Downloads (videos and thumbnails)
+      - /mnt/user/data/media/youtube/ytandchill:/app/downloads
+      # Logs
+      - /mnt/user/appdata/ytandchill/logs:/app/logs
+      # Cookies file for age-restricted content
+      - /mnt/user/appdata/ytandchill/cookies.txt:/app/cookies.txt
+    restart: unless-stopped
+    user: "99:100"
+    labels:
+      # Unraid WebUI integration
+      - "net.unraid.docker.managed=dockerman"
+      - "net.unraid.docker.webui=http://[IP]:[PORT:4099]/"
+      - "net.unraid.docker.icon=https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/youtube.png"
+
+networks:
+  tarantino:
+    external: true

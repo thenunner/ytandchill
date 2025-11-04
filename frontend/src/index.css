@@ -1,0 +1,202 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-primary text-text-primary;
+  }
+
+  * {
+    @apply touch-manipulation;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  /* Modern Card Component */
+  .card {
+    @apply bg-dark-secondary rounded-xl border border-dark-border shadow-card overflow-hidden;
+    @apply hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 ease-out;
+  }
+
+  /* Card active/focus states - make selection visible like tabs */
+  .card:active,
+  .card:focus {
+    @apply bg-dark-tertiary border-dark-border-light shadow-card-hover;
+    @apply ring-2 ring-accent/40;
+  }
+
+  /* Card focus-visible for keyboard navigation */
+  .card:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent ring-2 ring-accent/60;
+  }
+
+  /* Modern Button Styles */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium;
+    @apply transition-all duration-200 ease-out;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-dark-primary;
+  }
+
+  .btn-primary {
+    @apply bg-dark-primary/95 text-white border border-dark-border;
+    @apply hover:bg-dark-tertiary/50 hover:border-dark-border-light;
+    @apply focus:ring-accent;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-primary/95 text-white border border-dark-border;
+    @apply hover:bg-dark-tertiary/50 hover:border-dark-border-light;
+    @apply focus:ring-text-secondary;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white border border-red-700;
+    @apply hover:bg-red-700 hover:border-red-800;
+    @apply focus:ring-red-500;
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  /* Modern Input Styles */
+  .input {
+    @apply w-full px-4 py-2 bg-dark-primary border border-dark-border-light rounded-lg;
+    @apply text-text-primary placeholder-text-secondary;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent;
+    @apply transition-all duration-200;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-text-primary mb-2;
+  }
+
+  /* Icon Button */
+  .icon-btn {
+    @apply w-11 h-11 flex items-center justify-center;
+    @apply bg-dark-secondary border border-dark-border rounded-lg;
+    @apply text-text-primary hover:bg-dark-tertiary hover:border-dark-border-light hover:text-white;
+    @apply transition-all duration-200 cursor-pointer;
+  }
+
+  /* Nav Tab */
+  .nav-tab {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-t-lg;
+    @apply bg-dark-secondary border border-dark-border-light border-b-2 border-b-transparent;
+    @apply text-white font-medium text-sm relative;
+    @apply transition-all duration-300 ease-out cursor-pointer;
+  }
+
+  .nav-tab::before {
+    @apply content-[''] absolute bottom-0 left-0 right-0 h-0.5;
+    @apply bg-gradient-to-r from-text-muted to-accent;
+    @apply transform scale-x-0 transition-transform duration-300 ease-out;
+  }
+
+  .nav-tab:hover {
+    @apply bg-dark-tertiary border-dark-border-light -translate-y-0.5;
+  }
+
+  .nav-tab:hover::before {
+    @apply scale-x-50;
+  }
+
+  .nav-tab.active {
+    @apply bg-dark-hover border-dark-border-light shadow-glow;
+  }
+
+  .nav-tab.active::before {
+    @apply scale-x-100;
+  }
+
+  /* Stats Pill */
+  .stat-pill {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full;
+    @apply text-sm font-medium border;
+    @apply shadow-sm hover:-translate-y-0.5 hover:shadow-md;
+    @apply transition-all duration-200;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold;
+    @apply backdrop-blur-sm;
+  }
+
+  /* Search Input Compact */
+  .search-input {
+    @apply px-3 py-2 bg-dark-primary border border-dark-border-light rounded-full;
+    @apply text-text-primary placeholder-text-secondary text-sm;
+    @apply focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50;
+    @apply transition-all duration-200;
+  }
+
+  /* Filter Button */
+  .filter-btn {
+    @apply flex items-center gap-2 px-3.5 py-2 rounded-lg;
+    @apply bg-dark-primary/95 border border-dark-border text-white;
+    @apply text-sm cursor-pointer transition-all duration-200;
+    @apply hover:bg-dark-tertiary/50;
+  }
+
+  .filter-btn.active {
+    @apply bg-dark-tertiary border-dark-border-light text-white font-medium;
+  }
+}
+
+/* Custom scrollbar - Modern & Subtle */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #14161a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3d44;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4d54;
+}
+
+/* Plyr customizations */
+.plyr {
+  @apply rounded-xl overflow-hidden;
+  --plyr-color-main: #e5e7eb;
+}
+
+.plyr--video {
+  @apply bg-black;
+}
+
+.plyr__control--overlaid {
+  background: rgba(229, 231, 235, 0.9);
+}
+
+.plyr__control--overlaid:hover {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Focus Visible for Accessibility */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-accent;
+}
+
+/* Smooth Transitions for All Interactive Elements */
+button,
+a,
+input,
+textarea,
+select {
+  @apply transition-colors duration-200;
+}
