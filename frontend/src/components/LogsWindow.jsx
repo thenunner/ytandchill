@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
+import { usePictureInPicture } from 'react-document-pip';
 
 export default function LogsWindow({ logsData, onClose }) {
+  const { isPictureInPictureAvailable, isInPictureInPicture, openPictureInPicture, closePictureInPicture } = usePictureInPicture();
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -75,16 +77,50 @@ export default function LogsWindow({ logsData, onClose }) {
           )}
         </div>
 
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="text-text-secondary hover:text-red-400 transition-colors p-1 hover:bg-dark-hover rounded"
-          title="Close and return to Settings"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="flex items-center gap-2">
+          {/* PiP Button (Chrome/Edge only) */}
+          {isPictureInPictureAvailable && !isInPictureInPicture && (
+            <button
+              onClick={() => openPictureInPicture({ width: 700, height: 500 })}
+              className="text-text-secondary hover:text-blue-400 transition-colors p-1 hover:bg-dark-hover rounded"
+              title="Open in Picture-in-Picture (always on top)"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 11h-8v6h8v-6z"></path>
+                <path d="M21 3H3a2 2 0 00-2 2v14a2 2 0 002 2h18a2 2 0 002-2V5a2 2 0 00-2-2z"></path>
+              </svg>
+            </button>
+          )}
+
+          {/* Exit PiP Button (when in PiP mode) */}
+          {isInPictureInPicture && (
+            <button
+              onClick={closePictureInPicture}
+              className="text-text-secondary hover:text-blue-400 transition-colors p-1 hover:bg-dark-hover rounded"
+              title="Exit Picture-in-Picture"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 3H5a2 2 0 00-2 2v3m18 0V5a2 2 0 00-2-2h-3m0 18h3a2 2 0 002-2v-3M3 16v3a2 2 0 002 2h3"></path>
+              </svg>
+            </button>
+          )}
+
+          {/* Close Button */}
+          <button
+            onClick={() => {
+              if (isInPictureInPicture) {
+                closePictureInPicture();
+              }
+              onClose(); // This will set logsPopped to false and show inline logs
+            }}
+            className="text-text-secondary hover:text-red-400 transition-colors p-1 hover:bg-dark-hover rounded"
+            title="Close pop-out and show inline logs"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Logs Content */}

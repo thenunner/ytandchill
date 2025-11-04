@@ -49,6 +49,7 @@ export default function Player() {
             'mute',
             'volume',
             'settings',
+            'pip',
             'fullscreen',
           ],
           settings: ['speed'],

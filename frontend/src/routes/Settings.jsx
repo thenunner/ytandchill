@@ -19,7 +19,12 @@ export default function Settings({ logsPopped, setLogsPopped }) {
   const [refreshMinute, setRefreshMinute] = useState(0);
   const [youtubeApiKey, setYoutubeApiKey] = useState('');
   const [logLevel, setLogLevel] = useState('INFO');
-  const [showLogs, setShowLogs] = useState(false);
+
+  // Initialize showLogs from localStorage, default to true (open) if not set
+  const [showLogs, setShowLogs] = useState(() => {
+    const saved = localStorage.getItem('logsVisible');
+    return saved !== null ? saved === 'true' : true; // Default: open
+  });
 
   // Auto-scroll to bottom of logs when they update
   useEffect(() => {
@@ -54,6 +59,12 @@ export default function Settings({ logsPopped, setLogsPopped }) {
     } catch (error) {
       showNotification(error.message, 'error');
     }
+  };
+
+  const toggleLogs = () => {
+    const newValue = !showLogs;
+    setShowLogs(newValue);
+    localStorage.setItem('logsVisible', newValue.toString());
   };
 
   if (isLoading) {
@@ -253,14 +264,18 @@ export default function Settings({ logsPopped, setLogsPopped }) {
               {/* View Log Button or Popped-out indicator */}
               {logsPopped ? (
                 <button
-                  onClick={() => setLogsPopped(false)}
+                  onClick={() => {
+                    setLogsPopped(false);
+                    setShowLogs(true); // Show inline logs when closing pop-out
+                    localStorage.setItem('logsVisible', 'true');
+                  }}
                   className="btn bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap py-1.5 text-sm font-bold"
                 >
                   Logs Popped Out (Click to Close)
                 </button>
               ) : (
                 <button
-                  onClick={() => setShowLogs(!showLogs)}
+                  onClick={toggleLogs}
                   className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
                 >
                   {showLogs ? 'Hide Logs' : 'View Logs'}

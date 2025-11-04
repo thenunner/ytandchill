@@ -2,6 +2,7 @@ import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-r
 import { useQueue, useHealth, useLogs } from './api/queries';
 import { useNotification } from './contexts/NotificationContext';
 import { useEffect, useState } from 'react';
+import { PictureInPictureProvider } from 'react-document-pip';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
 import ChannelLibrary from './routes/ChannelLibrary';
@@ -298,10 +299,12 @@ function App() {
 
       {/* Popped-out Logs Window - Persists across all pages */}
       {logsPopped && (
-        <LogsWindow
-          logsData={logsData}
-          onClose={() => setLogsPopped(false)}
-        />
+        <PictureInPictureProvider>
+          <LogsWindow
+            logsData={logsData}
+            onClose={() => setLogsPopped(false)}
+          />
+        </PictureInPictureProvider>
       )}
     </div>
   );
