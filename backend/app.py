@@ -454,7 +454,34 @@ def health_check():
     # Check cookies.txt
     cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
     cookies_available = os.path.exists(cookies_path)
-    
+
+    # Calculate total storage size of downloads directory
+    total_storage_bytes = 0
+    downloads_path = os.path.join(os.path.dirname(__file__), 'downloads')
+    if os.path.exists(downloads_path):
+        for dirpath, dirnames, filenames in os.walk(downloads_path):
+            for filename in filenames:
+                filepath = os.path.join(dirpath, filename)
+                try:
+                    total_storage_bytes += os.path.getsize(filepath)
+                except (OSError, FileNotFoundError):
+                    pass
+
+    # Format storage size
+    def format_bytes(bytes_size):
+        if bytes_size < 1024:
+            return f"{bytes_size}B"
+        elif bytes_size < 1024 * 1024:
+            return f"{bytes_size / 1024:.1f}KB"
+        elif bytes_size < 1024 * 1024 * 1024:
+            return f"{bytes_size / (1024 * 1024):.1f}MB"
+        elif bytes_size < 1024 * 1024 * 1024 * 1024:
+            return f"{bytes_size / (1024 * 1024 * 1024):.1f}GB"
+        else:
+            return f"{bytes_size / (1024 * 1024 * 1024 * 1024):.1f}TB"
+
+    total_storage = format_bytes(total_storage_bytes)
+
     # Check if worker thread is actually alive (not just the flag)
     worker_alive = download_worker.running and download_worker.thread and download_worker.thread.is_alive()
 
@@ -472,7 +499,8 @@ def health_check():
         'auto_refresh_enabled': auto_refresh_enabled,
         'auto_refresh_time': auto_refresh_time,
         'download_worker_running': worker_alive,
-        'cookies_available': cookies_available
+        'cookies_available': cookies_available,
+        'total_storage': total_storage
     })
 
 # Channels

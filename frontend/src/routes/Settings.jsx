@@ -185,26 +185,30 @@ export default function Settings() {
                 System Status
               </h3>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-16">FFmpeg</span>
+                <span className="text-text-secondary w-24">FFmpeg</span>
                 <span className={`font-medium ${health?.ffmpeg_available ? 'text-green-400' : 'text-red-400'}`}>
                   {health?.ffmpeg_available ? '✓' : '✗'}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-16">yt-dlp</span>
-                <span className="text-text-primary font-mono text-xs">{health?.ytdlp_version || 'Unknown'}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-16">Worker</span>
+                <span className="text-text-secondary w-24">Worker</span>
                 <span className={`font-medium ${health?.download_worker_running ? 'text-green-400' : 'text-red-400'}`}>
                   {health?.download_worker_running ? '✓' : '✗'}
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-16">Cookies</span>
+                <span className="text-text-secondary w-24">Cookies</span>
                 <span className={`font-medium ${health?.cookies_available ? 'text-green-400' : 'text-yellow-400'}`}>
                   {health?.cookies_available ? '✓' : '!'}
                 </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary w-24">yt-dlp</span>
+                <span className="text-text-primary font-mono text-xs">{health?.ytdlp_version || 'Unknown'}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary w-24">YT and Chill</span>
+                <span className="text-text-primary font-mono text-xs">v1.0.0</span>
               </div>
             </div>
           </div>
@@ -228,6 +232,10 @@ export default function Settings() {
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary text-right w-40">Total Channels</span>
                 <span className="text-text-primary font-mono font-semibold text-right w-16">{channels?.length || 0}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary text-right w-40">Total Storage</span>
+                <span className="text-text-primary font-mono font-semibold text-right w-16">{health?.total_storage || '0B'}</span>
               </div>
             </div>
           </div>
@@ -325,11 +333,6 @@ export default function Settings() {
             )}
           </div>
         </div>
-      </div>
-
-      {/* Version Footer */}
-      <div className="text-center text-xs text-text-muted mt-6 pb-2">
-        YT and Chill v1.0.0
       </div>
     </div>
     </>
