@@ -326,6 +326,11 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Version Footer */}
+      <div className="text-center text-xs text-text-muted mt-6 pb-2">
+        YT and Chill v1.0.0
+      </div>
     </div>
     </>
   );
