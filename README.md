@@ -51,8 +51,15 @@ YT and Chill works on:
 
 **Installation:**
 
-1. Download or clone this repository
-2. Open Command Prompt or PowerShell
+1. **Download the repository:**
+   - **Option 1 (Download ZIP):** Click the green "Code" button at the top of this GitHub page, then click "Download ZIP". Extract the ZIP file to a folder of your choice (e.g., `C:\ytandchill`).
+   - **Option 2 (Git Clone):** If you have Git installed, open Command Prompt or PowerShell and run:
+     ```cmd
+     git clone https://github.com/thenunner/ytandchill.git
+     cd ytandchill
+     ```
+
+2. Open Command Prompt or PowerShell in the project folder
 3. Run the setup script:
    ```cmd
    setup-native-windows.bat
@@ -80,7 +87,14 @@ brew install python node ffmpeg
 
 **Installation:**
 
-1. Clone this repository
+1. **Download the repository:**
+   - **Option 1 (Download ZIP):** Click the green "Code" button at the top of this GitHub page, then click "Download ZIP". Extract the ZIP file to a folder of your choice (e.g., `~/ytandchill`).
+   - **Option 2 (Git Clone):** Open a terminal and run:
+     ```bash
+     git clone https://github.com/thenunner/ytandchill.git
+     cd ytandchill
+     ```
+
 2. Run the setup script:
    ```bash
    chmod +x setup-native-linux.sh
