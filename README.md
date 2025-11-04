@@ -16,6 +16,23 @@ YouTube channel downloader and video library manager. Monitor channels, queue do
 - **Thumbnail Support**: Automatic thumbnail downloads for easy browsing
 - **Age-Restricted Content**: Optional cookie support for age-restricted videos
 
+## Screenshots
+
+### Channels View
+![Channels](images/Channels.png)
+
+### Library View
+![Library](images/library.png)
+
+### Playlist View
+![Playlist](images/playlist.png)
+
+### Download Queue
+![Queue](images/queue.png)
+
+### Video Player
+![Video Player](images/video.png)
+
 ## Platform Support
 
 YT and Chill works on:

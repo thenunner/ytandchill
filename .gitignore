@@ -18,6 +18,9 @@ githubtoken.txt
 *.token
 *token.txt
 
+# Personal/maintainer scripts
+update.sh
+
 # Python
 __pycache__/
 *.py[cod]

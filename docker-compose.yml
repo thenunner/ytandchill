@@ -6,7 +6,7 @@ services:
     image: ytandchill:latest
     container_name: ytandchill
     networks:
-      - tarantino
+      - bridge
     ports:
       - "${PORT:-4099}:4099"
     environment:
@@ -29,5 +29,5 @@ services:
       - "net.unraid.docker.icon=https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/youtube.png"
 
 networks:
-  tarantino:
-    external: true
+  bridge:
+    driver: bridge

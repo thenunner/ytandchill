@@ -360,7 +360,7 @@ YT and Chill uses Docker on Unraid for easy management and updates.
    - **Downloads Path**: `/mnt/user/data/media/youtube/ytandchill`
    - **Logs Path**: `/mnt/user/appdata/ytandchill/logs`
    - **Cookies Path**: `/mnt/user/appdata/ytandchill/cookies.txt`
-   - **Network**: `tarantino` (or your custom network)
+   - **Network**: `bridge` (or your custom network)
 
 5. Click **Apply**
 
@@ -389,7 +389,7 @@ YT and Chill uses Docker on Unraid for easy management and updates.
 ### Unraid-Specific Notes
 
 - **User Permissions**: Container runs as `nobody:users` (99:100)
-- **Network**: Uses custom network (default: "tarantino")
+- **Network**: Uses bridge network (default: "bridge")
 - **Updates**: Use "Force Update" in Docker tab to pull latest from GitHub
 - **WebUI Integration**: Template includes WebUI link in Docker tab
 - **Auto-start**: Configured to restart unless stopped

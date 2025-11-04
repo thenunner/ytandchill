@@ -36,7 +36,7 @@
 2. **Create container manually in Unraid Docker tab:**
    - **Name:** ytandchill
    - **Repository:** ytandchill:latest
-   - **Network Type:** Custom: tarantino (or bridge if not using custom networks)
+   - **Network Type:** bridge (standard network)
    - **WebUI:** http://[IP]:[PORT:4099]
    - **Icon URL:** https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/youtube.png
    - **Extra Parameters:** `--rm` (removes container on stop, cleans up orphaned images)
@@ -149,14 +149,14 @@ http://YOUR-UNRAID-IP:4099
 
 ## Network Configuration
 
-### Using Custom Network (tarantino)
-If you use a custom Docker network like "tarantino":
-- Set Network Type to "Custom: tarantino"
+### Using Bridge Network (Default)
+The template uses the standard bridge network:
+- Set Network Type to "Bridge"
 - Access via: `http://YOUR-UNRAID-IP:4099`
 
-### Using Bridge Network
-If using default bridge:
-- Set Network Type to "Bridge"
+### Using Custom Network (Optional)
+If you have a custom Docker network:
+- Set Network Type to "Custom: your_network_name"
 - Access via: `http://YOUR-UNRAID-IP:4099`
 
 ---

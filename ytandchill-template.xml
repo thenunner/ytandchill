@@ -3,7 +3,7 @@
   <Name>ytandchill</Name>
   <Repository>ghcr.io/thenunner/ytandchill:latest</Repository>
   <Registry>https://ghcr.io</Registry>
-  <Network>tarantino</Network>
+  <Network>bridge</Network>
   <MyIP/>
   <Shell>bash</Shell>
   <Privileged>false</Privileged>
