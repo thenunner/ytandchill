@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { usePictureInPicture } from 'react-document-pip';
+import DocumentPip from 'react-document-pip';
 
 export default function LogsWindow({ logsData, onClose }) {
-  const { isPictureInPictureAvailable, isInPictureInPicture, openPictureInPicture, closePictureInPicture } = usePictureInPicture();
+  const [isPipOpen, setIsPipOpen] = useState(false);
+  const isPipSupported = typeof window !== 'undefined' && 'documentPictureInPicture' in window;
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -50,19 +51,8 @@ export default function LogsWindow({ logsData, onClose }) {
     }
   }, [isDragging, dragOffset]);
 
-  return (
-    <div
-      className="fixed bg-dark-secondary border border-dark-border rounded-lg shadow-2xl"
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        width: '700px',
-        maxHeight: '500px',
-        zIndex: 9999,
-        cursor: isDragging ? 'grabbing' : 'default',
-      }}
-      onMouseDown={handleMouseDown}
-    >
+  const logsContent = (
+    <div className="bg-dark-secondary border border-dark-border rounded-lg shadow-2xl" style={{ width: '700px', maxHeight: '500px' }}>
       {/* Header - Draggable */}
       <div className="logs-window-header flex items-center justify-between bg-dark-tertiary px-4 py-3 rounded-t-lg cursor-grab active:cursor-grabbing border-b border-dark-border">
         <div className="flex items-center gap-2 text-text-primary font-semibold">
@@ -79,9 +69,9 @@ export default function LogsWindow({ logsData, onClose }) {
 
         <div className="flex items-center gap-2">
           {/* PiP Button (Chrome/Edge only) */}
-          {isPictureInPictureAvailable && !isInPictureInPicture && (
+          {isPipSupported && !isPipOpen && (
             <button
-              onClick={() => openPictureInPicture({ width: 700, height: 500 })}
+              onClick={() => setIsPipOpen(true)}
               className="text-text-secondary hover:text-blue-400 transition-colors p-1 hover:bg-dark-hover rounded"
               title="Open in Picture-in-Picture (always on top)"
             >
@@ -93,9 +83,9 @@ export default function LogsWindow({ logsData, onClose }) {
           )}
 
           {/* Exit PiP Button (when in PiP mode) */}
-          {isInPictureInPicture && (
+          {isPipOpen && (
             <button
-              onClick={closePictureInPicture}
+              onClick={() => setIsPipOpen(false)}
               className="text-text-secondary hover:text-blue-400 transition-colors p-1 hover:bg-dark-hover rounded"
               title="Exit Picture-in-Picture"
             >
@@ -108,9 +98,7 @@ export default function LogsWindow({ logsData, onClose }) {
           {/* Close Button */}
           <button
             onClick={() => {
-              if (isInPictureInPicture) {
-                closePictureInPicture();
-              }
+              setIsPipOpen(false);
               onClose(); // This will set logsPopped to false and show inline logs
             }}
             className="text-text-secondary hover:text-red-400 transition-colors p-1 hover:bg-dark-hover rounded"
@@ -150,6 +138,36 @@ export default function LogsWindow({ logsData, onClose }) {
           </div>
         )}
       </div>
+    </div>
+  );
+
+  // Wrap in DocumentPip if supported and PiP is open
+  if (isPipSupported && isPipOpen) {
+    return (
+      <DocumentPip
+        isPipOpen={isPipOpen}
+        size={{ width: 700, height: 500 }}
+        onClose={() => setIsPipOpen(false)}
+        mode="transfer-only"
+      >
+        {logsContent}
+      </DocumentPip>
+    );
+  }
+
+  // Otherwise, render as a floating div (for Firefox/Safari or when PiP is closed)
+  return (
+    <div
+      className="fixed"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: 9999,
+        cursor: isDragging ? 'grabbing' : 'default',
+      }}
+      onMouseDown={handleMouseDown}
+    >
+      {logsContent}
     </div>
   );
 }
