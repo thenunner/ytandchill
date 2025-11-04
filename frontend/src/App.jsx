@@ -22,6 +22,7 @@ function App() {
   const { data: logsData } = useLogs(500);
   const { notification } = useNotification();
   const [logsPopped, setLogsPopped] = useState(false);
+  const [showQuickLogs, setShowQuickLogs] = useState(false);
 
   // Handle new queue structure
   const queue = queueData?.queue_items || queueData || [];
@@ -122,10 +123,19 @@ function App() {
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
         {(downloading > 0 || pending > 0 || currentOperation?.type || health?.auto_refresh_enabled || notification || isAutoRefreshing || delayInfo) && (
-          <div className="px-4 py-2 border-t border-dark-border bg-dark-secondary/50 backdrop-blur-sm animate-slide-down">
+          <div className="px-4 py-2 border-t border-dark-border bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary">
-                <span className="font-semibold text-white">Status:</span>
+                <button
+                  onClick={() => setShowQuickLogs(!showQuickLogs)}
+                  className="font-semibold text-white hover:text-accent transition-colors cursor-pointer flex items-center gap-1"
+                  title="Click to view recent logs"
+                >
+                  Status:
+                  <svg className={`w-3 h-3 transition-transform ${showQuickLogs ? 'rotate-180' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </button>
 
                 {/* Queue Count */}
                 {(pending > 0 || downloading > 0) && (
@@ -276,6 +286,37 @@ function App() {
                 )}
               </div>
             </div>
+
+            {/* Quick Logs Slide-Down Panel */}
+            {showQuickLogs && (
+              <div className="absolute left-0 right-0 top-full bg-dark-secondary border-t border-dark-border shadow-lg animate-slide-down z-50">
+                <div className="px-4 py-3 max-h-64 overflow-auto font-mono text-xs">
+                  {logsData?.logs && logsData.logs.length > 0 ? (
+                    <div className="space-y-0.5">
+                      {logsData.logs.slice(-10).map((line, index) => (
+                        <div
+                          key={index}
+                          className={`${
+                            line.includes('ERROR') ? 'text-red-400' :
+                            line.includes('WARNING') ? 'text-yellow-400' :
+                            line.includes('INFO') ? 'text-blue-400' :
+                            line.includes('API') ? 'text-purple-400' :
+                            line.includes('DEBUG') ? 'text-gray-400' :
+                            'text-text-secondary'
+                          }`}
+                        >
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-text-muted text-center py-4">
+                      No logs available
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </header>

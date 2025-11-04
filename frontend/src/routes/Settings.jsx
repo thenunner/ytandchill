@@ -271,7 +271,7 @@ export default function Settings({ logsPopped, setLogsPopped }) {
                   }}
                   className="btn bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap py-1.5 text-sm font-bold"
                 >
-                  Logs Popped Out (Click to Close)
+                  Close Window
                 </button>
               ) : (
                 <button
