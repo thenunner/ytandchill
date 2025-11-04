@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>ytandchill</Name>
-  <Repository>ytandchill:latest</Repository>
-  <Registry/>
+  <Repository>ghcr.io/thenunner/ytandchill:latest</Repository>
+  <Registry>https://ghcr.io</Registry>
   <Network>tarantino</Network>
   <MyIP/>
   <Shell>bash</Shell>
