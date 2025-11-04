@@ -64,5 +64,8 @@ app.lock
 # Unraid specific
 *.xml.bak
 
+# Backup files
+*.bak
+
 # OS
 Thumbs.db

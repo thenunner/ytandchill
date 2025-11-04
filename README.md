@@ -1,158 +1,270 @@
-# YouTube Downloader - Docker Setup for Unraid
+# YT and Chill
 
-A self-hosted YouTube channel video downloader with automatic monitoring and queue management.
+YouTube channel downloader and video library manager. Monitor channels, queue downloads, and manage your local YouTube video library with a modern web interface.
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Unraid-lightgrey.svg)
 
 ## Features
 
-- Monitor YouTube channels for new videos
-- Automatic and manual video downloads
-- Queue management with drag-and-drop reordering
-- Web-based UI for managing channels, videos, and playlists
-- SQLite database for tracking videos
-- Support for age-restricted content via cookies
+- **Channel Management**: Subscribe to YouTube channels and automatically track new uploads
+- **Playlist Support**: Download and organize entire playlists
+- **Smart Downloads**: Queue-based download system with progress tracking
+- **Modern Web UI**: Clean, responsive interface built with React
+- **Video Library**: Browse, search, and manage your downloaded videos
+- **Thumbnail Support**: Automatic thumbnail downloads for easy browsing
+- **Age-Restricted Content**: Optional cookie support for age-restricted videos
 
-## Quick Start on Unraid
+## Platform Support
 
-### 1. Install via Docker Compose
+YT and Chill works on:
+- **Windows** (Native Python - no Docker required)
+- **Linux / macOS** (Native Python - no Docker required)
+- **Unraid** (Docker template or docker-compose)
 
-1. Copy this entire folder to your Unraid server (e.g., `/mnt/user/appdata/youtube-downloader/`)
+## Quick Start
 
-2. Edit `docker-compose.yml` and update the volume paths to match your Unraid paths:
-   ```yaml
-   volumes:
-     - /mnt/user/appdata/youtube-downloader/data:/app/data
-     - /mnt/user/media/YouTube:/app/downloads
-     - /mnt/user/appdata/youtube-downloader/logs:/app/logs
+### Windows
+
+**Prerequisites:**
+- [Python 3.11+](https://www.python.org/) (check "Add Python to PATH" during install)
+- [Node.js 18+](https://nodejs.org/)
+- [ffmpeg](https://ffmpeg.org/) (optional but recommended)
+
+**Installation:**
+
+1. Download or clone this repository
+2. Open Command Prompt or PowerShell
+3. Run the setup script:
+   ```cmd
+   setup-native-windows.bat
    ```
+4. Start the application:
+   ```cmd
+   start-native-windows.bat
+   ```
+5. Open http://localhost:4099 in your browser
 
-3. Build and start the container:
+### Linux / macOS
+
+**Prerequisites:**
+
+```bash
+# Ubuntu/Debian
+sudo apt install python3 python3-pip nodejs npm ffmpeg
+
+# Fedora
+sudo dnf install python3 python3-pip nodejs npm ffmpeg
+
+# macOS (with Homebrew)
+brew install python node ffmpeg
+```
+
+**Installation:**
+
+1. Clone this repository
+2. Run the setup script:
    ```bash
-   cd /mnt/user/appdata/youtube-downloader
+   chmod +x setup-native-linux.sh
+   ./setup-native-linux.sh
+   ```
+3. Start the application:
+   ```bash
+   ./start-native-linux.sh
+   ```
+4. Open http://localhost:4099 in your browser
+
+### Unraid
+
+#### Option 1: Using Docker Template (Recommended)
+
+1. Copy `ytandchill-template.xml` to `/boot/config/plugins/dockerMan/templates-user/`
+2. Go to Docker tab in Unraid WebUI
+3. Click "Add Container" and select "ytandchill"
+4. Configure paths and port as needed
+5. Click "Apply"
+
+#### Option 2: Using Docker Compose
+
+1. Copy the project to `/mnt/user/appdata/ytandchill/`
+2. Run docker-compose:
+   ```bash
    docker-compose up -d
    ```
 
-### 2. Access the Web UI
-
-Open your browser to: `http://YOUR-SERVER-IP:4099`
-
-The WebUI link will also appear in Unraid's Docker tab.
-
-### 3. First-Time Setup
-
-1. Go to **Settings** in the web UI
-2. Add your **YouTube API Key** (required for channel scanning)
-   - Get one from: https://console.cloud.google.com/apis/credentials
-   - Enable the YouTube Data API v3
-3. Configure download quality and other preferences
-4. Add your first channel from the **Channels** page
+See [UNRAID-SETUP.md](UNRAID-SETUP.md) for detailed Unraid installation instructions.
 
 ## Configuration
 
-### Port Configuration
+### Directory Structure
 
-Default port is `4099`. To change it:
+```
+ytandchill/
+├── data/              # Database and configuration
+├── downloads/         # Downloaded videos and thumbnails
+├── logs/              # Application logs
+└── cookies.txt        # YouTube cookies (optional)
+```
 
-1. Edit `docker-compose.yml`:
-   ```yaml
-   ports:
-     - "8080:4099"  # External:Internal
-   ```
-2. Or use environment variable:
-   ```yaml
-   environment:
-     - PORT=YOUR_PORT
-   ```
+### Environment Variables
 
-### Volume Mounts
+- `PORT`: Web interface port (default: 4099)
 
-| Local Path | Container Path | Purpose |
-|------------|---------------|---------|
-| `./data` | `/app/data` | SQLite database |
-| `./downloads` | `/app/downloads` | Downloaded videos and thumbnails |
-| `./logs` | `/app/logs` | Application logs |
+### YouTube API Setup (Required)
 
-### Optional: Age-Restricted Content
+YT and Chill requires a YouTube Data API v3 key to scan channels and fetch video information:
 
-To download age-restricted videos:
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or select existing)
+3. Enable the **YouTube Data API v3**:
+   - Go to "APIs & Services" → "Library"
+   - Search for "YouTube Data API v3"
+   - Click "Enable"
+4. Create credentials:
+   - Go to "APIs & Services" → "Credentials"
+   - Click "Create Credentials" → "API Key"
+   - Copy your API key
+5. In YT and Chill web interface:
+   - Navigate to **Settings**
+   - Paste your API key in the "YouTube API Key" field
+   - Click "Save"
 
-1. Export your YouTube cookies to `cookies.txt` (use browser extension)
-2. Uncomment this line in `docker-compose.yml`:
-   ```yaml
-   - ./cookies.txt:/app/cookies.txt
-   ```
+**Note**: The free tier provides 10,000 quota units per day, which is sufficient for personal use (scanning ~100-300 channels daily).
 
-## Migrating Existing Data
+### Cookies for Age-Restricted Content (Optional)
 
-If you have an existing installation and want to migrate:
+To download age-restricted videos, you need to provide YouTube authentication cookies:
 
-1. Copy your old database file to:
-   ```
-   yt-docker/data/youtube_downloader.db
-   ```
+**Method 1: Browser Extension (Recommended)**
+1. Install a cookie export extension:
+   - Chrome/Edge: "Get cookies.txt LOCALLY"
+   - Firefox: "cookies.txt"
+2. Go to youtube.com and ensure you're logged in
+3. Click the extension icon and export cookies for youtube.com
+4. Save the exported file as `cookies.txt` in the project directory
+5. Restart the container
 
-2. Copy your downloads folder to:
-   ```
-   yt-docker/downloads/
-   ```
+**Method 2: Manual Export**
+1. Open browser DevTools (F12)
+2. Go to youtube.com (logged in)
+3. Navigate to Application → Cookies → youtube.com
+4. Export cookies in Netscape format
+5. Save as `cookies.txt`
 
-3. The app will automatically find all existing videos and channels!
-
-Note: You'll need to re-enter your YouTube API key in Settings.
+**Important**:
+- The cookies.txt file must be in Netscape HTTP Cookie File format
+- Cookies expire periodically - if downloads fail, re-export your cookies
+- Never share your cookies.txt file (it contains your authentication)
 
 ## Usage
 
-### Adding Channels
+1. **Add Channels**: Navigate to the Channels page and add YouTube channel URLs
+2. **Browse Library**: View all tracked channels and playlists
+3. **Queue Downloads**: Select videos to download from channel pages
+4. **Watch Videos**: Access your downloaded library through the Library tab
 
-1. Go to **Channels** → **Add Channel**
-2. Enter channel URL or ID
-3. Click **Scan** to discover videos
-4. Videos appear in the **Videos** page
+## Building from Source
 
-### Downloading Videos
+### For Windows/Linux/macOS (Native)
 
-1. Find videos in the **Videos** page
-2. Click **Download** to add to queue
-3. Monitor progress in the **Queue** page
-4. Drag to reorder queued items
-5. Use **Clear Queue** to remove all pending downloads
+The setup scripts handle everything automatically. To manually rebuild:
 
-### Auto-Refresh
+**Frontend:**
+```bash
+cd frontend
+npm install
+npm run build
+```
 
-Enable in **Settings** to automatically check channels for new videos every 6 hours.
+**Backend:**
+```bash
+cd backend
+pip install -r requirements.txt
+```
 
-## Unraid-Specific Notes
+### For Unraid (Docker)
 
-- Container runs as `nobody:users` (99:100) for proper file permissions
-- WebUI integration enabled for easy access from Docker tab
-- Compatible with Unraid Community Applications
+Pre-built images are available from GitHub Container Registry:
+```bash
+docker pull ghcr.io/thenunner/ytandchill:latest
+```
+
+Or build locally:
+```bash
+docker-compose build
+```
+
+## Architecture
+
+- **Frontend**: React + Vite + Tailwind CSS
+- **Backend**: Python + Flask
+- **Downloader**: yt-dlp
+- **Database**: SQLite
+- **Video Processing**: ffmpeg
+
+## File Organization
+
+### Setup Scripts
+- `setup-native-windows.bat` - Windows setup
+- `setup-native-linux.sh` - Linux/Mac setup
+- `start-native-windows.bat` - Start on Windows
+- `start-native-linux.sh` - Start on Linux/Mac
+
+### Unraid Docker Files
+- `docker-compose.yml` - Unraid docker-compose configuration
+- `ytandchill-template.xml` - Unraid Docker template
+- `build-for-unraid.sh` - Build script for Unraid
+
+### Documentation
+- `README.md` - This file (quick start guide)
+- `PLATFORM-GUIDE.md` - Detailed platform-specific instructions
+- `UNRAID-SETUP.md` - Detailed Unraid Docker instructions
 
 ## Troubleshooting
 
-### Videos aren't downloading
-- Check that ffmpeg is installed (included in Docker image)
-- Verify YouTube API key in Settings
-- Check logs: `docker-compose logs -f`
+### Windows/Linux/macOS (Native)
 
-### Permission errors
-- Ensure mounted folders have correct permissions: `chmod -R 99:100`
+**Application won't start:**
+- Check Python version: `python --version` (need 3.11+)
+- Check Node version: `node --version` (need 18+)
+- Ensure ffmpeg is installed: `ffmpeg -version`
+- Check logs in `logs/app.log`
 
-### Database issues
-- Database is in `data/youtube_downloader.db`
-- Backup before major changes
+**Port already in use:**
+- Another service is using port 4099
+- Change port in `backend/app.py` (line with `port = int(os.environ.get('PORT', 4099))`)
 
-## Updating
+**Downloads failing:**
+- Update yt-dlp: `pip install --upgrade yt-dlp`
+- Check internet connection
+- Check logs for specific errors
 
-```bash
-cd /path/to/yt-docker
-docker-compose pull
-docker-compose up -d --build
-```
+**Can't access age-restricted videos:**
+- Ensure cookies.txt is properly formatted (Netscape format)
+- Re-export cookies if they've expired
+- Restart application after adding cookies
+
+### Unraid (Docker)
+
+**Container won't start:**
+- Check logs: `docker logs ytandchill`
+- Verify volume paths exist and have correct permissions (99:100)
+- Ensure port 4099 is not in use
+
+**Force update not working:**
+- Manually pull: `docker pull ghcr.io/thenunner/ytandchill:latest`
+- Restart container from Unraid Docker tab
+
+## License
+
+MIT License - feel free to use for personal projects
+
+## Credits
+
+- Built with [yt-dlp](https://github.com/yt-dlp/yt-dlp)
+- Icons from [Dashboard Icons](https://github.com/walkxcode/dashboard-icons)
 
 ## Support
 
-For issues or questions, check the application logs:
-```bash
-docker-compose logs -f youtube-downloader
-```
-
-Or check the logs folder: `./logs/app.log`
+For issues and feature requests, please open an issue on GitHub.
