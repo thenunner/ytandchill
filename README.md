@@ -14,7 +14,7 @@ YouTube channel downloader and video library manager. Monitor channels, queue do
 - **Modern Web UI**: Clean, responsive interface built with React
 - **Video Library**: Browse, search, and manage your downloaded videos
 - **Thumbnail Support**: Automatic thumbnail downloads for easy browsing
-- **Age-Restricted Content**: Optional cookie support for age-restricted videos
+- **Cookie Authentication**: Support for YouTube cookies (strongly recommended for reliable downloads)
 
 ## Screenshots
 
@@ -121,7 +121,7 @@ ytandchill/
 ├── data/              # Database and configuration
 ├── downloads/         # Downloaded videos and thumbnails
 ├── logs/              # Application logs
-└── cookies.txt        # YouTube cookies (optional)
+└── cookies.txt        # YouTube cookies (strongly recommended)
 ```
 
 ### Environment Variables
@@ -149,9 +149,11 @@ YT and Chill requires a YouTube Data API v3 key to scan channels and fetch video
 
 **Note**: The free tier provides 10,000 quota units per day, which is sufficient for personal use (scanning ~100-300 channels daily).
 
-### Cookies for Age-Restricted Content (Optional)
+### YouTube Cookies (Strongly Recommended)
 
-To download age-restricted videos, you need to provide YouTube authentication cookies:
+**As of 2024, YouTube cookies are essentially required for reliable downloads.** According to [yt-dlp's FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp), YouTube has implemented increasingly aggressive bot detection, making downloads fail without authentication cookies. While technically optional, you'll likely encounter frequent download failures without them.
+
+To provide YouTube authentication cookies:
 
 **Method 1: Browser Extension (Recommended)**
 1. Install a cookie export extension:
@@ -171,8 +173,9 @@ To download age-restricted videos, you need to provide YouTube authentication co
 
 **Important**:
 - The cookies.txt file must be in Netscape HTTP Cookie File format
-- Cookies expire periodically - if downloads fail, re-export your cookies
+- Cookies expire periodically - if downloads start failing, re-export your cookies
 - Never share your cookies.txt file (it contains your authentication)
+- **Without cookies, you may experience**: bot detection errors, rate limiting, and failed downloads even for public videos
 
 ## Usage
 
