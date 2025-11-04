@@ -332,5 +332,6 @@ export default function Settings({ logsPopped, setLogsPopped }) {
       </div>
       )}
     </div>
+    </>
   );
 }
