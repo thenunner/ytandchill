@@ -13,7 +13,7 @@
   <Category>MediaApp:Video Status:Stable</Category>
   <WebUI>http://[IP]:[PORT:4099]</WebUI>
   <TemplateURL/>
-  <Icon>https://raw.githubusercontent.com/thenunner/ytandchill/main/images/icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/thenunner/ytandchill/main/images/icon.png?v=2</Icon>
   <ExtraParams></ExtraParams>
   <PostArgs/>
   <CPUset/>
