@@ -254,6 +254,18 @@ docker-compose build
 - `README.md` - This file (quick start guide)
 - `PLATFORM-GUIDE.md` - Detailed platform-specific instructions
 - `UNRAID-SETUP.md` - Detailed Unraid Docker instructions
+- `FAQ.md` - Frequently asked questions and common issues
+
+## FAQ
+
+For common issues, error messages, and troubleshooting help, see the **[FAQ (Frequently Asked Questions)](FAQ.md)**.
+
+Common topics covered:
+- YouTube cookies and authentication
+- Common yt-dlp errors (geo-blocking, bot detection, etc.)
+- Download failures and performance issues
+- Account safety and recommendations
+- Storage and backup
 
 ## Troubleshooting
 

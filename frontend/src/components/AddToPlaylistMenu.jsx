@@ -205,7 +205,7 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
         <div className="flex-1 overflow-y-auto p-2">
           {playlists && playlists.length > 0 ? (
             <div className="space-y-1">
-              {playlists.map((playlist) => {
+              {[...playlists].sort((a, b) => a.name.localeCompare(b.name)).map((playlist) => {
                 const isInPlaylist = existingPlaylistIds.has(playlist.id);
                 return (
                   <button
