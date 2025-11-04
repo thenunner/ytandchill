@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels, useVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 
-export default function Settings({ logsPopped, setLogsPopped }) {
+export default function Settings() {
   const { data: settings, isLoading } = useSettings();
   const { data: health } = useHealth();
   const { data: logsData } = useLogs(500);
@@ -154,13 +154,13 @@ export default function Settings({ logsPopped, setLogsPopped }) {
               </div>
             </div>
           </div>
-          <p className="text-xs text-text-muted">
+          <p className="text-sm text-text-secondary font-medium">
             Required for fast channel scanning. Get your key at{' '}
             <a
               href="https://console.cloud.google.com/apis/credentials"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-accent hover:underline"
+              className="text-accent hover:underline font-semibold"
             >
               Google Cloud Console
             </a>
@@ -261,33 +261,19 @@ export default function Settings({ logsPopped, setLogsPopped }) {
               >
                 {updateSettings.isPending ? 'Saving...' : 'Save Settings'}
               </button>
-              {/* View Log Button or Popped-out indicator */}
-              {logsPopped ? (
-                <button
-                  onClick={() => {
-                    setLogsPopped(false);
-                    setShowLogs(true); // Show inline logs when closing pop-out
-                    localStorage.setItem('logsVisible', 'true');
-                  }}
-                  className="btn bg-blue-600 text-white hover:bg-blue-700 whitespace-nowrap py-1.5 text-sm font-bold"
-                >
-                  Close Window
-                </button>
-              ) : (
-                <button
-                  onClick={toggleLogs}
-                  className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
-                >
-                  {showLogs ? 'Hide Logs' : 'View Logs'}
-                </button>
-              )}
+              {/* View Log Button */}
+              <button
+                onClick={toggleLogs}
+                className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+              >
+                {showLogs ? 'Hide Logs' : 'View Logs'}
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Log Viewer Card - Collapsible (hide if popped out) */}
-      {!logsPopped && (
+      {/* Log Viewer Card - Collapsible */}
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
           showLogs ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
@@ -299,17 +285,6 @@ export default function Settings({ logsPopped, setLogsPopped }) {
               <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
             </svg>
             Application Logs
-
-            {/* Pop-out Button */}
-            <button
-              onClick={() => setLogsPopped(true)}
-              className="ml-2 p-1 text-text-secondary hover:text-accent-primary hover:bg-dark-hover rounded transition-colors"
-              title="Pop out logs in floating window"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </button>
 
             {logsData?.total_lines && (
               <span className="text-xs text-text-muted ml-auto">
@@ -345,8 +320,6 @@ export default function Settings({ logsPopped, setLogsPopped }) {
           </div>
         </div>
       </div>
-      )}
     </div>
-    </>
   );
 }

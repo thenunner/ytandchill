@@ -12,7 +12,6 @@ import Ignored from './routes/Ignored';
 import Queue from './routes/Queue';
 import Settings from './routes/Settings';
 import Player from './routes/Player';
-import LogsWindow from './components/LogsWindow';
 
 function App() {
   const location = useLocation();
@@ -21,7 +20,6 @@ function App() {
   const { data: health } = useHealth();
   const { data: logsData } = useLogs(500);
   const { notification } = useNotification();
-  const [logsPopped, setLogsPopped] = useState(false);
   const [showQuickLogs, setShowQuickLogs] = useState(false);
 
   // Handle new queue structure
@@ -332,18 +330,10 @@ function App() {
           <Route path="/needs-work" element={<NeedsWork />} />
           <Route path="/ignored" element={<Ignored />} />
           <Route path="/queue" element={<Queue />} />
-          <Route path="/settings" element={<Settings logsPopped={logsPopped} setLogsPopped={setLogsPopped} />} />
+          <Route path="/settings" element={<Settings />} />
           <Route path="/player/:videoId" element={<Player />} />
         </Routes>
       </main>
-
-      {/* Popped-out Logs Window - Persists across all pages */}
-      {logsPopped && (
-        <LogsWindow
-          logsData={logsData}
-          onClose={() => setLogsPopped(false)}
-        />
-      )}
     </div>
   );
 }
