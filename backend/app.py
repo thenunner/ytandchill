@@ -422,6 +422,7 @@ def serialize_queue_item(item):
         'progress_pct': item.progress_pct,
         'speed_bps': item.speed_bps,
         'eta_seconds': item.eta_seconds,
+        'total_bytes': item.total_bytes,
         'log': item.log,
         'created_at': item.created_at.isoformat(),
         'updated_at': item.updated_at.isoformat()
@@ -1097,7 +1098,8 @@ def get_queue():
                 'video': item['video'],  # Include full video object
                 'progress_pct': item['progress_pct'],
                 'speed_bps': item['speed_bps'],
-                'eta_seconds': item['eta_seconds']
+                'eta_seconds': item['eta_seconds'],
+                'total_bytes': item.get('total_bytes', 0)
             }
             break
 
