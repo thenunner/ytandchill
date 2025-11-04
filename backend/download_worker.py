@@ -236,9 +236,9 @@ class DownloadWorker:
                             progress_pct = (downloaded / total) * 100
                             temp_queue_item.progress_pct = progress_pct
 
-                            # Log progress every 10% at INFO level
-                            progress_milestone = int(progress_pct // 10) * 10
-                            if progress_milestone > last_logged_progress[0] and progress_milestone % 10 == 0:
+                            # Log progress every 5% at INFO level
+                            progress_milestone = int(progress_pct // 5) * 5
+                            if progress_milestone > last_logged_progress[0] and progress_milestone % 5 == 0:
                                 speed_mbps = (d.get('speed', 0) or 0) / (1024 * 1024)
                                 eta_min = (d.get('eta', 0) or 0) / 60
                                 # Only log if we have actual download progress (not just initial metadata)
