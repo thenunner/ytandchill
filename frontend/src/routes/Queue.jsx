@@ -32,9 +32,10 @@ function SortableQueueItem({ item, index, onRemove }) {
         <div
           {...attributes}
           {...listeners}
-          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary hover:text-text-primary transition-colors p-1"
+          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary hover:text-text-primary transition-colors p-2 md:p-1 touch-none"
+          style={{ touchAction: 'none' }}
         >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="w-6 h-6 md:w-5 md:h-5" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="9" cy="5" r="1.5"></circle>
             <circle cx="9" cy="12" r="1.5"></circle>
             <circle cx="9" cy="19" r="1.5"></circle>
@@ -105,8 +106,8 @@ export default function Queue() {
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 250, // 250ms hold before drag starts (prevents conflict with scrolling)
-        tolerance: 5, // 5px of movement tolerance
+        delay: 150, // 150ms hold before drag starts (shorter for better UX)
+        tolerance: 8, // 8px of movement tolerance
       },
     })
   );
