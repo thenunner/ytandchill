@@ -14,14 +14,31 @@ export default function Library() {
   const [renamePlaylistId, setRenamePlaylistId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
   const [activeMenuId, setActiveMenuId] = useState(null);
-  const [playlistSortBy, setPlaylistSortBy] = useState('a_z'); // Sort option for playlists
-  const [showPlaylistSortMenu, setShowPlaylistSortMenu] = useState(false); // Sort menu visibility for playlists
+
+  // Playlist filters with localStorage persistence
+  const [playlistSortBy, setPlaylistSortBy] = useState(() => {
+    return localStorage.getItem('library_playlistSortBy') || 'a_z';
+  });
+  const [showPlaylistSortMenu, setShowPlaylistSortMenu] = useState(false);
+  const [hideEmptyPlaylists, setHideEmptyPlaylists] = useState(() => {
+    return localStorage.getItem('library_hideEmptyPlaylists') === 'true';
+  });
+
+  // Channel filters with localStorage persistence
+  const [channelSortBy, setChannelSortBy] = useState(() => {
+    return localStorage.getItem('library_channelSortBy') || 'a_z';
+  });
+  const [showChannelSortMenu, setShowChannelSortMenu] = useState(false);
+  const [hideWatchedChannels, setHideWatchedChannels] = useState(() => {
+    return localStorage.getItem('library_hideWatchedChannels') === 'true';
+  });
 
   const deletePlaylist = useDeletePlaylist();
   const updatePlaylist = useUpdatePlaylist();
   const { showNotification } = useNotification();
   const menuRef = useRef(null);
   const playlistSortMenuRef = useRef(null);
+  const channelSortMenuRef = useRef(null);
 
   // Sync activeTab with URL parameter
   useEffect(() => {
@@ -30,6 +47,24 @@ export default function Library() {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
+
+  // Persist playlist filters to localStorage
+  useEffect(() => {
+    localStorage.setItem('library_playlistSortBy', playlistSortBy);
+  }, [playlistSortBy]);
+
+  useEffect(() => {
+    localStorage.setItem('library_hideEmptyPlaylists', hideEmptyPlaylists);
+  }, [hideEmptyPlaylists]);
+
+  // Persist channel filters to localStorage
+  useEffect(() => {
+    localStorage.setItem('library_channelSortBy', channelSortBy);
+  }, [channelSortBy]);
+
+  useEffect(() => {
+    localStorage.setItem('library_hideWatchedChannels', hideWatchedChannels);
+  }, [hideWatchedChannels]);
 
   // Helper function to format file size
   const formatFileSize = (bytes) => {
@@ -59,11 +94,15 @@ export default function Library() {
           videoCount: 0,
           totalSizeBytes: 0,
           videos: [],  // Store all videos for random thumbnail selection
+          watchedCount: 0,
         };
       }
       acc[channelId].videoCount++;
       acc[channelId].totalSizeBytes += video.file_size_bytes || 0;
       acc[channelId].videos.push(video);
+      if (video.watched) {
+        acc[channelId].watchedCount++;
+      }
       return acc;
     }, {})).map(channel => {
       // Pick a random video thumbnail for this channel (only once per video list)
@@ -71,21 +110,61 @@ export default function Library() {
       return {
         ...channel,
         thumbnail: randomVideo.thumb_url,
+        allWatched: channel.watchedCount === channel.videoCount,
       };
-    }).sort((a, b) => a.title.localeCompare(b.title));
+    });
   }, [videos]);
 
-  // Filter channels based on search input (real-time)
-  const channelsList = allChannelsList.filter(channel =>
-    (channel.title || '').toLowerCase().includes(searchInput.toLowerCase())
-  );
+  // Filter and sort channels based on search input and filters
+  const channelsList = useMemo(() => {
+    // First filter by search and hide watched
+    const filtered = allChannelsList.filter(channel => {
+      // Search filter
+      if (!(channel.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+        return false;
+      }
+      // Hide watched channels filter
+      if (hideWatchedChannels && channel.allWatched) {
+        return false;
+      }
+      return true;
+    });
+
+    // Then sort based on selected option
+    const sorted = [...filtered].sort((a, b) => {
+      switch (channelSortBy) {
+        case 'a_z':
+          return (a.title || '').localeCompare(b.title || '');
+        case 'z_a':
+          return (b.title || '').localeCompare(a.title || '');
+        case 'most_videos':
+          return b.videoCount - a.videoCount;
+        case 'least_videos':
+          return a.videoCount - b.videoCount;
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [allChannelsList, searchInput, hideWatchedChannels, channelSortBy]);
 
   // Filter and sort playlists
-  const filteredPlaylists = (() => {
-    // First filter by search
-    const filtered = playlists ? playlists.filter(playlist =>
-      (playlist.title || '').toLowerCase().includes(searchInput.toLowerCase())
-    ) : [];
+  const filteredPlaylists = useMemo(() => {
+    if (!playlists) return [];
+
+    // First filter by search and empty playlists
+    const filtered = playlists.filter(playlist => {
+      // Search filter
+      if (!(playlist.title || playlist.name || '').toLowerCase().includes(searchInput.toLowerCase())) {
+        return false;
+      }
+      // Hide empty playlists filter
+      if (hideEmptyPlaylists && (playlist.video_count === 0 || !playlist.video_count)) {
+        return false;
+      }
+      return true;
+    });
 
     // Then sort based on selected option
     const sorted = [...filtered].sort((a, b) => {
@@ -104,7 +183,7 @@ export default function Library() {
     });
 
     return sorted;
-  })();
+  }, [playlists, searchInput, hideEmptyPlaylists, playlistSortBy]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -116,13 +195,15 @@ export default function Library() {
       if (playlistSortMenuRef.current && !playlistSortMenuRef.current.contains(event.target)) {
         setShowPlaylistSortMenu(false);
       }
+      // Close channel sort menu if clicking outside
+      if (channelSortMenuRef.current && !channelSortMenuRef.current.contains(event.target)) {
+        setShowChannelSortMenu(false);
+      }
     };
 
-    if (activeMenuId !== null) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [activeMenuId]);
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleDeletePlaylist = async (playlistId) => {
     if (!window.confirm('Delete this playlist? Videos will not be deleted.')) return;
@@ -237,6 +318,91 @@ export default function Library() {
               placeholder="Search channels..."
               className="search-input w-[180px]"
             />
+
+            {/* Sort Button */}
+            <div className="relative" ref={channelSortMenuRef}>
+              <button
+                onClick={() => setShowChannelSortMenu(!showChannelSortMenu)}
+                className="filter-btn"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="4" y1="6" x2="16" y2="6"></line>
+                  <line x1="4" y1="12" x2="13" y2="12"></line>
+                  <line x1="4" y1="18" x2="10" y2="18"></line>
+                </svg>
+                <span>Sort</span>
+              </button>
+
+              {/* Sort Dropdown Menu */}
+              {showChannelSortMenu && (
+                <div className="absolute right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-50">
+                  <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
+
+                  {/* A-Z / Z-A */}
+                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
+                          className={`${channelSortBy === 'a_z' ? 'text-green-500' : 'text-text-primary hover:text-green-500'}`}
+                        >
+                          A-Z
+                        </button>
+                        <button
+                          onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
+                          className={`${channelSortBy === 'z_a' ? 'text-green-500' : 'text-text-primary hover:text-green-500'}`}
+                        >
+                          Z-A
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Videos */}
+                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-text-primary">Videos</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
+                          className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                          title="Most Videos"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M12 5v14M5 12l7-7 7 7"></path>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
+                          className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                          title="Least Videos"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M12 19V5M5 12l7 7 7-7"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Hide Watched Button */}
+            <button
+              onClick={() => setHideWatchedChannels(!hideWatchedChannels)}
+              className={`filter-btn ${hideWatchedChannels ? 'bg-dark-tertiary text-white border-dark-border-light' : ''}`}
+              title="Hide channels where all videos are watched"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                {hideWatchedChannels ? (
+                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                ) : (
+                  <circle cx="12" cy="12" r="10" />
+                )}
+              </svg>
+              <span>Hide watched</span>
+            </button>
 
             {/* View Toggle */}
             <div className="flex items-center gap-2">
@@ -383,6 +549,22 @@ export default function Library() {
                   </div>
                 )}
               </div>
+
+              {/* Hide Empty Button */}
+              <button
+                onClick={() => setHideEmptyPlaylists(!hideEmptyPlaylists)}
+                className={`filter-btn ${hideEmptyPlaylists ? 'bg-dark-tertiary text-white border-dark-border-light' : ''}`}
+                title="Hide playlists with 0 videos"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  {hideEmptyPlaylists ? (
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  ) : (
+                    <circle cx="12" cy="12" r="10" />
+                  )}
+                </svg>
+                <span>Hide empty</span>
+              </button>
 
               {/* Edit Button */}
               <button
