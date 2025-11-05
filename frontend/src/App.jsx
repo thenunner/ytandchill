@@ -123,7 +123,7 @@ function App() {
         {(downloading > 0 || pending > 0 || currentOperation?.type || health?.auto_refresh_enabled || notification || isAutoRefreshing || delayInfo) && (
           <div className="px-4 py-2 border-t border-dark-border bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
-              <div className="flex items-center gap-2 text-text-secondary">
+              <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
                 <button
                   onClick={() => setShowQuickLogs(!showQuickLogs)}
                   className="font-semibold text-white hover:text-accent transition-colors cursor-pointer flex items-center gap-1"
@@ -137,14 +137,14 @@ function App() {
 
                 {/* Queue Count */}
                 {(pending > 0 || downloading > 0) && (
-                  <span className="text-text-secondary">
+                  <span className="text-text-secondary flex-shrink-0">
                     [<span className="text-text-muted font-bold">{pending + downloading}</span> queued]
                   </span>
                 )}
 
                 {/* Notification Message - Highest Priority */}
                 {notification && (
-                  <div className="flex items-center gap-2 animate-fade-in">
+                  <div className="flex items-center gap-2 animate-fade-in flex-shrink-0">
                     {notification.type === 'success' && (
                       <svg className="w-4 h-4 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <polyline points="20 6 9 17 4 12"></polyline>
@@ -176,7 +176,7 @@ function App() {
 
                 {/* Current Operation (scanning, adding channel) - Second Priority */}
                 {!notification && currentOperation?.type && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
                       <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
@@ -188,7 +188,7 @@ function App() {
 
                 {/* Queue Paused Message */}
                 {!notification && !currentOperation?.type && isPaused && pending > 0 && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="6" y="4" width="4" height="16"></rect>
                       <rect x="14" y="4" width="4" height="16"></rect>
@@ -201,7 +201,7 @@ function App() {
 
                 {/* Download Progress with Details */}
                 {!notification && !currentOperation?.type && !isPaused && currentDownload && (
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 flex-shrink-0">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
                       <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
