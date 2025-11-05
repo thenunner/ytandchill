@@ -102,12 +102,13 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
         </div>
 
         {/* Filters Grid - Dynamic columns based on mode */}
-        <div className={`grid grid-cols-1 md:grid-cols-${
-          isPlaylistMode ? '1' :
-          isLibraryMode && hideVideosFilter ? '5' : // Library mode: upload, duration, view, visibility, sort
-          hideVideosFilter ? '4' :  // Discovery mode: upload, duration, view, sort
-          '5' // Discovery mode with videos filter: upload, videos, duration, view, sort
-        } divide-y md:divide-y-0 md:divide-x divide-dark-border`}>
+        <div className="overflow-x-auto">
+        <div className={`grid ${
+          isPlaylistMode ? 'grid-cols-1' :
+          isLibraryMode && hideVideosFilter ? 'grid-cols-5' : // Library mode: upload, duration, view, visibility, sort
+          hideVideosFilter ? 'grid-cols-4' :  // Discovery mode: upload, duration, view, sort
+          'grid-cols-5' // Discovery mode with videos filter: upload, videos, duration, view, sort
+        } divide-x divide-dark-border`}>
           {/* Upload Date Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
           <div className="p-4">
@@ -258,6 +259,7 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
               ))}
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
