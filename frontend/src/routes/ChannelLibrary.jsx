@@ -50,7 +50,7 @@ export default function ChannelLibrary() {
 
   const channel = channels?.find(c => c.id === Number(channelId));
 
-  // Get filters from URL
+  // Get filters from URL, with localStorage fallback for library mode visibility filters
   // Library mode: 'videos' or 'playlists' (default: 'videos')
   // Discovery mode: 'needs-review' or 'ignored' (default: 'needs-review')
   const contentFilter = searchParams.get('filter') || (isLibraryMode ? 'videos' : 'needs-review');
@@ -60,8 +60,21 @@ export default function ChannelLibrary() {
   const maxDuration = searchParams.get('max_duration');
   const uploadDateFrom = searchParams.get('upload_from');
   const uploadDateTo = searchParams.get('upload_to');
-  const hideWatched = searchParams.get('hide_watched') === 'true';
-  const hidePlaylisted = searchParams.get('hide_playlisted') === 'true';
+
+  // For library mode, initialize from localStorage if URL param not present
+  const hideWatched = (() => {
+    const urlParam = searchParams.get('hide_watched');
+    if (urlParam !== null) return urlParam === 'true';
+    if (isLibraryMode) return localStorage.getItem('channelLibrary_hideWatched') === 'true';
+    return false;
+  })();
+
+  const hidePlaylisted = (() => {
+    const urlParam = searchParams.get('hide_playlisted');
+    if (urlParam !== null) return urlParam === 'true';
+    if (isLibraryMode) return localStorage.getItem('channelLibrary_hidePlaylisted') === 'true';
+    return false;
+  })();
 
   // Derive current filter states for the modal
   const getCurrentUploadDateFilter = () => {
@@ -121,6 +134,48 @@ export default function ChannelLibrary() {
   useEffect(() => {
     localStorage.setItem('viewMode', viewMode);
   }, [viewMode]);
+
+  // Initialize URL params from localStorage on mount (library mode only)
+  useEffect(() => {
+    if (isLibraryMode) {
+      const newParams = new URLSearchParams(searchParams);
+      let changed = false;
+
+      // Only set URL params from localStorage if they're not already in the URL
+      if (!searchParams.has('hide_watched')) {
+        const storedHideWatched = localStorage.getItem('channelLibrary_hideWatched');
+        if (storedHideWatched === 'true') {
+          newParams.set('hide_watched', 'true');
+          changed = true;
+        }
+      }
+
+      if (!searchParams.has('hide_playlisted')) {
+        const storedHidePlaylisted = localStorage.getItem('channelLibrary_hidePlaylisted');
+        if (storedHidePlaylisted === 'true') {
+          newParams.set('hide_playlisted', 'true');
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        setSearchParams(newParams, { replace: true });
+      }
+    }
+  }, []); // Run only on mount
+
+  // Persist library mode visibility filters to localStorage
+  useEffect(() => {
+    if (isLibraryMode) {
+      localStorage.setItem('channelLibrary_hideWatched', hideWatched);
+    }
+  }, [hideWatched, isLibraryMode]);
+
+  useEffect(() => {
+    if (isLibraryMode) {
+      localStorage.setItem('channelLibrary_hidePlaylisted', hidePlaylisted);
+    }
+  }, [hidePlaylisted, isLibraryMode]);
 
   // Note: searchInput is kept as pure local state to avoid losing focus on input
   // It persists naturally when toggling edit mode since it's component state
