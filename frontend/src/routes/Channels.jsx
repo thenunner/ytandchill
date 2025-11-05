@@ -404,7 +404,7 @@ export default function Channels() {
                     </div>
 
                     {/* Discovered - Middle */}
-                    <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="Discovered videos">
+                    <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="Needs review">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <circle cx="12" cy="12" r="1"></circle>
