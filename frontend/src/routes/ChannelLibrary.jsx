@@ -706,7 +706,7 @@ export default function ChannelLibrary() {
             />
           )}
           <div>
-            <h2 className="text-lg md:text-2xl font-bold text-text-primary">{channel.title}</h2>
+            <h2 className="text-base md:text-2xl font-bold text-text-primary">{channel.title}</h2>
             <p className="text-text-secondary text-sm">{sortedVideos.length} videos</p>
           </div>
 

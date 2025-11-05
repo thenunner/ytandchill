@@ -61,7 +61,7 @@
   }
 
   .btn-sm {
-    @apply px-3 py-1.5 text-sm;
+    @apply px-2 sm:px-3 py-1.5 text-xs sm:text-sm;
   }
 
   /* Modern Input Styles */
@@ -138,9 +138,9 @@
 
   /* Filter Button */
   .filter-btn {
-    @apply flex items-center gap-2 px-3.5 py-2 rounded-lg;
+    @apply flex items-center gap-1 sm:gap-2 px-2 sm:px-3.5 py-2 rounded-lg;
     @apply bg-dark-primary/95 border border-dark-border text-white;
-    @apply text-sm cursor-pointer transition-all duration-200;
+    @apply text-xs sm:text-sm cursor-pointer transition-all duration-200;
     @apply hover:bg-dark-tertiary/50;
   }
 

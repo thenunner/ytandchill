@@ -370,7 +370,7 @@ export default function Channels() {
                   {/* Row 1: Title and 3-Dot Menu */}
                   <div className="flex items-center justify-between gap-2">
                     {/* Title - single line with ellipsis */}
-                    <h3 className="text-xs md:text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent transition-colors flex-1" title={channel.title}>
+                    <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent transition-colors flex-1" title={channel.title}>
                       {channel.title}
                     </h3>
 
