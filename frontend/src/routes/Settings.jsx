@@ -110,7 +110,10 @@ export default function Settings() {
               <div className="flex items-center gap-2">
                 <select
                   value={refreshHour}
-                  onChange={(e) => setRefreshHour(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    setRefreshHour(parseInt(e.target.value));
+                    setTimeout(() => handleSave(), 100);
+                  }}
                   className="input text-sm font-mono py-1.5 px-2 w-16"
                 >
                   {Array.from({ length: 24 }, (_, i) => (
@@ -122,7 +125,10 @@ export default function Settings() {
                 <span className="text-text-primary text-sm font-bold">:</span>
                 <select
                   value={refreshMinute}
-                  onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    setRefreshMinute(parseInt(e.target.value));
+                    setTimeout(() => handleSave(), 100);
+                  }}
                   className="input text-sm font-mono py-1.5 px-2 w-16"
                 >
                   {Array.from({ length: 60 }, (_, i) => (
@@ -134,7 +140,10 @@ export default function Settings() {
                 {/* ON/OFF Toggle */}
                 <div className="flex border border-dark-border rounded-md overflow-hidden">
                   <button
-                    onClick={() => setAutoRefresh(false)}
+                    onClick={() => {
+                      setAutoRefresh(false);
+                      setTimeout(() => handleSave(), 100);
+                    }}
                     className={`px-3 py-1.5 text-xs font-bold transition-all ${
                       !autoRefresh
                         ? 'bg-green-600 text-white'
@@ -144,7 +153,10 @@ export default function Settings() {
                     OFF
                   </button>
                   <button
-                    onClick={() => setAutoRefresh(true)}
+                    onClick={() => {
+                      setAutoRefresh(true);
+                      setTimeout(() => handleSave(), 100);
+                    }}
                     className={`px-3 py-1.5 text-xs font-bold transition-all ${
                       autoRefresh
                         ? 'bg-green-600 text-white'
@@ -243,38 +255,52 @@ export default function Settings() {
 
         {/* Logging Level */}
         <div className="pt-3 border-t border-dark-border mt-3">
-          <div className="flex items-center justify-between gap-3">
-            <span className="text-sm text-text-secondary">Logging level</span>
-            <div className="flex items-center gap-3 flex-1">
-              {/* Dropdown */}
-              <select
-                value={logLevel}
-                onChange={(e) => {
-                  setLogLevel(e.target.value);
-                  // Auto-save after a short delay to allow state to update
-                  setTimeout(() => handleSave(), 100);
-                }}
-                className="search-input w-32 text-sm font-mono"
-                title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
-              >
-                <option value="DEBUG">DEBUG</option>
-                <option value="INFO">INFO</option>
-                <option value="API">API</option>
-                <option value="WARNING">WARNING</option>
-                <option value="ERROR">ERROR</option>
-              </select>
-              {/* Save Button */}
-              <button
-                onClick={handleSave}
-                disabled={updateSettings.isPending}
-                className="btn btn-primary whitespace-nowrap py-1.5 text-sm"
-              >
-                {updateSettings.isPending ? 'Saving...' : 'Save Settings'}
-              </button>
-              {/* View Log Button */}
+          {/* Desktop layout: horizontal row */}
+          {/* Mobile layout: stacked with label/button on top, slider below */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            {/* Left section: Label and View Logs button (side by side on mobile, label only on desktop) */}
+            <div className="flex items-center justify-between md:justify-start gap-3">
+              <span className="text-sm text-text-secondary">Logging level</span>
+              {/* View Log Button - shows on mobile in this row, on desktop at the end */}
               <button
                 onClick={toggleLogs}
-                className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+                className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold md:hidden"
+              >
+                {showLogs ? 'Hide Logs' : 'View Logs'}
+              </button>
+            </div>
+
+            {/* Middle section: Slider with labels */}
+            <div className="flex items-center gap-3 flex-1">
+              <div
+                className="flex flex-col gap-1.5 flex-1 md:max-w-sm"
+                title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="4"
+                  value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
+                  onChange={(e) => {
+                    setLogLevel(['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)]);
+                    // Auto-save after a short delay to allow state to update
+                    setTimeout(() => handleSave(), 100);
+                  }}
+                  className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                />
+                <div className="flex justify-between text-xs font-mono">
+                  <span className={logLevel === 'DEBUG' ? 'text-green-500 font-bold' : 'text-white'}>DEBUG</span>
+                  <span className={logLevel === 'INFO' ? 'text-green-500 font-bold' : 'text-white'}>INFO</span>
+                  <span className={logLevel === 'API' ? 'text-green-500 font-bold' : 'text-white'}>API</span>
+                  <span className={logLevel === 'WARNING' ? 'text-green-500 font-bold' : 'text-white'}>WARNING</span>
+                  <span className={logLevel === 'ERROR' ? 'text-green-500 font-bold' : 'text-white'}>ERROR</span>
+                </div>
+              </div>
+
+              {/* View Log Button - shows on desktop here, hidden on mobile */}
+              <button
+                onClick={toggleLogs}
+                className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold hidden md:block"
               >
                 {showLogs ? 'Hide Logs' : 'View Logs'}
               </button>
