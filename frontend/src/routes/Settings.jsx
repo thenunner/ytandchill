@@ -173,7 +173,7 @@ export default function Settings() {
 
       {/* System Status Card */}
       <div className="card p-4">
-        <div className="flex gap-8 mb-4">
+        <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-4">
           {/* Left column - System Status */}
           <div className="flex-shrink-0">
             <div className="space-y-2 text-sm">
@@ -214,8 +214,8 @@ export default function Settings() {
           </div>
 
           {/* Right column - Stats */}
-          <div className="flex-1 flex flex-col items-end">
-            <div className="space-y-2 text-sm flex flex-col items-end">
+          <div className="flex-1 flex flex-col md:items-end">
+            <div className="space-y-2 text-sm flex flex-col md:items-end">
               <h3 className="text-sm font-semibold text-text-primary self-start">Stats</h3>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary text-right w-40">Videos to Review</span>
@@ -246,27 +246,23 @@ export default function Settings() {
           <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-text-secondary">Logging level</span>
             <div className="flex items-center gap-3 flex-1">
-              {/* Slider with labels */}
-              <div
-                className="flex flex-col gap-1.5 flex-1 max-w-sm"
+              {/* Dropdown */}
+              <select
+                value={logLevel}
+                onChange={(e) => {
+                  setLogLevel(e.target.value);
+                  // Auto-save after a short delay to allow state to update
+                  setTimeout(() => handleSave(), 100);
+                }}
+                className="search-input w-32 text-sm font-mono"
                 title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
               >
-                <input
-                  type="range"
-                  min="0"
-                  max="4"
-                  value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
-                  onChange={(e) => setLogLevel(['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)])}
-                  className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-                />
-                <div className="flex justify-between text-xs font-mono">
-                  <span className={logLevel === 'DEBUG' ? 'text-green-500 font-bold' : 'text-white'}>DEBUG</span>
-                  <span className={logLevel === 'INFO' ? 'text-green-500 font-bold' : 'text-white'}>INFO</span>
-                  <span className={logLevel === 'API' ? 'text-green-500 font-bold' : 'text-white'}>API</span>
-                  <span className={logLevel === 'WARNING' ? 'text-green-500 font-bold' : 'text-white'}>WARNING</span>
-                  <span className={logLevel === 'ERROR' ? 'text-green-500 font-bold' : 'text-white'}>ERROR</span>
-                </div>
-              </div>
+                <option value="DEBUG">DEBUG</option>
+                <option value="INFO">INFO</option>
+                <option value="API">API</option>
+                <option value="WARNING">WARNING</option>
+                <option value="ERROR">ERROR</option>
+              </select>
               {/* Save Button */}
               <button
                 onClick={handleSave}

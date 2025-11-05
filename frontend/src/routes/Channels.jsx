@@ -370,7 +370,7 @@ export default function Channels() {
                   {/* Row 1: Title and 3-Dot Menu */}
                   <div className="flex items-center justify-between gap-2">
                     {/* Title - single line with ellipsis */}
-                    <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent transition-colors flex-1" title={channel.title}>
+                    <h3 className="text-xs md:text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent transition-colors flex-1" title={channel.title}>
                       {channel.title}
                     </h3>
 
@@ -392,7 +392,7 @@ export default function Channels() {
                   </div>
 
                   {/* Row 2: Stats - Downloaded (left), Discovered (middle), Ignored (right) */}
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col md:flex-row md:justify-between gap-1 md:gap-0">
                     {/* Downloaded - Far Left */}
                     <div className="flex items-center gap-1 text-sm font-semibold text-green-400" title="Downloaded videos">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

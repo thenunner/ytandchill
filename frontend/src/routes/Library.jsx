@@ -637,7 +637,7 @@ export default function Library() {
               )}
             </div>
           ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
           {channelsList.map(channel => (
             <Link
               key={channel.id}
@@ -733,7 +733,7 @@ export default function Library() {
               <p className="text-sm mt-2">{searchInput ? 'Try a different search term' : 'Create playlists to organize your videos'}</p>
             </div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
               {filteredPlaylists.map(playlist => {
                 const isSelected = selectedPlaylists.includes(playlist.id);
                 return (
