@@ -164,7 +164,7 @@ export default function Channels() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="sticky top-[100px] z-40 bg-dark-primary/95 backdrop-blur-lg -mx-4 px-4 py-4 mb-4">
+      <div className="sticky top-[100px] z-40 bg-dark-primary/95 backdrop-blur-lg md:-mx-4 md:px-4 py-4 mb-4">
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <h2 className="text-xl sm:text-2xl font-bold text-text-primary">Channels</h2>
           <button

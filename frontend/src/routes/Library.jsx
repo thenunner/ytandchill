@@ -20,9 +20,6 @@ export default function Library() {
     return localStorage.getItem('library_playlistSortBy') || 'a_z';
   });
   const [showPlaylistSortMenu, setShowPlaylistSortMenu] = useState(false);
-  const [hideEmptyPlaylists, setHideEmptyPlaylists] = useState(() => {
-    return localStorage.getItem('library_hideEmptyPlaylists') === 'true';
-  });
 
   // Channel filters with localStorage persistence
   const [channelSortBy, setChannelSortBy] = useState(() => {
@@ -52,10 +49,6 @@ export default function Library() {
   useEffect(() => {
     localStorage.setItem('library_playlistSortBy', playlistSortBy);
   }, [playlistSortBy]);
-
-  useEffect(() => {
-    localStorage.setItem('library_hideEmptyPlaylists', hideEmptyPlaylists);
-  }, [hideEmptyPlaylists]);
 
   // Persist channel filters to localStorage
   useEffect(() => {
@@ -153,14 +146,10 @@ export default function Library() {
   const filteredPlaylists = useMemo(() => {
     if (!playlists) return [];
 
-    // First filter by search and empty playlists
+    // First filter by search
     const filtered = playlists.filter(playlist => {
       // Search filter
       if (!(playlist.title || playlist.name || '').toLowerCase().includes(searchInput.toLowerCase())) {
-        return false;
-      }
-      // Hide empty playlists filter
-      if (hideEmptyPlaylists && (playlist.video_count === 0 || !playlist.video_count)) {
         return false;
       }
       return true;
@@ -183,7 +172,7 @@ export default function Library() {
     });
 
     return sorted;
-  }, [playlists, searchInput, hideEmptyPlaylists, playlistSortBy]);
+  }, [playlists, searchInput, playlistSortBy]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -549,22 +538,6 @@ export default function Library() {
                   </div>
                 )}
               </div>
-
-              {/* Hide Empty Button */}
-              <button
-                onClick={() => setHideEmptyPlaylists(!hideEmptyPlaylists)}
-                className={`filter-btn ${hideEmptyPlaylists ? 'bg-dark-tertiary text-white border-dark-border-light' : ''}`}
-                title="Hide playlists with 0 videos"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  {hideEmptyPlaylists ? (
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  ) : (
-                    <circle cx="12" cy="12" r="10" />
-                  )}
-                </svg>
-                <span>Hide empty</span>
-              </button>
 
               {/* Edit Button */}
               <button

@@ -478,7 +478,7 @@ export default function ChannelLibrary() {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Sticky Header Row */}
-      <div className="sticky top-[100px] z-40 bg-dark-primary/95 backdrop-blur-lg -mx-8 px-8 py-4 mb-4">
+      <div className="sticky top-[100px] z-40 bg-dark-primary/95 backdrop-blur-lg md:-mx-8 md:px-8 py-4 mb-4">
         <div className="flex items-center gap-3 flex-wrap">
           {/* Back Arrow - Library mode goes to /library, Discovery mode goes to / (main channels list) */}
           <Link
