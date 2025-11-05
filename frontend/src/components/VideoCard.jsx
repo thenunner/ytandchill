@@ -120,8 +120,8 @@ export default function VideoCard({
 
   return (
     <div
-      className={`card cursor-pointer transition-all ${
-        isSelected ? 'ring-2 ring-accent/60 shadow-card-hover' : ''
+      className={`card cursor-pointer transition-colors ${
+        isSelected ? 'ring-2 ring-accent/60' : ''
       } ${onToggleSelect ? 'hover:ring-2 hover:ring-accent/50' : ''}`}
       onClick={handleCardClick}
     >
