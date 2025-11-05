@@ -477,7 +477,7 @@ export default function ChannelLibrary() {
           {/* Back Arrow - Library mode goes to /library, Discovery mode goes to / (main channels list) */}
           <Link
             to={isLibraryMode ? "/library" : "/"}
-            className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-white transition-all"
+            className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-white transition-colors"
             title={isLibraryMode ? "Back to Library" : "Back to Channels"}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -496,7 +496,7 @@ export default function ChannelLibrary() {
                     newParams.delete('filter');
                     setSearchParams(newParams);
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     contentFilter === 'videos'
                       ? 'bg-dark-tertiary text-white border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
@@ -510,7 +510,7 @@ export default function ChannelLibrary() {
                     newParams.set('filter', 'playlists');
                     setSearchParams(newParams);
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     contentFilter === 'playlists'
                       ? 'bg-dark-tertiary text-white border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
@@ -528,7 +528,7 @@ export default function ChannelLibrary() {
                     newParams.delete('filter');
                     setSearchParams(newParams);
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     contentFilter === 'needs-review'
                       ? 'bg-dark-tertiary text-white border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
@@ -542,7 +542,7 @@ export default function ChannelLibrary() {
                     newParams.set('filter', 'ignored');
                     setSearchParams(newParams);
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     contentFilter === 'ignored'
                       ? 'bg-dark-tertiary text-white border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
@@ -712,7 +712,7 @@ export default function ChannelLibrary() {
                 e.stopPropagation();
                 setMenuOpen(!menuOpen);
               }}
-              className="p-1.5 rounded-full bg-gray-600 hover:bg-gray-500 transition-all"
+              className="p-1.5 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors"
             >
               <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="5" r="1"></circle>
@@ -920,7 +920,7 @@ export default function ChannelLibrary() {
                 <Link
                   key={playlist.id}
                   to={`/playlist/${playlist.id}`}
-                  className="card group hover:shadow-card-hover transition-all"
+                  className="card group transition-colors"
                 >
                   {/* Playlist thumbnail */}
                   <div className="relative aspect-video bg-dark-tertiary rounded-t-xl overflow-hidden">
@@ -1022,7 +1022,7 @@ export default function ChannelLibrary() {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-all z-50 animate-fade-in"
+          className="fixed bottom-6 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-colors z-50 animate-fade-in"
           aria-label="Scroll to top"
         >
           <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

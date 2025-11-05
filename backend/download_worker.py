@@ -278,7 +278,7 @@ class DownloadWorker:
             'retries': 3,
             'continue': True,
             'noprogress': False,
-            'concurrent_fragment_downloads': 2,  # Download 2 fragments in parallel for better performance
+            'concurrent_fragment_downloads': 3,  # Download 3 fragments in parallel for better performance
         }
 
         # Add cookies if available

@@ -642,7 +642,7 @@ export default function Library() {
             <Link
               key={channel.id}
               to={`/channel/${channel.id}/library`}
-              className="card group hover:shadow-card-hover transition-all"
+              className="card group transition-colors"
             >
               {/* Thumbnail */}
               <div className="relative aspect-video bg-dark-tertiary rounded-t-xl overflow-hidden">
@@ -739,9 +739,9 @@ export default function Library() {
                 return (
                   <div
                     key={playlist.id}
-                    className={`card cursor-pointer transition-all ${
-                      isSelected ? 'ring-2 ring-accent/60 shadow-card-hover' : ''
-                    } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group hover:shadow-card-hover'}`}
+                    className={`card cursor-pointer transition-colors ${
+                      isSelected ? 'ring-2 ring-accent/60' : ''
+                    } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
                     onClick={(e) => {
                       if (editMode) {
                         togglePlaylistSelection(playlist.id);

@@ -112,7 +112,7 @@ export default function Playlist() {
             {/* Back Arrow */}
             <Link
               to={playlist.channel_id ? `/channel/${playlist.channel_id}/library?filter=playlists` : '/library?tab=playlists'}
-              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-white transition-all"
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-white transition-colors"
               title="Back"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
