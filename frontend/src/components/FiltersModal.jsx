@@ -105,9 +105,9 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
         <div className="overflow-x-auto">
         <div className={`grid ${
           isPlaylistMode ? 'grid-cols-1' :
-          isLibraryMode && hideVideosFilter ? 'grid-cols-5' : // Library mode: upload, duration, view, visibility, sort
-          hideVideosFilter ? 'grid-cols-4' :  // Discovery mode: upload, duration, view, sort
-          'grid-cols-5' // Discovery mode with videos filter: upload, videos, duration, view, sort
+          isLibraryMode && hideVideosFilter ? 'grid-cols-4' : // Library mode: upload, duration, view+visibility, sort
+          hideVideosFilter ? 'grid-cols-3' :  // Discovery mode: upload, duration, view, sort
+          'grid-cols-4' // Discovery mode with videos filter: upload, videos, duration, view+visibility, sort
         } divide-x divide-dark-border`}>
           {/* Upload Date Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
@@ -176,11 +176,11 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
           </div>
           )}
 
-          {/* View Column - Hidden in playlist mode */}
+          {/* View & Visibility Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
           <div className="p-4">
             <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
-              VIEW
+              VIEW {isLibraryMode && '& VISIBILITY'}
             </h4>
             <div className="space-y-1">
               {filterOptions.view.map((option) => (
@@ -195,47 +195,43 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
                   <span>{option.label}</span>
                 </button>
               ))}
-            </div>
-          </div>
-          )}
 
-          {/* Visibility Column - Only in library mode, not in playlist mode */}
-          {isLibraryMode && !isPlaylistMode && (
-          <div className="p-4">
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
-              VISIBILITY
-            </h4>
-            <div className="space-y-1">
-              <button
-                onClick={() => onFilterChange('hide_watched', filters.hideWatched ? '' : 'true')}
-                className={`filter-btn w-full justify-start ${
-                  filters.hideWatched ? 'active' : ''
-                }`}
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  {filters.hideWatched ? (
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  ) : (
-                    <circle cx="12" cy="12" r="10" />
-                  )}
-                </svg>
-                <span>Hide watched</span>
-              </button>
-              <button
-                onClick={() => onFilterChange('hide_playlisted', filters.hidePlaylisted ? '' : 'true')}
-                className={`filter-btn w-full justify-start ${
-                  filters.hidePlaylisted ? 'active' : ''
-                }`}
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  {filters.hidePlaylisted ? (
-                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  ) : (
-                    <circle cx="12" cy="12" r="10" />
-                  )}
-                </svg>
-                <span>Hide playlisted</span>
-              </button>
+              {/* Visibility options - Only in library mode */}
+              {isLibraryMode && (
+                <>
+                  <div className="h-2"></div>
+                  <button
+                    onClick={() => onFilterChange('hide_watched', filters.hideWatched ? '' : 'true')}
+                    className={`filter-btn w-full justify-start ${
+                      filters.hideWatched ? 'active' : ''
+                    }`}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      {filters.hideWatched ? (
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      ) : (
+                        <circle cx="12" cy="12" r="10" />
+                      )}
+                    </svg>
+                    <span>Hide watched</span>
+                  </button>
+                  <button
+                    onClick={() => onFilterChange('hide_playlisted', filters.hidePlaylisted ? '' : 'true')}
+                    className={`filter-btn w-full justify-start ${
+                      filters.hidePlaylisted ? 'active' : ''
+                    }`}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      {filters.hidePlaylisted ? (
+                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      ) : (
+                        <circle cx="12" cy="12" r="10" />
+                      )}
+                    </svg>
+                    <span>Hide playlisted</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
           )}
