@@ -50,7 +50,7 @@ function SortableQueueItem({ item, index, onRemove }) {
         </div>
 
         {/* Thumbnail */}
-        <div className="flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden">
+        <div className="hidden md:block flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden">
           {item.video?.thumb_url ? (
             <img
               src={item.video.thumb_url}
@@ -275,7 +275,7 @@ export default function Queue() {
             >
               <div className="flex items-start gap-3">
                 {/* Thumbnail */}
-                <div className="flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden">
+                <div className="hidden md:block flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden">
                   {currentDownload.video?.thumb_url ? (
                     <img
                       src={currentDownload.video.thumb_url}
@@ -355,7 +355,7 @@ export default function Queue() {
             >
               <div className="flex items-center gap-3">
                 {/* Thumbnail with checkmark overlay */}
-                <div className="flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden relative">
+                <div className="hidden md:block flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden relative">
                   {item.video?.thumb_url ? (
                     <img
                       src={item.video.thumb_url}
@@ -399,7 +399,7 @@ export default function Queue() {
             >
               <div className="flex items-start gap-3">
                 {/* Thumbnail with error overlay */}
-                <div className="flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden relative">
+                <div className="hidden md:block flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden relative">
                   {item.video?.thumb_url ? (
                     <img
                       src={item.video.thumb_url}
