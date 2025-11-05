@@ -56,6 +56,11 @@ export default function Player() {
           speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
           seekTime: 10,
           autoplay: true,
+          fullscreen: {
+            enabled: true,
+            fallback: true,
+            iosNative: true, // Enable native fullscreen on iOS
+          },
         });
 
         console.log('Plyr player object:', player);
@@ -196,10 +201,10 @@ export default function Player() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Player Layout - Horizontal with left action buttons */}
-      <div className="flex gap-4">
-        {/* Left Action Buttons */}
-        <div className="flex flex-col gap-3 flex-shrink-0">
+      {/* Player Layout - Responsive: vertical on mobile, horizontal on desktop */}
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Left Action Buttons - Hidden on mobile */}
+        <div className="hidden md:flex flex-col gap-3 flex-shrink-0">
           {/* Back Arrow */}
           <Link
             to={`/channel/${video.channel_id}/library`}
@@ -246,11 +251,13 @@ export default function Player() {
         </div>
 
         {/* Player Container */}
-        <div className="flex-1 max-w-[960px]">
-          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover min-h-[540px]">
+        <div className="flex-1 w-full md:max-w-[960px]">
+          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover min-h-[300px] md:min-h-[540px]">
             <video
               ref={videoRef}
               className="w-full h-auto"
+              playsInline
+              preload="metadata"
             />
           </div>
 

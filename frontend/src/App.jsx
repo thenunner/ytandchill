@@ -98,14 +98,14 @@ function App() {
       {/* Top Navigation Bar */}
       <header className="bg-dark-primary border-b border-dark-border sticky top-0 z-50">
         {/* Main Nav Row */}
-        <div className="flex items-center gap-8 px-4 h-[60px]">
-          {/* Nav Tabs */}
-          <nav className="flex gap-2">
+        <div className="flex items-center gap-2 md:gap-8 px-4 h-[60px]">
+          {/* Nav Tabs - Horizontally scrollable on mobile */}
+          <nav className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory flex-1 md:flex-initial -mx-2 px-2">
             {navLinks.map(link => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`nav-tab ${link.iconOnly ? 'px-3' : ''} ${location.pathname === link.path ? 'active' : ''}`}
+                className={`nav-tab snap-start flex-shrink-0 ${link.iconOnly ? 'px-3' : ''} ${location.pathname === link.path ? 'active' : ''}`}
               >
                 {link.icon}
                 {!link.iconOnly && <span>{link.label}</span>}

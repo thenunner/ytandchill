@@ -1,6 +1,6 @@
 import { useQueue, usePauseQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useClearQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -96,11 +96,17 @@ export default function Queue() {
   const clearQueue = useClearQueue();
   const { showNotification } = useNotification();
 
-  // Configure drag sensors
+  // Configure drag sensors for both mouse and touch
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8, // 8px of movement required before drag starts
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // 250ms hold before drag starts (prevents conflict with scrolling)
+        tolerance: 5, // 5px of movement tolerance
       },
     })
   );

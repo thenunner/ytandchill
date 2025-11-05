@@ -282,15 +282,15 @@ export default function Library() {
       {/* Header */}
       <div className="sticky top-[100px] z-40 bg-dark-primary/95 backdrop-blur-lg -mx-4 px-4 py-4 mb-4">
         {activeTab === 'channels' ? (
-          /* Channels: Single row layout */
-          <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-text-primary">Library</h2>
+          /* Channels: Responsive layout - wraps on mobile */
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-text-primary">Library</h2>
 
             {/* Tabs */}
             <div className="flex gap-2">
               <button
                 onClick={() => setActiveTab('channels')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === 'channels'
                     ? 'bg-dark-tertiary text-white border border-dark-border-light'
                     : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
@@ -300,7 +300,7 @@ export default function Library() {
               </button>
               <button
                 onClick={() => setActiveTab('playlists')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === 'playlists'
                     ? 'bg-dark-tertiary text-white border border-dark-border-light'
                     : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
@@ -310,13 +310,13 @@ export default function Library() {
               </button>
             </div>
 
-            {/* Search */}
+            {/* Search - Full width on mobile */}
             <input
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               placeholder="Search channels..."
-              className="search-input w-[180px]"
+              className="search-input w-full sm:w-[180px]"
             />
 
             {/* Sort Button */}
@@ -441,18 +441,18 @@ export default function Library() {
             </div>
           </div>
         ) : (
-          /* Playlists: Two row layout for extra buttons */
+          /* Playlists: Responsive layout - wraps on mobile */
           <>
             <div className="flex items-center gap-4">
-              <h2 className="text-2xl font-bold text-text-primary">Library</h2>
+              <h2 className="text-xl md:text-2xl font-bold text-text-primary">Library</h2>
             </div>
 
-            <div className="flex items-center gap-4 mt-4">
+            <div className="flex flex-wrap items-center gap-3 md:gap-4 mt-4">
               {/* Tabs */}
               <div className="flex gap-2">
                 <button
                   onClick={() => setActiveTab('channels')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === 'channels'
                       ? 'bg-dark-tertiary text-white border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
@@ -462,7 +462,7 @@ export default function Library() {
                 </button>
                 <button
                   onClick={() => setActiveTab('playlists')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === 'playlists'
                       ? 'bg-dark-tertiary text-white border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
@@ -472,13 +472,13 @@ export default function Library() {
                 </button>
               </div>
 
-              {/* Search */}
+              {/* Search - Full width on mobile */}
               <input
                 type="text"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
                 placeholder="Search playlists..."
-                className="search-input w-[180px]"
+                className="search-input w-full sm:w-[180px]"
               />
 
               {/* Sort Button */}
