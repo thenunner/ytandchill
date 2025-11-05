@@ -106,16 +106,16 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
         <div className={`grid ${
           isPlaylistMode ? 'grid-cols-1' :
           isLibraryMode && hideVideosFilter ? 'grid-cols-4' : // Library mode: upload, duration, view+visibility, sort
-          hideVideosFilter ? 'grid-cols-3' :  // Discovery mode: upload, duration, view, sort
-          'grid-cols-4' // Discovery mode with videos filter: upload, videos, duration, view+visibility, sort
+          hideVideosFilter ? 'grid-cols-4' :  // Discovery mode: upload, duration, view, sort
+          'grid-cols-5' // Discovery mode with videos filter: upload, videos, duration, view, sort
         } divide-x divide-dark-border`}>
           {/* Upload Date Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
-          <div className="p-4">
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+          <div className="p-2 sm:p-4">
+            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 sm:mb-3">
               UPLOAD DATE
             </h4>
-            <div className="space-y-1">
+            <div className="space-y-0.5 sm:space-y-1">
               {filterOptions.uploadDate.map((option) => (
                 <button
                   key={option.value}
@@ -133,11 +133,11 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
 
           {/* Videos Column - Hidden for ChannelLibrary and playlist mode */}
           {!hideVideosFilter && !isPlaylistMode && (
-            <div className="p-4">
-              <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+            <div className="p-2 sm:p-4">
+              <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 sm:mb-3">
                 VIDEOS
               </h4>
-              <div className="space-y-1">
+              <div className="space-y-0.5 sm:space-y-1">
                 {filterOptions.videos.map((option) => (
                   <button
                     key={option.value}
@@ -156,11 +156,11 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
 
           {/* Duration Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
-          <div className="p-4">
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+          <div className="p-2 sm:p-4">
+            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 sm:mb-3">
               DURATION
             </h4>
-            <div className="space-y-1">
+            <div className="space-y-0.5 sm:space-y-1">
               {filterOptions.duration.map((option) => (
                 <button
                   key={option.value}
@@ -178,11 +178,11 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
 
           {/* View & Visibility Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
-          <div className="p-4">
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+          <div className="p-2 sm:p-4">
+            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 sm:mb-3">
               VIEW {isLibraryMode && '& VISIBILITY'}
             </h4>
-            <div className="space-y-1">
+            <div className="space-y-0.5 sm:space-y-1">
               {filterOptions.view.map((option) => (
                 <button
                   key={option.value}
@@ -237,11 +237,11 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
           )}
 
           {/* Sort By Column - Always visible */}
-          <div className="p-4">
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+          <div className="p-2 sm:p-4">
+            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 sm:mb-3">
               SORT BY
             </h4>
-            <div className="space-y-1">
+            <div className="space-y-0.5 sm:space-y-1">
               {filterOptions.sort.map((option) => (
                 <button
                   key={option.value}
