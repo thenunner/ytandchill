@@ -567,7 +567,7 @@ export default function ChannelLibrary() {
               value={searchInput}
               onChange={(e) => handleSearchChange(e.target.value)}
               placeholder="Search videos..."
-              className="search-input w-[180px]"
+              className="search-input w-full sm:w-[180px]"
             />
           </div>
 
@@ -706,7 +706,7 @@ export default function ChannelLibrary() {
             />
           )}
           <div>
-            <h2 className="text-2xl font-bold text-text-primary">{channel.title}</h2>
+            <h2 className="text-lg md:text-2xl font-bold text-text-primary">{channel.title}</h2>
             <p className="text-text-secondary text-sm">{sortedVideos.length} videos</p>
           </div>
 
@@ -850,7 +850,7 @@ export default function ChannelLibrary() {
 
           {/* Stats Bar - Only in discovery mode */}
           {!isLibraryMode && (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
               {/* Downloaded */}
               <div className="flex items-center gap-1 text-sm font-semibold text-green-400" title="Downloaded videos">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

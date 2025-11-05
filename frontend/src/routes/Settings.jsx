@@ -230,24 +230,24 @@ export default function Settings() {
             <div className="space-y-2 text-sm flex flex-col md:items-end">
               <h3 className="text-sm font-semibold text-text-primary self-start">Stats</h3>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-right w-40">Videos to Review</span>
-                <span className="text-text-primary font-mono font-semibold text-right w-16">{discoveredVideos?.length || 0}</span>
+                <span className="text-text-secondary text-center md:text-right w-40">Videos to Review</span>
+                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{discoveredVideos?.length || 0}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-right w-40">Videos Ignored</span>
-                <span className="text-text-primary font-mono font-semibold text-right w-16">{ignoredVideos?.length || 0}</span>
+                <span className="text-text-secondary text-center md:text-right w-40">Videos Ignored</span>
+                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{ignoredVideos?.length || 0}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-right w-40">Videos in Library</span>
-                <span className="text-text-primary font-mono font-semibold text-right w-16">{libraryVideos?.length || 0}</span>
+                <span className="text-text-secondary text-center md:text-right w-40">Videos in Library</span>
+                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{libraryVideos?.length || 0}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-right w-40">Total Channels</span>
-                <span className="text-text-primary font-mono font-semibold text-right w-16">{channels?.length || 0}</span>
+                <span className="text-text-secondary text-center md:text-right w-40">Total Channels</span>
+                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{channels?.length || 0}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-right w-40">Total Storage</span>
-                <span className="text-text-primary font-mono font-semibold text-right w-16">{health?.total_storage || '0B'}</span>
+                <span className="text-text-secondary text-center md:text-right w-40">Total Storage</span>
+                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{health?.total_storage || '0B'}</span>
               </div>
             </div>
           </div>
