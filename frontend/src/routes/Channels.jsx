@@ -19,6 +19,7 @@ export default function Channels() {
   const [maxMinutes, setMaxMinutes] = useState(0);
   const [editingChannel, setEditingChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [menuOpen, setMenuOpen] = useState(null); // Track which channel's menu is open (grid view only)
   const [showDurationSettings, setShowDurationSettings] = useState(null); // Track which channel shows duration settings
   const [searchInput, setSearchInput] = useState(''); // Search filter
   const [sortBy, setSortBy] = useState('most_downloaded'); // Sort option
