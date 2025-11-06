@@ -1,10 +1,11 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
   const [searchInput, setSearchInput] = useState('');
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'channels');
@@ -26,9 +27,6 @@ export default function Library() {
     return localStorage.getItem('library_channelSortBy') || 'a_z';
   });
   const [showChannelSortMenu, setShowChannelSortMenu] = useState(false);
-  const [hideWatchedChannels, setHideWatchedChannels] = useState(() => {
-    return localStorage.getItem('library_hideWatchedChannels') === 'true';
-  });
 
   const deletePlaylist = useDeletePlaylist();
   const updatePlaylist = useUpdatePlaylist();
@@ -54,10 +52,6 @@ export default function Library() {
   useEffect(() => {
     localStorage.setItem('library_channelSortBy', channelSortBy);
   }, [channelSortBy]);
-
-  useEffect(() => {
-    localStorage.setItem('library_hideWatchedChannels', hideWatchedChannels);
-  }, [hideWatchedChannels]);
 
   // Helper function to format file size
   const formatFileSize = (bytes) => {
@@ -108,16 +102,12 @@ export default function Library() {
     });
   }, [videos]);
 
-  // Filter and sort channels based on search input and filters
+  // Filter and sort channels based on search input
   const channelsList = useMemo(() => {
-    // First filter by search and hide watched
+    // First filter by search
     const filtered = allChannelsList.filter(channel => {
       // Search filter
       if (!(channel.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
-        return false;
-      }
-      // Hide watched channels filter
-      if (hideWatchedChannels && channel.allWatched) {
         return false;
       }
       return true;
@@ -140,7 +130,7 @@ export default function Library() {
     });
 
     return sorted;
-  }, [allChannelsList, searchInput, hideWatchedChannels, channelSortBy]);
+  }, [allChannelsList, searchInput, channelSortBy]);
 
   // Filter and sort playlists
   const filteredPlaylists = useMemo(() => {
@@ -273,8 +263,6 @@ export default function Library() {
         {activeTab === 'channels' ? (
           /* Channels: Responsive layout - wraps on mobile */
           <div className="flex flex-wrap items-center gap-3 md:gap-4">
-            <h2 className="text-xl md:text-2xl font-bold text-text-primary">Library</h2>
-
             {/* Tabs */}
             <div className="flex gap-2">
               <button
@@ -377,22 +365,6 @@ export default function Library() {
               )}
             </div>
 
-            {/* Hide Watched Button */}
-            <button
-              onClick={() => setHideWatchedChannels(!hideWatchedChannels)}
-              className={`filter-btn ${hideWatchedChannels ? 'bg-dark-tertiary text-white border-dark-border-light' : ''}`}
-              title="Hide channels where all videos are watched"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                {hideWatchedChannels ? (
-                  <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                ) : (
-                  <circle cx="12" cy="12" r="10" />
-                )}
-              </svg>
-              <span>Hide watched</span>
-            </button>
-
             {/* View Toggle */}
             <div className="flex items-center gap-2">
               <button
@@ -432,11 +404,7 @@ export default function Library() {
         ) : (
           /* Playlists: Responsive layout - wraps on mobile */
           <>
-            <div className="flex items-center gap-4">
-              <h2 className="text-xl md:text-2xl font-bold text-text-primary">Library</h2>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-3 md:gap-4 mt-4">
+            <div className="flex flex-wrap items-center gap-3 md:gap-4">
               {/* Tabs */}
               <div className="flex gap-2">
                 <button
@@ -597,7 +565,7 @@ export default function Library() {
               <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
               </svg>
-              {allChannelsList.length > 0 && (hideWatchedChannels || searchInput) ? (
+              {allChannelsList.length > 0 && searchInput ? (
                 <>
                   <p className="text-lg font-medium">No channels match filters</p>
                   <p className="text-sm mt-2">Remove filters to see them</p>
@@ -719,7 +687,9 @@ export default function Library() {
                       if (editMode) {
                         togglePlaylistSelection(playlist.id);
                       } else if (!e.target.closest('button') && !e.target.closest('.menu')) {
-                        window.location.href = `/playlist/${playlist.id}`;
+                        navigate(`/playlist/${playlist.id}`, {
+                          state: { from: '/library?tab=playlists' }
+                        });
                       }
                     }}
                   >

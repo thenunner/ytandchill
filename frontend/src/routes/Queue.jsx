@@ -232,7 +232,6 @@ export default function Queue() {
   return (
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-4">
-        <h2 className="text-lg md:text-2xl font-bold text-text-primary">Download Queue</h2>
         <div className="flex space-x-2">
           <button onClick={handlePause} className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-white transition-colors font-medium">
             Pause

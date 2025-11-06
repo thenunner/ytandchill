@@ -1,4 +1,4 @@
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
@@ -10,6 +10,7 @@ import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 export default function Player() {
   const { videoId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: video, isLoading } = useVideo(videoId);
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
@@ -184,6 +185,12 @@ export default function Player() {
     }
   };
 
+  const handleBack = () => {
+    // Use referrer from state if available, otherwise default to channel library
+    const referrer = location.state?.from || `/channel/${video.channel_id}/library`;
+    navigate(referrer);
+  };
+
   const toggleWatched = async () => {
     try {
       await updateVideo.mutateAsync({
@@ -206,15 +213,15 @@ export default function Player() {
         {/* Left Action Buttons - Hidden on mobile */}
         <div className="hidden md:flex flex-col gap-3 flex-shrink-0">
           {/* Back Arrow */}
-          <Link
-            to={`/channel/${video.channel_id}/library`}
+          <button
+            onClick={handleBack}
             className="icon-btn hover:bg-red-600 hover:border-red-700"
-            title="Back to videos"
+            title="Back"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
-          </Link>
+          </button>
 
           <button
             onClick={toggleWatched}
@@ -253,15 +260,15 @@ export default function Player() {
         {/* Mobile Action Buttons - Above video on mobile only */}
         <div className="md:hidden flex justify-center gap-3 mb-4 flex-shrink-0">
           {/* Back Arrow */}
-          <Link
-            to={`/channel/${video.channel_id}/library`}
+          <button
+            onClick={handleBack}
             className="icon-btn hover:bg-red-600 hover:border-red-700"
-            title="Back to videos"
+            title="Back"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
-          </Link>
+          </button>
 
           {/* Mark Watched/Unwatched */}
           <button

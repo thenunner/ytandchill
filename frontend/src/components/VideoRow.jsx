@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
@@ -15,6 +15,7 @@ export default function VideoRow({
   editMode = false,
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const deleteVideo = useDeleteVideo();
   const { showNotification } = useNotification();
   const [showMenu, setShowMenu] = useState(false);
@@ -75,7 +76,9 @@ export default function VideoRow({
 
     // Otherwise, play the video (only if it's downloaded)
     if (video.status === 'library') {
-      navigate(`/player/${video.id}`);
+      navigate(`/player/${video.id}`, {
+        state: { from: location.pathname + location.search }
+      });
     }
   };
 

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
@@ -16,6 +16,7 @@ export default function VideoCard({
   isLibraryView = false, // New prop for library view (shows 3-column layout with file size)
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const deleteVideo = useDeleteVideo();
   const { showNotification } = useNotification();
   const [showMenu, setShowMenu] = useState(false);
@@ -78,7 +79,9 @@ export default function VideoCard({
 
     // Otherwise, play the video (only if it's downloaded)
     if (video.status === 'library') {
-      navigate(`/player/${video.id}`);
+      navigate(`/player/${video.id}`, {
+        state: { from: location.pathname + location.search }
+      });
     }
   };
 

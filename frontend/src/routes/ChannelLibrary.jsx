@@ -695,8 +695,8 @@ export default function ChannelLibrary() {
         </div>
       </div>
 
-      {/* Channel Header - Only show for videos, not playlists */}
-      {channel && contentFilter !== 'playlists' && (
+      {/* Channel Header - Only show in discovery mode for videos, not in library mode or playlists */}
+      {channel && contentFilter !== 'playlists' && !isLibraryMode && (
         <div className="relative flex items-center gap-6 mb-4">
           {channel.thumbnail && (
             <img
@@ -926,6 +926,7 @@ export default function ChannelLibrary() {
                 <Link
                   key={playlist.id}
                   to={`/playlist/${playlist.id}`}
+                  state={{ from: location.pathname + location.search }}
                   className="card group transition-colors"
                 >
                   {/* Playlist thumbnail */}

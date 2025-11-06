@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { usePlaylist, useRemoveVideoFromPlaylist } from '../api/queries';
+import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
@@ -9,8 +9,11 @@ import FiltersModal from '../components/FiltersModal';
 export default function Playlist() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: playlist, isLoading } = usePlaylist(id);
   const removeVideo = useRemoveVideoFromPlaylist();
+  const deleteVideo = useDeleteVideo();
+  const bulkUpdateVideos = useBulkUpdateVideos();
   const { showNotification } = useNotification();
 
   const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
@@ -18,6 +21,8 @@ export default function Playlist() {
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [sort, setSort] = useState('date-desc');
   const [hideWatched, setHideWatched] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedVideos, setSelectedVideos] = useState([]);
 
   useEffect(() => {
     localStorage.setItem('viewMode', viewMode);
@@ -37,6 +42,58 @@ export default function Playlist() {
     try {
       await removeVideo.mutateAsync({ playlistId: parseInt(id), videoId });
       showNotification('Video removed from playlist', 'success');
+    } catch (error) {
+      showNotification(error.message, 'error');
+    }
+  };
+
+  // Edit mode handlers
+  const toggleVideoSelection = (videoId) => {
+    setSelectedVideos(prev =>
+      prev.includes(videoId)
+        ? prev.filter(id => id !== videoId)
+        : [...prev, videoId]
+    );
+  };
+
+  const selectAll = () => {
+    setSelectedVideos(sortedVideos.map(v => v.id));
+  };
+
+  const clearSelection = () => {
+    setSelectedVideos([]);
+  };
+
+  const handleBulkAction = async (action) => {
+    if (selectedVideos.length === 0) return;
+
+    try {
+      switch (action) {
+        case 'mark-watched':
+          await bulkUpdateVideos.mutateAsync({
+            videoIds: selectedVideos,
+            updates: { watched: true }
+          });
+          showNotification(`${selectedVideos.length} videos marked as watched`, 'success');
+          break;
+
+        case 'remove':
+          if (!window.confirm(`Remove ${selectedVideos.length} videos from this playlist?`)) return;
+          for (const videoId of selectedVideos) {
+            await removeVideo.mutateAsync({ playlistId: parseInt(id), videoId });
+          }
+          showNotification(`${selectedVideos.length} videos removed from playlist`, 'success');
+          break;
+
+        case 'delete':
+          if (!window.confirm(`Delete ${selectedVideos.length} videos from library? This will also delete the video files.`)) return;
+          for (const videoId of selectedVideos) {
+            await deleteVideo.mutateAsync(videoId);
+          }
+          showNotification(`${selectedVideos.length} videos deleted from library`, 'success');
+          break;
+      }
+      setSelectedVideos([]);
     } catch (error) {
       showNotification(error.message, 'error');
     }
@@ -110,15 +167,22 @@ export default function Playlist() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             {/* Back Arrow */}
-            <Link
-              to={playlist.channel_id ? `/channel/${playlist.channel_id}/library?filter=playlists` : '/library?tab=playlists'}
+            <button
+              onClick={() => {
+                const referrer = location.state?.from || (
+                  playlist.channel_id
+                    ? `/channel/${playlist.channel_id}/library?filter=playlists`
+                    : '/library?tab=playlists'
+                );
+                navigate(referrer);
+              }}
               className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-white transition-colors"
               title="Back"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="15 18 9 12 15 6"></polyline>
               </svg>
-            </Link>
+            </button>
 
             {/* Playlist Title */}
             <div className="flex items-center gap-2">
@@ -149,6 +213,67 @@ export default function Playlist() {
             </svg>
             <span>Filters</span>
           </button>
+
+          {/* Edit Button */}
+          <button
+            onClick={() => {
+              setEditMode(!editMode);
+              setSelectedVideos([]);
+            }}
+            className={`filter-btn ${editMode ? 'bg-dark-tertiary text-white border-dark-border-light' : ''}`}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>{editMode ? 'Done' : 'Edit'}</span>
+          </button>
+
+          {/* Edit Mode Actions */}
+          {editMode && (
+            <>
+              {/* Select All */}
+              {sortedVideos.length > 0 && (
+                <button
+                  onClick={selectAll}
+                  className="btn btn-sm bg-dark-tertiary text-white hover:bg-dark-hover"
+                >
+                  Select All ({sortedVideos.length})
+                </button>
+              )}
+
+              {/* Action Buttons when videos selected */}
+              {selectedVideos.length > 0 && (
+                <>
+                  <span className="text-sm text-text-secondary">{selectedVideos.length} selected</span>
+                  <button
+                    onClick={() => handleBulkAction('mark-watched')}
+                    className="btn btn-sm bg-green-600 text-white hover:bg-green-700"
+                  >
+                    Mark Watched
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('remove')}
+                    className="btn btn-sm bg-yellow-600 text-white hover:bg-yellow-700"
+                  >
+                    Remove from Playlist
+                  </button>
+                  <button
+                    onClick={() => handleBulkAction('delete')}
+                    className="btn btn-sm bg-red-600 text-white hover:bg-red-700"
+                  >
+                    Delete from Library
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="btn btn-sm bg-dark-tertiary text-white hover:bg-dark-hover"
+                  >
+                    Clear
+                  </button>
+                </>
+              )}
+            </>
+          )}
         </div>
       </div>
 
@@ -160,9 +285,12 @@ export default function Playlist() {
               <VideoCard
                 key={video.id}
                 video={video}
-                showRemoveFromPlaylist={true}
+                showRemoveFromPlaylist={!editMode}
                 onRemoveFromPlaylist={() => handleRemoveVideo(video.id)}
                 isLibraryView={true}
+                editMode={editMode}
+                isSelected={selectedVideos.includes(video.id)}
+                onToggleSelect={editMode ? toggleVideoSelection : undefined}
               />
             ))}
           </div>
@@ -172,8 +300,11 @@ export default function Playlist() {
               <VideoRow
                 key={video.id}
                 video={video}
-                showRemoveFromPlaylist={true}
+                showRemoveFromPlaylist={!editMode}
                 onRemoveFromPlaylist={() => handleRemoveVideo(video.id)}
+                editMode={editMode}
+                isSelected={selectedVideos.includes(video.id)}
+                onToggleSelect={editMode ? toggleVideoSelection : undefined}
               />
             ))}
           </div>
