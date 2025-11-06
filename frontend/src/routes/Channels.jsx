@@ -23,6 +23,8 @@ export default function Channels() {
   const [searchInput, setSearchInput] = useState(''); // Search filter
   const [sortBy, setSortBy] = useState('most_downloaded'); // Sort option
   const [showSortMenu, setShowSortMenu] = useState(false); // Sort menu visibility
+  const [isScanningAll, setIsScanningAll] = useState(false); // Scan all progress
+  const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 }); // X/Y progress
   const sortMenuRef = useRef(null);
 
   const handleAddChannel = async (e) => {
@@ -92,6 +94,47 @@ export default function Channels() {
     } catch (error) {
       showNotification(error.message, 'error');
     }
+  };
+
+  const handleScanAllChannels = async () => {
+    if (!channels || channels.length === 0) {
+      showNotification('No channels to scan', 'info');
+      return;
+    }
+
+    setIsScanningAll(true);
+    setScanProgress({ current: 0, total: channels.length });
+    showNotification(`Starting scan of ${channels.length} channels...`, 'info', { persistent: true });
+
+    let totalNew = 0;
+    let totalIgnored = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < channels.length; i++) {
+      const channel = channels[i];
+      setScanProgress({ current: i + 1, total: channels.length });
+
+      try {
+        const result = await scanChannel.mutateAsync({
+          id: channel.id,
+          forceFull: false
+        });
+        totalNew += result.new_videos || 0;
+        totalIgnored += result.ignored_videos || 0;
+      } catch (error) {
+        console.error(`Failed to scan channel ${channel.title}:`, error);
+        errorCount++;
+      }
+    }
+
+    setIsScanningAll(false);
+    setScanProgress({ current: 0, total: 0 });
+
+    const message = errorCount > 0
+      ? `Scan complete: ${totalNew} new, ${totalIgnored} ignored (${errorCount} errors)`
+      : `Scan complete: ${totalNew} new videos, ${totalIgnored} ignored`;
+
+    showNotification(message, errorCount > 0 ? 'warning' : 'success');
   };
 
   // Click outside to close menu and duration settings
@@ -286,6 +329,33 @@ export default function Channels() {
               </div>
             )}
           </div>
+
+          {/* Scan All Button */}
+          <button
+            onClick={handleScanAllChannels}
+            disabled={isScanningAll || !channels || channels.length === 0}
+            className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
+            title={isScanningAll ? `Scanning ${scanProgress.current}/${scanProgress.total}...` : 'Scan all channels for new videos'}
+          >
+            {isScanningAll ? (
+              <>
+                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.25"></path>
+                  <path d="M21 12a9 9 0 01-9 9" strokeLinecap="round"></path>
+                </svg>
+                <span>Scanning {scanProgress.current}/{scanProgress.total}</span>
+              </>
+            ) : (
+              <>
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
+                </svg>
+                <span>Scan All</span>
+              </>
+            )}
+          </button>
         </div>
       </div>
 

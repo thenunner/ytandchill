@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useChannels, useScanChannel } from '../api/queries';
+import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 
 export default function Library() {
@@ -32,10 +32,6 @@ export default function Library() {
   const deletePlaylist = useDeletePlaylist();
   const updatePlaylist = useUpdatePlaylist();
   const { showNotification } = useNotification();
-  const { data: channels } = useChannels();
-  const scanChannel = useScanChannel();
-  const [isScanningAll, setIsScanningAll] = useState(false);
-  const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 });
   const menuRef = useRef(null);
   const playlistSortMenuRef = useRef(null);
   const channelSortMenuRef = useRef(null);
@@ -262,49 +258,6 @@ export default function Library() {
     }
   };
 
-  const handleScanAll = async () => {
-    if (!channels || channels.length === 0) {
-      showNotification('No channels to scan', 'info');
-      return;
-    }
-
-    setIsScanningAll(true);
-    setScanProgress({ current: 0, total: channels.length });
-    showNotification(`Starting scan of ${channels.length} channels...`, 'info', { persistent: true });
-
-    let totalNew = 0;
-    let totalIgnored = 0;
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (let i = 0; i < channels.length; i++) {
-      const channel = channels[i];
-      setScanProgress({ current: i + 1, total: channels.length });
-
-      try {
-        const result = await scanChannel.mutateAsync({
-          id: channel.id,
-          forceFull: false
-        });
-        totalNew += result.new_videos || 0;
-        totalIgnored += result.ignored_videos || 0;
-        successCount++;
-      } catch (error) {
-        console.error(`Failed to scan channel ${channel.title}:`, error);
-        errorCount++;
-      }
-    }
-
-    setIsScanningAll(false);
-    setScanProgress({ current: 0, total: 0 });
-
-    const message = errorCount > 0
-      ? `Scan complete: ${totalNew} new, ${totalIgnored} ignored (${errorCount} errors)`
-      : `Scan complete: ${totalNew} new videos, ${totalIgnored} ignored`;
-
-    showNotification(message, errorCount > 0 ? 'warning' : 'success');
-  };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -422,33 +375,6 @@ export default function Library() {
                 </div>
               )}
             </div>
-
-            {/* Scan All Button */}
-            <button
-              onClick={handleScanAll}
-              disabled={isScanningAll || !channels || channels.length === 0}
-              className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
-              title={isScanningAll ? `Scanning ${scanProgress.current}/${scanProgress.total}...` : 'Scan all channels for new videos'}
-            >
-              {isScanningAll ? (
-                <>
-                  <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.25"></path>
-                    <path d="M21 12a9 9 0 01-9 9" strokeLinecap="round"></path>
-                  </svg>
-                  <span>Scanning {scanProgress.current}/{scanProgress.total}</span>
-                </>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
-                  </svg>
-                  <span>Scan All</span>
-                </>
-              )}
-            </button>
 
             {/* View Toggle */}
             <div className="flex items-center gap-2">
