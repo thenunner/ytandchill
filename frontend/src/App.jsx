@@ -267,7 +267,7 @@ function App() {
                   </div>
                 )}
 
-                {!notification && !currentOperation?.type && !currentDownload && !delayInfo && !isAutoRefreshing && health?.auto_refresh_enabled && (
+                {!notification && !currentOperation?.type && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
                   <span className="text-text-secondary">
                     Auto-refresh <span className="text-green-400">enabled</span> for {health.auto_refresh_time || '03:00'}
                     {lastAutoRefresh && (
