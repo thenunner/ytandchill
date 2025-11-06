@@ -1061,6 +1061,7 @@ export default function ChannelLibrary() {
         hideVideosFilter={true}
         isPlaylistMode={contentFilter === 'playlists'}
         isLibraryMode={isLibraryMode}
+        isPlaylistView={contentFilter === 'playlists'}
       />
 
       {/* Scroll to Top Button */}

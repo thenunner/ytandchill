@@ -76,10 +76,11 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
         {/* Filters Grid - Dynamic columns based on mode */}
         <div className="overflow-x-auto">
         <div className={`grid ${
-          isPlaylistMode ? 'grid-cols-1' :
-          isLibraryMode && hideVideosFilter ? 'grid-cols-3' : // Library mode: upload, duration, sort
-          hideVideosFilter ? 'grid-cols-3' :  // Discovery mode: upload, duration, sort
-          'grid-cols-4' // Discovery mode with videos filter: upload, videos, duration, sort
+          isPlaylistMode ? 'grid-cols-1' : // Playlists tab: sort only
+          !isPlaylistView && hideVideosFilter ? 'grid-cols-4' : // With visibility: upload, duration, visibility, sort
+          !isPlaylistView ? 'grid-cols-5' : // With visibility: upload, videos, duration, visibility, sort
+          hideVideosFilter ? 'grid-cols-3' : // Playlist view no visibility: upload, duration, sort
+          'grid-cols-4' // Playlist view no visibility: upload, videos, duration, sort
         } divide-x divide-dark-border`}>
           {/* Upload Date Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
@@ -144,6 +145,33 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
                   {option.label}
                 </button>
               ))}
+            </div>
+          </div>
+          )}
+
+          {/* Visibility Column - Only in library mode videos tab */}
+          {isLibraryMode && !isPlaylistView && (
+          <div className="p-2 sm:p-4">
+            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 sm:mb-3">
+              VISIBILITY
+            </h4>
+            <div className="space-y-0.5 sm:space-y-1">
+              <button
+                onClick={() => onFilterChange('hide_watched', filters.hideWatched ? '' : 'true')}
+                className={`filter-btn w-full justify-start ${
+                  filters.hideWatched ? 'active' : ''
+                }`}
+              >
+                <span>Hide watched</span>
+              </button>
+              <button
+                onClick={() => onFilterChange('hide_playlisted', filters.hidePlaylisted ? '' : 'true')}
+                className={`filter-btn w-full justify-start ${
+                  filters.hidePlaylisted ? 'active' : ''
+                }`}
+              >
+                <span>Hide in playlist</span>
+              </button>
             </div>
           </div>
           )}
