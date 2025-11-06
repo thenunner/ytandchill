@@ -19,12 +19,14 @@ Common topics covered:
 
 ## Features
 
+- **Fully Responsive Mobile UI**: Complete mobile-friendly interface with touch-optimized controls, responsive layouts, and mobile-specific features for managing your library on any device
+- **Auto-Refresh Scheduler**: Set daily scan times to automatically check for new videos from your subscribed channels, keeping your library up-to-date without manual intervention
+- **Smart Duration Filters**: Set minimum and maximum video length preferences per channel to automatically filter out shorts, long streams, or any videos outside your preferred range
 - **Channel Management**: Subscribe to YouTube channels and automatically track new uploads
-- **Playlist Support**: Download and organize entire playlists
-- **Smart Downloads**: Queue-based download system with progress tracking
-- **Modern Web UI**: Clean, responsive interface built with React
-- **Video Library**: Browse, search, and manage your downloaded videos
-- **Thumbnail Support**: Automatic thumbnail downloads for easy browsing
+- **Advanced Video Player**: Built-in player with automatic resume from last position, playback speed controls, and picture-in-picture support
+- **Smart Downloads**: Queue-based download system with drag-and-drop reordering, pause/resume controls, and progress tracking
+- **Playlist Support**: Create and organize custom playlists from your downloaded videos
+- **Video Library**: Browse, search, and manage your downloaded videos with flexible filtering and sorting options
 - **Cookie Authentication**: Support for YouTube cookies (strongly recommended for reliable downloads)
 
 ## Screenshots
