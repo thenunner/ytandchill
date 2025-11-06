@@ -206,13 +206,6 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
                       filters.hideWatched ? 'active' : ''
                     }`}
                   >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      {filters.hideWatched ? (
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      ) : (
-                        <circle cx="12" cy="12" r="10" />
-                      )}
-                    </svg>
                     <span>Hide watched</span>
                   </button>
                   <button
@@ -221,13 +214,6 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
                       filters.hidePlaylisted ? 'active' : ''
                     }`}
                   >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      {filters.hidePlaylisted ? (
-                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      ) : (
-                        <circle cx="12" cy="12" r="10" />
-                      )}
-                    </svg>
                     <span>Hide playlisted</span>
                   </button>
                 </>
