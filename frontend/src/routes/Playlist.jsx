@@ -203,6 +203,44 @@ export default function Playlist() {
             className="search-input w-[180px]"
           />
 
+          {/* View Toggle */}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg border transition-all ${
+                viewMode === 'grid'
+                  ? 'bg-dark-tertiary border-dark-border-light text-white'
+                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+              }`}
+              title="Grid View"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={`p-2 rounded-lg border transition-all ${
+                viewMode === 'list'
+                  ? 'bg-dark-tertiary border-dark-border-light text-white'
+                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+              }`}
+              title="List View"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
           {/* Filters Button */}
           <button
             onClick={() => setShowFiltersModal(true)}

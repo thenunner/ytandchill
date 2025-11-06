@@ -21,34 +21,6 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
       { label: '30-60 minutes', value: '30-60' },
       { label: 'Over 60 minutes', value: 'over60' },
     ],
-    view: [
-      {
-        label: 'Card',
-        value: 'grid',
-        icon: (
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="3" y="3" width="7" height="7"></rect>
-            <rect x="14" y="3" width="7" height="7"></rect>
-            <rect x="14" y="14" width="7" height="7"></rect>
-            <rect x="3" y="14" width="7" height="7"></rect>
-          </svg>
-        ),
-      },
-      {
-        label: 'List',
-        value: 'list',
-        icon: (
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
-        ),
-      },
-    ],
     sort: isPlaylistMode ? [
       { label: 'Most videos', value: 'videos-desc' },
       { label: 'Least videos', value: 'videos-asc' },
@@ -105,9 +77,9 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
         <div className="overflow-x-auto">
         <div className={`grid ${
           isPlaylistMode ? 'grid-cols-1' :
-          isLibraryMode && hideVideosFilter ? 'grid-cols-4' : // Library mode: upload, duration, view+visibility, sort
-          hideVideosFilter ? 'grid-cols-4' :  // Discovery mode: upload, duration, view, sort
-          'grid-cols-5' // Discovery mode with videos filter: upload, videos, duration, view, sort
+          isLibraryMode && hideVideosFilter ? 'grid-cols-3' : // Library mode: upload, duration, sort
+          hideVideosFilter ? 'grid-cols-3' :  // Discovery mode: upload, duration, sort
+          'grid-cols-4' // Discovery mode with videos filter: upload, videos, duration, sort
         } divide-x divide-dark-border`}>
           {/* Upload Date Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
@@ -172,52 +144,6 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
                   {option.label}
                 </button>
               ))}
-            </div>
-          </div>
-          )}
-
-          {/* View & Visibility Column - Hidden in playlist mode */}
-          {!isPlaylistMode && (
-          <div className="p-2 sm:p-4">
-            <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 sm:mb-3">
-              VIEW {isLibraryMode && '& VISIBILITY'}
-            </h4>
-            <div className="space-y-0.5 sm:space-y-1">
-              {filterOptions.view.map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => onFilterChange('view', option.value)}
-                  className={`filter-btn w-full ${
-                    filters.view === option.value ? 'active' : ''
-                  }`}
-                >
-                  {option.icon}
-                  <span>{option.label}</span>
-                </button>
-              ))}
-
-              {/* Visibility options - Only in library mode, not in playlist view */}
-              {isLibraryMode && !isPlaylistView && (
-                <>
-                  <div className="h-2"></div>
-                  <button
-                    onClick={() => onFilterChange('hide_watched', filters.hideWatched ? '' : 'true')}
-                    className={`filter-btn w-full justify-start ${
-                      filters.hideWatched ? 'active' : ''
-                    }`}
-                  >
-                    <span>Hide watched</span>
-                  </button>
-                  <button
-                    onClick={() => onFilterChange('hide_playlisted', filters.hidePlaylisted ? '' : 'true')}
-                    className={`filter-btn w-full justify-start ${
-                      filters.hidePlaylisted ? 'active' : ''
-                    }`}
-                  >
-                    <span>Hide in playlist</span>
-                  </button>
-                </>
-              )}
             </div>
           </div>
           )}
