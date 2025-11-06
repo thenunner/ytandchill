@@ -713,16 +713,8 @@ export default function Library() {
       {/* Playlists Tab */}
       {activeTab === 'playlists' && (
         <>
-          {filteredPlaylists.length === 0 ? (
-            <div className="text-center py-20 text-text-secondary">
-              <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
-                <circle cx="18" cy="16" r="3" />
-              </svg>
-              <p className="text-lg font-medium">{searchInput ? 'No matching playlists' : 'No playlists yet'}</p>
-              <p className="text-sm mt-2">{searchInput ? 'Try a different search term' : 'Create playlists to organize your videos'}</p>
-            </div>
-          ) : playlistViewMode === 'grid' ? (
+          {filteredPlaylists.length > 0 ? (
+            playlistViewMode === 'grid' ? (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
               {filteredPlaylists.map(playlist => {
                 const isSelected = selectedPlaylists.includes(playlist.id);
@@ -971,6 +963,16 @@ export default function Library() {
                   </div>
                 );
               })}
+            </div>
+            )
+          ) : (
+            <div className="text-center py-20 text-text-secondary">
+              <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
+                <circle cx="18" cy="16" r="3" />
+              </svg>
+              <p className="text-lg font-medium">{searchInput ? 'No matching playlists' : 'No playlists yet'}</p>
+              <p className="text-sm mt-2">{searchInput ? 'Try a different search term' : 'Create playlists to organize your videos'}</p>
             </div>
           )}
         </>
