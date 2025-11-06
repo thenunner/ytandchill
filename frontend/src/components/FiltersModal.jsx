@@ -77,10 +77,10 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
         <div className="overflow-x-auto">
         <div className={`grid ${
           isPlaylistMode ? 'grid-cols-1' : // Playlists tab: sort only
-          !isPlaylistView && hideVideosFilter ? 'grid-cols-4' : // With visibility: upload, duration, visibility, sort
-          !isPlaylistView ? 'grid-cols-5' : // With visibility: upload, videos, duration, visibility, sort
-          hideVideosFilter ? 'grid-cols-3' : // Playlist view no visibility: upload, duration, sort
-          'grid-cols-4' // Playlist view no visibility: upload, videos, duration, sort
+          isLibraryMode && !isPlaylistView && hideVideosFilter ? 'grid-cols-4' : // Library with visibility: upload, duration, visibility, sort
+          isLibraryMode && !isPlaylistView ? 'grid-cols-5' : // Library with visibility: upload, videos, duration, visibility, sort
+          hideVideosFilter ? 'grid-cols-3' : // No visibility: upload, duration, sort
+          'grid-cols-4' // No visibility: upload, videos, duration, sort
         } divide-x divide-dark-border`}>
           {/* Upload Date Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
