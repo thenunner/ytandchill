@@ -665,7 +665,12 @@ export default function Channels() {
             return (
               <div
                 key={channel.id}
-                className="card flex items-center gap-3 p-0 w-full transition-colors group"
+                className="card flex items-center gap-3 p-0 w-full cursor-pointer transition-colors group"
+                onClick={(e) => {
+                  if (!e.target.closest('button')) {
+                    navigate(`/channel/${channel.id}`);
+                  }
+                }}
               >
                   {/* 3-Dot Menu Button - Left of thumbnail */}
                   <div className="flex-shrink-0 pl-3">
@@ -733,11 +738,8 @@ export default function Channels() {
                   </button>
                 </div>
 
-                {/* Clickable Row */}
-                <Link
-                  to={`/channel/${channel.id}`}
-                  className="flex items-center gap-4 flex-1 py-2 pr-3"
-                >
+                {/* Content Row */}
+                <div className="flex items-center gap-4 flex-1 py-2 pr-3">
                   {/* Thumbnail - Hidden on mobile */}
                   <div className="relative w-[200px] h-[80px] flex-shrink-0 bg-dark-tertiary rounded-lg overflow-hidden hidden md:block">
                     {channel.thumbnail ? (
@@ -797,7 +799,7 @@ export default function Channels() {
                       </div>
                     </div>
                   </div>
-                </Link>
+                </div>
               </div>
             );
           })}
