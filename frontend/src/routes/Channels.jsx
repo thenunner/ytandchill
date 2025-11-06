@@ -659,35 +659,37 @@ export default function Channels() {
           ))}
         </div>
       ) : (
-        <div className="flex flex-col gap-2 items-start">
-          {filteredAndSortedChannels.map(channel => {
-            const showMenu = menuOpen === channel.id;
-            return (
-              <div
-                key={channel.id}
-                className="card flex items-center gap-3 p-0 w-full cursor-pointer transition-colors group"
-              >
-                {/* 3-Dot Menu Button - Left of thumbnail */}
-                <div className="flex-shrink-0 pl-3">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setMenuOpen(showMenu ? null : channel.id);
-                    }}
-                    className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-white rounded-lg transition-colors"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="12" cy="5" r="2"></circle>
-                      <circle cx="12" cy="12" r="2"></circle>
-                      <circle cx="12" cy="19" r="2"></circle>
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Sliding Drawer Menu - slides in from left, pushing content right */}
+        <div className="overflow-x-auto -mx-4 px-4">
+          <div className="flex flex-col gap-2 items-start min-w-[800px]">
+            {filteredAndSortedChannels.map(channel => {
+              const isMenuOpen = menuOpen === channel.id;
+              return (
                 <div
-                  className={`flex flex-col gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
-                    showMenu ? 'w-[140px] opacity-100 pr-3' : 'w-0 opacity-0'
+                  key={channel.id}
+                  className="card flex items-center gap-3 p-0 w-full transition-colors group"
+                >
+                  {/* 3-Dot Menu Button - Left of thumbnail */}
+                  <div className="flex-shrink-0 pl-3">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setMenuOpen(isMenuOpen ? null : channel.id);
+                      }}
+                      className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-white rounded-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="2"></circle>
+                        <circle cx="12" cy="12" r="2"></circle>
+                        <circle cx="12" cy="19" r="2"></circle>
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Sliding Drawer Menu - slides in from left, pushing content right */}
+                  <div
+                    className={`flex flex-col gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
+                      isMenuOpen ? 'w-[140px] opacity-100 pr-3' : 'w-0 opacity-0'
                   }`}
                 >
                   <button
@@ -802,6 +804,7 @@ export default function Channels() {
             );
           })}
         </div>
+      </div>
       )}
 
       {filteredAndSortedChannels.length === 0 && (
