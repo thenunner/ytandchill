@@ -142,6 +142,7 @@ class AutoRefreshScheduler:
 
             new_videos_count = 0
             ignored_count = 0
+            latest_upload_date = None
 
             for video_data in videos_response.get('items', []):
                 video_id = video_data['id']
@@ -165,15 +166,11 @@ class AutoRefreshScheduler:
                 # Parse upload date
                 upload_date = video_data['snippet']['publishedAt'][:10].replace('-', '')
 
-                # Check if uploaded after last scan
-                if channel.last_scan_at and upload_date:
+                # Track the latest upload date found
+                if upload_date:
                     upload_dt = datetime.strptime(upload_date, '%Y%m%d')
-                    # Make last_scan_at timezone-aware if it isn't
-                    last_scan = channel.last_scan_at
-                    if last_scan.tzinfo is None:
-                        last_scan = last_scan.replace(tzinfo=timezone.utc)
-                    if upload_dt.replace(tzinfo=timezone.utc) <= last_scan:
-                        continue
+                    if latest_upload_date is None or upload_dt > latest_upload_date:
+                        latest_upload_date = upload_dt
 
                 # Check duration filters and set status
                 status = 'discovered'
@@ -199,8 +196,13 @@ class AutoRefreshScheduler:
                 else:
                     new_videos_count += 1
 
-            # Update last scan time
-            channel.last_scan_at = datetime.now(timezone.utc)
+            # Update last scan time to the latest video upload date found
+            # This ensures the next scan picks up from the last video, not the scan time
+            if latest_upload_date:
+                channel.last_scan_at = latest_upload_date.replace(tzinfo=timezone.utc)
+            elif channel.last_scan_at is None:
+                # If no videos were found and no previous scan, set to now
+                channel.last_scan_at = datetime.now(timezone.utc)
 
             print(f"Channel {channel.title}: {new_videos_count} new videos, {ignored_count} ignored")
 

@@ -724,17 +724,14 @@ def scan_channel(channel_id):
 
         new_count = 0
         ignored_count = 0
+        latest_upload_date = None
 
         for video_data in videos:
-            # For incremental scan, skip videos uploaded before last_scan_at
-            if not force_full and channel.last_scan_at and video_data['upload_date']:
+            # Track the latest upload date found
+            if video_data['upload_date']:
                 upload_dt = datetime.strptime(video_data['upload_date'], '%Y%m%d')
-                last_scan = channel.last_scan_at
-                if last_scan.tzinfo is None:
-                    last_scan = last_scan.replace(tzinfo=timezone.utc)
-                # Skip videos older than last scan (incremental mode only)
-                if upload_dt.replace(tzinfo=timezone.utc) <= last_scan:
-                    continue
+                if latest_upload_date is None or upload_dt > latest_upload_date:
+                    latest_upload_date = upload_dt
 
             # Check if video already exists in database
             existing = session.query(Video).filter(Video.yt_id == video_data['id']).first()
@@ -767,7 +764,14 @@ def scan_channel(channel_id):
             else:
                 new_count += 1
 
-        channel.last_scan_at = datetime.now(timezone.utc)
+        # Update last scan time to the latest video upload date found
+        # This ensures the next scan picks up from the last video, not the scan time
+        if latest_upload_date:
+            channel.last_scan_at = latest_upload_date.replace(tzinfo=timezone.utc)
+        elif channel.last_scan_at is None:
+            # If no videos were found and no previous scan, set to now
+            channel.last_scan_at = datetime.now(timezone.utc)
+
         session.commit()
 
         clear_operation()

@@ -142,9 +142,9 @@ export default function Channels() {
           return (b.downloaded_count || 0) - (a.downloaded_count || 0);
         case 'least_downloaded':
           return (a.downloaded_count || 0) - (b.downloaded_count || 0);
-        case 'most_needs_review':
+        case 'most_to_review':
           return (b.discovered_count || 0) - (a.discovered_count || 0);
-        case 'least_needs_review':
+        case 'least_to_review':
           return (a.discovered_count || 0) - (b.discovered_count || 0);
         default:
           return 0;
@@ -261,21 +261,21 @@ export default function Channels() {
                 {/* Needs Review */}
                 <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-primary">Needs Review</span>
+                    <span className="text-text-primary">To Review</span>
                     <div className="flex gap-1">
                       <button
-                        onClick={() => { setSortBy('most_needs_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_needs_review' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Most Needs Review"
+                        onClick={() => { setSortBy('most_to_review'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Most To Review"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 5v14M5 12l7-7 7 7"></path>
                         </svg>
                       </button>
                       <button
-                        onClick={() => { setSortBy('least_needs_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_needs_review' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Least Needs Review"
+                        onClick={() => { setSortBy('least_to_review'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Least To Review"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 19V5M5 12l7 7 7-7"></path>
@@ -404,7 +404,7 @@ export default function Channels() {
                     </div>
 
                     {/* Discovered - Middle */}
-                    <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="Needs review">
+                    <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="To Review">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <circle cx="12" cy="12" r="1"></circle>
@@ -486,10 +486,10 @@ export default function Channels() {
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex flex-col"
                   >
-                    <span className="font-medium">Scan New</span>
+                    <span className="font-medium">Scan</span>
                     {channel.last_scan_at && (
                       <span className="text-xs text-text-secondary mt-0.5">
-                        Since {new Date(channel.last_scan_at).toLocaleDateString()}
+                        Since {new Date(channel.last_scan_at).toLocaleDateString()} video
                       </span>
                     )}
                   </button>

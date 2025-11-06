@@ -52,8 +52,8 @@ export default function ChannelLibrary() {
 
   // Get filters from URL, with localStorage fallback for library mode visibility filters
   // Library mode: 'videos' or 'playlists' (default: 'videos')
-  // Discovery mode: 'needs-review' or 'ignored' (default: 'needs-review')
-  const contentFilter = searchParams.get('filter') || (isLibraryMode ? 'videos' : 'needs-review');
+  // Discovery mode: 'to-review' or 'ignored' (default: 'to-review')
+  const contentFilter = searchParams.get('filter') || (isLibraryMode ? 'videos' : 'to-review');
   const search = searchParams.get('search') || '';
   const sort = searchParams.get('sort') || 'date-desc';
   const minDuration = searchParams.get('min_duration');
@@ -110,11 +110,11 @@ export default function ChannelLibrary() {
     status = 'library';
     ignored = 'false';
   } else {
-    // Discovery mode: Needs Review = discovered videos, Ignored = ignored videos
+    // Discovery mode: To Review = discovered videos, Ignored = ignored videos
     if (contentFilter === 'ignored') {
       ignored = 'true';
     } else {
-      // needs-review
+      // to-review
       status = 'discovered';
       ignored = 'false';
     }
@@ -527,7 +527,7 @@ export default function ChannelLibrary() {
               </>
             ) : (
               <>
-                {/* Discovery Mode: Needs Review / Ignored */}
+                {/* Discovery Mode: To Review / Ignored */}
                 <button
                   onClick={() => {
                     const newParams = new URLSearchParams(searchParams);
@@ -535,12 +535,12 @@ export default function ChannelLibrary() {
                     setSearchParams(newParams);
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    contentFilter === 'needs-review'
+                    contentFilter === 'to-review'
                       ? 'bg-dark-tertiary text-white border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
                   }`}
                 >
-                  Needs Review
+                  To Review
                 </button>
                 <button
                   onClick={() => {
@@ -658,7 +658,7 @@ export default function ChannelLibrary() {
               {selectedVideos.length > 0 && (
                 <>
                   <span className="text-sm text-text-secondary">{selectedVideos.length} selected</span>
-                  {contentFilter === 'needs-review' && (
+                  {contentFilter === 'to-review' && (
                     <>
                       <button
                         onClick={() => handleBulkAction('queue')}
@@ -741,10 +741,10 @@ export default function ChannelLibrary() {
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex flex-col"
                   >
-                    <span className="font-medium">Scan New</span>
+                    <span className="font-medium">Scan</span>
                     {channel.last_scan_at && (
                       <span className="text-xs text-text-secondary mt-0.5">
-                        Since {new Date(channel.last_scan_at).toLocaleDateString()}
+                        Since {new Date(channel.last_scan_at).toLocaleDateString()} video
                       </span>
                     )}
                   </button>
@@ -862,7 +862,7 @@ export default function ChannelLibrary() {
               </div>
 
               {/* Discovered */}
-              <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="Needs review">
+              <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="To Review">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10"></circle>
                   <circle cx="12" cy="12" r="1"></circle>
