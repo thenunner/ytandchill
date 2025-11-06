@@ -5,10 +5,7 @@ import { useEffect, useState } from 'react';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
 import ChannelLibrary from './routes/ChannelLibrary';
-import Playlists from './routes/Playlists';
 import Playlist from './routes/Playlist';
-import NeedsWork from './routes/NeedsWork';
-import Ignored from './routes/Ignored';
 import Queue from './routes/Queue';
 import Settings from './routes/Settings';
 import Player from './routes/Player';
@@ -327,8 +324,6 @@ function App() {
           <Route path="/channel/:channelId" element={<ChannelLibrary />} />
           <Route path="/channel/:channelId/library" element={<ChannelLibrary />} />
           <Route path="/playlist/:id" element={<Playlist />} />
-          <Route path="/needs-work" element={<NeedsWork />} />
-          <Route path="/ignored" element={<Ignored />} />
           <Route path="/queue" element={<Queue />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/player/:videoId" element={<Player />} />

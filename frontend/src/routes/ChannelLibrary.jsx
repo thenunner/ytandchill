@@ -5,7 +5,6 @@ import { useNotification } from '../contexts/NotificationContext';
 import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
-import MultiSelectBar from '../components/MultiSelectBar';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 
 export default function ChannelLibrary() {
