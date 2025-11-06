@@ -9,6 +9,7 @@ from yt_dlp.utils import GeoRestrictedError
 from models import Video, QueueItem
 from sqlalchemy.orm import Session
 import signal
+import glob
 
 logger = logging.getLogger(__name__)
 
@@ -340,6 +341,39 @@ class DownloadWorker:
                     session.commit()
                     self.current_download = None
                     return  # Exit download, .part file preserved for resume
+
+                # Check for age verification errors - move to ignored status
+                if 'verify your age' in error_str.lower() or \
+                   ('age' in error_str.lower() and 'verif' in error_str.lower()):
+                    logger.warning(f'Age verification required for video: {video.title} ({video.yt_id})')
+                    logger.warning('Moving video to ignored status to prevent re-download attempts')
+
+                    # Delete partial files if they exist
+                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
+                    for file_path in glob.glob(video_pattern):
+                        try:
+                            os.remove(file_path)
+                            logger.debug(f'Deleted file: {file_path}')
+                        except Exception as del_error:
+                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
+
+                    # Delete thumbnail
+                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
+                    if os.path.exists(thumb_path):
+                        try:
+                            os.remove(thumb_path)
+                            logger.debug(f'Deleted thumbnail: {thumb_path}')
+                        except Exception as thumb_error:
+                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
+
+                    # Set to ignored status and remove from queue
+                    video.status = 'ignored'
+                    if queue_item:
+                        session.delete(queue_item)
+                    session.commit()
+                    self.current_download = None
+                    logger.info(f'Successfully moved age-restricted video to ignored: {video.yt_id}')
+                    return  # Exit and move to next video
 
                 logger.error(f'Download attempt {attempt} failed for {video.yt_id}: {error_str}')
                 # Removed print - using logger instead
