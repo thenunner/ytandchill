@@ -211,7 +211,7 @@ function App() {
                       Downloading:
                     </span>
                     <span className="text-white">
-                      {currentDownload.video_title}
+                      {currentDownload.video?.title || 'Unknown'}
                     </span>
                     <span className="text-white">
                       {Math.round(currentDownload.progress_pct)}%

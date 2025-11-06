@@ -375,6 +375,134 @@ class DownloadWorker:
                     logger.info(f'Successfully moved age-restricted video to ignored: {video.yt_id}')
                     return  # Exit and move to next video
 
+                # Check for private videos - auto-ignore
+                if 'private' in error_str.lower() and 'video' in error_str.lower():
+                    logger.warning(f'Private video detected: {video.title} ({video.yt_id})')
+                    logger.warning('Moving private video to ignored status')
+
+                    # Delete partial files if they exist
+                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
+                    for file_path in glob.glob(video_pattern):
+                        try:
+                            os.remove(file_path)
+                            logger.debug(f'Deleted file: {file_path}')
+                        except Exception as del_error:
+                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
+
+                    # Delete thumbnail
+                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
+                    if os.path.exists(thumb_path):
+                        try:
+                            os.remove(thumb_path)
+                            logger.debug(f'Deleted thumbnail: {thumb_path}')
+                        except Exception as thumb_error:
+                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
+
+                    # Set to ignored status and remove from queue
+                    video.status = 'ignored'
+                    if queue_item:
+                        session.delete(queue_item)
+                    session.commit()
+                    self.current_download = None
+                    logger.info(f'Successfully moved private video to ignored: {video.yt_id}')
+                    return  # Exit and move to next video
+
+                # Check for deleted/unavailable videos - auto-ignore
+                if 'removed' in error_str.lower() or 'unavailable' in error_str.lower() or 'does not exist' in error_str.lower():
+                    logger.warning(f'Deleted/unavailable video detected: {video.title} ({video.yt_id})')
+                    logger.warning('Moving deleted video to ignored status')
+
+                    # Delete partial files if they exist
+                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
+                    for file_path in glob.glob(video_pattern):
+                        try:
+                            os.remove(file_path)
+                            logger.debug(f'Deleted file: {file_path}')
+                        except Exception as del_error:
+                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
+
+                    # Delete thumbnail
+                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
+                    if os.path.exists(thumb_path):
+                        try:
+                            os.remove(thumb_path)
+                            logger.debug(f'Deleted thumbnail: {thumb_path}')
+                        except Exception as thumb_error:
+                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
+
+                    # Set to ignored status and remove from queue
+                    video.status = 'ignored'
+                    if queue_item:
+                        session.delete(queue_item)
+                    session.commit()
+                    self.current_download = None
+                    logger.info(f'Successfully moved deleted/unavailable video to ignored: {video.yt_id}')
+                    return  # Exit and move to next video
+
+                # Check for members-only content - auto-ignore
+                if ('members' in error_str.lower() and 'only' in error_str.lower()) or 'join this channel' in error_str.lower():
+                    logger.warning(f'Members-only content detected: {video.title} ({video.yt_id})')
+                    logger.warning('Moving members-only video to ignored status')
+
+                    # Delete partial files if they exist
+                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
+                    for file_path in glob.glob(video_pattern):
+                        try:
+                            os.remove(file_path)
+                            logger.debug(f'Deleted file: {file_path}')
+                        except Exception as del_error:
+                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
+
+                    # Delete thumbnail
+                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
+                    if os.path.exists(thumb_path):
+                        try:
+                            os.remove(thumb_path)
+                            logger.debug(f'Deleted thumbnail: {thumb_path}')
+                        except Exception as thumb_error:
+                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
+
+                    # Set to ignored status and remove from queue
+                    video.status = 'ignored'
+                    if queue_item:
+                        session.delete(queue_item)
+                    session.commit()
+                    self.current_download = None
+                    logger.info(f'Successfully moved members-only video to ignored: {video.yt_id}')
+                    return  # Exit and move to next video
+
+                # Check for copyright takedowns - auto-ignore
+                if 'copyright' in error_str.lower():
+                    logger.warning(f'Copyright takedown detected: {video.title} ({video.yt_id})')
+                    logger.warning('Moving copyright-blocked video to ignored status')
+
+                    # Delete partial files if they exist
+                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
+                    for file_path in glob.glob(video_pattern):
+                        try:
+                            os.remove(file_path)
+                            logger.debug(f'Deleted file: {file_path}')
+                        except Exception as del_error:
+                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
+
+                    # Delete thumbnail
+                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
+                    if os.path.exists(thumb_path):
+                        try:
+                            os.remove(thumb_path)
+                            logger.debug(f'Deleted thumbnail: {thumb_path}')
+                        except Exception as thumb_error:
+                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
+
+                    # Set to ignored status and remove from queue
+                    video.status = 'ignored'
+                    if queue_item:
+                        session.delete(queue_item)
+                    session.commit()
+                    self.current_download = None
+                    logger.info(f'Successfully moved copyright-blocked video to ignored: {video.yt_id}')
+                    return  # Exit and move to next video
+
                 logger.error(f'Download attempt {attempt} failed for {video.yt_id}: {error_str}')
                 # Removed print - using logger instead
 
