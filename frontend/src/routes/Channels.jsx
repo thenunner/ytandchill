@@ -672,12 +672,11 @@ export default function Channels() {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        e.preventDefault();
-                        setMenuOpen(prev => prev === channel.id ? null : channel.id);
+                        setMenuOpen(isMenuOpen ? null : channel.id);
                       }}
                       className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-white rounded-lg transition-colors"
                     >
-                      <svg className="w-4 h-4 pointer-events-none" viewBox="0 0 24 24" fill="currentColor">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                         <circle cx="12" cy="5" r="2"></circle>
                         <circle cx="12" cy="12" r="2"></circle>
                         <circle cx="12" cy="19" r="2"></circle>
