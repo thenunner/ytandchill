@@ -61,6 +61,7 @@ export default function Library() {
 
   // Persist playlist view mode to localStorage
   useEffect(() => {
+    console.log('PERSISTING playlistViewMode to localStorage:', playlistViewMode);
     localStorage.setItem('playlistViewMode', playlistViewMode);
   }, [playlistViewMode]);
 
@@ -452,7 +453,11 @@ export default function Library() {
               {/* View Mode Toggle */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setPlaylistViewMode('grid')}
+                  onClick={() => {
+                    console.log('GRID BUTTON CLICKED - Current playlistViewMode:', playlistViewMode);
+                    setPlaylistViewMode('grid');
+                    console.log('GRID BUTTON - After setState call');
+                  }}
                   className={`p-2 rounded-lg border transition-all ${
                     playlistViewMode === 'grid'
                       ? 'bg-dark-tertiary border-dark-border-light text-white'
@@ -468,7 +473,11 @@ export default function Library() {
                   </svg>
                 </button>
                 <button
-                  onClick={() => setPlaylistViewMode('list')}
+                  onClick={() => {
+                    console.log('LIST BUTTON CLICKED - Current playlistViewMode:', playlistViewMode);
+                    setPlaylistViewMode('list');
+                    console.log('LIST BUTTON - After setState call');
+                  }}
                   className={`p-2 rounded-lg border transition-all ${
                     playlistViewMode === 'list'
                       ? 'bg-dark-tertiary border-dark-border-light text-white'
@@ -713,6 +722,12 @@ export default function Library() {
       {/* Playlists Tab */}
       {activeTab === 'playlists' && (
         <div key={`playlists-${playlistViewMode}`}>
+          {(() => {
+            console.log('RENDERING PLAYLISTS - playlistViewMode:', playlistViewMode);
+            console.log('RENDERING PLAYLISTS - filteredPlaylists.length:', filteredPlaylists.length);
+            console.log('RENDERING PLAYLISTS - Will render:', playlistViewMode === 'grid' ? 'GRID' : 'LIST');
+            return null;
+          })()}
           {filteredPlaylists.length > 0 ? (
             playlistViewMode === 'grid' ? (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
