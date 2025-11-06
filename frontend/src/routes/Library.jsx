@@ -61,7 +61,6 @@ export default function Library() {
 
   // Persist playlist view mode to localStorage
   useEffect(() => {
-    console.log('PERSISTING playlistViewMode to localStorage:', playlistViewMode);
     localStorage.setItem('playlistViewMode', playlistViewMode);
   }, [playlistViewMode]);
 
@@ -415,8 +414,7 @@ export default function Library() {
           </div>
         ) : (
           /* Playlists: Responsive layout - wraps on mobile */
-          <>
-            <div className="flex flex-wrap items-center gap-3 md:gap-4">
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
               {/* Tabs */}
               <div className="flex gap-2">
                 <button
@@ -450,20 +448,15 @@ export default function Library() {
                 className="search-input w-full sm:w-[180px]"
               />
 
-              {/* View Mode Toggle */}
+              {/* View Toggle */}
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => {
-                    console.log('GRID BUTTON CLICKED - Current playlistViewMode:', playlistViewMode);
-                    setPlaylistViewMode('grid');
-                    console.log('GRID BUTTON - After setState call');
-                  }}
+                  onClick={() => setPlaylistViewMode('grid')}
                   className={`p-2 rounded-lg border transition-all ${
                     playlistViewMode === 'grid'
-                      ? 'bg-dark-tertiary border-dark-border-light text-white'
-                      : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                      ? 'bg-dark-tertiary border-dark-border-light text-white ring-2 ring-accent/40'
+                      : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
                   }`}
-                  title="Grid View"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <rect x="3" y="3" width="7" height="7"></rect>
@@ -473,17 +466,12 @@ export default function Library() {
                   </svg>
                 </button>
                 <button
-                  onClick={() => {
-                    console.log('LIST BUTTON CLICKED - Current playlistViewMode:', playlistViewMode);
-                    setPlaylistViewMode('list');
-                    console.log('LIST BUTTON - After setState call');
-                  }}
+                  onClick={() => setPlaylistViewMode('list')}
                   className={`p-2 rounded-lg border transition-all ${
                     playlistViewMode === 'list'
-                      ? 'bg-dark-tertiary border-dark-border-light text-white'
-                      : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                      ? 'bg-dark-tertiary border-dark-border-light text-white ring-2 ring-accent/40'
+                      : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
                   }`}
-                  title="List View"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="8" y1="6" x2="21" y2="6"></line>
@@ -611,7 +599,6 @@ export default function Library() {
                 </>
               )}
             </div>
-          </>
         )}
       </div>
 
@@ -722,12 +709,6 @@ export default function Library() {
       {/* Playlists Tab */}
       {activeTab === 'playlists' && (
         <div key={`playlists-${playlistViewMode}`}>
-          {(() => {
-            console.log('RENDERING PLAYLISTS - playlistViewMode:', playlistViewMode);
-            console.log('RENDERING PLAYLISTS - filteredPlaylists.length:', filteredPlaylists.length);
-            console.log('RENDERING PLAYLISTS - Will render:', playlistViewMode === 'grid' ? 'GRID' : 'LIST');
-            return null;
-          })()}
           {filteredPlaylists.length > 0 ? (
             playlistViewMode === 'grid' ? (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
@@ -836,7 +817,7 @@ export default function Library() {
                     {/* Playlist info */}
                     <div className="p-3">
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors truncate" title={playlist.title || playlist.name}>
+                        <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2" title={playlist.title || playlist.name}>
                           {playlist.title || playlist.name}
                         </h3>
                         <span className="text-xs text-text-secondary whitespace-nowrap flex-shrink-0">
@@ -899,7 +880,7 @@ export default function Library() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors truncate" title={playlist.title || playlist.name}>
+                      <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2" title={playlist.title || playlist.name}>
                         {playlist.title || playlist.name}
                       </h3>
                       <div className="flex items-center gap-3 mt-1">
