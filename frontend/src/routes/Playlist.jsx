@@ -248,21 +248,21 @@ export default function Playlist() {
                   <span className="text-sm text-text-secondary">{selectedVideos.length} selected</span>
                   <button
                     onClick={() => handleBulkAction('mark-watched')}
-                    className="btn btn-sm bg-green-600 text-white hover:bg-green-700"
+                    className="btn btn-primary btn-sm"
                   >
                     Mark Watched
                   </button>
                   <button
                     onClick={() => handleBulkAction('remove')}
-                    className="btn btn-sm bg-yellow-600 text-white hover:bg-yellow-700"
+                    className="btn btn-secondary btn-sm"
                   >
                     Remove from Playlist
                   </button>
                   <button
                     onClick={() => handleBulkAction('delete')}
-                    className="btn btn-sm bg-red-600 text-white hover:bg-red-700"
+                    className="btn btn-secondary btn-sm"
                   >
-                    Delete from Library
+                    Delete Video
                   </button>
                   <button
                     onClick={clearSelection}
@@ -332,6 +332,7 @@ export default function Playlist() {
         hideVideosFilter={true}
         isPlaylistMode={false}
         isLibraryMode={true}
+        isPlaylistView={true}
       />
     </div>
   );

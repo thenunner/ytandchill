@@ -659,8 +659,8 @@ class DownloadWorker:
             ).count() > 0
 
             if has_more and download_success:
-                # Random delay: 60 seconds to 5 minutes (60-300 seconds)
-                delay_seconds = random.randint(60, 300)
+                # Random delay: 60 seconds to 3 minutes (60-180 seconds)
+                delay_seconds = random.randint(60, 180)
                 logger.info(f"Delaying {delay_seconds} seconds ({delay_seconds/60:.1f} min) before next download to avoid rate limiting...")
                 # Removed print - using logger instead
 

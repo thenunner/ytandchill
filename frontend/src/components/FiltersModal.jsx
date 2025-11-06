@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function FiltersModal({ isOpen, onClose, filters, onFilterChange, hideVideosFilter, isPlaylistMode, isLibraryMode }) {
+export default function FiltersModal({ isOpen, onClose, filters, onFilterChange, hideVideosFilter, isPlaylistMode, isLibraryMode, isPlaylistView }) {
   if (!isOpen) return null;
 
   const filterOptions = {
@@ -196,8 +196,8 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
                 </button>
               ))}
 
-              {/* Visibility options - Only in library mode */}
-              {isLibraryMode && (
+              {/* Visibility options - Only in library mode, not in playlist view */}
+              {isLibraryMode && !isPlaylistView && (
                 <>
                   <div className="h-2"></div>
                   <button
