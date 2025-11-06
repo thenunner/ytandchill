@@ -840,11 +840,20 @@ export default function Library() {
                 return (
                   <div
                     key={playlist.id}
-                    className={`flex items-center transition-colors ${
-                      isSelected ? 'ring-2 ring-accent/60 rounded-lg' : ''
-                    } ${editMode ? 'hover:ring-2 hover:ring-accent/50 rounded-lg' : ''}`}
+                    className={`card flex items-center gap-3 p-0 w-full cursor-pointer transition-colors ${
+                      isSelected ? 'ring-2 ring-accent/60' : ''
+                    } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
+                    onClick={(e) => {
+                      if (editMode) {
+                        togglePlaylistSelection(playlist.id);
+                      } else if (!e.target.closest('button')) {
+                        navigate(`/playlist/${playlist.id}`, {
+                          state: { from: '/library?tab=playlists' }
+                        });
+                      }
+                    }}
                   >
-                    {/* 3-Dot Menu Button - Left of card (only when NOT in edit mode) */}
+                    {/* 3-Dot Menu Button - Left of thumbnail (only when NOT in edit mode) */}
                     {!editMode && (
                       <div className="flex-shrink-0 pl-3">
                         <button
@@ -894,23 +903,8 @@ export default function Library() {
                       </div>
                     )}
 
-                    {/* Card Container */}
-                    <div
-                      className={`card flex items-center gap-4 cursor-pointer transition-all duration-200 ease-in-out flex-1 ${
-                        editMode ? '' : 'group'
-                      }`}
-                      onClick={(e) => {
-                        if (editMode) {
-                          togglePlaylistSelection(playlist.id);
-                        } else if (!e.target.closest('button')) {
-                          navigate(`/playlist/${playlist.id}`, {
-                            state: { from: '/library?tab=playlists' }
-                          });
-                        }
-                      }}
-                    >
-                      {/* Thumbnail */}
-                      <div className={`relative w-32 h-20 bg-dark-tertiary rounded-lg overflow-hidden flex-shrink-0 ${editMode ? 'ml-3' : ''}`}>
+                    {/* Thumbnail */}
+                    <div className={`relative w-32 h-20 bg-dark-tertiary rounded-lg overflow-hidden flex-shrink-0 ${editMode ? 'ml-3' : ''}`}>
                       {playlist.thumbnail ? (
                         <img
                           src={playlist.thumbnail}
@@ -953,7 +947,6 @@ export default function Library() {
                           </>
                         )}
                       </div>
-                    </div>
                     </div>
                   </div>
                 );
