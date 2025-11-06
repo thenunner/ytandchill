@@ -214,7 +214,7 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
                       filters.hidePlaylisted ? 'active' : ''
                     }`}
                   >
-                    <span>Hide playlisted</span>
+                    <span>Hide in playlist</span>
                   </button>
                 </>
               )}
