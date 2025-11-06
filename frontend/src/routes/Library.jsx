@@ -712,7 +712,7 @@ export default function Library() {
 
       {/* Playlists Tab */}
       {activeTab === 'playlists' && (
-        <>
+        <div key={`playlists-${playlistViewMode}`}>
           {filteredPlaylists.length > 0 ? (
             playlistViewMode === 'grid' ? (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
@@ -975,7 +975,7 @@ export default function Library() {
               <p className="text-sm mt-2">{searchInput ? 'Try a different search term' : 'Create playlists to organize your videos'}</p>
             </div>
           )}
-        </>
+        </div>
       )}
     </div>
   );
