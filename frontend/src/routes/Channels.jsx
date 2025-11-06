@@ -659,20 +659,18 @@ export default function Channels() {
           ))}
         </div>
       ) : (
-        <div className="overflow-x-auto -mx-4 px-4">
-          <div className="flex flex-col gap-2 items-start min-w-[800px]">
-            {filteredAndSortedChannels.map(channel => {
-              const isMenuOpen = menuOpen === channel.id;
-              return (
-                <div
-                  key={channel.id}
-                  className="card flex items-center gap-3 p-0 w-full transition-colors group"
-                >
+        <div className="flex flex-col gap-2">
+          {filteredAndSortedChannels.map(channel => {
+            const isMenuOpen = menuOpen === channel.id;
+            return (
+              <div
+                key={channel.id}
+                className="card flex items-center gap-3 p-0 w-full transition-colors group"
+              >
                   {/* 3-Dot Menu Button - Left of thumbnail */}
                   <div className="flex-shrink-0 pl-3">
                     <button
                       onClick={(e) => {
-                        e.preventDefault();
                         e.stopPropagation();
                         setMenuOpen(isMenuOpen ? null : channel.id);
                       }}
@@ -740,8 +738,8 @@ export default function Channels() {
                   to={`/channel/${channel.id}`}
                   className="flex items-center gap-4 flex-1 py-2 pr-3"
                 >
-                  {/* Thumbnail */}
-                  <div className="relative w-[200px] h-[80px] flex-shrink-0 bg-dark-tertiary rounded-lg overflow-hidden">
+                  {/* Thumbnail - Hidden on mobile */}
+                  <div className="relative w-[200px] h-[80px] flex-shrink-0 bg-dark-tertiary rounded-lg overflow-hidden hidden md:block">
                     {channel.thumbnail ? (
                       <img
                         src={channel.thumbnail}
@@ -804,7 +802,6 @@ export default function Channels() {
             );
           })}
         </div>
-      </div>
       )}
 
       {filteredAndSortedChannels.length === 0 && (
