@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useVideos, useChannels, useAddToQueue, useBulkUpdateVideos, usePlaylists, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
+import { useVideos, useChannels, useAddToQueue, useBulkUpdateVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
@@ -13,7 +13,6 @@ export default function ChannelLibrary() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: channels } = useChannels();
-  const { data: playlists } = usePlaylists();
   const { data: queueData } = useQueue();
   const addToQueue = useAddToQueue();
   const bulkUpdate = useBulkUpdateVideos();
@@ -511,15 +510,9 @@ export default function ChannelLibrary() {
                 </button>
                 <button
                   onClick={() => {
-                    const newParams = new URLSearchParams(searchParams);
-                    newParams.set('filter', 'playlists');
-                    setSearchParams(newParams);
+                    navigate('/library?tab=playlists');
                   }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    contentFilter === 'playlists'
-                      ? 'bg-dark-tertiary text-white border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
-                  }`}
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white"
                 >
                   Playlists
                 </button>
@@ -920,85 +913,8 @@ export default function ChannelLibrary() {
         </div>
       )}
 
-      {/* Videos Grid/List or Playlists */}
-      {contentFilter === 'playlists' ? (
-        // Playlists View - show all playlists (not filtered by channel)
-        (() => {
-          const channelPlaylists = (playlists || []).sort((a, b) => {
-            switch (sort) {
-              case 'date-desc':
-                // Newest first
-                return new Date(b.created_at) - new Date(a.created_at);
-              case 'date-asc':
-                // Oldest first
-                return new Date(a.created_at) - new Date(b.created_at);
-              case 'videos-desc':
-                // Most videos first
-                return (b.video_count || 0) - (a.video_count || 0);
-              case 'videos-asc':
-                // Least videos first
-                return (a.video_count || 0) - (b.video_count || 0);
-              case 'title-asc':
-                // A-Z
-                return (a.title || a.name).localeCompare(b.title || b.name);
-              case 'title-desc':
-                // Z-A
-                return (b.title || b.name).localeCompare(a.title || a.name);
-              default:
-                return 0;
-            }
-          });
-          return channelPlaylists.length === 0 ? (
-            <div className="text-center py-20 text-text-secondary">
-              <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
-                <circle cx="18" cy="16" r="3" />
-              </svg>
-              <p className="text-lg font-medium">No playlists yet</p>
-              <p className="text-sm mt-2">Create playlists to organize your videos</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-              {channelPlaylists.map(playlist => (
-                <Link
-                  key={playlist.id}
-                  to={`/playlist/${playlist.id}`}
-                  state={{ from: location.pathname + location.search }}
-                  className="card group transition-colors"
-                >
-                  {/* Playlist thumbnail */}
-                  <div className="relative aspect-video bg-dark-tertiary rounded-t-xl overflow-hidden">
-                    {playlist.thumbnail ? (
-                      <img
-                        src={playlist.thumbnail}
-                        alt={playlist.title || playlist.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <svg className="w-10 h-10 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                        </svg>
-                      </div>
-                    )}
-                  </div>
-                  {/* Playlist info */}
-                  <div className="p-3 flex items-center justify-between gap-2">
-                    <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors truncate" title={playlist.title || playlist.name}>
-                      {playlist.title || playlist.name}
-                    </h3>
-                    <span className="text-xs text-text-secondary whitespace-nowrap flex-shrink-0">
-                      {playlist.video_count || 0} videos
-                    </span>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          );
-        })()
-      ) : (
-        // Videos View
-        sortedVideos.length === 0 ? (
+      {/* Videos Grid/List */}
+      {sortedVideos.length === 0 ? (
           <div className="text-center py-20 text-text-secondary">
             <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
@@ -1041,8 +957,7 @@ export default function ChannelLibrary() {
               />
             ))}
           </div>
-        )
-      )}
+        )}
 
       {/* Filters Modal */}
       <FiltersModal
