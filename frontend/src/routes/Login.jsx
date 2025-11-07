@@ -39,9 +39,8 @@ function Login() {
         return;
       }
 
-      // Redirect to main page
-      navigate('/');
-      window.location.reload(); // Reload to update auth state
+      // Redirect to main page - force full page reload to reset all state
+      window.location.href = '/';
     } catch (err) {
       setError('Failed to connect to server');
       setIsLoading(false);
