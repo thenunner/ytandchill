@@ -23,18 +23,10 @@ function App() {
   const [isFirstRun, setIsFirstRun] = useState(null); // null = checking, true = first run, false = not first run
   const [isAuthenticated, setIsAuthenticated] = useState(null); // null = checking, true = logged in, false = not logged in
 
-  // Check authentication and first run status
+  // Check authentication and first run status on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check if user just logged in (prevents redirect loop)
-        if (sessionStorage.getItem('just_logged_in') === 'true') {
-          sessionStorage.removeItem('just_logged_in');
-          setIsAuthenticated(true);
-          setIsFirstRun(false);
-          return;
-        }
-
         // Check first run
         const firstRunRes = await fetch('/api/auth/check-first-run', { credentials: 'include' });
         if (!firstRunRes.ok) {
@@ -44,48 +36,29 @@ function App() {
         setIsFirstRun(firstRunData.first_run);
 
         if (firstRunData.first_run) {
-          // If first run, go to setup
-          if (location.pathname !== '/setup') {
-            navigate('/setup');
-          }
+          setIsAuthenticated(false); // First run, not authenticated yet
           return;
         }
 
         // Check authentication
         const authRes = await fetch('/api/auth/check', { credentials: 'include' });
         if (!authRes.ok) {
-          // Got a response but not authenticated - redirect to login
+          // Got a response but not authenticated
           setIsAuthenticated(false);
-          if (location.pathname !== '/login' && location.pathname !== '/setup') {
-            navigate('/login');
-          }
           return;
         }
 
         const authData = await authRes.json();
         setIsAuthenticated(authData.authenticated);
-
-        if (!authData.authenticated && location.pathname !== '/login' && location.pathname !== '/setup') {
-          navigate('/login');
-        }
       } catch (err) {
         console.error('Error checking auth:', err);
-        // Network error - assume authenticated if already on a protected page
-        // This prevents redirect loops on network errors
-        if (location.pathname === '/' || location.pathname === '/login') {
-          setIsAuthenticated(false);
-          if (location.pathname === '/') {
-            navigate('/login');
-          }
-        } else {
-          // On protected pages, assume authenticated on network error
-          setIsAuthenticated(true);
-        }
+        // On error, assume not authenticated
+        setIsAuthenticated(false);
       }
     };
 
     checkAuth();
-  }, [location.pathname, navigate]);
+  }, []);
 
   // Handle new queue structure
   const queue = queueData?.queue_items || queueData || [];
@@ -157,6 +130,20 @@ function App() {
       iconOnly: true
     },
   ];
+
+  // Show loading screen while checking auth
+  if (isAuthenticated === null || isFirstRun === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-dark-primary">
+        <div className="text-text-secondary">Loading...</div>
+      </div>
+    );
+  }
+
+  // Redirect to setup if first run
+  if (isFirstRun && location.pathname !== '/setup') {
+    return <Navigate to="/setup" replace />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-dark-primary">

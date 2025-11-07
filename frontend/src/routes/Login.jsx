@@ -39,10 +39,7 @@ function Login() {
         return;
       }
 
-      // Set flag so App.jsx knows we just logged in
-      sessionStorage.setItem('just_logged_in', 'true');
-
-      // Force full page reload to trigger auth check (same as manual navigation + refresh)
+      // Redirect to home - full page reload to trigger auth check
       window.location.replace('/');
     } catch (err) {
       setError('Failed to connect to server');
