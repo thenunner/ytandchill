@@ -151,7 +151,7 @@ export default function Settings() {
 
   return (
     <>
-    <div className="max-w-2xl space-y-4 animate-fade-in">
+    <div className="max-w-xl space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
@@ -408,27 +408,27 @@ export default function Settings() {
           </div>
 
           {/* Right column - Stats */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-shrink-0">
             <div className="space-y-2 text-sm">
               <h3 className="text-sm font-semibold text-text-primary">Stats</h3>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary">Videos to Review</span>
+                <span className="text-text-secondary w-40">Videos to Review</span>
                 <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary">Videos Ignored</span>
+                <span className="text-text-secondary w-40">Videos Ignored</span>
                 <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary">Videos in Library</span>
+                <span className="text-text-secondary w-40">Videos in Library</span>
                 <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary">Total Channels</span>
+                <span className="text-text-secondary w-40">Total Channels</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary">Total Storage</span>
+                <span className="text-text-secondary w-40">Total Storage</span>
                 <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
               </div>
             </div>
@@ -440,7 +440,7 @@ export default function Settings() {
           <div className="flex flex-col gap-2">
             {/* Row 1: Slider + Level labels */}
             <div
-              className="w-full"
+              className="max-w-md"
               title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
             >
               <input
