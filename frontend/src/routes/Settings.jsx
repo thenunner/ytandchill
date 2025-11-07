@@ -151,7 +151,7 @@ export default function Settings() {
 
   return (
     <>
-    <div className="max-w-xl space-y-4 animate-fade-in">
+    <div className="max-w-2xl space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
@@ -411,23 +411,23 @@ export default function Settings() {
           <div className="flex-1 flex flex-col">
             <div className="space-y-2 text-sm">
               <h3 className="text-sm font-semibold text-text-primary">Stats</h3>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <span className="text-text-secondary">Videos to Review</span>
                 <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <span className="text-text-secondary">Videos Ignored</span>
                 <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <span className="text-text-secondary">Videos in Library</span>
                 <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <span className="text-text-secondary">Total Channels</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
                 <span className="text-text-secondary">Total Storage</span>
                 <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
               </div>
@@ -437,24 +437,10 @@ export default function Settings() {
 
         {/* Logging Level */}
         <div className="pt-2 border-t border-dark-border mt-2">
-          {/* Desktop layout: horizontal row */}
-          {/* Mobile layout: stacked with label/button on top, slider below */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-            {/* Left section: Label and View Logs button (side by side on mobile, label only on desktop) */}
-            <div className="flex items-center justify-between md:justify-start gap-2">
-              <span className="text-sm text-text-secondary">Logging level</span>
-              {/* View Log Button - shows on mobile in this row, hidden on desktop */}
-              <button
-                onClick={toggleLogs}
-                className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold md:hidden"
-              >
-                {showLogs ? 'Hide Logs' : 'View Logs'}
-              </button>
-            </div>
-
-            {/* Middle section: Slider with labels */}
+          <div className="flex flex-col gap-2">
+            {/* Row 1: Slider + Level labels */}
             <div
-              className="flex flex-col gap-1 flex-1 md:max-w-sm"
+              className="w-full"
               title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
             >
               <input
@@ -464,12 +450,11 @@ export default function Settings() {
                 value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
                 onChange={(e) => {
                   setLogLevel(['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)]);
-                  // Auto-save after a short delay to allow state to update
                   setTimeout(() => handleSave(), 100);
                 }}
                 className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
-              <div className="flex justify-between text-xs font-mono">
+              <div className="flex justify-between text-xs font-mono mt-1">
                 <span className={logLevel === 'DEBUG' ? 'text-green-500 font-bold' : 'text-white'}>DEBUG</span>
                 <span className={logLevel === 'INFO' ? 'text-green-500 font-bold' : 'text-white'}>INFO</span>
                 <span className={logLevel === 'API' ? 'text-green-500 font-bold' : 'text-white'}>API</span>
@@ -478,13 +463,16 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Right section: View Log Button - shows on desktop only */}
-            <button
-              onClick={toggleLogs}
-              className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold hidden md:block"
-            >
-              {showLogs ? 'Hide Logs' : 'View Logs'}
-            </button>
+            {/* Row 2: "Logging level" text + View Logs button */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-text-secondary">Logging level</span>
+              <button
+                onClick={toggleLogs}
+                className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+              >
+                {showLogs ? 'Hide Logs' : 'View Logs'}
+              </button>
+            </div>
           </div>
         </div>
       </div>
