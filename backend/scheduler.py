@@ -56,13 +56,9 @@ class AutoRefreshScheduler:
         """Update yt-dlp to the latest version"""
         try:
             print("Updating yt-dlp...")
-            # Get the path to pip in the virtual environment
-            venv_path = os.path.dirname(os.path.dirname(__file__))
-            pip_path = os.path.join(venv_path, 'venv', 'Scripts', 'pip.exe')
-
-            # Run pip upgrade
+            # Run pip upgrade using the current environment's pip
             result = subprocess.run(
-                [pip_path, 'install', '--upgrade', 'yt-dlp'],
+                ['pip', 'install', '--upgrade', 'yt-dlp'],
                 capture_output=True,
                 text=True,
                 timeout=300  # 5 minute timeout
