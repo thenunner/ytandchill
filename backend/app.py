@@ -242,12 +242,17 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
 # Note: Using a custom handler to allow credentials with dynamic origins
 @app.after_request
 def after_request(response):
+    # Set CORS headers
     origin = request.headers.get('Origin')
     if origin:
         response.headers['Access-Control-Allow-Origin'] = origin
         response.headers['Access-Control-Allow-Credentials'] = 'true'
         response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, DELETE, OPTIONS'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+
+    # Log the request
+    logger.api(f'{request.method} {request.path} - {response.status_code}')
+
     return response
 
 # FORCE DEBUG MODE OFF - Multiple layers of protection
@@ -258,12 +263,6 @@ app.config['ENV'] = 'production'
 
 # Disable werkzeug's default request logging - we'll handle it ourselves
 logging.getLogger('werkzeug').setLevel(logging.ERROR)  # Only log errors from werkzeug
-
-# Custom request logger at API level
-@app.after_request
-def log_request(response):
-    logger.api(f'{request.method} {request.path} - {response.status_code}')
-    return response
 
 # Initialize database
 engine, Session = init_db()
