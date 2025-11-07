@@ -39,7 +39,10 @@ function Login() {
         return;
       }
 
-      // Redirect to main page - force full page reload to reset all state
+      // Set flag so App.jsx knows we just logged in
+      sessionStorage.setItem('just_logged_in', 'true');
+
+      // Redirect to home page
       window.location.href = '/';
     } catch (err) {
       setError('Failed to connect to server');

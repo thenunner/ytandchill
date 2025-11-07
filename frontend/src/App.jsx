@@ -27,6 +27,14 @@ function App() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Check if user just logged in (prevents redirect loop)
+        if (sessionStorage.getItem('just_logged_in') === 'true') {
+          sessionStorage.removeItem('just_logged_in');
+          setIsAuthenticated(true);
+          setIsFirstRun(false);
+          return;
+        }
+
         // Check first run
         const firstRunRes = await fetch('/api/auth/check-first-run', { credentials: 'include' });
         if (!firstRunRes.ok) {
