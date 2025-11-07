@@ -300,6 +300,14 @@ def is_authenticated():
     """Check if user is logged in via session"""
     return session.get('authenticated', False)
 
+# Handle OPTIONS preflight requests for CORS
+@app.before_request
+def handle_preflight():
+    """Handle CORS preflight OPTIONS requests"""
+    if request.method == 'OPTIONS':
+        response = app.make_default_options_response()
+        return response
+
 # Authentication check before each request
 @app.before_request
 def require_authentication():
