@@ -151,7 +151,7 @@ export default function Settings() {
 
   return (
     <>
-    <div className="max-w-md space-y-4 animate-fade-in">
+    <div className="max-w-lg space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
