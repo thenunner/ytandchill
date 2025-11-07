@@ -151,7 +151,7 @@ export default function Settings() {
 
   return (
     <>
-    <div className="max-w-xl space-y-4 animate-fade-in">
+    <div className="max-w-md space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
@@ -440,7 +440,7 @@ export default function Settings() {
           <div className="flex flex-col gap-2">
             {/* Row 1: Slider + Level labels */}
             <div
-              className="max-w-md"
+              className="max-w-sm"
               title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
             >
               <input
@@ -464,7 +464,7 @@ export default function Settings() {
             </div>
 
             {/* Row 2: "Logging level" text + View Logs button */}
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between max-w-sm">
               <span className="text-sm text-text-secondary">Logging level</span>
               <button
                 onClick={toggleLogs}
