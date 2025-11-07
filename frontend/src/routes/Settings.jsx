@@ -157,10 +157,8 @@ export default function Settings() {
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
       </div>
 
-      {/* API Key and Password Change - Side by Side */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* API Key Card */}
-        <div className="card p-4">
+      {/* YouTube Data API Key */}
+      <div className="card p-4">
           <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
@@ -187,7 +185,7 @@ export default function Settings() {
           </p>
           <button
             onClick={handleSave}
-            className="btn bg-gray-700 hover:bg-gray-600 text-white font-bold mt-3 w-full"
+            className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold mt-3 w-full"
           >
             Save API Key
           </button>
@@ -206,7 +204,7 @@ export default function Settings() {
         {!showPasswordChange ? (
           <button
             onClick={() => setShowPasswordChange(true)}
-            className="btn bg-gray-700 hover:bg-gray-600 text-white font-bold"
+            className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold"
           >
             Reset User
           </button>
@@ -294,7 +292,6 @@ export default function Settings() {
           </form>
         )}
         </div>
-      </div>
 
       {/* Auto-Scan Card */}
       <div className="card p-4">
@@ -457,7 +454,7 @@ export default function Settings() {
 
             {/* Middle section: Slider with labels */}
             <div
-              className="flex flex-col gap-1 flex-1 md:max-w-md"
+              className="flex flex-col gap-1 flex-1 md:max-w-sm"
               title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
             >
               <input
