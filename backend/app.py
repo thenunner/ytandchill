@@ -306,6 +306,7 @@ def require_authentication():
         first_run_setting = session.query(Setting).filter_by(key='first_run').first()
         if first_run_setting and first_run_setting.value == 'true':
             # Allow unauthenticated access during first run to show setup page
+            # This includes root path and API endpoints so React app can load
             return None
     finally:
         session.close()

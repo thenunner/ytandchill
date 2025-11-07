@@ -69,32 +69,27 @@ function Setup() {
 
   return (
     <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      maxWidth: '450px',
+      margin: '40px auto',
       padding: '20px'
     }}>
       <div style={{
         background: 'white',
-        borderRadius: '12px',
-        padding: '40px',
-        maxWidth: '450px',
-        width: '100%',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+        borderRadius: '8px',
+        padding: '30px',
+        border: '1px solid #ddd'
       }}>
-        <div style={{ textAlign: 'center', marginBottom: '30px' }}>
+        <div style={{ marginBottom: '24px' }}>
           <h1 style={{
-            fontSize: '28px',
+            fontSize: '24px',
             fontWeight: 'bold',
             color: '#333',
             marginBottom: '8px'
           }}>
-            Welcome to YT and Chill
+            Setup Login Credentials
           </h1>
           <p style={{ color: '#666', fontSize: '14px' }}>
-            Set up your login credentials
+            Create your username and password
           </p>
         </div>
 
@@ -200,31 +195,19 @@ function Setup() {
             disabled={isLoading}
             style={{
               width: '100%',
-              padding: '14px',
-              background: isLoading ? '#999' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              padding: '12px',
+              background: isLoading ? '#999' : '#dc2626',
               color: 'white',
               border: 'none',
               borderRadius: '6px',
-              fontSize: '16px',
+              fontSize: '14px',
               fontWeight: '600',
-              cursor: isLoading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s ease'
+              cursor: isLoading ? 'not-allowed' : 'pointer'
             }}
           >
             {isLoading ? 'Saving...' : 'Complete Setup'}
           </button>
         </form>
-
-        <div style={{
-          marginTop: '24px',
-          padding: '16px',
-          background: '#f8f9fa',
-          borderRadius: '6px',
-          fontSize: '13px',
-          color: '#666'
-        }}>
-          <strong style={{ color: '#333' }}>Note:</strong> After setup, you'll be prompted to log in with these credentials every time you access the application.
-        </div>
       </div>
     </div>
   );
