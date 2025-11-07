@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, send_from_directory, send_file, Response, session
-from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import secrets
@@ -239,7 +238,17 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
 
-CORS(app, origins='*', supports_credentials=True)
+# CORS configuration - allow credentials from any origin
+# Note: Using a custom handler to allow credentials with dynamic origins
+@app.after_request
+def after_request(response):
+    origin = request.headers.get('Origin')
+    if origin:
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+    return response
 
 # FORCE DEBUG MODE OFF - Multiple layers of protection
 app.debug = False
