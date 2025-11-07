@@ -1439,7 +1439,9 @@ def check_first_run():
 @app.route('/api/auth/check', methods=['GET'])
 def check_auth():
     """Check if user is authenticated"""
-    return jsonify({'authenticated': is_authenticated()})
+    is_auth = is_authenticated()
+    logger.info(f"Auth check - Session authenticated: {is_auth}, Session data: {dict(session)}")
+    return jsonify({'authenticated': is_auth})
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():

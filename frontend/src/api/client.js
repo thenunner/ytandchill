@@ -5,6 +5,7 @@ class APIClient {
     const url = `${API_BASE}${endpoint}`;
     const config = {
       ...options,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         ...options.headers,
