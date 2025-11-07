@@ -1448,16 +1448,23 @@ def login():
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()
 
+    logger.info(f"Login attempt - Username: {username}")
+
     if not username or not password:
+        logger.warning("Login failed - Missing username or password")
         return jsonify({'error': 'Username and password are required'}), 400
+
+    # Get stored credentials for comparison
+    stored_username, stored_password_hash = get_stored_credentials()
+    logger.info(f"Stored username: {stored_username}, Checking password match...")
 
     if check_auth_credentials(username, password):
         session['authenticated'] = True
         session.permanent = True
-        logger.info(f"User logged in: {username}")
+        logger.info(f"✓ Login successful for user: {username}")
         return jsonify({'success': True, 'message': 'Login successful'})
     else:
-        logger.warning(f"Failed login attempt for user: {username}")
+        logger.warning(f"✗ Login failed - Invalid credentials for user: {username}")
         return jsonify({'error': 'Invalid username or password'}), 401
 
 @app.route('/api/auth/logout', methods=['POST'])
@@ -1508,12 +1515,9 @@ def setup_auth():
 
         db_session.commit()
 
-        # Automatically log the user in after setup
-        session['authenticated'] = True
-        session.permanent = True
-
+        # Don't auto-login - redirect to login page
         logger.info(f"Authentication setup completed for user: {username}")
-        return jsonify({'success': True, 'message': 'Credentials saved successfully'})
+        return jsonify({'success': True, 'message': 'Credentials saved successfully. Please log in.'})
     except Exception as e:
         db_session.rollback()
         logger.error(f"Error during auth setup: {str(e)}")

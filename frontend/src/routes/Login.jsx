@@ -39,7 +39,7 @@ function Login() {
         return;
       }
 
-      showNotification('Login successful!', 'success');
+      // Redirect to main page
       navigate('/');
       window.location.reload(); // Reload to update auth state
     } catch (err) {
@@ -99,7 +99,7 @@ function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn bg-accent hover:bg-accent-hover text-white font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn bg-red-700 hover:bg-red-800 text-white font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>

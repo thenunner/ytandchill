@@ -127,7 +127,7 @@ export default function Settings() {
         return;
       }
 
-      showNotification('Credentials changed successfully! Please log in again with your new credentials.', 'success');
+      showNotification('Credentials changed successfully!', 'success');
 
       // Clear form
       setCurrentPassword('');
@@ -135,11 +135,6 @@ export default function Settings() {
       setNewPassword('');
       setConfirmNewPassword('');
       setShowPasswordChange(false);
-
-      // Wait a moment then reload to trigger re-authentication
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
     } catch (err) {
       setPasswordError('Failed to connect to server');
       setIsChangingPassword(false);

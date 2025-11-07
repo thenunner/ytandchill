@@ -55,13 +55,12 @@ function Setup() {
         return;
       }
 
-      showNotification('Setup complete! Redirecting...', 'success');
+      showNotification('Credentials saved! Please log in.', 'success');
 
-      // Redirect to main page (user is now logged in automatically)
+      // Redirect to login page
       setTimeout(() => {
-        navigate('/');
-        window.location.reload();
-      }, 1000);
+        navigate('/login');
+      }, 1500);
     } catch (err) {
       setError('Failed to connect to server');
       setIsLoading(false);
@@ -133,7 +132,7 @@ function Setup() {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn bg-accent hover:bg-accent-hover text-white font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn bg-red-700 hover:bg-red-800 text-white font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Saving...' : 'Complete Setup'}
           </button>
