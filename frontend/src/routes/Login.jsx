@@ -42,8 +42,8 @@ function Login() {
       // Set flag so App.jsx knows we just logged in
       sessionStorage.setItem('just_logged_in', 'true');
 
-      // Use React Router navigate instead of window.location
-      navigate('/', { replace: true });
+      // Force full page reload to trigger auth check (same as manual navigation + refresh)
+      window.location.replace('/');
     } catch (err) {
       setError('Failed to connect to server');
       setIsLoading(false);
