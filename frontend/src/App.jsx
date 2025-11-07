@@ -10,6 +10,7 @@ import Queue from './routes/Queue';
 import Settings from './routes/Settings';
 import Player from './routes/Player';
 import Setup from './routes/Setup';
+import Login from './routes/Login';
 
 function App() {
   const location = useLocation();
@@ -20,21 +21,43 @@ function App() {
   const { notification } = useNotification();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
   const [isFirstRun, setIsFirstRun] = useState(null); // null = checking, true = first run, false = not first run
+  const [isAuthenticated, setIsAuthenticated] = useState(null); // null = checking, true = logged in, false = not logged in
 
-  // Check if this is first run
+  // Check authentication and first run status
   useEffect(() => {
-    fetch('/api/auth/check-first-run')
-      .then(res => res.json())
-      .then(data => {
-        setIsFirstRun(data.first_run);
-        if (data.first_run && location.pathname !== '/setup') {
-          navigate('/setup');
+    const checkAuth = async () => {
+      try {
+        // Check first run
+        const firstRunRes = await fetch('/api/auth/check-first-run', { credentials: 'include' });
+        const firstRunData = await firstRunRes.json();
+        setIsFirstRun(firstRunData.first_run);
+
+        if (firstRunData.first_run) {
+          // If first run, go to setup
+          if (location.pathname !== '/setup') {
+            navigate('/setup');
+          }
+          return;
         }
-      })
-      .catch(err => {
-        console.error('Error checking first run:', err);
-        setIsFirstRun(false);
-      });
+
+        // Check authentication
+        const authRes = await fetch('/api/auth/check', { credentials: 'include' });
+        const authData = await authRes.json();
+        setIsAuthenticated(authData.authenticated);
+
+        if (!authData.authenticated && location.pathname !== '/login') {
+          navigate('/login');
+        }
+      } catch (err) {
+        console.error('Error checking auth:', err);
+        setIsAuthenticated(false);
+        if (location.pathname !== '/login') {
+          navigate('/login');
+        }
+      }
+    };
+
+    checkAuth();
   }, [location.pathname, navigate]);
 
   // Handle new queue structure
@@ -338,7 +361,8 @@ function App() {
       <main className="flex-1 w-full px-4 py-6 max-w-[1600px]">
         <Routes>
           <Route path="/setup" element={<Setup />} />
-          <Route path="/" element={isFirstRun ? <Navigate to="/setup" replace /> : <Channels />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
           <Route path="/library" element={<Library />} />
           <Route path="/channel/:channelId" element={<ChannelLibrary />} />
           <Route path="/channel/:channelId/library" element={<ChannelLibrary />} />

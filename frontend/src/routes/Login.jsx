@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 
-function Setup() {
+function Login() {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,53 +14,34 @@ function Setup() {
     e.preventDefault();
     setError('');
 
-    // Validation
-    if (!username || !password || !confirmPassword) {
-      setError('All fields are required');
-      return;
-    }
-
-    if (username.length < 3) {
-      setError('Username must be at least 3 characters');
-      return;
-    }
-
-    if (password.length < 3) {
-      setError('Password must be at least 3 characters');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
+    if (!username || !password) {
+      setError('Username and password are required');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/setup', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ username, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Failed to save credentials');
+        setError(data.error || 'Login failed');
         setIsLoading(false);
         return;
       }
 
-      showNotification('Setup complete! Redirecting...', 'success');
-
-      // Redirect to main page (user is now logged in automatically)
-      setTimeout(() => {
-        navigate('/');
-        window.location.reload();
-      }, 1000);
+      showNotification('Login successful!', 'success');
+      navigate('/');
+      window.location.reload(); // Reload to update auth state
     } catch (err) {
       setError('Failed to connect to server');
       setIsLoading(false);
@@ -73,10 +53,10 @@ function Setup() {
       <div className="card p-8 max-w-md w-full">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-text-primary mb-2">
-            Setup Login Credentials
+            Login
           </h1>
           <p className="text-text-secondary text-sm">
-            Create your username and password
+            Enter your credentials to continue
           </p>
         </div>
 
@@ -89,7 +69,7 @@ function Setup() {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder="Choose a username"
+              placeholder="Enter your username"
               className="input w-full py-2 px-3"
               disabled={isLoading}
               autoFocus
@@ -104,21 +84,7 @@ function Setup() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Choose a password"
-              className="input w-full py-2 px-3"
-              disabled={isLoading}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
+              placeholder="Enter your password"
               className="input w-full py-2 px-3"
               disabled={isLoading}
             />
@@ -135,7 +101,7 @@ function Setup() {
             disabled={isLoading}
             className="btn bg-accent hover:bg-accent-hover text-white font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? 'Saving...' : 'Complete Setup'}
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>
@@ -143,4 +109,4 @@ function Setup() {
   );
 }
 
-export default Setup;
+export default Login;

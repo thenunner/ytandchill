@@ -1,7 +1,8 @@
-from flask import Flask, request, jsonify, send_from_directory, send_file, Response
+from flask import Flask, request, jsonify, send_from_directory, send_file, Response, session
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+import secrets
 from datetime import datetime, timezone
 import os
 import yt_dlp
@@ -231,6 +232,13 @@ def scan_channel_videos(youtube, channel_id, max_results=50):
 # In Docker: /app/dist, In local dev: ../frontend/dist
 static_folder = 'dist' if os.path.exists('dist') else '../frontend/dist'
 app = Flask(__name__, static_folder=static_folder)
+
+# Session configuration
+app.config['SECRET_KEY'] = secrets.token_hex(32)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
+
 CORS(app, origins='*', supports_credentials=True)
 
 # FORCE DEBUG MODE OFF - Multiple layers of protection
@@ -280,19 +288,15 @@ def check_auth_credentials(username, password):
     stored_username, stored_password_hash = get_stored_credentials()
     return username == stored_username and check_password_hash(stored_password_hash, password)
 
-def authenticate():
-    """Send 401 response that enables HTTP Basic Auth"""
-    return Response(
-        'Authentication required. Please log in.',
-        401,
-        {'WWW-Authenticate': 'Basic realm="YT and Chill - Login Required"'}
-    )
+def is_authenticated():
+    """Check if user is logged in via session"""
+    return session.get('authenticated', False)
 
 # Authentication check before each request
 @app.before_request
 def require_authentication():
-    """Require HTTP Basic Auth for all requests except setup endpoints"""
-    # Allow setup endpoint without auth (for first-run setup)
+    """Require session-based authentication for all requests except auth/setup endpoints"""
+    # Allow auth endpoints without authentication
     if request.path.startswith('/api/auth/'):
         return None
 
@@ -300,21 +304,13 @@ def require_authentication():
     if request.path.startswith('/assets/'):
         return None
 
-    # Check if this is first run - if so, allow access to show setup page
-    session = session_factory()
-    try:
-        first_run_setting = session.query(Setting).filter_by(key='first_run').first()
-        if first_run_setting and first_run_setting.value == 'true':
-            # Allow unauthenticated access during first run to show setup page
-            # This includes root path and API endpoints so React app can load
-            return None
-    finally:
-        session.close()
+    # Allow root path for React app
+    if request.path == '/' or not request.path.startswith('/api/'):
+        return None
 
-    # Require authentication for all other requests
-    auth = request.authorization
-    if not auth or not check_auth_credentials(auth.username, auth.password):
-        return authenticate()
+    # Check if user is authenticated
+    if not is_authenticated():
+        return jsonify({'error': 'Authentication required'}), 401
 
 # Initialize download worker
 download_worker = DownloadWorker(session_factory, download_dir='downloads')
@@ -1432,13 +1428,43 @@ def update_settings():
 @app.route('/api/auth/check-first-run', methods=['GET'])
 def check_first_run():
     """Check if this is the first run (setup needed)"""
-    session = get_db()
+    db_session = get_db()
     try:
-        first_run_setting = session.query(Setting).filter_by(key='first_run').first()
+        first_run_setting = db_session.query(Setting).filter_by(key='first_run').first()
         is_first_run = first_run_setting and first_run_setting.value == 'true'
         return jsonify({'first_run': is_first_run})
     finally:
-        session.close()
+        db_session.close()
+
+@app.route('/api/auth/check', methods=['GET'])
+def check_auth():
+    """Check if user is authenticated"""
+    return jsonify({'authenticated': is_authenticated()})
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Login with username and password"""
+    data = request.json
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
+
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
+
+    if check_auth_credentials(username, password):
+        session['authenticated'] = True
+        session.permanent = True
+        logger.info(f"User logged in: {username}")
+        return jsonify({'success': True, 'message': 'Login successful'})
+    else:
+        logger.warning(f"Failed login attempt for user: {username}")
+        return jsonify({'error': 'Invalid username or password'}), 401
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """Logout current user"""
+    session.clear()
+    return jsonify({'success': True, 'message': 'Logged out successfully'})
 
 @app.route('/api/auth/setup', methods=['POST'])
 def setup_auth():
@@ -1456,39 +1482,44 @@ def setup_auth():
     if len(password) < 3:
         return jsonify({'error': 'Password must be at least 3 characters'}), 400
 
-    session = get_db()
+    db_session = get_db()
     try:
         # Update username
-        username_setting = session.query(Setting).filter_by(key='auth_username').first()
+        username_setting = db_session.query(Setting).filter_by(key='auth_username').first()
         if username_setting:
             username_setting.value = username
         else:
-            session.add(Setting(key='auth_username', value=username))
+            db_session.add(Setting(key='auth_username', value=username))
 
         # Update password hash
         password_hash = generate_password_hash(password)
-        password_setting = session.query(Setting).filter_by(key='auth_password_hash').first()
+        password_setting = db_session.query(Setting).filter_by(key='auth_password_hash').first()
         if password_setting:
             password_setting.value = password_hash
         else:
-            session.add(Setting(key='auth_password_hash', value=password_hash))
+            db_session.add(Setting(key='auth_password_hash', value=password_hash))
 
         # Mark first run as complete
-        first_run_setting = session.query(Setting).filter_by(key='first_run').first()
+        first_run_setting = db_session.query(Setting).filter_by(key='first_run').first()
         if first_run_setting:
             first_run_setting.value = 'false'
         else:
-            session.add(Setting(key='first_run', value='false'))
+            db_session.add(Setting(key='first_run', value='false'))
 
-        session.commit()
+        db_session.commit()
+
+        # Automatically log the user in after setup
+        session['authenticated'] = True
+        session.permanent = True
+
         logger.info(f"Authentication setup completed for user: {username}")
         return jsonify({'success': True, 'message': 'Credentials saved successfully'})
     except Exception as e:
-        session.rollback()
+        db_session.rollback()
         logger.error(f"Error during auth setup: {str(e)}")
         return jsonify({'error': 'Failed to save credentials'}), 500
     finally:
-        session.close()
+        db_session.close()
 
 @app.route('/api/auth/change', methods=['POST'])
 def change_auth():
@@ -1515,32 +1546,36 @@ def change_auth():
     if not check_password_hash(stored_password_hash, current_password):
         return jsonify({'error': 'Current password is incorrect'}), 401
 
-    session = get_db()
+    db_session = get_db()
     try:
         # Update username
-        username_setting = session.query(Setting).filter_by(key='auth_username').first()
+        username_setting = db_session.query(Setting).filter_by(key='auth_username').first()
         if username_setting:
             username_setting.value = new_username
         else:
-            session.add(Setting(key='auth_username', value=new_username))
+            db_session.add(Setting(key='auth_username', value=new_username))
 
         # Update password hash
         new_password_hash = generate_password_hash(new_password)
-        password_setting = session.query(Setting).filter_by(key='auth_password_hash').first()
+        password_setting = db_session.query(Setting).filter_by(key='auth_password_hash').first()
         if password_setting:
             password_setting.value = new_password_hash
         else:
-            session.add(Setting(key='auth_password_hash', value=new_password_hash))
+            db_session.add(Setting(key='auth_password_hash', value=new_password_hash))
 
-        session.commit()
+        db_session.commit()
+
+        # Keep user logged in with new credentials
+        session['authenticated'] = True
+
         logger.info(f"Credentials changed for user: {new_username}")
         return jsonify({'success': True, 'message': 'Credentials updated successfully'})
     except Exception as e:
-        session.rollback()
+        db_session.rollback()
         logger.error(f"Error changing credentials: {str(e)}")
         return jsonify({'error': 'Failed to update credentials'}), 500
     finally:
-        session.close()
+        db_session.close()
 
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
