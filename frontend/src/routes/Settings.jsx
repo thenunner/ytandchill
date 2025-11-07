@@ -20,6 +20,15 @@ export default function Settings() {
   const [youtubeApiKey, setYoutubeApiKey] = useState('');
   const [logLevel, setLogLevel] = useState('INFO');
 
+  // Password change state
+  const [showPasswordChange, setShowPasswordChange] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
   // Initialize showLogs from localStorage, default to true (open) if not set
   const [showLogs, setShowLogs] = useState(() => {
     const saved = localStorage.getItem('logsVisible');
@@ -70,6 +79,73 @@ export default function Settings() {
     localStorage.setItem('logsVisible', newValue.toString());
   };
 
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordError('');
+
+    // Validation
+    if (!currentPassword || !newUsername || !newPassword || !confirmNewPassword) {
+      setPasswordError('All fields are required');
+      return;
+    }
+
+    if (newUsername.length < 3) {
+      setPasswordError('Username must be at least 3 characters');
+      return;
+    }
+
+    if (newPassword.length < 3) {
+      setPasswordError('Password must be at least 3 characters');
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('New passwords do not match');
+      return;
+    }
+
+    setIsChangingPassword(true);
+
+    try {
+      const response = await fetch('/api/auth/change', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_username: newUsername,
+          new_password: newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setPasswordError(data.error || 'Failed to change credentials');
+        setIsChangingPassword(false);
+        return;
+      }
+
+      showNotification('Credentials changed successfully! Please log in again with your new credentials.', 'success');
+
+      // Clear form
+      setCurrentPassword('');
+      setNewUsername('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setShowPasswordChange(false);
+
+      // Wait a moment then reload to trigger re-authentication
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (err) {
+      setPasswordError('Failed to connect to server');
+      setIsChangingPassword(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -86,89 +162,23 @@ export default function Settings() {
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
       </div>
 
-      {/* API Key Card */}
-      <div className="card p-4">
-        <div className="space-y-2">
-          <div className="flex items-end gap-3">
-            <div className="flex-1">
-              <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
-                </svg>
-                YouTube Data API Key
-              </h3>
-              <input
-                type="text"
-                value={youtubeApiKey}
-                onChange={(e) => setYoutubeApiKey(e.target.value)}
-                placeholder="Enter your YouTube Data API v3 key..."
-                className="input text-sm py-1.5 px-3 w-full font-mono"
-              />
-            </div>
-            <div>
-              <span className="text-sm text-text-secondary block mb-3">Auto-scan channels daily at</span>
-              <div className="flex items-center gap-2">
-                <select
-                  value={refreshHour}
-                  onChange={(e) => {
-                    setRefreshHour(parseInt(e.target.value));
-                    setTimeout(() => handleSave(), 100);
-                  }}
-                  className="input text-sm font-mono py-1.5 px-2 w-16"
-                >
-                  {Array.from({ length: 24 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {i.toString().padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-                <span className="text-text-primary text-sm font-bold">:</span>
-                <select
-                  value={refreshMinute}
-                  onChange={(e) => {
-                    setRefreshMinute(parseInt(e.target.value));
-                    setTimeout(() => handleSave(), 100);
-                  }}
-                  className="input text-sm font-mono py-1.5 px-2 w-16"
-                >
-                  {Array.from({ length: 60 }, (_, i) => (
-                    <option key={i} value={i}>
-                      {i.toString().padStart(2, '0')}
-                    </option>
-                  ))}
-                </select>
-                {/* ON/OFF Toggle */}
-                <div className="flex border border-dark-border rounded-md overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setAutoRefresh(false);
-                      setTimeout(() => handleSave(), 100);
-                    }}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      !autoRefresh
-                        ? 'bg-green-600 text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    OFF
-                  </button>
-                  <button
-                    onClick={() => {
-                      setAutoRefresh(true);
-                      setTimeout(() => handleSave(), 100);
-                    }}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      autoRefresh
-                        ? 'bg-green-600 text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    ON
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+      {/* API Key and Password Change - Side by Side */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* API Key Card */}
+        <div className="card p-4">
+          <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+            </svg>
+            YouTube Data API Key
+          </h3>
+          <input
+            type="text"
+            value={youtubeApiKey}
+            onChange={(e) => setYoutubeApiKey(e.target.value)}
+            placeholder="Enter your YouTube Data API v3 key..."
+            className="input text-sm py-1.5 px-3 w-full font-mono mb-2"
+          />
           <p className="text-sm text-text-secondary font-medium">
             Required for fast channel scanning. Get your key at{' '}
             <a
@@ -180,6 +190,186 @@ export default function Settings() {
               Google Cloud Console
             </a>
           </p>
+          <button
+            onClick={handleSave}
+            className="btn bg-accent hover:bg-accent-hover text-white font-bold mt-3 w-full"
+          >
+            Save API Key
+          </button>
+        </div>
+
+        {/* Password Change Card */}
+        <div className="card p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Change Username & Password
+        </h3>
+
+        {!showPasswordChange ? (
+          <button
+            onClick={() => setShowPasswordChange(true)}
+            className="btn bg-accent hover:bg-accent-hover text-white font-bold"
+          >
+            Change Credentials
+          </button>
+        ) : (
+          <form onSubmit={handlePasswordChange} className="space-y-3">
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">Current Password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">New Username</label>
+              <input
+                type="text"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder="Enter new username"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">New Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
+            </div>
+
+            {passwordError && (
+              <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
+                {passwordError}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={isChangingPassword}
+                className="btn bg-accent hover:bg-accent-hover text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasswordChange(false);
+                  setPasswordError('');
+                  setCurrentPassword('');
+                  setNewUsername('');
+                  setNewPassword('');
+                  setConfirmNewPassword('');
+                }}
+                className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold"
+                disabled={isChangingPassword}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
+        </div>
+      </div>
+
+      {/* Auto-Scan Card */}
+      <div className="card p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+          Auto-Scan Channels Daily
+        </h3>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-text-secondary">Scan all channels at</span>
+          <select
+            value={refreshHour}
+            onChange={(e) => {
+              setRefreshHour(parseInt(e.target.value));
+              setTimeout(() => handleSave(), 100);
+            }}
+            className="input text-sm font-mono py-1.5 px-2 w-16"
+          >
+            {Array.from({ length: 24 }, (_, i) => (
+              <option key={i} value={i}>
+                {i.toString().padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+          <span className="text-text-primary text-sm font-bold">:</span>
+          <select
+            value={refreshMinute}
+            onChange={(e) => {
+              setRefreshMinute(parseInt(e.target.value));
+              setTimeout(() => handleSave(), 100);
+            }}
+            className="input text-sm font-mono py-1.5 px-2 w-16"
+          >
+            {Array.from({ length: 60 }, (_, i) => (
+              <option key={i} value={i}>
+                {i.toString().padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+          {/* ON/OFF Toggle */}
+          <div className="flex border border-dark-border rounded-md overflow-hidden">
+            <button
+              onClick={() => {
+                setAutoRefresh(false);
+                setTimeout(() => handleSave(), 100);
+              }}
+              className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                !autoRefresh
+                  ? 'bg-green-600 text-white'
+                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+              }`}
+            >
+              OFF
+            </button>
+            <button
+              onClick={() => {
+                setAutoRefresh(true);
+                setTimeout(() => handleSave(), 100);
+              }}
+              className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                autoRefresh
+                  ? 'bg-green-600 text-white'
+                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+              }`}
+            >
+              ON
+            </button>
+          </div>
         </div>
       </div>
 
@@ -220,7 +410,7 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className="text-text-primary font-mono text-xs">v2.0.1</span>
+                <span className="text-text-primary font-mono text-xs">v2.1.0</span>
               </div>
             </div>
           </div>

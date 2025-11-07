@@ -2,6 +2,7 @@ from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime, timezone
+from werkzeug.security import generate_password_hash
 
 Base = declarative_base()
 
@@ -95,6 +96,20 @@ def init_db(database_url='sqlite:///data/youtube_downloader.db'):
     engine = create_engine(database_url, echo=False)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
+
+    # Initialize default settings including auth credentials
+    session = Session()
+    try:
+        # Check if auth settings exist
+        if not session.query(Setting).filter_by(key='auth_username').first():
+            # Set default admin credentials
+            session.add(Setting(key='auth_username', value='admin'))
+            session.add(Setting(key='auth_password_hash', value=generate_password_hash('admin')))
+            session.add(Setting(key='first_run', value='true'))
+            session.commit()
+    finally:
+        session.close()
+
     return engine, Session
 
 def get_session(Session):

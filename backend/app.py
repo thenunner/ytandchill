@@ -1,5 +1,7 @@
-from flask import Flask, request, jsonify, send_from_directory, send_file
+from flask import Flask, request, jsonify, send_from_directory, send_file, Response
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from datetime import datetime, timezone
 import os
 import yt_dlp
@@ -15,6 +17,8 @@ import atexit
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
 from utils import parse_iso8601_duration
+from werkzeug.security import check_password_hash, generate_password_hash, safe_join
+from functools import wraps
 
 # Get logger for this module
 logger = logging.getLogger(__name__)
@@ -227,7 +231,7 @@ def scan_channel_videos(youtube, channel_id, max_results=50):
 # In Docker: /app/dist, In local dev: ../frontend/dist
 static_folder = 'dist' if os.path.exists('dist') else '../frontend/dist'
 app = Flask(__name__, static_folder=static_folder)
-CORS(app)
+CORS(app, origins='*', supports_credentials=True)
 
 # FORCE DEBUG MODE OFF - Multiple layers of protection
 app.debug = False
@@ -247,6 +251,69 @@ def log_request(response):
 # Initialize database
 engine, Session = init_db()
 session_factory = Session
+
+# Initialize rate limiter
+limiter = Limiter(
+    app=app,
+    key_func=get_remote_address,
+    default_limits=["200 per minute"],  # General rate limit for all endpoints
+    storage_uri="memory://"
+)
+
+# Authentication helper functions
+def get_stored_credentials():
+    """Get stored username and password hash from database"""
+    session = session_factory()
+    try:
+        username_setting = session.query(Setting).filter_by(key='auth_username').first()
+        password_setting = session.query(Setting).filter_by(key='auth_password_hash').first()
+
+        username = username_setting.value if username_setting else 'admin'
+        password_hash = password_setting.value if password_setting else generate_password_hash('admin')
+
+        return username, password_hash
+    finally:
+        session.close()
+
+def check_auth_credentials(username, password):
+    """Validate username and password against stored credentials"""
+    stored_username, stored_password_hash = get_stored_credentials()
+    return username == stored_username and check_password_hash(stored_password_hash, password)
+
+def authenticate():
+    """Send 401 response that enables HTTP Basic Auth"""
+    return Response(
+        'Authentication required. Please log in.',
+        401,
+        {'WWW-Authenticate': 'Basic realm="YT and Chill - Login Required"'}
+    )
+
+# Authentication check before each request
+@app.before_request
+def require_authentication():
+    """Require HTTP Basic Auth for all requests except setup endpoints"""
+    # Allow setup endpoint without auth (for first-run setup)
+    if request.path.startswith('/api/auth/'):
+        return None
+
+    # Allow static files without auth (CSS, JS, etc.)
+    if request.path.startswith('/assets/'):
+        return None
+
+    # Check if this is first run - if so, allow access to show setup page
+    session = session_factory()
+    try:
+        first_run_setting = session.query(Setting).filter_by(key='first_run').first()
+        if first_run_setting and first_run_setting.value == 'true':
+            # Allow unauthenticated access during first run to show setup page
+            return None
+    finally:
+        session.close()
+
+    # Require authentication for all other requests
+    auth = request.authorization
+    if not auth or not check_auth_credentials(auth.username, auth.password):
+        return authenticate()
 
 # Initialize download worker
 download_worker = DownloadWorker(session_factory, download_dir='downloads')
@@ -643,11 +710,13 @@ def create_channel():
     except HttpError as api_error:
         session.rollback()
         clear_operation()
-        return jsonify({'error': f'YouTube API error: {api_error}'}), 500
+        logger.error(f'YouTube API error while adding channel: {api_error}', exc_info=True)
+        return jsonify({'error': 'Failed to add channel due to YouTube API error'}), 500
     except Exception as e:
         session.rollback()
         clear_operation()
-        return jsonify({'error': str(e)}), 500
+        logger.error(f'Error adding channel: {str(e)}', exc_info=True)
+        return jsonify({'error': 'An error occurred while adding the channel'}), 500
     finally:
         session.close()
 
@@ -676,6 +745,7 @@ def update_channel(channel_id):
     return jsonify(result)
 
 @app.route('/api/channels/<int:channel_id>', methods=['DELETE'])
+@limiter.limit("20 per minute")
 def delete_channel(channel_id):
     session = get_db()
     channel = session.query(Channel).filter(Channel.id == channel_id).first()
@@ -783,11 +853,13 @@ def scan_channel(channel_id):
     except HttpError as api_error:
         session.rollback()
         clear_operation()
-        return jsonify({'error': f'YouTube API error: {api_error}'}), 500
+        logger.error(f'YouTube API error while scanning channel: {api_error}', exc_info=True)
+        return jsonify({'error': 'Failed to scan channel due to YouTube API error'}), 500
     except Exception as e:
         session.rollback()
         clear_operation()
-        return jsonify({'error': str(e)}), 500
+        logger.error(f'Error scanning channel: {str(e)}', exc_info=True)
+        return jsonify({'error': 'An error occurred while scanning the channel'}), 500
     finally:
         session.close()
 
@@ -899,6 +971,7 @@ def update_video(video_id):
     return jsonify(result)
 
 @app.route('/api/videos/<int:video_id>', methods=['DELETE'])
+@limiter.limit("20 per minute")
 def delete_video(video_id):
     import os
     session = get_db()
@@ -1022,6 +1095,7 @@ def update_playlist(playlist_id):
     return jsonify(result)
 
 @app.route('/api/playlists/<int:playlist_id>', methods=['DELETE'])
+@limiter.limit("20 per minute")
 def delete_playlist(playlist_id):
     session = get_db()
     playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
@@ -1066,6 +1140,7 @@ def add_video_to_playlist(playlist_id):
     return jsonify({'success': True}), 201
 
 @app.route('/api/playlists/<int:playlist_id>/videos/<int:video_id>', methods=['DELETE'])
+@limiter.limit("20 per minute")
 def remove_video_from_playlist(playlist_id, video_id):
     session = get_db()
     
@@ -1188,6 +1263,7 @@ def cancel_current_download():
     return jsonify({'status': 'cancelled'})
 
 @app.route('/api/queue/<int:item_id>', methods=['DELETE'])
+@limiter.limit("20 per minute")
 def remove_from_queue(item_id):
     session = get_db()
     item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
@@ -1278,6 +1354,7 @@ def reorder_queue():
     return jsonify({'queue_items': queue_items}), 200
 
 @app.route('/api/queue/clear', methods=['POST'])
+@limiter.limit("10 per minute")
 def clear_queue():
     """Remove all pending queue items (keep downloading item)"""
     session = get_db()
@@ -1306,7 +1383,8 @@ def clear_queue():
         }), 200
     except Exception as e:
         session.rollback()
-        return jsonify({'error': str(e)}), 500
+        logger.error(f'Error clearing queue: {str(e)}', exc_info=True)
+        return jsonify({'error': 'An error occurred while clearing the queue'}), 500
     finally:
         session.close()
 
@@ -1349,6 +1427,120 @@ def update_settings():
 
     return jsonify({'success': True})
 
+# Authentication endpoints
+@app.route('/api/auth/check-first-run', methods=['GET'])
+def check_first_run():
+    """Check if this is the first run (setup needed)"""
+    session = get_db()
+    try:
+        first_run_setting = session.query(Setting).filter_by(key='first_run').first()
+        is_first_run = first_run_setting and first_run_setting.value == 'true'
+        return jsonify({'first_run': is_first_run})
+    finally:
+        session.close()
+
+@app.route('/api/auth/setup', methods=['POST'])
+def setup_auth():
+    """Complete first-run setup with new credentials"""
+    data = request.json
+    username = data.get('username', '').strip()
+    password = data.get('password', '').strip()
+
+    if not username or not password:
+        return jsonify({'error': 'Username and password are required'}), 400
+
+    if len(username) < 3:
+        return jsonify({'error': 'Username must be at least 3 characters'}), 400
+
+    if len(password) < 3:
+        return jsonify({'error': 'Password must be at least 3 characters'}), 400
+
+    session = get_db()
+    try:
+        # Update username
+        username_setting = session.query(Setting).filter_by(key='auth_username').first()
+        if username_setting:
+            username_setting.value = username
+        else:
+            session.add(Setting(key='auth_username', value=username))
+
+        # Update password hash
+        password_hash = generate_password_hash(password)
+        password_setting = session.query(Setting).filter_by(key='auth_password_hash').first()
+        if password_setting:
+            password_setting.value = password_hash
+        else:
+            session.add(Setting(key='auth_password_hash', value=password_hash))
+
+        # Mark first run as complete
+        first_run_setting = session.query(Setting).filter_by(key='first_run').first()
+        if first_run_setting:
+            first_run_setting.value = 'false'
+        else:
+            session.add(Setting(key='first_run', value='false'))
+
+        session.commit()
+        logger.info(f"Authentication setup completed for user: {username}")
+        return jsonify({'success': True, 'message': 'Credentials saved successfully'})
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error during auth setup: {str(e)}")
+        return jsonify({'error': 'Failed to save credentials'}), 500
+    finally:
+        session.close()
+
+@app.route('/api/auth/change', methods=['POST'])
+def change_auth():
+    """Change username/password (requires current password)"""
+    data = request.json
+    current_password = data.get('current_password', '').strip()
+    new_username = data.get('new_username', '').strip()
+    new_password = data.get('new_password', '').strip()
+
+    if not current_password:
+        return jsonify({'error': 'Current password is required'}), 400
+
+    if not new_username or not new_password:
+        return jsonify({'error': 'New username and password are required'}), 400
+
+    if len(new_username) < 3:
+        return jsonify({'error': 'Username must be at least 3 characters'}), 400
+
+    if len(new_password) < 3:
+        return jsonify({'error': 'Password must be at least 3 characters'}), 400
+
+    # Verify current password
+    stored_username, stored_password_hash = get_stored_credentials()
+    if not check_password_hash(stored_password_hash, current_password):
+        return jsonify({'error': 'Current password is incorrect'}), 401
+
+    session = get_db()
+    try:
+        # Update username
+        username_setting = session.query(Setting).filter_by(key='auth_username').first()
+        if username_setting:
+            username_setting.value = new_username
+        else:
+            session.add(Setting(key='auth_username', value=new_username))
+
+        # Update password hash
+        new_password_hash = generate_password_hash(new_password)
+        password_setting = session.query(Setting).filter_by(key='auth_password_hash').first()
+        if password_setting:
+            password_setting.value = new_password_hash
+        else:
+            session.add(Setting(key='auth_password_hash', value=new_password_hash))
+
+        session.commit()
+        logger.info(f"Credentials changed for user: {new_username}")
+        return jsonify({'success': True, 'message': 'Credentials updated successfully'})
+    except Exception as e:
+        session.rollback()
+        logger.error(f"Error changing credentials: {str(e)}")
+        return jsonify({'error': 'Failed to update credentials'}), 500
+    finally:
+        session.close()
+
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
     """Get the last N lines from the log file"""
@@ -1367,11 +1559,26 @@ def get_logs():
 
         return jsonify({'logs': last_lines, 'total_lines': len(all_lines)})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        logger.error(f'Error reading logs: {str(e)}', exc_info=True)
+        return jsonify({'error': 'An error occurred while reading the logs'}), 500
 
 # Serve video files
 @app.route('/api/media/<path:filename>')
 def serve_media(filename):
+    """Serve media files with path traversal protection"""
+    # Validate and sanitize the path to prevent directory traversal
+    safe_path = safe_join('downloads', filename)
+    if safe_path is None or not os.path.exists(safe_path):
+        logger.warning(f"Attempted to access invalid or non-existent file: {filename}")
+        return jsonify({'error': 'File not found'}), 404
+
+    # Additional check: ensure the resolved path is actually within downloads directory
+    downloads_abs = os.path.abspath('downloads')
+    file_abs = os.path.abspath(safe_path)
+    if not file_abs.startswith(downloads_abs):
+        logger.warning(f"Path traversal attempt blocked: {filename}")
+        return jsonify({'error': 'Access denied'}), 403
+
     return send_from_directory('downloads', filename)
 
 # Serve React app

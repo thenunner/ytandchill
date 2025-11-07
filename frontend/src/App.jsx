@@ -9,6 +9,7 @@ import Playlist from './routes/Playlist';
 import Queue from './routes/Queue';
 import Settings from './routes/Settings';
 import Player from './routes/Player';
+import Setup from './routes/Setup';
 
 function App() {
   const location = useLocation();
@@ -18,6 +19,23 @@ function App() {
   const { data: logsData } = useLogs(500);
   const { notification } = useNotification();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
+  const [isFirstRun, setIsFirstRun] = useState(null); // null = checking, true = first run, false = not first run
+
+  // Check if this is first run
+  useEffect(() => {
+    fetch('/api/auth/check-first-run')
+      .then(res => res.json())
+      .then(data => {
+        setIsFirstRun(data.first_run);
+        if (data.first_run && location.pathname !== '/setup') {
+          navigate('/setup');
+        }
+      })
+      .catch(err => {
+        console.error('Error checking first run:', err);
+        setIsFirstRun(false);
+      });
+  }, [location.pathname, navigate]);
 
   // Handle new queue structure
   const queue = queueData?.queue_items || queueData || [];
@@ -319,7 +337,8 @@ function App() {
       {/* Main Content */}
       <main className="flex-1 w-full px-4 py-6 max-w-[1600px]">
         <Routes>
-          <Route path="/" element={<Channels />} />
+          <Route path="/setup" element={<Setup />} />
+          <Route path="/" element={isFirstRun ? <Navigate to="/setup" replace /> : <Channels />} />
           <Route path="/library" element={<Library />} />
           <Route path="/channel/:channelId" element={<ChannelLibrary />} />
           <Route path="/channel/:channelId/library" element={<ChannelLibrary />} />
