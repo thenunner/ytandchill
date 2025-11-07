@@ -29,6 +29,9 @@ function App() {
       try {
         // Check first run
         const firstRunRes = await fetch('/api/auth/check-first-run', { credentials: 'include' });
+        if (!firstRunRes.ok) {
+          throw new Error(`First run check failed: ${firstRunRes.status}`);
+        }
         const firstRunData = await firstRunRes.json();
         setIsFirstRun(firstRunData.first_run);
 
@@ -42,17 +45,33 @@ function App() {
 
         // Check authentication
         const authRes = await fetch('/api/auth/check', { credentials: 'include' });
+        if (!authRes.ok) {
+          // Got a response but not authenticated - redirect to login
+          setIsAuthenticated(false);
+          if (location.pathname !== '/login' && location.pathname !== '/setup') {
+            navigate('/login');
+          }
+          return;
+        }
+
         const authData = await authRes.json();
         setIsAuthenticated(authData.authenticated);
 
-        if (!authData.authenticated && location.pathname !== '/login') {
+        if (!authData.authenticated && location.pathname !== '/login' && location.pathname !== '/setup') {
           navigate('/login');
         }
       } catch (err) {
         console.error('Error checking auth:', err);
-        setIsAuthenticated(false);
-        if (location.pathname !== '/login') {
-          navigate('/login');
+        // Network error - assume authenticated if already on a protected page
+        // This prevents redirect loops on network errors
+        if (location.pathname === '/' || location.pathname === '/login') {
+          setIsAuthenticated(false);
+          if (location.pathname === '/') {
+            navigate('/login');
+          }
+        } else {
+          // On protected pages, assume authenticated on network error
+          setIsAuthenticated(true);
         }
       }
     };
