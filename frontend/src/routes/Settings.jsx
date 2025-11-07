@@ -187,7 +187,7 @@ export default function Settings() {
           </p>
           <button
             onClick={handleSave}
-            className="btn bg-accent hover:bg-accent-hover text-white font-bold mt-3 w-full"
+            className="btn bg-gray-700 hover:bg-gray-600 text-white font-bold mt-3 w-full"
           >
             Save API Key
           </button>
@@ -200,15 +200,15 @@ export default function Settings() {
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          Change Username & Password
+          Reset User Information
         </h3>
 
         {!showPasswordChange ? (
           <button
             onClick={() => setShowPasswordChange(true)}
-            className="btn bg-accent hover:bg-accent-hover text-white font-bold"
+            className="btn bg-gray-700 hover:bg-gray-600 text-white font-bold"
           >
-            Change Credentials
+            Reset User
           </button>
         ) : (
           <form onSubmit={handlePasswordChange} className="space-y-3">
