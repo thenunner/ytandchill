@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify, send_from_directory, send_file, Response, session
-from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import secrets
@@ -239,23 +238,22 @@ app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
 
-# CORS configuration - allow credentials from any origin by reflecting the origin header
-def cors_origins():
-    """Return the request origin for CORS, allowing any origin with credentials"""
-    return request.headers.get('Origin', '*')
-
-CORS(app,
-     resources={r"/api/*": {
-         "origins": cors_origins,
-         "supports_credentials": True,
-         "methods": ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-         "allow_headers": ["Content-Type"]
-     }})
-
-# Request logger
+# CORS configuration - using after_request to allow credentials from any origin
 @app.after_request
-def log_request(response):
+def add_cors_headers(response):
+    # Get the origin from the request
+    origin = request.headers.get('Origin')
+
+    if origin:
+        # Set CORS headers to allow the requesting origin
+        response.headers['Access-Control-Allow-Origin'] = origin
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PATCH, DELETE, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+
+    # Log the request
     logger.api(f'{request.method} {request.path} - {response.status_code}')
+
     return response
 
 # FORCE DEBUG MODE OFF - Multiple layers of protection
@@ -302,6 +300,14 @@ def check_auth_credentials(username, password):
 def is_authenticated():
     """Check if user is logged in via session"""
     return session.get('authenticated', False)
+
+# Handle OPTIONS preflight requests for CORS
+@app.before_request
+def handle_options():
+    """Handle CORS preflight OPTIONS requests"""
+    if request.method == 'OPTIONS':
+        response = app.make_default_options_response()
+        return response
 
 # Authentication check before each request
 @app.before_request
