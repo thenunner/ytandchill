@@ -377,13 +377,13 @@ function App() {
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
-          <Route path="/library" element={<Library />} />
-          <Route path="/channel/:channelId" element={<ChannelLibrary />} />
-          <Route path="/channel/:channelId/library" element={<ChannelLibrary />} />
-          <Route path="/playlist/:id" element={<Playlist />} />
-          <Route path="/queue" element={<Queue />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/player/:videoId" element={<Player />} />
+          <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
+          <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+          <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+          <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
+          <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
+          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
+          <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
         </Routes>
       </main>
     </div>
