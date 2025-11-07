@@ -151,7 +151,7 @@ export default function Settings() {
 
   return (
     <>
-    <div className="max-w-2xl space-y-4 animate-fade-in">
+    <div className="max-w-xl space-y-4 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
@@ -185,7 +185,7 @@ export default function Settings() {
           </p>
           <button
             onClick={handleSave}
-            className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold mt-3 w-full"
+            className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold mt-3 px-6 py-1.5"
           >
             Save API Key
           </button>
@@ -408,28 +408,28 @@ export default function Settings() {
           </div>
 
           {/* Right column - Stats */}
-          <div className="flex-1 flex flex-col md:items-end">
-            <div className="space-y-2 text-sm flex flex-col md:items-end">
-              <h3 className="text-sm font-semibold text-text-primary self-start">Stats</h3>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-center md:text-right w-40">Videos to Review</span>
-                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{discoveredVideos?.length || 0}</span>
+          <div className="flex-1 flex flex-col">
+            <div className="space-y-2 text-sm">
+              <h3 className="text-sm font-semibold text-text-primary">Stats</h3>
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Videos to Review</span>
+                <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-center md:text-right w-40">Videos Ignored</span>
-                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{ignoredVideos?.length || 0}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Videos Ignored</span>
+                <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-center md:text-right w-40">Videos in Library</span>
-                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{libraryVideos?.length || 0}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Videos in Library</span>
+                <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-center md:text-right w-40">Total Channels</span>
-                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{channels?.length || 0}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Total Channels</span>
+                <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary text-center md:text-right w-40">Total Storage</span>
-                <span className="text-text-primary font-mono font-semibold text-center md:text-right w-16">{health?.total_storage || '0B'}</span>
+              <div className="flex items-center justify-between">
+                <span className="text-text-secondary">Total Storage</span>
+                <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
               </div>
             </div>
           </div>
