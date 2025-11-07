@@ -42,8 +42,8 @@ function Login() {
       // Set flag so App.jsx knows we just logged in
       sessionStorage.setItem('just_logged_in', 'true');
 
-      // Redirect to home page
-      window.location.href = '/';
+      // Use React Router navigate instead of window.location
+      navigate('/', { replace: true });
     } catch (err) {
       setError('Failed to connect to server');
       setIsLoading(false);
