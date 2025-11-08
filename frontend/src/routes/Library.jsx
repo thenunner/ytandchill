@@ -965,6 +965,47 @@ export default function Library() {
           )}
         </div>
       )}
+
+      {/* Rename Playlist Modal */}
+      {showRenameModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
+            <h3 className="text-xl font-bold text-text-primary mb-4">Rename Playlist</h3>
+            <input
+              type="text"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleRenamePlaylist();
+                }
+              }}
+              placeholder="Enter playlist name"
+              className="input w-full mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowRenameModal(false);
+                  setRenamePlaylistId(null);
+                  setRenameValue('');
+                }}
+                className="btn btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleRenamePlaylist}
+                disabled={!renameValue.trim()}
+                className="btn btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Rename
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
