@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useQueue, usePauseQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -142,6 +142,21 @@ export default function Queue() {
   const { showNotification } = useNotification();
   const [showScrollTop, setShowScrollTop] = useState(false);
 
+  // Track scroll position to preserve it during queue updates from move operations
+  const scrollPositionRef = useRef(null);
+  const preserveScrollRef = useRef(false);
+
+  // Preserve scroll position when queue data updates from move operations
+  // useLayoutEffect runs synchronously after DOM updates but BEFORE browser paint
+  // This prevents visible scroll jumps
+  useLayoutEffect(() => {
+    if (preserveScrollRef.current && scrollPositionRef.current !== null) {
+      window.scrollTo(0, scrollPositionRef.current);
+      preserveScrollRef.current = false;
+      scrollPositionRef.current = null;
+    }
+  }, [queue]);
+
   // Scroll detection for scroll-to-top button
   useEffect(() => {
     const handleScroll = () => {
@@ -245,18 +260,32 @@ export default function Queue() {
 
   const handleMoveToTop = async (itemId) => {
     try {
+      // Save scroll position before mutation
+      scrollPositionRef.current = window.scrollY;
+      preserveScrollRef.current = true;
+
       await moveToTop.mutateAsync(itemId);
       showNotification('Moved to top of queue', 'success');
     } catch (error) {
+      // Reset flags on error
+      preserveScrollRef.current = false;
+      scrollPositionRef.current = null;
       showNotification(error.message, 'error');
     }
   };
 
   const handleMoveToBottom = async (itemId) => {
     try {
+      // Save scroll position before mutation
+      scrollPositionRef.current = window.scrollY;
+      preserveScrollRef.current = true;
+
       await moveToBottom.mutateAsync(itemId);
       showNotification('Moved to bottom of queue', 'success');
     } catch (error) {
+      // Reset flags on error
+      preserveScrollRef.current = false;
+      scrollPositionRef.current = null;
       showNotification(error.message, 'error');
     }
   };
