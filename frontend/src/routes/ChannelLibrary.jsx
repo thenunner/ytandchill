@@ -378,37 +378,57 @@ export default function ChannelLibrary() {
 
     if (key === 'sort') {
       newParams.set('sort', value);
+      // Save to localStorage for persistence
+      localStorage.setItem(`${localStorageKey}_sort`, value);
     } else if (key === 'duration') {
       // Convert duration filter to min/max minutes
       newParams.delete('min_duration');
       newParams.delete('max_duration');
+      // Clear localStorage for duration
+      localStorage.removeItem(`${localStorageKey}_minDuration`);
+      localStorage.removeItem(`${localStorageKey}_maxDuration`);
 
       if (value === 'under5') {
         newParams.set('max_duration', '5');
+        localStorage.setItem(`${localStorageKey}_maxDuration`, '5');
       } else if (value === '5-30') {
         newParams.set('min_duration', '5');
         newParams.set('max_duration', '30');
+        localStorage.setItem(`${localStorageKey}_minDuration`, '5');
+        localStorage.setItem(`${localStorageKey}_maxDuration`, '30');
       } else if (value === '30-60') {
         newParams.set('min_duration', '30');
         newParams.set('max_duration', '60');
+        localStorage.setItem(`${localStorageKey}_minDuration`, '30');
+        localStorage.setItem(`${localStorageKey}_maxDuration`, '60');
       } else if (value === 'over60') {
         newParams.set('min_duration', '60');
+        localStorage.setItem(`${localStorageKey}_minDuration`, '60');
       }
     } else if (key === 'uploadDate') {
       // Convert upload date filter to from/to dates
       newParams.delete('upload_from');
       newParams.delete('upload_to');
+      // Clear localStorage for upload dates
+      localStorage.removeItem(`${localStorageKey}_uploadFrom`);
+      localStorage.removeItem(`${localStorageKey}_uploadTo`);
 
       const now = new Date();
       if (value === 'week') {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        newParams.set('upload_from', weekAgo.toISOString().split('T')[0]);
+        const fromDate = weekAgo.toISOString().split('T')[0];
+        newParams.set('upload_from', fromDate);
+        localStorage.setItem(`${localStorageKey}_uploadFrom`, fromDate);
       } else if (value === 'month') {
         const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        newParams.set('upload_from', monthAgo.toISOString().split('T')[0]);
+        const fromDate = monthAgo.toISOString().split('T')[0];
+        newParams.set('upload_from', fromDate);
+        localStorage.setItem(`${localStorageKey}_uploadFrom`, fromDate);
       } else if (value === 'year') {
         const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-        newParams.set('upload_from', yearAgo.toISOString().split('T')[0]);
+        const fromDate = yearAgo.toISOString().split('T')[0];
+        newParams.set('upload_from', fromDate);
+        localStorage.setItem(`${localStorageKey}_uploadFrom`, fromDate);
       }
     } else if (value) {
       newParams.set(key, value);
