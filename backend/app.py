@@ -1170,8 +1170,11 @@ def bulk_update_videos():
 @app.route('/api/categories', methods=['GET'])
 def get_categories():
     """List all categories with playlist counts"""
+    from sqlalchemy.orm import joinedload
     session = get_db()
-    categories = session.query(Category).order_by(Category.name).all()
+    categories = session.query(Category).options(
+        joinedload(Category.playlists).joinedload(Playlist.playlist_videos)
+    ).order_by(Category.name).all()
     result = [serialize_category(c) for c in categories]
     session.close()
     return jsonify(result)
@@ -1206,7 +1209,9 @@ def get_category(category_id):
     """Get single category with its playlists"""
     from sqlalchemy.orm import joinedload
     session = get_db()
-    category = session.query(Category).options(joinedload(Category.playlists)).filter(Category.id == category_id).first()
+    category = session.query(Category).options(
+        joinedload(Category.playlists).joinedload(Playlist.playlist_videos)
+    ).filter(Category.id == category_id).first()
 
     if not category:
         session.close()
@@ -1316,7 +1321,10 @@ def get_playlists():
     session = get_db()
     channel_id = request.args.get('channel_id', type=int)
 
-    query = session.query(Playlist).options(joinedload(Playlist.category))
+    query = session.query(Playlist).options(
+        joinedload(Playlist.category),
+        joinedload(Playlist.playlist_videos)
+    )
     if channel_id:
         query = query.filter(Playlist.channel_id == channel_id)
 
