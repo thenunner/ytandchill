@@ -280,6 +280,10 @@ export function useMoveToTop() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (itemId) => api.moveToTop(itemId),
+    onMutate: async () => {
+      // Cancel any ongoing refetches to prevent conflict with 2-second polling
+      await queryClient.cancelQueries({ queryKey: ['queue'] });
+    },
     onSuccess: () => {
       // Delay refetch like qui does (gives backend time to process)
       setTimeout(() => {
@@ -293,6 +297,10 @@ export function useMoveToBottom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (itemId) => api.moveToBottom(itemId),
+    onMutate: async () => {
+      // Cancel any ongoing refetches to prevent conflict with 2-second polling
+      await queryClient.cancelQueries({ queryKey: ['queue'] });
+    },
     onSuccess: () => {
       // Delay refetch like qui does (gives backend time to process)
       setTimeout(() => {
