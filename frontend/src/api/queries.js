@@ -280,8 +280,9 @@ export function useMoveToTop() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (itemId) => api.moveToTop(itemId),
-    // Don't invalidate - let the natural 2-second polling pick up the change
-    // This prevents scroll jumps during active downloads
+    onSuccess: () => {
+      queryClient.invalidateQueries(['queue']);
+    },
   });
 }
 
@@ -289,8 +290,9 @@ export function useMoveToBottom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (itemId) => api.moveToBottom(itemId),
-    // Don't invalidate - let the natural 2-second polling pick up the change
-    // This prevents scroll jumps during active downloads
+    onSuccess: () => {
+      queryClient.invalidateQueries(['queue']);
+    },
   });
 }
 

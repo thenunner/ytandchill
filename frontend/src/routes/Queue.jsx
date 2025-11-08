@@ -80,6 +80,7 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                e.currentTarget.blur(); // Remove focus to prevent scroll-into-view
                 onMoveToTop(item.id);
               }}
               className="text-text-secondary hover:text-white transition-colors p-1.5 hover:bg-dark-tertiary rounded"
@@ -95,6 +96,7 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                e.currentTarget.blur(); // Remove focus to prevent scroll-into-view
                 onMoveToBottom(item.id);
               }}
               className="text-text-secondary hover:text-white transition-colors p-1.5 hover:bg-dark-tertiary rounded"
