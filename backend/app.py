@@ -357,11 +357,7 @@ def startup_recovery():
 
 startup_recovery()
 
-# Initialize scheduler
-scheduler = AutoRefreshScheduler(session_factory)
-scheduler.start()
-
-# Global operation tracking (for status bar updates)
+# Global operation tracking (for status bar updates) - Must be defined before scheduler
 current_operation = {
     'type': None,  # 'scanning', 'adding_channel', 'auto_refresh'
     'message': None,
@@ -388,6 +384,10 @@ def clear_operation():
         'channel_id': None,
         'progress': 0
     }
+
+# Initialize scheduler with operation tracking callbacks
+scheduler = AutoRefreshScheduler(session_factory, set_operation, clear_operation)
+scheduler.start()
 
 # Initialize default settings
 def init_settings():
@@ -416,6 +416,14 @@ def serialize_channel(channel):
     downloaded_count = len([v for v in channel.videos if v.status == 'library'])
     ignored_count = len([v for v in channel.videos if v.status in ['ignored', 'geoblocked']])
 
+    # Get the most recent video upload date
+    last_video_date = None
+    if channel.videos:
+        videos_with_dates = [v for v in channel.videos if v.upload_date]
+        if videos_with_dates:
+            most_recent = max(videos_with_dates, key=lambda v: v.upload_date)
+            last_video_date = most_recent.upload_date
+
     # Convert local thumbnail path to URL, or keep YouTube URL if still remote
     thumbnail_url = None
     if channel.thumbnail:
@@ -436,6 +444,7 @@ def serialize_channel(channel):
         'min_minutes': channel.min_minutes,
         'max_minutes': channel.max_minutes,
         'last_scan_at': channel.last_scan_at.isoformat() if channel.last_scan_at else None,
+        'last_video_date': last_video_date,
         'created_at': channel.created_at.isoformat(),
         'updated_at': channel.updated_at.isoformat(),
         'video_count': discovered_count,
@@ -781,6 +790,7 @@ def scan_channel(channel_id):
 
     if not channel:
         session.close()
+        logger.debug(f"Scan requested for non-existent channel ID: {channel_id}")
         return jsonify({'error': 'Channel not found'}), 404
 
     try:
@@ -789,27 +799,34 @@ def scan_channel(channel_id):
         force_full = data.get('force_full', False)
 
         scan_type = "full" if force_full else "incremental"
+        logger.debug(f"Starting {scan_type} scan for channel: {channel.title} (ID: {channel.id})")
         set_operation('scanning', f'{scan_type.capitalize()} scan: {channel.title}...', channel_id=channel.id)
 
         # Get YouTube API key
         api_key = get_youtube_api_key(session)
         if not api_key:
+            logger.debug("YouTube API key not configured")
             clear_operation()
             return jsonify({'error': 'YouTube API key not configured. Please add it in Settings.'}), 400
 
         # Build YouTube API client
+        logger.debug(f"Building YouTube API client for channel: {channel.title}")
         youtube = build('youtube', 'v3', developerKey=api_key)
 
         # Scan videos using YouTube Data API
         # For full scan, get ALL videos (999999 effectively means no limit)
         # For incremental, just get recent 50
         max_results = 999999 if force_full else 50
+        logger.debug(f"Fetching up to {max_results} videos for channel: {channel.title}")
         videos = scan_channel_videos(youtube, channel.yt_id, max_results=max_results)
+        logger.debug(f"Found {len(videos)} total videos from YouTube API for channel: {channel.title}")
 
         new_count = 0
         ignored_count = 0
+        existing_count = 0
         latest_upload_date = None
 
+        logger.debug(f"Processing videos for channel: {channel.title}")
         for video_data in videos:
             # Track the latest upload date found
             if video_data['upload_date']:
@@ -821,6 +838,7 @@ def scan_channel(channel_id):
             existing = session.query(Video).filter(Video.yt_id == video_data['id']).first()
             if existing:
                 # Video already in database, skip it
+                existing_count += 1
                 continue
 
             duration_min = video_data['duration_sec'] / 60
@@ -829,8 +847,12 @@ def scan_channel(channel_id):
             status = 'discovered'
             if channel.min_minutes > 0 and duration_min < channel.min_minutes:
                 status = 'ignored'
+                logger.debug(f"Video '{video_data['title']}' ignored: {duration_min:.1f}m < {channel.min_minutes}m minimum")
             elif channel.max_minutes > 0 and duration_min > channel.max_minutes:
                 status = 'ignored'
+                logger.debug(f"Video '{video_data['title']}' ignored: {duration_min:.1f}m > {channel.max_minutes}m maximum")
+            else:
+                logger.debug(f"Video '{video_data['title']}' discovered: {duration_min:.1f}m duration")
 
             video = Video(
                 yt_id=video_data['id'],
@@ -848,15 +870,20 @@ def scan_channel(channel_id):
             else:
                 new_count += 1
 
+        logger.debug(f"Scan results for '{channel.title}': {new_count} new, {ignored_count} ignored, {existing_count} already in database")
+
         # Update last scan time to the latest video upload date found
         # This ensures the next scan picks up from the last video, not the scan time
         if latest_upload_date:
             channel.last_scan_at = latest_upload_date.replace(tzinfo=timezone.utc)
+            logger.debug(f"Updated last_scan_at for '{channel.title}' to {latest_upload_date}")
         elif channel.last_scan_at is None:
             # If no videos were found and no previous scan, set to now
             channel.last_scan_at = datetime.now(timezone.utc)
+            logger.debug(f"Set initial last_scan_at for '{channel.title}' to now")
 
         session.commit()
+        logger.debug(f"Scan complete for channel: {channel.title}")
 
         clear_operation()
         return jsonify({
@@ -965,18 +992,27 @@ def get_video(video_id):
 def update_video(video_id):
     data = request.json
     session = get_db()
-    
+
     video = session.query(Video).filter(Video.id == video_id).first()
     if not video:
         session.close()
+        logger.debug(f"Video update requested for non-existent video ID: {video_id}")
         return jsonify({'error': 'Video not found'}), 404
-    
+
+    changes = []
     if 'watched' in data:
         video.watched = data['watched']
+        changes.append(f"watched={data['watched']}")
     if 'playback_seconds' in data:
         video.playback_seconds = data['playback_seconds']
+        changes.append(f"playback={data['playback_seconds']}s")
     if 'status' in data:
+        old_status = video.status
         video.status = data['status']
+        changes.append(f"status: {old_status} -> {data['status']}")
+
+    if changes:
+        logger.debug(f"Updated video '{video.title}' (ID: {video_id}): {', '.join(changes)}")
 
     session.commit()
     result = serialize_video(video)
@@ -1235,11 +1271,13 @@ def add_to_queue():
     video = session.query(Video).filter(Video.id == video_id).first()
     if not video:
         session.close()
+        logger.debug(f"Add to queue requested for non-existent video ID: {video_id}")
         return jsonify({'error': 'Video not found'}), 404
 
     # Check if already in queue (video status is queued or downloading)
     if video.status in ['queued', 'downloading']:
         session.close()
+        logger.debug(f"Video '{video.title}' (ID: {video_id}) already in queue with status: {video.status}")
         return jsonify({'error': 'Video already in queue'}), 400
 
     # Set video status to queued and create queue item
@@ -1249,6 +1287,8 @@ def add_to_queue():
     item = QueueItem(video_id=video_id, queue_position=max_pos + 1)
     session.add(item)
     session.commit()
+
+    logger.debug(f"Added video '{video.title}' (ID: {video_id}) to queue at position {max_pos + 1}")
 
     result = serialize_queue_item(item)
     session.close()

@@ -7,12 +7,17 @@ from models import Channel, Video, Setting
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from utils import parse_iso8601_duration
+import logging
+
+logger = logging.getLogger(__name__)
 
 class AutoRefreshScheduler:
-    def __init__(self, session_factory):
+    def __init__(self, session_factory, set_operation_callback=None, clear_operation_callback=None):
         self.session_factory = session_factory
         self.scheduler = BackgroundScheduler()
         self.enabled = False
+        self.set_operation = set_operation_callback
+        self.clear_operation = clear_operation_callback
     
     def start(self):
         # Check if auto-refresh is enabled
@@ -55,7 +60,7 @@ class AutoRefreshScheduler:
     def update_ytdlp(self):
         """Update yt-dlp to the latest version"""
         try:
-            print("Updating yt-dlp...")
+            logger.info("Auto-scan: Updating yt-dlp...")
             # Run pip upgrade using the current environment's pip
             result = subprocess.run(
                 ['pip', 'install', '--upgrade', 'yt-dlp'],
@@ -65,16 +70,20 @@ class AutoRefreshScheduler:
             )
 
             if result.returncode == 0:
-                print("yt-dlp updated successfully")
-                print(result.stdout)
+                logger.info("Auto-scan: yt-dlp updated successfully")
+                logger.debug(f"yt-dlp update output: {result.stdout}")
             else:
-                print(f"yt-dlp update failed: {result.stderr}")
+                logger.warning(f"Auto-scan: yt-dlp update failed: {result.stderr}")
         except Exception as e:
-            print(f"Error updating yt-dlp: {e}")
+            logger.error(f"Auto-scan: Error updating yt-dlp: {e}")
 
     def scan_all_channels(self):
         """Scan all channels and update yt-dlp"""
+        logger.info("Auto-scan: Starting scheduled auto-scan")
+
         # First, update yt-dlp
+        if self.set_operation:
+            self.set_operation('auto_refresh', 'Updating yt-dlp...')
         self.update_ytdlp()
 
         # Then scan all channels
@@ -83,22 +92,31 @@ class AutoRefreshScheduler:
             # Get YouTube API key
             api_key_setting = session.query(Setting).filter(Setting.key == 'youtube_api_key').first()
             if not api_key_setting or not api_key_setting.value:
-                print("YouTube API key not configured, skipping auto-refresh")
+                logger.warning("Auto-scan: YouTube API key not configured, skipping auto-refresh")
+                if self.clear_operation:
+                    self.clear_operation()
                 return
 
             youtube = build('youtube', 'v3', developerKey=api_key_setting.value)
 
             channels = session.query(Channel).all()
-            print(f"Auto-refresh: Scanning {len(channels)} channels")
+            logger.info(f"Auto-scan: Scanning {len(channels)} channels")
 
-            for channel in channels:
+            for i, channel in enumerate(channels, 1):
+                logger.debug(f"Auto-scan: Processing channel {i}/{len(channels)}: {channel.title}")
+                if self.set_operation:
+                    self.set_operation('auto_refresh', f'Auto-scan: {channel.title} ({i}/{len(channels)})', channel_id=channel.id)
                 self._scan_channel_with_api(session, youtube, channel)
 
             session.commit()
-            print("Auto-refresh completed successfully")
+            logger.info("Auto-scan: Completed successfully")
+            if self.clear_operation:
+                self.clear_operation()
         except Exception as e:
             session.rollback()
-            print(f"Auto-refresh error: {e}")
+            logger.error(f"Auto-scan: Error during auto-scan: {e}")
+            if self.clear_operation:
+                self.clear_operation()
         finally:
             session.close()
     
@@ -196,13 +214,15 @@ class AutoRefreshScheduler:
             # This ensures the next scan picks up from the last video, not the scan time
             if latest_upload_date:
                 channel.last_scan_at = latest_upload_date.replace(tzinfo=timezone.utc)
+                logger.debug(f"Auto-scan: Updated last_scan_at for '{channel.title}' to {latest_upload_date}")
             elif channel.last_scan_at is None:
                 # If no videos were found and no previous scan, set to now
                 channel.last_scan_at = datetime.now(timezone.utc)
+                logger.debug(f"Auto-scan: Set initial last_scan_at for '{channel.title}' to now")
 
-            print(f"Channel {channel.title}: {new_videos_count} new videos, {ignored_count} ignored")
+            logger.info(f"Auto-scan: Channel '{channel.title}' - {new_videos_count} new videos, {ignored_count} ignored")
 
         except HttpError as api_error:
-            print(f"YouTube API error for channel {channel.title}: {api_error}")
+            logger.error(f"Auto-scan: YouTube API error for channel '{channel.title}': {api_error}")
         except Exception as e:
-            print(f"Error scanning channel {channel.title}: {e}")
+            logger.error(f"Auto-scan: Error scanning channel '{channel.title}': {e}")

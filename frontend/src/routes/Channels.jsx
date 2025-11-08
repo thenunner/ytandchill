@@ -116,6 +116,23 @@ export default function Channels() {
       const channel = channels[i];
       setScanProgress({ current: i + 1, total: channels.length });
 
+      // Format last video date
+      let lastVideoText = '';
+      if (channel.last_video_date) {
+        const date = new Date(channel.last_video_date.slice(0, 4),
+                               parseInt(channel.last_video_date.slice(4, 6)) - 1,
+                               channel.last_video_date.slice(6, 8));
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        lastVideoText = ` from ${month}/${day}`;
+      }
+
+      showNotification(
+        `Scanning "${channel.title}"${lastVideoText} (${i + 1}/${channels.length})`,
+        'info',
+        { persistent: true }
+      );
+
       try {
         const result = await scanChannel.mutateAsync({
           id: channel.id,
