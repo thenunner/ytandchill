@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useQueue, usePauseQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -137,6 +138,21 @@ export default function Queue() {
   const moveToBottom = useMoveToBottom();
   const clearQueue = useClearQueue();
   const { showNotification } = useNotification();
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Scroll detection for scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Configure drag sensors for both mouse and touch
   const sensors = useSensors(
@@ -508,6 +524,19 @@ export default function Queue() {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-colors z-50 animate-fade-in"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </button>
       )}
     </div>
   );
