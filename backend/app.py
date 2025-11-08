@@ -117,15 +117,13 @@ def resolve_channel_id_from_url(youtube, url):
     # Extract handle or channel ID from URL
     if 'youtube.com/@' in url:
         handle = url.split('/@')[1].split('/')[0].split('?')[0]
-        # Search for channel by handle
-        search_response = youtube.search().list(
+        # Use forHandle parameter for exact handle lookup
+        response = youtube.channels().list(
             part='snippet',
-            q=handle,
-            type='channel',
-            maxResults=1
+            forHandle=handle
         ).execute()
-        if search_response.get('items'):
-            return search_response['items'][0]['snippet']['channelId']
+        if response.get('items'):
+            return response['items'][0]['id']
     elif 'youtube.com/channel/' in url:
         return url.split('/channel/')[1].split('/')[0].split('?')[0]
     elif 'youtube.com/c/' in url:
