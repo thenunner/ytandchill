@@ -249,11 +249,11 @@ export default function Queue() {
       await moveToTop.mutateAsync(itemId);
       showNotification('Moved to top of queue', 'success');
 
-      // Restore scroll position after React Query refetch
-      // Use requestAnimationFrame to wait for DOM update
-      requestAnimationFrame(() => {
+      // Restore scroll position after React Query refetch completes
+      // Use setTimeout to wait for refetch and DOM update
+      setTimeout(() => {
         window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-      });
+      }, 100);
     } catch (error) {
       showNotification(error.message, 'error');
     }
@@ -267,11 +267,11 @@ export default function Queue() {
       await moveToBottom.mutateAsync(itemId);
       showNotification('Moved to bottom of queue', 'success');
 
-      // Restore scroll position after React Query refetch
-      // Use requestAnimationFrame to wait for DOM update
-      requestAnimationFrame(() => {
+      // Restore scroll position after React Query refetch completes
+      // Use setTimeout to wait for refetch and DOM update
+      setTimeout(() => {
         window.scrollTo({ top: currentScrollY, behavior: 'instant' });
-      });
+      }, 100);
     } catch (error) {
       showNotification(error.message, 'error');
     }
