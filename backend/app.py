@@ -227,13 +227,40 @@ def scan_channel_videos(youtube, channel_id, max_results=50):
         traceback.print_exc()
         return []
 
+# Initialize database BEFORE Flask app so we can load secret key from DB
+engine, Session = init_db()
+session_factory = Session
+
+def get_or_create_secret_key():
+    """Get or create persistent secret key from database"""
+    session = session_factory()
+    try:
+        # Check if secret_key exists in database
+        secret_key_setting = session.query(Setting).filter(Setting.key == 'secret_key').first()
+
+        if secret_key_setting and secret_key_setting.value:
+            # Use existing secret key
+            return secret_key_setting.value
+        else:
+            # Generate new secret key and save to database
+            new_secret_key = secrets.token_hex(32)
+            if secret_key_setting:
+                secret_key_setting.value = new_secret_key
+            else:
+                secret_key_setting = Setting(key='secret_key', value=new_secret_key)
+                session.add(secret_key_setting)
+            session.commit()
+            return new_secret_key
+    finally:
+        session.close()
+
 # Determine static folder path - different for Docker vs local dev
 # In Docker: /app/dist, In local dev: ../frontend/dist
 static_folder = 'dist' if os.path.exists('dist') else '../frontend/dist'
 app = Flask(__name__, static_folder=static_folder)
 
 # Session configuration
-app.config['SECRET_KEY'] = secrets.token_hex(32)
+app.config['SECRET_KEY'] = get_or_create_secret_key()
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # 24 hours
@@ -264,10 +291,6 @@ app.config['ENV'] = 'production'
 
 # Disable werkzeug's default request logging - we'll handle it ourselves
 logging.getLogger('werkzeug').setLevel(logging.ERROR)  # Only log errors from werkzeug
-
-# Initialize database
-engine, Session = init_db()
-session_factory = Session
 
 # Initialize rate limiter
 limiter = Limiter(
