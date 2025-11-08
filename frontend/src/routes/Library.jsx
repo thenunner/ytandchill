@@ -403,6 +403,12 @@ export default function Library() {
           isCurrentlyAssigned ? 'Removed from category' : 'Added to category',
           'success'
         );
+        // Close modal after single playlist update
+        setShowCategorySelectorModal(false);
+        setSelectedPlaylistForCategory(null);
+        setCategoryActionType(null);
+        setShowCreateInSelector(false);
+        setNewCategoryInSelector('');
       } else if (categoryActionType === 'bulk' && selectedPlaylists.length > 0) {
         // Bulk - assign all to this category
         await bulkAssignCategory.mutateAsync({
@@ -416,6 +422,8 @@ export default function Library() {
         setShowCategorySelectorModal(false);
         setSelectedPlaylistForCategory(null);
         setCategoryActionType(null);
+        setShowCreateInSelector(false);
+        setNewCategoryInSelector('');
       }
     } catch (error) {
       showNotification(error.message || 'Failed to update category', 'error');
@@ -1685,8 +1693,20 @@ export default function Library() {
 
       {/* Category Selector Modal */}
       {showCategorySelectorModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-secondary rounded-lg max-w-md w-full shadow-2xl border border-dark-border flex flex-col max-h-[600px]">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+          onClick={() => {
+            setShowCategorySelectorModal(false);
+            setSelectedPlaylistForCategory(null);
+            setCategoryActionType(null);
+            setShowCreateInSelector(false);
+            setNewCategoryInSelector('');
+          }}
+        >
+          <div
+            className="bg-dark-secondary rounded-lg max-w-md w-full shadow-2xl border border-dark-border flex flex-col max-h-[600px]"
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-dark-border">
               <h3 className="text-lg font-semibold text-text-primary">Category Options</h3>
