@@ -179,6 +179,18 @@ export function useAddVideoToPlaylist() {
   });
 }
 
+export function useAddVideosToPlaylistBulk() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ playlistId, videoIds }) => api.addVideosToPlaylistBulk(playlistId, videoIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['playlists']);
+      queryClient.invalidateQueries(['playlist']);
+      queryClient.invalidateQueries(['videos']);
+    },
+  });
+}
+
 export function useRemoveVideoFromPlaylist() {
   const queryClient = useQueryClient();
   return useMutation({

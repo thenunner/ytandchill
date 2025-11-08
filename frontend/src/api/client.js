@@ -150,6 +150,13 @@ class APIClient {
     });
   }
 
+  addVideosToPlaylistBulk(playlistId, videoIds) {
+    return this.request(`/playlists/${playlistId}/videos/bulk`, {
+      method: 'POST',
+      body: JSON.stringify({ video_ids: videoIds }),
+    });
+  }
+
   removeVideoFromPlaylist(playlistId, videoId) {
     return this.request(`/playlists/${playlistId}/videos/${videoId}`, {
       method: 'DELETE',

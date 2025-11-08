@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { usePlaylists, useAddVideoToPlaylist, useRemoveVideoFromPlaylist, useCreatePlaylist } from '../api/queries';
+import { usePlaylists, useAddVideoToPlaylist, useAddVideosToPlaylistBulk, useRemoveVideoFromPlaylist, useCreatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 
 export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, triggerRef }) {
   const { data: playlists } = usePlaylists();
   const addToPlaylist = useAddVideoToPlaylist();
+  const addToPlaylistBulk = useAddVideosToPlaylistBulk();
   const removeFromPlaylist = useRemoveVideoFromPlaylist();
   const createPlaylist = useCreatePlaylist();
   const { showNotification } = useNotification();
@@ -82,39 +83,23 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
   };
 
   const handleAddToPlaylist = async (playlistId) => {
-    let successCount = 0;
-    let errorCount = 0;
-    let lastError = null;
-
     try {
-      // Add each video to the playlist
-      for (const vid of videosToAdd) {
-        try {
-          await addToPlaylist.mutateAsync({ playlistId, videoId: vid });
-          successCount++;
-        } catch (error) {
-          errorCount++;
-          lastError = error.message;
-          // Continue with other videos in bulk mode
-          if (!isBulk) {
-            throw error;
-          }
-        }
-      }
+      if (isBulk) {
+        // Use bulk endpoint for better performance
+        const result = await addToPlaylistBulk.mutateAsync({ playlistId, videoIds: videosToAdd });
 
-      // Show appropriate notification
-      if (successCount > 0 && errorCount === 0) {
-        showNotification(
-          isBulk ? `${successCount} videos added to playlist` : 'Added to playlist',
-          'success'
-        );
-      } else if (successCount > 0 && errorCount > 0) {
-        showNotification(
-          `${successCount} videos added, ${errorCount} failed (may already be in playlist)`,
-          'success'
-        );
-      } else if (errorCount > 0) {
-        showNotification(lastError || 'Failed to add video(s)', 'error');
+        if (result.skipped_count > 0) {
+          showNotification(
+            `${result.added_count} videos added to playlist, ${result.skipped_count} already in playlist`,
+            'success'
+          );
+        } else {
+          showNotification(`${result.added_count} videos added to playlist`, 'success');
+        }
+      } else {
+        // Single video - use regular endpoint
+        await addToPlaylist.mutateAsync({ playlistId, videoId: videosToAdd[0] });
+        showNotification('Added to playlist', 'success');
       }
 
       onClose();
@@ -131,33 +116,17 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
       return;
     }
 
-    let successCount = 0;
-    let errorCount = 0;
-
     try {
       const newPlaylist = await createPlaylist.mutateAsync({ name: newPlaylistName });
 
-      // Add each video to the new playlist
-      for (const vid of videosToAdd) {
-        try {
-          await addToPlaylist.mutateAsync({ playlistId: newPlaylist.id, videoId: vid });
-          successCount++;
-        } catch (error) {
-          errorCount++;
-          // Continue with other videos
-          if (!isBulk) {
-            throw error;
-          }
-        }
-      }
-
-      if (successCount > 0) {
-        showNotification(
-          isBulk
-            ? `Playlist created and ${successCount} videos added`
-            : 'Playlist created and video added',
-          'success'
-        );
+      if (isBulk) {
+        // Use bulk endpoint for better performance
+        const result = await addToPlaylistBulk.mutateAsync({ playlistId: newPlaylist.id, videoIds: videosToAdd });
+        showNotification(`Playlist created and ${result.added_count} videos added`, 'success');
+      } else {
+        // Single video
+        await addToPlaylist.mutateAsync({ playlistId: newPlaylist.id, videoId: videosToAdd[0] });
+        showNotification('Playlist created and video added', 'success');
       }
 
       onClose();

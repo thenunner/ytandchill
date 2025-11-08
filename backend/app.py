@@ -1243,6 +1243,79 @@ def add_video_to_playlist(playlist_id):
     
     return jsonify({'success': True}), 201
 
+@app.route('/api/playlists/<int:playlist_id>/videos/bulk', methods=['POST'])
+def add_videos_to_playlist_bulk(playlist_id):
+    """Add multiple videos to a playlist in a single transaction"""
+    data = request.json
+    session = get_db()
+
+    video_ids = data.get('video_ids', [])
+
+    if not video_ids:
+        session.close()
+        return jsonify({'error': 'video_ids array is required'}), 400
+
+    if not isinstance(video_ids, list):
+        session.close()
+        return jsonify({'error': 'video_ids must be an array'}), 400
+
+    # Check playlist exists
+    playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
+    if not playlist:
+        session.close()
+        return jsonify({'error': 'Playlist not found'}), 404
+
+    logger.debug(f"Bulk add to playlist '{playlist.name}' (ID: {playlist_id}): {len(video_ids)} videos")
+
+    try:
+        added_count = 0
+        skipped_count = 0
+        skipped_videos = []
+
+        for video_id in video_ids:
+            # Check if already in playlist
+            existing = session.query(PlaylistVideo).filter(
+                PlaylistVideo.playlist_id == playlist_id,
+                PlaylistVideo.video_id == video_id
+            ).first()
+
+            if existing:
+                logger.debug(f"Bulk add: Skipping video ID {video_id} - already in playlist")
+                skipped_count += 1
+                continue
+
+            # Get video for logging
+            video = session.query(Video).filter(Video.id == video_id).first()
+            if not video:
+                logger.debug(f"Bulk add: Skipping non-existent video ID: {video_id}")
+                skipped_count += 1
+                continue
+
+            # Add to playlist
+            pv = PlaylistVideo(playlist_id=playlist_id, video_id=video_id)
+            session.add(pv)
+            added_count += 1
+            logger.debug(f"Bulk add: Added video '{video.title}' (ID: {video_id}) to playlist")
+
+        session.commit()
+        logger.info(f"Bulk add to playlist completed: {added_count} added, {skipped_count} skipped")
+
+        session.close()
+
+        response = {
+            'added_count': added_count,
+            'skipped_count': skipped_count,
+            'total_requested': len(video_ids)
+        }
+
+        return jsonify(response), 201
+
+    except Exception as e:
+        session.rollback()
+        session.close()
+        logger.error(f"Error during bulk add to playlist: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/playlists/<int:playlist_id>/videos/<int:video_id>', methods=['DELETE'])
 @limiter.limit("20 per minute")
 def remove_video_from_playlist(playlist_id, video_id):
