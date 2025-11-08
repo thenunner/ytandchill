@@ -117,13 +117,46 @@ def resolve_channel_id_from_url(youtube, url):
     # Extract handle or channel ID from URL
     if 'youtube.com/@' in url:
         handle = url.split('/@')[1].split('/')[0].split('?')[0]
-        # Use forHandle parameter for exact handle lookup
-        response = youtube.channels().list(
+
+        # Try forUsername first (works for some handles)
+        try:
+            response = youtube.channels().list(
+                part='snippet',
+                forUsername=handle
+            ).execute()
+            if response.get('items'):
+                return response['items'][0]['id']
+        except:
+            pass
+
+        # Fallback: Use search with exact query match
+        # Add quotes for exact matching and filter by channel type
+        search_response = youtube.search().list(
             part='snippet',
-            forHandle=handle
+            q=f'"{handle}"',
+            type='channel',
+            maxResults=5
         ).execute()
-        if response.get('items'):
-            return response['items'][0]['id']
+
+        # Look for exact handle match in results
+        if search_response.get('items'):
+            for item in search_response['items']:
+                # Check if the channel's custom URL or title matches
+                channel_id = item['snippet']['channelId']
+                channel_details = youtube.channels().list(
+                    part='snippet',
+                    id=channel_id
+                ).execute()
+
+                if channel_details.get('items'):
+                    custom_url = channel_details['items'][0]['snippet'].get('customUrl', '')
+                    # Check if customUrl matches the handle (with or without @)
+                    if custom_url.lower() == f'@{handle.lower()}' or custom_url.lower() == handle.lower():
+                        return channel_id
+
+            # If no exact match found, return first result (original behavior)
+            return search_response['items'][0]['snippet']['channelId']
+
     elif 'youtube.com/channel/' in url:
         return url.split('/channel/')[1].split('/')[0].split('?')[0]
     elif 'youtube.com/c/' in url:
