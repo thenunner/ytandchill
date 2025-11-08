@@ -1204,8 +1204,9 @@ def create_category():
 @app.route('/api/categories/<int:category_id>', methods=['GET'])
 def get_category(category_id):
     """Get single category with its playlists"""
+    from sqlalchemy.orm import joinedload
     session = get_db()
-    category = session.query(Category).filter(Category.id == category_id).first()
+    category = session.query(Category).options(joinedload(Category.playlists)).filter(Category.id == category_id).first()
 
     if not category:
         session.close()
@@ -1311,17 +1312,18 @@ def bulk_assign_category():
 
 @app.route('/api/playlists', methods=['GET'])
 def get_playlists():
+    from sqlalchemy.orm import joinedload
     session = get_db()
     channel_id = request.args.get('channel_id', type=int)
-    
-    query = session.query(Playlist)
+
+    query = session.query(Playlist).options(joinedload(Playlist.category))
     if channel_id:
         query = query.filter(Playlist.channel_id == channel_id)
-    
+
     playlists = query.all()
     result = [serialize_playlist(p) for p in playlists]
     session.close()
-    
+
     return jsonify(result)
 
 @app.route('/api/playlists', methods=['POST'])
@@ -1343,17 +1345,18 @@ def create_playlist():
 
 @app.route('/api/playlists/<int:playlist_id>', methods=['GET'])
 def get_playlist(playlist_id):
+    from sqlalchemy.orm import joinedload
     session = get_db()
-    playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
-    
+    playlist = session.query(Playlist).options(joinedload(Playlist.category)).filter(Playlist.id == playlist_id).first()
+
     if not playlist:
         session.close()
         return jsonify({'error': 'Playlist not found'}), 404
-    
+
     videos = [serialize_video(pv.video) for pv in playlist.playlist_videos]
     result = serialize_playlist(playlist)
     result['videos'] = videos
-    
+
     session.close()
     return jsonify(result)
 
