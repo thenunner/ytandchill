@@ -209,6 +209,7 @@ export function useQueue() {
     queryFn: () => api.getQueue(),
     refetchInterval: 2000, // Refetch every 2 seconds for real-time updates
     staleTime: 0, // Always consider stale for immediate polling
+    notifyOnChangeProps: ['data', 'error'], // Only re-render when data/error changes, not loading state
   });
 }
 
@@ -280,7 +281,45 @@ export function useMoveToTop() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (itemId) => api.moveToTop(itemId),
-    onSuccess: () => {
+    onMutate: async (itemId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries(['queue']);
+
+      // Snapshot the previous value
+      const previousQueue = queryClient.getQueryData(['queue']);
+
+      // Optimistically update the cache
+      queryClient.setQueryData(['queue'], (old) => {
+        if (!old) return old;
+
+        const queueItems = old.queue_items || [];
+        const itemIndex = queueItems.findIndex(item => item.id === itemId);
+
+        if (itemIndex === -1 || itemIndex === 0) return old;
+
+        // Move item to top
+        const newItems = [...queueItems];
+        const [movedItem] = newItems.splice(itemIndex, 1);
+        newItems.unshift(movedItem);
+
+        // Update queue positions
+        newItems.forEach((item, index) => {
+          item.queue_position = index + 1;
+        });
+
+        return { ...old, queue_items: newItems };
+      });
+
+      return { previousQueue };
+    },
+    onError: (err, itemId, context) => {
+      // Rollback on error
+      if (context?.previousQueue) {
+        queryClient.setQueryData(['queue'], context.previousQueue);
+      }
+    },
+    onSettled: () => {
+      // Refetch to sync with server
       queryClient.invalidateQueries(['queue']);
     },
   });
@@ -290,7 +329,45 @@ export function useMoveToBottom() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (itemId) => api.moveToBottom(itemId),
-    onSuccess: () => {
+    onMutate: async (itemId) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries(['queue']);
+
+      // Snapshot the previous value
+      const previousQueue = queryClient.getQueryData(['queue']);
+
+      // Optimistically update the cache
+      queryClient.setQueryData(['queue'], (old) => {
+        if (!old) return old;
+
+        const queueItems = old.queue_items || [];
+        const itemIndex = queueItems.findIndex(item => item.id === itemId);
+
+        if (itemIndex === -1 || itemIndex === queueItems.length - 1) return old;
+
+        // Move item to bottom
+        const newItems = [...queueItems];
+        const [movedItem] = newItems.splice(itemIndex, 1);
+        newItems.push(movedItem);
+
+        // Update queue positions
+        newItems.forEach((item, index) => {
+          item.queue_position = index + 1;
+        });
+
+        return { ...old, queue_items: newItems };
+      });
+
+      return { previousQueue };
+    },
+    onError: (err, itemId, context) => {
+      // Rollback on error
+      if (context?.previousQueue) {
+        queryClient.setQueryData(['queue'], context.previousQueue);
+      }
+    },
+    onSettled: () => {
+      // Refetch to sync with server
       queryClient.invalidateQueries(['queue']);
     },
   });
