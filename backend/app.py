@@ -1355,6 +1355,82 @@ def add_to_queue():
 
     return jsonify(result), 201
 
+@app.route('/api/queue/bulk', methods=['POST'])
+def add_to_queue_bulk():
+    """Add multiple videos to queue in a single transaction"""
+    data = request.json
+    session = get_db()
+
+    video_ids = data.get('video_ids', [])
+
+    if not video_ids:
+        session.close()
+        return jsonify({'error': 'video_ids array is required'}), 400
+
+    if not isinstance(video_ids, list):
+        session.close()
+        return jsonify({'error': 'video_ids must be an array'}), 400
+
+    logger.debug(f"Bulk add to queue requested for {len(video_ids)} videos")
+
+    try:
+        # Get max queue position once
+        max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
+
+        added_count = 0
+        skipped_count = 0
+        skipped_videos = []
+
+        for video_id in video_ids:
+            # Get video
+            video = session.query(Video).filter(Video.id == video_id).first()
+            if not video:
+                logger.debug(f"Bulk add: Skipping non-existent video ID: {video_id}")
+                skipped_count += 1
+                continue
+
+            # Skip if already in queue
+            if video.status in ['queued', 'downloading']:
+                logger.debug(f"Bulk add: Skipping video '{video.title}' (ID: {video_id}) - already in queue")
+                skipped_videos.append(video.title)
+                skipped_count += 1
+                continue
+
+            # Add to queue
+            video.status = 'queued'
+            max_pos += 1
+            item = QueueItem(video_id=video_id, queue_position=max_pos)
+            session.add(item)
+            added_count += 1
+            logger.debug(f"Bulk add: Added video '{video.title}' (ID: {video_id}) to queue at position {max_pos}")
+
+        session.commit()
+        logger.info(f"Bulk add to queue completed: {added_count} added, {skipped_count} skipped")
+
+        session.close()
+
+        # Auto-resume the download worker when adding to queue
+        if added_count > 0 and download_worker.paused:
+            download_worker.resume()
+            logger.info("Auto-resumed download worker after bulk add to queue")
+
+        response = {
+            'added_count': added_count,
+            'skipped_count': skipped_count,
+            'total_requested': len(video_ids)
+        }
+
+        if skipped_videos:
+            response['skipped_videos'] = skipped_videos[:10]  # Limit to first 10 for readability
+
+        return jsonify(response), 201
+
+    except Exception as e:
+        session.rollback()
+        session.close()
+        logger.error(f"Error during bulk add to queue: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/queue/pause', methods=['POST'])
 def pause_queue():
     download_worker.pause()

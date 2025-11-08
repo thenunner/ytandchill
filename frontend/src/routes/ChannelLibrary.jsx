@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useVideos, useChannels, useAddToQueue, useBulkUpdateVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
+import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
@@ -15,6 +15,7 @@ export default function ChannelLibrary() {
   const { data: channels } = useChannels();
   const { data: queueData } = useQueue();
   const addToQueue = useAddToQueue();
+  const addToQueueBulk = useAddToQueueBulk();
   const bulkUpdate = useBulkUpdateVideos();
   const deleteVideo = useDeleteVideo();
   const deleteChannel = useDeleteChannel();
@@ -472,10 +473,13 @@ export default function ChannelLibrary() {
     try {
       switch (action) {
         case 'queue':
-          for (const videoId of selectedVideos) {
-            await addToQueue.mutateAsync(videoId);
+          // Use bulk endpoint for better performance
+          const result = await addToQueueBulk.mutateAsync(selectedVideos);
+          if (result.skipped_count > 0) {
+            showNotification(`${result.added_count} videos added to queue, ${result.skipped_count} already in queue`, 'success');
+          } else {
+            showNotification(`${result.added_count} videos added to queue`, 'success');
           }
-          showNotification(`${selectedVideos.length} videos added to queue`, 'success');
           break;
         case 'ignore':
           await bulkUpdate.mutateAsync({

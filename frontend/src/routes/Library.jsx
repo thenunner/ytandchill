@@ -215,7 +215,7 @@ export default function Library() {
 
     try {
       await updatePlaylist.mutateAsync({
-        playlistId: renamePlaylistId,
+        id: renamePlaylistId,
         data: { name: renameValue },
       });
       showNotification('Playlist renamed', 'success');

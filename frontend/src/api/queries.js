@@ -1,6 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from './client';
 
+// Auth (following autobrr/qui pattern)
+export function useAuthCheck() {
+  return useQuery({
+    queryKey: ['auth', 'check'],
+    queryFn: () => api.checkAuth(),
+    retry: false,                    // Don't retry failed auth
+    staleTime: Infinity,             // Only refetch on window focus
+    refetchOnWindowFocus: true,      // Check auth when switching tabs
+  });
+}
+
+export function useFirstRunCheck() {
+  return useQuery({
+    queryKey: ['auth', 'first-run'],
+    queryFn: () => api.checkFirstRun(),
+    retry: false,
+    staleTime: Infinity,
+    refetchOnWindowFocus: true,
+  });
+}
+
 // Channels
 export function useChannels() {
   return useQuery({
@@ -183,6 +204,17 @@ export function useAddToQueue() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (videoId) => api.addToQueue(videoId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['queue']);
+      queryClient.invalidateQueries(['videos']);
+    },
+  });
+}
+
+export function useAddToQueueBulk() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (videoIds) => api.addToQueueBulk(videoIds),
     onSuccess: () => {
       queryClient.invalidateQueries(['queue']);
       queryClient.invalidateQueries(['videos']);

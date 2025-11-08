@@ -13,17 +13,34 @@ class APIClient {
     };
 
     const response = await fetch(url, config);
-    
+
+    // Handle 401 Unauthorized - session expired
+    // Following autobrr/qui pattern: exclude auth check endpoints from redirect logic
+    const isAuthCheckEndpoint = endpoint === '/auth/check' || endpoint === '/auth/check-first-run';
+
+    if (response.status === 401) {
+      // Only redirect if:
+      // 1. Not an auth check endpoint itself
+      // 2. Not already on login/setup page
+      if (!isAuthCheckEndpoint &&
+          !window.location.pathname.includes('/login') &&
+          !window.location.pathname.includes('/setup')) {
+        console.warn('Session expired, redirecting to login');
+        window.location.href = '/login';
+      }
+      throw new Error('Session expired');
+    }
+
     if (response.status === 204) {
       return null;
     }
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || 'API request failed');
     }
-    
+
     return data;
   }
 
@@ -151,6 +168,13 @@ class APIClient {
     });
   }
 
+  addToQueueBulk(videoIds) {
+    return this.request('/queue/bulk', {
+      method: 'POST',
+      body: JSON.stringify({ video_ids: videoIds }),
+    });
+  }
+
   pauseQueue() {
     return this.request('/queue/pause', {
       method: 'POST',
@@ -212,6 +236,15 @@ class APIClient {
       method: 'PATCH',
       body: JSON.stringify(data),
     });
+  }
+
+  // Auth
+  checkAuth() {
+    return this.request('/auth/check');
+  }
+
+  checkFirstRun() {
+    return this.request('/auth/check-first-run');
   }
 
   // Health

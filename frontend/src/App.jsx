@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useQueue, useHealth, useLogs } from './api/queries';
+import { useQueue, useHealth, useLogs, useAuthCheck, useFirstRunCheck } from './api/queries';
 import { useNotification } from './contexts/NotificationContext';
 import { useEffect, useState } from 'react';
 import Channels from './routes/Channels';
@@ -20,45 +20,15 @@ function App() {
   const { data: logsData } = useLogs(500);
   const { notification } = useNotification();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
-  const [isFirstRun, setIsFirstRun] = useState(null); // null = checking, true = first run, false = not first run
-  const [isAuthenticated, setIsAuthenticated] = useState(null); // null = checking, true = logged in, false = not logged in
 
-  // Check authentication and first run status on mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // Check first run
-        const firstRunRes = await fetch('/api/auth/check-first-run', { credentials: 'include' });
-        if (!firstRunRes.ok) {
-          throw new Error(`First run check failed: ${firstRunRes.status}`);
-        }
-        const firstRunData = await firstRunRes.json();
-        setIsFirstRun(firstRunData.first_run);
+  // Auth checks using React Query (following autobrr/qui pattern)
+  const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();
+  const { data: authData, isLoading: authLoading, error: authError } = useAuthCheck();
 
-        if (firstRunData.first_run) {
-          setIsAuthenticated(false); // First run, not authenticated yet
-          return;
-        }
-
-        // Check authentication
-        const authRes = await fetch('/api/auth/check', { credentials: 'include' });
-        if (!authRes.ok) {
-          // Got a response but not authenticated
-          setIsAuthenticated(false);
-          return;
-        }
-
-        const authData = await authRes.json();
-        setIsAuthenticated(authData.authenticated);
-      } catch (err) {
-        console.error('Error checking auth:', err);
-        // On error, assume not authenticated
-        setIsAuthenticated(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
+  // Derive auth state from queries
+  const isFirstRun = firstRunData?.first_run || false;
+  const isAuthenticated = authData?.authenticated || false;
+  const isLoading = firstRunLoading || authLoading;
 
   // Handle new queue structure
   const queue = queueData?.queue_items || queueData || [];
@@ -132,7 +102,7 @@ function App() {
   ];
 
   // Show loading screen while checking auth
-  if (isAuthenticated === null || isFirstRun === null) {
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-dark-primary">
         <div className="text-text-secondary">Loading...</div>
