@@ -243,8 +243,17 @@ export default function Queue() {
 
   const handleMoveToTop = async (itemId) => {
     try {
+      // Save current scroll position
+      const currentScrollY = window.scrollY;
+
       await moveToTop.mutateAsync(itemId);
       showNotification('Moved to top of queue', 'success');
+
+      // Restore scroll position after React Query refetch
+      // Use requestAnimationFrame to wait for DOM update
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+      });
     } catch (error) {
       showNotification(error.message, 'error');
     }
@@ -252,8 +261,17 @@ export default function Queue() {
 
   const handleMoveToBottom = async (itemId) => {
     try {
+      // Save current scroll position
+      const currentScrollY = window.scrollY;
+
       await moveToBottom.mutateAsync(itemId);
       showNotification('Moved to bottom of queue', 'success');
+
+      // Restore scroll position after React Query refetch
+      // Use requestAnimationFrame to wait for DOM update
+      requestAnimationFrame(() => {
+        window.scrollTo({ top: currentScrollY, behavior: 'instant' });
+      });
     } catch (error) {
       showNotification(error.message, 'error');
     }
