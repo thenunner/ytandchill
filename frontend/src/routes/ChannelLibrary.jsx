@@ -243,7 +243,7 @@ export default function ChannelLibrary() {
     if (changed) {
       setSearchParams(newParams, { replace: true });
     }
-  }, []); // Run only on mount
+  }, [channelId]); // Run when channelId changes (navigating to a different channel or returning to same channel)
 
   // Note: searchInput is kept as pure local state to avoid losing focus on input
   // It persists naturally when toggling edit mode since it's component state
