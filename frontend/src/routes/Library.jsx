@@ -35,6 +35,7 @@ export default function Library() {
   const menuRef = useRef(null);
   const playlistSortMenuRef = useRef(null);
   const channelSortMenuRef = useRef(null);
+  const categoryMenuRef = useRef(null);
 
   // Category hooks and state
   const { data: categories } = useCategories();
@@ -48,6 +49,8 @@ export default function Library() {
   const [showCategorySelectorModal, setShowCategorySelectorModal] = useState(false);
   const [categoryActionType, setCategoryActionType] = useState(null); // 'single' or 'bulk'
   const [selectedPlaylistForCategory, setSelectedPlaylistForCategory] = useState(null);
+  const [showCreateInSelector, setShowCreateInSelector] = useState(false);
+  const [newCategoryInSelector, setNewCategoryInSelector] = useState('');
   const [expandedCategories, setExpandedCategories] = useState(() => {
     // Load expanded state from localStorage
     const saved = localStorage.getItem('expandedCategories');
@@ -208,25 +211,21 @@ export default function Library() {
       return { categorized: {}, uncategorized: filteredPlaylists || [] };
     }
 
-    // Separate playlists into categorized and uncategorized
+    // Initialize all categories (even empty ones)
     const categorized = {};
+    categories.forEach(category => {
+      categorized[category.id] = {
+        category,
+        playlists: []
+      };
+    });
+
+    // Separate playlists into categorized and uncategorized
     const uncategorized = [];
 
     filteredPlaylists.forEach(playlist => {
-      if (playlist.category_id) {
-        if (!categorized[playlist.category_id]) {
-          // Find the category object
-          const category = categories.find(c => c.id === playlist.category_id);
-          if (category) {
-            categorized[playlist.category_id] = {
-              category,
-              playlists: []
-            };
-          }
-        }
-        if (categorized[playlist.category_id]) {
-          categorized[playlist.category_id].playlists.push(playlist);
-        }
+      if (playlist.category_id && categorized[playlist.category_id]) {
+        categorized[playlist.category_id].playlists.push(playlist);
       } else {
         uncategorized.push(playlist);
       }
@@ -259,6 +258,10 @@ export default function Library() {
       // Close channel sort menu if clicking outside
       if (channelSortMenuRef.current && !channelSortMenuRef.current.contains(event.target)) {
         setShowChannelSortMenu(false);
+      }
+      // Close category menu if clicking outside
+      if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target)) {
+        setActiveCategoryMenuId(null);
       }
     };
 
@@ -387,53 +390,38 @@ export default function Library() {
     }));
   };
 
-  const handleAssignCategory = async (categoryId) => {
+  const handleToggleCategory = async (categoryId, isCurrentlyAssigned) => {
     try {
       if (categoryActionType === 'single' && selectedPlaylistForCategory) {
-        // Single playlist assignment
+        // Single playlist - toggle on/off
+        const newCategoryId = isCurrentlyAssigned ? null : categoryId;
         await updatePlaylist.mutateAsync({
           id: selectedPlaylistForCategory,
-          data: { category_id: categoryId },
+          data: { category_id: newCategoryId },
         });
-        showNotification('Playlist category updated', 'success');
+        showNotification(
+          isCurrentlyAssigned ? 'Removed from category' : 'Added to category',
+          'success'
+        );
       } else if (categoryActionType === 'bulk' && selectedPlaylists.length > 0) {
-        // Bulk assignment
+        // Bulk - assign all to this category
         await bulkAssignCategory.mutateAsync({
           playlistIds: selectedPlaylists,
           categoryId: categoryId,
         });
         showNotification(`${selectedPlaylists.length} playlists assigned to category`, 'success');
+        // Clear selection after bulk assignment
+        setSelectedPlaylists([]);
+        setEditMode(false);
+        setShowCategorySelectorModal(false);
+        setSelectedPlaylistForCategory(null);
+        setCategoryActionType(null);
       }
-      setShowCategorySelectorModal(false);
-      setSelectedPlaylistForCategory(null);
-      setCategoryActionType(null);
     } catch (error) {
-      showNotification(error.message || 'Failed to assign category', 'error');
+      showNotification(error.message || 'Failed to update category', 'error');
     }
   };
 
-  const handleRemoveCategory = async () => {
-    try {
-      if (categoryActionType === 'single' && selectedPlaylistForCategory) {
-        await updatePlaylist.mutateAsync({
-          id: selectedPlaylistForCategory,
-          data: { category_id: null },
-        });
-        showNotification('Playlist removed from category', 'success');
-      } else if (categoryActionType === 'bulk' && selectedPlaylists.length > 0) {
-        await bulkAssignCategory.mutateAsync({
-          playlistIds: selectedPlaylists,
-          categoryId: null,
-        });
-        showNotification(`${selectedPlaylists.length} playlists removed from categories`, 'success');
-      }
-      setShowCategorySelectorModal(false);
-      setSelectedPlaylistForCategory(null);
-      setCategoryActionType(null);
-    } catch (error) {
-      showNotification(error.message || 'Failed to remove category', 'error');
-    }
-  };
 
   if (isLoading) {
     return (
@@ -779,7 +767,7 @@ export default function Library() {
                         }}
                         className="btn btn-primary btn-sm"
                       >
-                        Assign Category
+                        Category Options
                       </button>
                       <button
                         onClick={handleBulkDeletePlaylists}
@@ -945,7 +933,7 @@ export default function Library() {
                       </button>
 
                       {/* Category 3-Dot Menu */}
-                      <div className="relative flex-shrink-0" ref={activeCategoryMenuId === categoryId ? menuRef : null}>
+                      <div className="relative flex-shrink-0" ref={activeCategoryMenuId === categoryId ? categoryMenuRef : null}>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -1094,7 +1082,7 @@ export default function Library() {
                                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                               <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                             </svg>
-                                            Assign Category
+                                            Category Options
                                           </button>
                                           <button
                                             onClick={(e) => {
@@ -1384,9 +1372,9 @@ export default function Library() {
                                         className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
                                       >
                                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 3h9a2 2 0 0 1 2 2z"></path>
                                         </svg>
-                                        Assign Category
+                                        Category Options
                                       </button>
                                       <button
                                         onClick={(e) => {
@@ -1698,54 +1686,138 @@ export default function Library() {
       {/* Category Selector Modal */}
       {showCategorySelectorModal && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
-            <h3 className="text-xl font-bold text-text-primary mb-4">
-              {categoryActionType === 'bulk'
-                ? `Assign ${selectedPlaylists.length} Playlists to Category`
-                : 'Assign Playlist to Category'}
-            </h3>
-
-            {/* Category List */}
-            <div className="space-y-2 mb-4 max-h-96 overflow-y-auto">
-              {categories && categories.length > 0 ? (
-                categories.map(category => (
-                  <button
-                    key={category.id}
-                    onClick={() => handleAssignCategory(category.id)}
-                    className="w-full px-4 py-3 text-left bg-dark-tertiary hover:bg-dark-hover border border-dark-border rounded-lg transition-colors flex items-center justify-between group"
-                  >
-                    <span className="text-text-primary font-medium">{category.name}</span>
-                    <span className="text-text-muted text-sm">
-                      {category.playlist_count || 0} {category.playlist_count === 1 ? 'playlist' : 'playlists'}
-                    </span>
-                  </button>
-                ))
-              ) : (
-                <p className="text-text-secondary text-sm text-center py-4">
-                  No categories yet. Create one using the + Category button.
-                </p>
-              )}
-            </div>
-
-            {/* Actions */}
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={handleRemoveCategory}
-                className="btn btn-secondary w-full"
-              >
-                Remove from Category
-              </button>
+          <div className="bg-dark-secondary rounded-lg max-w-md w-full shadow-2xl border border-dark-border flex flex-col max-h-[600px]">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-border">
+              <h3 className="text-lg font-semibold text-text-primary">Category Options</h3>
               <button
                 onClick={() => {
                   setShowCategorySelectorModal(false);
                   setSelectedPlaylistForCategory(null);
                   setCategoryActionType(null);
+                  setShowCreateInSelector(false);
+                  setNewCategoryInSelector('');
                 }}
-                className="btn btn-secondary w-full"
+                className="text-text-secondary hover:text-text-primary transition-colors"
               >
-                Cancel
+                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
               </button>
             </div>
+
+            {/* Category List */}
+            <div className="flex-1 overflow-y-auto p-2">
+              {categories && categories.length > 0 ? (
+                <div className="space-y-1">
+                  {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map(category => {
+                    // For single playlist mode, check if this category is currently assigned
+                    const currentPlaylist = categoryActionType === 'single' && playlists
+                      ? playlists.find(p => p.id === selectedPlaylistForCategory)
+                      : null;
+                    const isAssigned = currentPlaylist && currentPlaylist.category_id === category.id;
+
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => handleToggleCategory(category.id, isAssigned)}
+                        className="w-full px-3 py-2 text-left rounded-lg hover:bg-dark-hover transition-colors flex items-center gap-3"
+                      >
+                        {/* Checkbox */}
+                        <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                          isAssigned
+                            ? 'bg-accent border-accent'
+                            : 'border-text-secondary bg-transparent'
+                        }`}>
+                          {isAssigned && (
+                            <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                              <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                          )}
+                        </div>
+
+                        {/* Category info */}
+                        <div className="flex-1 min-w-0 flex items-center justify-between">
+                          <div className="text-sm font-medium text-text-primary truncate">{category.name}</div>
+                          <div className="text-xs text-text-secondary ml-2">
+                            {category.playlist_count || 0} {category.playlist_count === 1 ? 'playlist' : 'playlists'}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-text-secondary">
+                  <p className="text-sm">No categories yet</p>
+                </div>
+              )}
+            </div>
+
+            {/* Create new category section */}
+            <div className="border-t border-dark-border p-4">
+              {!showCreateInSelector ? (
+                <button
+                  onClick={() => setShowCreateInSelector(true)}
+                  className="w-full px-4 py-2 text-left rounded-lg hover:bg-dark-hover transition-colors flex items-center gap-2 text-sm font-medium text-accent"
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                  Create new category
+                </button>
+              ) : (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newCategoryInSelector.trim()) {
+                      showNotification('Please enter a category name', 'error');
+                      return;
+                    }
+                    try {
+                      const newCategory = await createCategory.mutateAsync({ name: newCategoryInSelector.trim() });
+                      showNotification('Category created', 'success');
+                      // Immediately assign to the new category
+                      await handleToggleCategory(newCategory.id, false);
+                      setShowCreateInSelector(false);
+                      setNewCategoryInSelector('');
+                    } catch (error) {
+                      showNotification(error.message, 'error');
+                    }
+                  }}
+                  className="space-y-2"
+                >
+                  <input
+                    type="text"
+                    value={newCategoryInSelector}
+                    onChange={(e) => setNewCategoryInSelector(e.target.value)}
+                    placeholder="Category name"
+                    className="w-full px-3 py-2 bg-dark-tertiary border border-dark-border rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreateInSelector(false);
+                        setNewCategoryInSelector('');
+                      }}
+                      className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-secondary transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-primary font-medium border border-dark-border-light transition-colors"
+                      disabled={createCategory.isLoading}
+                    >
+                      Create
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
           </div>
         </div>
       )}

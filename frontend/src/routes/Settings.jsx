@@ -393,7 +393,7 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className="text-text-primary font-mono text-xs">v2.2.0</span>
+                <span className="text-text-primary font-mono text-xs">v2.3.0</span>
               </div>
             </div>
           </div>
