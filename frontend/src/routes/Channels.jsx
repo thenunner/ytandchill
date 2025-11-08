@@ -22,7 +22,7 @@ export default function Channels() {
   const [menuOpen, setMenuOpen] = useState(null); // Track which channel's menu is open (grid view only)
   const [showDurationSettings, setShowDurationSettings] = useState(null); // Track which channel shows duration settings
   const [searchInput, setSearchInput] = useState(''); // Search filter
-  const [sortBy, setSortBy] = useState('most_downloaded'); // Sort option
+  const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'most_downloaded'); // Sort option
   const [showSortMenu, setShowSortMenu] = useState(false); // Sort menu visibility
   const [isScanningAll, setIsScanningAll] = useState(false); // Scan all progress
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 }); // X/Y progress
@@ -190,6 +190,11 @@ export default function Channels() {
   useEffect(() => {
     localStorage.setItem('channelsViewMode', viewMode);
   }, [viewMode]);
+
+  // Persist sortBy to localStorage
+  useEffect(() => {
+    localStorage.setItem('channels_sortBy', sortBy);
+  }, [sortBy]);
 
   // Filter and sort channels
   const filteredAndSortedChannels = (() => {

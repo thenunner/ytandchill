@@ -1459,6 +1459,111 @@ def reorder_queue():
     queue_items = [serialize_queue_item(queue_item) for queue_item in items]
     session.close()
 
+    return jsonify({'queue_items': queue_items})
+
+@app.route('/api/queue/move-to-top', methods=['POST'])
+def move_to_top():
+    session = get_db()
+    data = request.json
+    item_id = data.get('item_id')
+
+    if not item_id:
+        session.close()
+        return jsonify({'error': 'item_id is required'}), 400
+
+    # Get the item to move
+    item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
+    if not item:
+        session.close()
+        return jsonify({'error': 'Queue item not found'}), 404
+
+    # Check if item is currently downloading (cannot reorder)
+    video = session.query(Video).filter(Video.id == item.video_id).first()
+    if video and video.status == 'downloading':
+        session.close()
+        return jsonify({'error': 'Cannot reorder currently downloading item'}), 400
+
+    old_position = item.queue_position
+
+    # If already at position 1, no change needed
+    if old_position == 1:
+        session.close()
+        return jsonify({'message': 'Already at top'}), 200
+
+    # Shift all items from position 1 to old_position-1 down by 1
+    items_to_shift = session.query(QueueItem).filter(
+        QueueItem.queue_position >= 1,
+        QueueItem.queue_position < old_position,
+        QueueItem.id != item_id
+    ).all()
+    for shift_item in items_to_shift:
+        shift_item.queue_position += 1
+
+    # Move item to position 1
+    item.queue_position = 1
+    session.commit()
+
+    # Return updated queue
+    items = session.query(QueueItem).join(Video).filter(
+        Video.status.in_(['queued', 'downloading'])
+    ).order_by(QueueItem.queue_position).all()
+    queue_items = [serialize_queue_item(queue_item) for queue_item in items]
+    session.close()
+
+    return jsonify({'queue_items': queue_items})
+
+@app.route('/api/queue/move-to-bottom', methods=['POST'])
+def move_to_bottom():
+    session = get_db()
+    data = request.json
+    item_id = data.get('item_id')
+
+    if not item_id:
+        session.close()
+        return jsonify({'error': 'item_id is required'}), 400
+
+    # Get the item to move
+    item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
+    if not item:
+        session.close()
+        return jsonify({'error': 'Queue item not found'}), 404
+
+    # Check if item is currently downloading (cannot reorder)
+    video = session.query(Video).filter(Video.id == item.video_id).first()
+    if video and video.status == 'downloading':
+        session.close()
+        return jsonify({'error': 'Cannot reorder currently downloading item'}), 400
+
+    old_position = item.queue_position
+
+    # Find max position
+    max_position = session.query(func.max(QueueItem.queue_position)).scalar() or 1
+
+    # If already at bottom, no change needed
+    if old_position == max_position:
+        session.close()
+        return jsonify({'message': 'Already at bottom'}), 200
+
+    # Shift all items from old_position+1 to max_position up by 1
+    items_to_shift = session.query(QueueItem).filter(
+        QueueItem.queue_position > old_position,
+        QueueItem.queue_position <= max_position,
+        QueueItem.id != item_id
+    ).all()
+    for shift_item in items_to_shift:
+        shift_item.queue_position -= 1
+
+    # Move item to bottom (max position)
+    item.queue_position = max_position
+    session.commit()
+
+    # Return updated queue
+    items = session.query(QueueItem).join(Video).filter(
+        Video.status.in_(['queued', 'downloading'])
+    ).order_by(QueueItem.queue_position).all()
+    queue_items = [serialize_queue_item(queue_item) for queue_item in items]
+    session.close()
+
     return jsonify({'queue_items': queue_items}), 200
 
 @app.route('/api/queue/clear', methods=['POST'])

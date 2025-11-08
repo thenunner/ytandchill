@@ -232,6 +232,26 @@ export function useReorderQueue() {
   });
 }
 
+export function useMoveToTop() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (itemId) => api.moveToTop(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['queue']);
+    },
+  });
+}
+
+export function useMoveToBottom() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (itemId) => api.moveToBottom(itemId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['queue']);
+    },
+  });
+}
+
 export function useClearQueue() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -19,14 +19,22 @@ export default function Playlist() {
   const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
   const [searchInput, setSearchInput] = useState('');
   const [showFiltersModal, setShowFiltersModal] = useState(false);
-  const [sort, setSort] = useState('date-desc');
-  const [hideWatched, setHideWatched] = useState(false);
+  const [sort, setSort] = useState(localStorage.getItem('playlist_sort') || 'date-desc');
+  const [hideWatched, setHideWatched] = useState(localStorage.getItem('playlist_hideWatched') === 'true');
   const [editMode, setEditMode] = useState(false);
   const [selectedVideos, setSelectedVideos] = useState([]);
 
   useEffect(() => {
     localStorage.setItem('viewMode', viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    localStorage.setItem('playlist_sort', sort);
+  }, [sort]);
+
+  useEffect(() => {
+    localStorage.setItem('playlist_hideWatched', hideWatched.toString());
+  }, [hideWatched]);
 
   const handleFilterChange = (key, value) => {
     if (key === 'view') {

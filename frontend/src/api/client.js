@@ -182,6 +182,20 @@ class APIClient {
     });
   }
 
+  moveToTop(itemId) {
+    return this.request('/queue/move-to-top', {
+      method: 'POST',
+      body: JSON.stringify({ item_id: itemId }),
+    });
+  }
+
+  moveToBottom(itemId) {
+    return this.request('/queue/move-to-bottom', {
+      method: 'POST',
+      body: JSON.stringify({ item_id: itemId }),
+    });
+  }
+
   clearQueue() {
     return this.request('/queue/clear', {
       method: 'POST',

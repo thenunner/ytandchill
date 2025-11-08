@@ -1,11 +1,11 @@
-import { useQueue, usePauseQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useClearQueue } from '../api/queries';
+import { useQueue, usePauseQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
 // Sortable Queue Item Component
-function SortableQueueItem({ item, index, onRemove }) {
+function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom }) {
   const {
     attributes,
     listeners,
@@ -72,15 +72,54 @@ function SortableQueueItem({ item, index, onRemove }) {
           <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate">
             {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
           </p>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRemove(item.id);
-            }}
-            className="text-xs text-red-400 font-medium hover:text-red-300 transition-colors flex-shrink-0 px-2 py-1 hover:bg-red-400/10 rounded"
-          >
-            Remove
-          </button>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Move to Top */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveToTop(item.id);
+              }}
+              className="text-text-secondary hover:text-white transition-colors p-1.5 hover:bg-dark-tertiary rounded"
+              title="Move to top"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="17 11 12 6 7 11"></polyline>
+                <polyline points="17 18 12 13 7 18"></polyline>
+              </svg>
+            </button>
+
+            {/* Move to Bottom */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveToBottom(item.id);
+              }}
+              className="text-text-secondary hover:text-white transition-colors p-1.5 hover:bg-dark-tertiary rounded"
+              title="Move to bottom"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="17 13 12 18 7 13"></polyline>
+                <polyline points="17 6 12 11 7 6"></polyline>
+              </svg>
+            </button>
+
+            {/* Remove */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRemove(item.id);
+              }}
+              className="text-text-secondary hover:text-red-400 transition-colors p-1.5 hover:bg-dark-tertiary rounded"
+              title="Remove from queue"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -94,6 +133,8 @@ export default function Queue() {
   const cancelCurrent = useCancelCurrent();
   const removeFromQueue = useRemoveFromQueue();
   const reorderQueue = useReorderQueue();
+  const moveToTop = useMoveToTop();
+  const moveToBottom = useMoveToBottom();
   const clearQueue = useClearQueue();
   const { showNotification } = useNotification();
 
@@ -179,6 +220,24 @@ export default function Queue() {
     try {
       await removeFromQueue.mutateAsync(itemId);
       showNotification('Removed from queue', 'success');
+    } catch (error) {
+      showNotification(error.message, 'error');
+    }
+  };
+
+  const handleMoveToTop = async (itemId) => {
+    try {
+      await moveToTop.mutateAsync(itemId);
+      showNotification('Moved to top of queue', 'success');
+    } catch (error) {
+      showNotification(error.message, 'error');
+    }
+  };
+
+  const handleMoveToBottom = async (itemId) => {
+    try {
+      await moveToBottom.mutateAsync(itemId);
+      showNotification('Moved to bottom of queue', 'success');
     } catch (error) {
       showNotification(error.message, 'error');
     }
@@ -346,6 +405,8 @@ export default function Queue() {
                     item={item}
                     index={index}
                     onRemove={handleRemove}
+                    onMoveToTop={handleMoveToTop}
+                    onMoveToBottom={handleMoveToBottom}
                   />
                 ))}
               </SortableContext>

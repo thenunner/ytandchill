@@ -48,16 +48,51 @@ export default function ChannelLibrary() {
 
   const channel = channels?.find(c => c.id === Number(channelId));
 
-  // Get filters from URL, with localStorage fallback for library mode visibility filters
+  // Get filters from URL, with localStorage fallback
+  // Build localStorage keys with channel ID for per-channel persistence
+  const localStorageKey = `channelLibrary_${channelId}`;
+
   // Library mode: 'videos' or 'playlists' (default: 'videos')
   // Discovery mode: 'to-review' or 'ignored' (default: 'to-review')
-  const contentFilter = searchParams.get('filter') || (isLibraryMode ? 'videos' : 'to-review');
+  const contentFilter = (() => {
+    const urlParam = searchParams.get('filter');
+    if (urlParam) return urlParam;
+    const stored = localStorage.getItem(`${localStorageKey}_filter`);
+    return stored || (isLibraryMode ? 'videos' : 'to-review');
+  })();
+
   const search = searchParams.get('search') || '';
-  const sort = searchParams.get('sort') || 'date-desc';
-  const minDuration = searchParams.get('min_duration');
-  const maxDuration = searchParams.get('max_duration');
-  const uploadDateFrom = searchParams.get('upload_from');
-  const uploadDateTo = searchParams.get('upload_to');
+
+  const sort = (() => {
+    const urlParam = searchParams.get('sort');
+    if (urlParam) return urlParam;
+    const stored = localStorage.getItem(`${localStorageKey}_sort`);
+    return stored || 'date-desc';
+  })();
+
+  const minDuration = (() => {
+    const urlParam = searchParams.get('min_duration');
+    if (urlParam) return urlParam;
+    return localStorage.getItem(`${localStorageKey}_minDuration`) || null;
+  })();
+
+  const maxDuration = (() => {
+    const urlParam = searchParams.get('max_duration');
+    if (urlParam) return urlParam;
+    return localStorage.getItem(`${localStorageKey}_maxDuration`) || null;
+  })();
+
+  const uploadDateFrom = (() => {
+    const urlParam = searchParams.get('upload_from');
+    if (urlParam) return urlParam;
+    return localStorage.getItem(`${localStorageKey}_uploadFrom`) || null;
+  })();
+
+  const uploadDateTo = (() => {
+    const urlParam = searchParams.get('upload_to');
+    if (urlParam) return urlParam;
+    return localStorage.getItem(`${localStorageKey}_uploadTo`) || null;
+  })();
 
   // For library mode, initialize from localStorage if URL param not present
   const hideWatched = (() => {
@@ -133,13 +168,61 @@ export default function ChannelLibrary() {
     localStorage.setItem('viewMode', viewMode);
   }, [viewMode]);
 
-  // Initialize URL params from localStorage on mount (library mode only)
+  // Initialize URL params from localStorage on mount
   useEffect(() => {
-    if (isLibraryMode) {
-      const newParams = new URLSearchParams(searchParams);
-      let changed = false;
+    const newParams = new URLSearchParams(searchParams);
+    let changed = false;
 
-      // Only set URL params from localStorage if they're not already in the URL
+    // Only set URL params from localStorage if they're not already in the URL
+    if (!searchParams.has('sort')) {
+      const storedSort = localStorage.getItem(`${localStorageKey}_sort`);
+      if (storedSort) {
+        newParams.set('sort', storedSort);
+        changed = true;
+      }
+    }
+
+    if (!searchParams.has('filter')) {
+      const storedFilter = localStorage.getItem(`${localStorageKey}_filter`);
+      if (storedFilter) {
+        newParams.set('filter', storedFilter);
+        changed = true;
+      }
+    }
+
+    if (!searchParams.has('min_duration')) {
+      const storedMinDuration = localStorage.getItem(`${localStorageKey}_minDuration`);
+      if (storedMinDuration) {
+        newParams.set('min_duration', storedMinDuration);
+        changed = true;
+      }
+    }
+
+    if (!searchParams.has('max_duration')) {
+      const storedMaxDuration = localStorage.getItem(`${localStorageKey}_maxDuration`);
+      if (storedMaxDuration) {
+        newParams.set('max_duration', storedMaxDuration);
+        changed = true;
+      }
+    }
+
+    if (!searchParams.has('upload_from')) {
+      const storedUploadFrom = localStorage.getItem(`${localStorageKey}_uploadFrom`);
+      if (storedUploadFrom) {
+        newParams.set('upload_from', storedUploadFrom);
+        changed = true;
+      }
+    }
+
+    if (!searchParams.has('upload_to')) {
+      const storedUploadTo = localStorage.getItem(`${localStorageKey}_uploadTo`);
+      if (storedUploadTo) {
+        newParams.set('upload_to', storedUploadTo);
+        changed = true;
+      }
+    }
+
+    if (isLibraryMode) {
       if (!searchParams.has('hide_watched')) {
         const storedHideWatched = localStorage.getItem('channelLibrary_hideWatched');
         if (storedHideWatched === 'true') {
@@ -155,10 +238,10 @@ export default function ChannelLibrary() {
           changed = true;
         }
       }
+    }
 
-      if (changed) {
-        setSearchParams(newParams, { replace: true });
-      }
+    if (changed) {
+      setSearchParams(newParams, { replace: true });
     }
   }, []); // Run only on mount
 
@@ -183,8 +266,20 @@ export default function ChannelLibrary() {
     const newParams = new URLSearchParams(searchParams);
     if (value) {
       newParams.set(key, value);
+      // Save to localStorage for persistence
+      if (key === 'filter') localStorage.setItem(`${localStorageKey}_filter`, value);
+      if (key === 'min_duration') localStorage.setItem(`${localStorageKey}_minDuration`, value);
+      if (key === 'max_duration') localStorage.setItem(`${localStorageKey}_maxDuration`, value);
+      if (key === 'upload_from') localStorage.setItem(`${localStorageKey}_uploadFrom`, value);
+      if (key === 'upload_to') localStorage.setItem(`${localStorageKey}_uploadTo`, value);
     } else {
       newParams.delete(key);
+      // Remove from localStorage when cleared
+      if (key === 'filter') localStorage.removeItem(`${localStorageKey}_filter`);
+      if (key === 'min_duration') localStorage.removeItem(`${localStorageKey}_minDuration`);
+      if (key === 'max_duration') localStorage.removeItem(`${localStorageKey}_maxDuration`);
+      if (key === 'upload_from') localStorage.removeItem(`${localStorageKey}_uploadFrom`);
+      if (key === 'upload_to') localStorage.removeItem(`${localStorageKey}_uploadTo`);
     }
     setSearchParams(newParams);
   };
@@ -192,6 +287,8 @@ export default function ChannelLibrary() {
   const handleSort = (sortValue) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('sort', sortValue);
+    // Save to localStorage for persistence
+    localStorage.setItem(`${localStorageKey}_sort`, sortValue);
     setSearchParams(newParams);
   };
 
