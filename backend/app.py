@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import os
 import yt_dlp
 import subprocess
-from models import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting
+from models import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category
 from download_worker import DownloadWorker
 from scheduler import AutoRefreshScheduler
 from googleapiclient.discovery import build
@@ -537,6 +537,30 @@ def serialize_video(video):
         'playlist_name': playlist_names[0] if playlist_names else None  # First playlist name for backward compatibility
     }
 
+def serialize_category(category):
+    """Serialize category with playlist count"""
+    playlist_count = len(category.playlists) if category.playlists else 0
+
+    # Get a random playlist thumbnail if category has playlists
+    thumbnail = None
+    if category.playlists:
+        import random
+        playlists_with_videos = [p for p in category.playlists if p.playlist_videos]
+        if playlists_with_videos:
+            random_playlist = random.choice(playlists_with_videos)
+            random_video = random.choice(random_playlist.playlist_videos).video
+            if random_video:
+                thumbnail = random_video.thumb_url
+
+    return {
+        'id': category.id,
+        'name': category.name,
+        'playlist_count': playlist_count,
+        'thumbnail': thumbnail,
+        'created_at': category.created_at.isoformat(),
+        'updated_at': category.updated_at.isoformat()
+    }
+
 def serialize_playlist(playlist):
     import random
 
@@ -547,9 +571,19 @@ def serialize_playlist(playlist):
         if random_video:
             thumbnail = random_video.thumb_url
 
+    # Include category info
+    category_info = None
+    if playlist.category:
+        category_info = {
+            'id': playlist.category.id,
+            'name': playlist.category.name
+        }
+
     return {
         'id': playlist.id,
         'channel_id': playlist.channel_id,
+        'category_id': playlist.category_id,
+        'category': category_info,
         'name': playlist.name,
         'title': playlist.name,  # Add title for frontend compatibility
         'video_count': len(playlist.playlist_videos),
@@ -1131,6 +1165,150 @@ def bulk_update_videos():
     return jsonify({'updated': len(videos)})
 
 # Playlists
+# ==================== CATEGORY ENDPOINTS ====================
+
+@app.route('/api/categories', methods=['GET'])
+def get_categories():
+    """List all categories with playlist counts"""
+    session = get_db()
+    categories = session.query(Category).order_by(Category.name).all()
+    result = [serialize_category(c) for c in categories]
+    session.close()
+    return jsonify(result)
+
+@app.route('/api/categories', methods=['POST'])
+def create_category():
+    """Create a new category"""
+    data = request.json
+    session = get_db()
+
+    name = data.get('name', '').strip()
+    if not name:
+        session.close()
+        return jsonify({'error': 'Category name is required'}), 400
+
+    # Check if category already exists
+    existing = session.query(Category).filter(Category.name == name).first()
+    if existing:
+        session.close()
+        return jsonify({'error': 'Category already exists'}), 409
+
+    category = Category(name=name)
+    session.add(category)
+    session.commit()
+
+    result = serialize_category(category)
+    session.close()
+    return jsonify(result), 201
+
+@app.route('/api/categories/<int:category_id>', methods=['GET'])
+def get_category(category_id):
+    """Get single category with its playlists"""
+    session = get_db()
+    category = session.query(Category).filter(Category.id == category_id).first()
+
+    if not category:
+        session.close()
+        return jsonify({'error': 'Category not found'}), 404
+
+    playlists = [serialize_playlist(p) for p in category.playlists]
+    result = serialize_category(category)
+    result['playlists'] = playlists
+
+    session.close()
+    return jsonify(result)
+
+@app.route('/api/categories/<int:category_id>', methods=['PATCH'])
+def update_category(category_id):
+    """Rename a category"""
+    data = request.json
+    session = get_db()
+
+    category = session.query(Category).filter(Category.id == category_id).first()
+    if not category:
+        session.close()
+        return jsonify({'error': 'Category not found'}), 404
+
+    if 'name' in data:
+        new_name = data['name'].strip()
+        if not new_name:
+            session.close()
+            return jsonify({'error': 'Category name is required'}), 400
+
+        # Check if new name already exists
+        existing = session.query(Category).filter(
+            Category.name == new_name,
+            Category.id != category_id
+        ).first()
+        if existing:
+            session.close()
+            return jsonify({'error': 'Category name already exists'}), 409
+
+        category.name = new_name
+
+    session.commit()
+    result = serialize_category(category)
+    session.close()
+    return jsonify(result)
+
+@app.route('/api/categories/<int:category_id>', methods=['DELETE'])
+@limiter.limit("20 per minute")
+def delete_category(category_id):
+    """Delete a category (playlists become uncategorized)"""
+    session = get_db()
+    category = session.query(Category).filter(Category.id == category_id).first()
+
+    if not category:
+        session.close()
+        return jsonify({'error': 'Category not found'}), 404
+
+    # Set all playlists in this category to NULL (uncategorized)
+    for playlist in category.playlists:
+        playlist.category_id = None
+
+    session.delete(category)
+    session.commit()
+    session.close()
+    return '', 204
+
+@app.route('/api/playlists/bulk-category', methods=['PATCH'])
+def bulk_assign_category():
+    """Assign multiple playlists to a category"""
+    data = request.json
+    session = get_db()
+
+    playlist_ids = data.get('playlist_ids', [])
+    category_id = data.get('category_id')  # Can be None to uncategorize
+
+    if not playlist_ids or not isinstance(playlist_ids, list):
+        session.close()
+        return jsonify({'error': 'playlist_ids array is required'}), 400
+
+    # If category_id is provided, verify it exists
+    if category_id is not None:
+        category = session.query(Category).filter(Category.id == category_id).first()
+        if not category:
+            session.close()
+            return jsonify({'error': 'Category not found'}), 404
+
+    # Update all playlists
+    updated_count = 0
+    for playlist_id in playlist_ids:
+        playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
+        if playlist:
+            playlist.category_id = category_id
+            updated_count += 1
+
+    session.commit()
+    session.close()
+
+    return jsonify({
+        'updated_count': updated_count,
+        'total_requested': len(playlist_ids)
+    })
+
+# ==================== PLAYLIST ENDPOINTS ====================
+
 @app.route('/api/playlists', methods=['GET'])
 def get_playlists():
     session = get_db()
@@ -1191,6 +1369,10 @@ def update_playlist(playlist_id):
 
     if 'name' in data:
         playlist.name = data['name']
+
+    if 'category_id' in data:
+        # Allow setting to None to uncategorize
+        playlist.category_id = data['category_id']
 
     session.commit()
     result = serialize_playlist(playlist)

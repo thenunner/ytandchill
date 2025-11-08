@@ -121,6 +121,65 @@ export function useBulkUpdateVideos() {
   });
 }
 
+// Categories
+export function useCategories() {
+  return useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.getCategories(),
+  });
+}
+
+export function useCategory(id) {
+  return useQuery({
+    queryKey: ['category', id],
+    queryFn: () => api.getCategory(id),
+    enabled: !!id,
+  });
+}
+
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => api.createCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['categories']);
+    },
+  });
+}
+
+export function useUpdateCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => api.updateCategory(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['categories']);
+      queryClient.invalidateQueries(['category']);
+    },
+  });
+}
+
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.deleteCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['categories']);
+      queryClient.invalidateQueries(['playlists']); // Playlists become uncategorized
+    },
+  });
+}
+
+export function useBulkAssignCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ playlistIds, categoryId }) => api.bulkAssignCategory(playlistIds, categoryId),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['playlists']);
+      queryClient.invalidateQueries(['categories']);
+    },
+  });
+}
+
 // Playlists
 export function usePlaylists(channelId) {
   return useQuery({

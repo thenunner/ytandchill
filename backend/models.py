@@ -45,16 +45,28 @@ class Video(Base):
     queue_items = relationship('QueueItem', back_populates='video', cascade='all, delete-orphan')
     playlist_videos = relationship('PlaylistVideo', back_populates='video', cascade='all, delete-orphan')
 
+class Category(Base):
+    __tablename__ = 'categories'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False, unique=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    playlists = relationship('Playlist', back_populates='category')
+
 class Playlist(Base):
     __tablename__ = 'playlists'
-    
+
     id = Column(Integer, primary_key=True)
     channel_id = Column(Integer, ForeignKey('channels.id'), index=True)
+    category_id = Column(Integer, ForeignKey('categories.id'), nullable=True, index=True)
     name = Column(String(200), nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
+
     channel = relationship('Channel', back_populates='playlists')
+    category = relationship('Category', back_populates='playlists')
     playlist_videos = relationship('PlaylistVideo', back_populates='playlist', cascade='all, delete-orphan')
 
 class PlaylistVideo(Base):

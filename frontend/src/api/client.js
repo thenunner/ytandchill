@@ -113,6 +113,42 @@ class APIClient {
     });
   }
 
+  // Categories
+  getCategories() {
+    return this.request('/categories');
+  }
+
+  getCategory(id) {
+    return this.request(`/categories/${id}`);
+  }
+
+  createCategory(data) {
+    return this.request('/categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  updateCategory(id, data) {
+    return this.request(`/categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  deleteCategory(id) {
+    return this.request(`/categories/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  bulkAssignCategory(playlistIds, categoryId) {
+    return this.request('/playlists/bulk-category', {
+      method: 'PATCH',
+      body: JSON.stringify({ playlist_ids: playlistIds, category_id: categoryId }),
+    });
+  }
+
   // Playlists
   getPlaylists(channelId) {
     const query = channelId ? `?channel_id=${channelId}` : '';
