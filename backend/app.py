@@ -1009,6 +1009,7 @@ def get_videos():
     upload_to = request.args.get('upload_to')  # YYYY-MM-DD format
 
     query = session.query(Video).options(
+        joinedload(Video.channel),
         joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
     )
 
@@ -1168,6 +1169,7 @@ def bulk_update_videos():
 # ==================== CATEGORY ENDPOINTS ====================
 
 @app.route('/api/categories', methods=['GET'])
+@login_required
 def get_categories():
     """List all categories with playlist counts"""
     from sqlalchemy.orm import joinedload
@@ -1180,6 +1182,7 @@ def get_categories():
     return jsonify(result)
 
 @app.route('/api/categories', methods=['POST'])
+@login_required
 def create_category():
     """Create a new category"""
     data = request.json
@@ -1205,6 +1208,7 @@ def create_category():
     return jsonify(result), 201
 
 @app.route('/api/categories/<int:category_id>', methods=['GET'])
+@login_required
 def get_category(category_id):
     """Get single category with its playlists"""
     from sqlalchemy.orm import joinedload
@@ -1225,6 +1229,7 @@ def get_category(category_id):
     return jsonify(result)
 
 @app.route('/api/categories/<int:category_id>', methods=['PATCH'])
+@login_required
 def update_category(category_id):
     """Rename a category"""
     data = request.json
@@ -1258,6 +1263,7 @@ def update_category(category_id):
     return jsonify(result)
 
 @app.route('/api/categories/<int:category_id>', methods=['DELETE'])
+@login_required
 @limiter.limit("20 per minute")
 def delete_category(category_id):
     """Delete a category (playlists become uncategorized)"""
@@ -1278,6 +1284,7 @@ def delete_category(category_id):
     return '', 204
 
 @app.route('/api/playlists/bulk-category', methods=['PATCH'])
+@login_required
 def bulk_assign_category():
     """Assign multiple playlists to a category"""
     data = request.json
