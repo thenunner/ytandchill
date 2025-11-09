@@ -297,9 +297,20 @@ export default function Settings() {
           <span className="text-sm text-text-secondary">Scan all channels at</span>
           <select
             value={refreshHour}
-            onChange={(e) => {
-              setRefreshHour(parseInt(e.target.value));
-              setTimeout(() => handleSave(), 100);
+            onChange={async (e) => {
+              const newHour = parseInt(e.target.value);
+              setRefreshHour(newHour);
+              // Save immediately
+              try {
+                await updateSettings.mutateAsync({
+                  auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                  auto_refresh_time: `${newHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                  youtube_api_key: youtubeApiKey,
+                  log_level: logLevel,
+                });
+              } catch (error) {
+                console.error('Failed to save refresh hour:', error);
+              }
             }}
             className="input text-sm font-mono py-1.5 px-2 w-16"
           >
@@ -312,9 +323,20 @@ export default function Settings() {
           <span className="text-text-primary text-sm font-bold">:</span>
           <select
             value={refreshMinute}
-            onChange={(e) => {
-              setRefreshMinute(parseInt(e.target.value));
-              setTimeout(() => handleSave(), 100);
+            onChange={async (e) => {
+              const newMinute = parseInt(e.target.value);
+              setRefreshMinute(newMinute);
+              // Save immediately
+              try {
+                await updateSettings.mutateAsync({
+                  auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                  auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`,
+                  youtube_api_key: youtubeApiKey,
+                  log_level: logLevel,
+                });
+              } catch (error) {
+                console.error('Failed to save refresh minute:', error);
+              }
             }}
             className="input text-sm font-mono py-1.5 px-2 w-16"
           >
@@ -327,9 +349,19 @@ export default function Settings() {
           {/* ON/OFF Toggle */}
           <div className="flex border border-dark-border rounded-md overflow-hidden">
             <button
-              onClick={() => {
+              onClick={async () => {
                 setAutoRefresh(false);
-                setTimeout(() => handleSave(), 100);
+                // Save immediately
+                try {
+                  await updateSettings.mutateAsync({
+                    auto_refresh_enabled: 'false',
+                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                    youtube_api_key: youtubeApiKey,
+                    log_level: logLevel,
+                  });
+                } catch (error) {
+                  console.error('Failed to save auto refresh:', error);
+                }
               }}
               className={`px-3 py-1.5 text-xs font-bold transition-all ${
                 !autoRefresh
@@ -340,9 +372,19 @@ export default function Settings() {
               OFF
             </button>
             <button
-              onClick={() => {
+              onClick={async () => {
                 setAutoRefresh(true);
-                setTimeout(() => handleSave(), 100);
+                // Save immediately
+                try {
+                  await updateSettings.mutateAsync({
+                    auto_refresh_enabled: 'true',
+                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                    youtube_api_key: youtubeApiKey,
+                    log_level: logLevel,
+                  });
+                } catch (error) {
+                  console.error('Failed to save auto refresh:', error);
+                }
               }}
               className={`px-3 py-1.5 text-xs font-bold transition-all ${
                 autoRefresh
@@ -393,7 +435,7 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className="text-text-primary font-mono text-xs">v2.3.0</span>
+                <span className="text-text-primary font-mono text-xs">v2.3.1</span>
               </div>
             </div>
           </div>
@@ -439,9 +481,20 @@ export default function Settings() {
                 min="0"
                 max="4"
                 value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
-                onChange={(e) => {
-                  setLogLevel(['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)]);
-                  setTimeout(() => handleSave(), 100);
+                onChange={async (e) => {
+                  const newLevel = ['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)];
+                  setLogLevel(newLevel);
+                  // Save immediately instead of using setTimeout
+                  try {
+                    await updateSettings.mutateAsync({
+                      auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                      youtube_api_key: youtubeApiKey,
+                      log_level: newLevel,
+                    });
+                  } catch (error) {
+                    console.error('Failed to save log level:', error);
+                  }
                 }}
                 className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
