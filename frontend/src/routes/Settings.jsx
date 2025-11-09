@@ -324,7 +324,7 @@ export default function Settings() {
         {/* Row 2: Controls */}
         <div className="flex items-center justify-between">
           <button
-            onClick={() => setShowPasswordChange(true)}
+            onClick={() => setShowPasswordChange(!showPasswordChange)}
             className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
           >
             Reset User
@@ -487,30 +487,13 @@ export default function Settings() {
               </div>
             )}
 
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                disabled={isChangingPassword}
-                className="btn bg-accent hover:bg-accent-hover text-text-primary font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowPasswordChange(false);
-                  setPasswordError('');
-                  setCurrentPassword('');
-                  setNewUsername('');
-                  setNewPassword('');
-                  setConfirmNewPassword('');
-                }}
-                className="btn bg-dark-tertiary hover:bg-dark-hover text-text-primary font-bold"
-                disabled={isChangingPassword}
-              >
-                Cancel
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isChangingPassword}
+              className="btn bg-accent hover:bg-accent-hover text-white font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
+            </button>
           </form>
         )}
       </div>
