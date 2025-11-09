@@ -206,46 +206,63 @@ export default function Settings() {
         <div className="flex gap-2">
           <button
             onClick={() => setTheme('dark')}
-            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+            className={`relative px-4 py-1.5 rounded-lg font-semibold text-sm transition-all bg-gray-800 border border-gray-600 hover:bg-black ${
               theme === 'dark'
-                ? 'bg-black text-white border-2 border-green-500'
-                : 'bg-gray-800 text-gray-300 border border-gray-600 hover:bg-black hover:text-white'
+                ? 'text-white after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
+                : 'text-gray-300 hover:text-white'
             }`}
           >
-            Matrix
+            Stone
           </button>
           <button
             onClick={() => setTheme('youtube')}
-            style={{ backgroundColor: theme === 'youtube' ? 'hsl(0, 8%, 10%)' : 'hsl(0, 8%, 8%)' }}
-            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+            className={`relative px-4 py-1.5 rounded-lg font-semibold text-sm transition-all bg-gray-800 border border-gray-600 hover:bg-black ${
               theme === 'youtube'
-                ? 'text-white border-2 border-green-500'
-                : 'text-red-200 border border-red-900 hover:text-white'
+                ? 'text-white after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
+                : 'text-red-400 hover:text-white'
             }`}
           >
-            Blood
+            Flame
           </button>
           <button
             onClick={() => setTheme('midnight')}
-            style={{ backgroundColor: theme === 'midnight' ? 'hsl(222, 47%, 11%)' : 'hsl(222, 47%, 9%)' }}
-            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+            className={`relative px-4 py-1.5 rounded-lg font-semibold text-sm transition-all bg-gray-800 border border-gray-600 hover:bg-black ${
               theme === 'midnight'
-                ? 'text-white border-2 border-green-500'
-                : 'text-blue-200 border border-blue-900 hover:text-white'
+                ? 'text-white after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
+                : 'text-blue-400 hover:text-white'
             }`}
           >
             Ocean
           </button>
           <button
             onClick={() => setTheme('purple')}
-            style={{ backgroundColor: theme === 'purple' ? 'hsl(270, 50%, 10%)' : 'hsl(270, 50%, 8%)' }}
-            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+            className={`relative px-4 py-1.5 rounded-lg font-semibold text-sm transition-all bg-gray-800 border border-gray-600 hover:bg-black ${
               theme === 'purple'
-                ? 'text-white border-2 border-green-500'
-                : 'text-purple-200 border border-purple-900 hover:text-white'
+                ? 'text-white after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-500 after:to-purple-300'
+                : 'text-purple-400 hover:text-white'
             }`}
           >
-            Lavender
+            Plum
+          </button>
+          <button
+            onClick={() => setTheme('orange')}
+            className={`relative px-4 py-1.5 rounded-lg font-semibold text-sm transition-all bg-gray-800 border border-gray-600 hover:bg-black ${
+              theme === 'orange'
+                ? 'text-white after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
+                : 'text-orange-400 hover:text-white'
+            }`}
+          >
+            Rust
+          </button>
+          <button
+            onClick={() => setTheme('green')}
+            className={`relative px-4 py-1.5 rounded-lg font-semibold text-sm transition-all bg-gray-800 border border-gray-600 hover:bg-black ${
+              theme === 'green'
+                ? 'text-white after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
+                : 'text-green-400 hover:text-white'
+            }`}
+          >
+            Tree
           </button>
         </div>
       </div>
@@ -502,7 +519,7 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className="text-text-primary font-mono text-xs">v2.3.3</span>
+                <span className="text-text-primary font-mono text-xs">v2.3.4</span>
               </div>
             </div>
           </div>

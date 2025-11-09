@@ -123,6 +123,66 @@
   /* Plyr player */
   --plyr-main: 270 70% 60%;        /* Purple for player */
 }
+
+/* Tangerine Orange Theme */
+.theme-orange {
+  /* Backgrounds */
+  --bg-primary: 25 45% 9%;         /* Deep orange/brown */
+  --bg-secondary: 25 40% 12%;      /* Lighter orange/brown */
+  --bg-tertiary: 25 35% 15%;       /* Elevated orange/brown */
+  --bg-hover: 25 25% 26%;          /* Orange-tinted hover */
+
+  /* Borders */
+  --border: 25 30% 16%;            /* Orange-tinted borders */
+  --border-light: 25 25% 26%;      /* Orange-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Orange */
+  --accent: 25 95% 55%;            /* #F97316 - Bright orange */
+  --accent-hover: 25 95% 65%;      /* Lighter orange on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 25 40% 12%;
+  --scrollbar-thumb: 25 75% 50%;   /* Orange thumb */
+  --scrollbar-thumb-hover: 25 80% 60%;
+
+  /* Plyr player */
+  --plyr-main: 25 95% 55%;         /* Orange for player */
+}
+
+/* Tree Green Theme */
+.theme-green {
+  /* Backgrounds */
+  --bg-primary: 140 40% 10%;       /* Deep forest green */
+  --bg-secondary: 140 35% 13%;     /* Lighter forest green */
+  --bg-tertiary: 140 30% 16%;      /* Elevated green */
+  --bg-hover: 140 20% 27%;         /* Green-tinted hover */
+
+  /* Borders */
+  --border: 140 25% 17%;           /* Green-tinted borders */
+  --border-light: 140 20% 27%;     /* Green-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Green */
+  --accent: 140 70% 50%;           /* #22C55E - Bright green */
+  --accent-hover: 140 70% 60%;     /* Lighter green on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 140 35% 13%;
+  --scrollbar-thumb: 140 60% 45%;  /* Green thumb */
+  --scrollbar-thumb-hover: 140 65% 55%;
+
+  /* Plyr player */
+  --plyr-main: 140 70% 50%;        /* Green for player */
+}
 /* ===== END THEME SYSTEM ===== */
 
 @layer base {
