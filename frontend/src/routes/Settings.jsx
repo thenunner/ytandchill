@@ -213,7 +213,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 9%, 92%)' }}></div>
-            Stone
+            ash
           </button>
           <button
             onClick={() => setTheme('youtube')}
@@ -224,7 +224,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-            Flame
+            rust
           </button>
           <button
             onClick={() => setTheme('midnight')}
@@ -235,7 +235,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(217, 91%, 60%)' }}></div>
-            Ocean
+            abyss
           </button>
           <button
             onClick={() => setTheme('purple')}
@@ -246,7 +246,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(270, 70%, 60%)' }}></div>
-            Plum
+            bruise
           </button>
           <button
             onClick={() => setTheme('orange')}
@@ -257,7 +257,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 95%, 55%)' }}></div>
-            Rust
+            ember
           </button>
           <button
             onClick={() => setTheme('green')}
@@ -268,7 +268,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 70%, 50%)' }}></div>
-            Tree
+            decay
           </button>
         </div>
       </div>
