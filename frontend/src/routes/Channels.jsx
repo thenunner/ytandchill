@@ -502,7 +502,7 @@ export default function Channels() {
                   )}
 
                   {/* Last Scan Badge - Bottom Left */}
-                  <div className="absolute bottom-2 left-2 bg-dark-secondary/90 text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
+                  <div className="absolute bottom-2 left-2 bg-dark-secondary/90 text-text-primary px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
                     {channel.last_scan_at ? new Date(channel.last_scan_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
                   </div>
                 </div>

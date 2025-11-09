@@ -20,14 +20,16 @@ Common topics covered:
 ## Features
 
 - **Fully Responsive Mobile UI**: Complete mobile-friendly interface with touch-optimized controls, responsive layouts, and mobile-specific features for managing your library on any device
-- **Auto-Refresh Scheduler**: Set daily scan times to automatically check for new videos from your subscribed channels, keeping your library up-to-date without manual intervention
+- **8 Custom Themes**: Choose from ash, chalk, rust, drift, bruise, ember, stain, and decay themes to personalize your interface
+- **Auto-Refresh Scheduler**: Set daily scan times to automatically check for new videos from your subscribed channels, keeping your library up-to-date without manual intervention (see [Auto-Scan Daily](#auto-scan-daily) in Settings)
 - **Smart Duration Filters**: Set minimum and maximum video length preferences per channel to automatically filter out shorts, long streams, or any videos outside your preferred range
 - **Channel Management**: Subscribe to YouTube channels and automatically track new uploads
 - **Advanced Video Player**: Built-in player with automatic resume from last position, playback speed controls, and picture-in-picture support
 - **Smart Downloads**: Queue-based download system with drag-and-drop reordering, pause/resume controls, and progress tracking
 - **Playlist Support**: Create and organize custom playlists from your downloaded videos
 - **Video Library**: Browse, search, and manage your downloaded videos with flexible filtering and sorting options
-- **Cookie Authentication**: Support for YouTube cookies (strongly recommended for reliable downloads)
+- **Cookie Authentication**: Support for YouTube cookies (strongly recommended for reliable downloads - see [Cookies.txt](#cookiestxt-strongly-recommended) in Settings)
+- **User Management**: Change your login credentials anytime with the Reset User feature (see [Reset User](#reset-user-password-management) in Settings)
 
 ## Screenshots
 
@@ -206,10 +208,89 @@ To provide YouTube authentication cookies:
 
 ## Usage
 
+### Getting Started
+
 1. **Add Channels**: Navigate to the Channels page and add YouTube channel URLs
 2. **Browse Library**: View all tracked channels and playlists
 3. **Queue Downloads**: Select videos to download from channel pages
 4. **Watch Videos**: Access your downloaded library through the Library tab
+
+### Settings Configuration
+
+Navigate to **Settings** to configure the following:
+
+#### YouTube Data API Key (Required)
+
+The YouTube Data API v3 key is **required** for channel scanning and fetching video metadata. See the [YouTube API Setup](#youtube-api-setup-required) section above for detailed instructions on obtaining your free API key.
+
+**Quick Setup:**
+1. Get your API key from [Google Cloud Console](https://console.cloud.google.com/)
+2. Go to **Settings** in YT and Chill
+3. Paste your API key in the "YouTube Data API Key" field
+4. Click "Save API Key"
+
+For more details, see [Do I need a YouTube API key?](FAQ.md#do-i-need-a-youtube-api-key) in the FAQ.
+
+#### Auto-Scan Daily
+
+Enable automatic channel scanning to keep your library up-to-date without manual intervention.
+
+**How it works:**
+- Set a specific time (hour and minute) for automatic channel scans
+- Toggle ON/OFF to enable or disable auto-scanning
+- When enabled, YT and Chill will automatically check all your subscribed channels for new videos at the scheduled time each day
+- New videos are added to your library for review - you can then download or ignore them
+
+**Setup:**
+1. Go to **Settings** → **Auto-Scan Daily**
+2. Select the hour and minute for daily scans (e.g., 03:00 AM)
+3. Toggle the switch to **ON**
+4. The system will automatically scan all channels at the scheduled time
+
+**Best Practices:**
+- Schedule scans during off-peak hours (e.g., early morning)
+- With the free API tier (10,000 quota units/day), you can scan ~100-300 channels daily
+- Monitor your API usage if you have many channels
+
+#### Cookies.txt (Strongly Recommended)
+
+As of 2024, YouTube cookies are **essential** for reliable downloads. Without them, you'll likely encounter bot detection errors and download failures.
+
+**Quick Setup:**
+1. Export cookies from your browser using a cookie extension (see detailed instructions in the FAQ)
+2. Save the file as `cookies.txt` in your YT and Chill directory
+3. Restart the application
+
+**Important Notes:**
+- Use a **disposable YouTube account**, NOT your personal account (see [Which YouTube account should I use?](FAQ.md#which-youtube-account-should-i-use-for-cookies) in the FAQ)
+- Cookies expire every few weeks - re-export when downloads start failing
+- For detailed export instructions, see [How do I properly export cookies?](FAQ.md#how-do-i-properly-export-cookies-from-youtube) in the FAQ
+
+#### Reset User (Password Management)
+
+The **Reset User** button allows you to change your login credentials for the YT and Chill web interface.
+
+**How to use:**
+1. Go to **Settings** → **Password** section
+2. Click "Reset User"
+3. Enter your current password
+4. Enter a new username (minimum 3 characters)
+5. Enter and confirm your new password (minimum 3 characters)
+6. Click "Save New Credentials"
+
+**Important:**
+- You'll be logged out and need to log in again with your new credentials
+- Make sure to remember your new username and password
+- There is no password recovery - if forgotten, you'll need to access the backend to reset manually
+
+#### Theme Selection
+
+Choose from 8 different color themes to customize your interface:
+
+**Row 1:** ash (dark gray), chalk (light mode), rust (red), drift (blue)
+**Row 2:** bruise (purple), ember (orange), stain (yellow), decay (green)
+
+Simply click on any theme button to apply it immediately. Your theme preference is saved automatically.
 
 ## Building from Source
 

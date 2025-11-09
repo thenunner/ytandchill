@@ -96,7 +96,7 @@ export default function ChannelRow({ channel, onScan, onEditFilters, onDelete, n
           )}
 
           {/* Last Scan Badge - Bottom Left */}
-          <div className="absolute bottom-1.5 left-1.5 bg-dark-secondary/90 text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
+          <div className="absolute bottom-1.5 left-1.5 bg-dark-secondary/90 text-text-primary px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
             {channel.last_scan_at ? new Date(channel.last_scan_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
           </div>
         </div>
