@@ -260,7 +260,7 @@ export default function VideoCard({
       {/* Content */}
       <div className="p-3 space-y-2">
         {/* Title */}
-        <h3 className="text-sm font-medium text-white line-clamp-2 leading-tight" title={video.title}>
+        <h3 className="text-sm font-medium text-text-primary line-clamp-2 leading-tight" title={video.title}>
           {video.title}
         </h3>
 

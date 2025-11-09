@@ -19,7 +19,7 @@ export default function ChannelRow({ channel, onScan, onEditFilters, onDelete, n
             e.stopPropagation();
             setShowMenu(!showMenu);
           }}
-          className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-white rounded-lg transition-colors"
+          className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary rounded-lg transition-colors"
         >
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="12" cy="5" r="2"></circle>

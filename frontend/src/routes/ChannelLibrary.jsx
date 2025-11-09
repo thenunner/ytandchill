@@ -602,7 +602,7 @@ export default function ChannelLibrary() {
           {/* Back Arrow - Library mode goes to /library, Discovery mode goes to / (main channels list) */}
           <Link
             to={isLibraryMode ? "/library" : "/"}
-            className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-white transition-colors"
+            className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors"
             title={isLibraryMode ? "Back to Library" : "Back to Channels"}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -623,8 +623,8 @@ export default function ChannelLibrary() {
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     contentFilter === 'videos'
-                      ? 'bg-dark-tertiary text-white border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
                   Videos
@@ -633,7 +633,7 @@ export default function ChannelLibrary() {
                   onClick={() => {
                     navigate('/library?tab=playlists');
                   }}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white"
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary"
                 >
                   Playlists
                 </button>
@@ -649,8 +649,8 @@ export default function ChannelLibrary() {
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     contentFilter === 'to-review'
-                      ? 'bg-dark-tertiary text-white border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
                   To Review
@@ -663,8 +663,8 @@ export default function ChannelLibrary() {
                   }}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     contentFilter === 'ignored'
-                      ? 'bg-dark-tertiary text-white border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
                   Ignored
@@ -690,8 +690,8 @@ export default function ChannelLibrary() {
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded-lg border transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-dark-tertiary border-dark-border-light text-white'
-                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary'
+                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
               }`}
               title="Grid View"
             >
@@ -706,8 +706,8 @@ export default function ChannelLibrary() {
               onClick={() => setViewMode('list')}
               className={`p-2 rounded-lg border transition-all ${
                 viewMode === 'list'
-                  ? 'bg-dark-tertiary border-dark-border-light text-white'
-                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary'
+                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
               }`}
               title="List View"
             >
@@ -742,7 +742,7 @@ export default function ChannelLibrary() {
                 setSelectedVideos([]); // Clear selection when toggling
               }}
               title={editMode ? "Exit selection mode" : "Select videos for bulk actions"}
-              className={`filter-btn ${editMode ? 'bg-dark-tertiary text-white border-dark-border-light' : ''}`}
+              className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -871,7 +871,7 @@ export default function ChannelLibrary() {
               }}
               className="p-1.5 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors"
             >
-              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-4 h-4 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="5" r="1"></circle>
                 <circle cx="12" cy="12" r="1"></circle>
                 <circle cx="12" cy="19" r="1"></circle>
@@ -1106,7 +1106,7 @@ export default function ChannelLibrary() {
           className="fixed bottom-6 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-colors z-50 animate-fade-in"
           aria-label="Scroll to top"
         >
-          <svg className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="18 15 12 9 6 15"></polyline>
           </svg>
         </button>

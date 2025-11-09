@@ -453,8 +453,8 @@ export default function Library() {
                 onClick={() => setActiveTab('channels')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === 'channels'
-                    ? 'bg-dark-tertiary text-white border border-dark-border-light'
-                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                 }`}
               >
                 Channels
@@ -463,8 +463,8 @@ export default function Library() {
                 onClick={() => setActiveTab('playlists')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === 'playlists'
-                    ? 'bg-dark-tertiary text-white border border-dark-border-light'
-                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                 }`}
               >
                 Playlists
@@ -555,7 +555,7 @@ export default function Library() {
                 onClick={() => setViewMode('grid')}
                 className={`p-2 rounded-lg border transition-all ${
                   viewMode === 'grid'
-                    ? 'bg-dark-tertiary border-dark-border-light text-white ring-2 ring-accent/40'
+                    ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
                     : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
                 }`}
               >
@@ -570,7 +570,7 @@ export default function Library() {
                 onClick={() => setViewMode('list')}
                 className={`p-2 rounded-lg border transition-all ${
                   viewMode === 'list'
-                    ? 'bg-dark-tertiary border-dark-border-light text-white ring-2 ring-accent/40'
+                    ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
                     : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
                 }`}
               >
@@ -594,8 +594,8 @@ export default function Library() {
                   onClick={() => setActiveTab('channels')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === 'channels'
-                      ? 'bg-dark-tertiary text-white border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
                   Channels
@@ -604,8 +604,8 @@ export default function Library() {
                   onClick={() => setActiveTab('playlists')}
                   className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                     activeTab === 'playlists'
-                      ? 'bg-dark-tertiary text-white border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
                   Playlists
@@ -640,7 +640,7 @@ export default function Library() {
                   onClick={() => setPlaylistViewMode('grid')}
                   className={`p-2 rounded-lg border transition-all ${
                     playlistViewMode === 'grid'
-                      ? 'bg-dark-tertiary border-dark-border-light text-white ring-2 ring-accent/40'
+                      ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
                       : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
                   }`}
                 >
@@ -655,7 +655,7 @@ export default function Library() {
                   onClick={() => setPlaylistViewMode('list')}
                   className={`p-2 rounded-lg border transition-all ${
                     playlistViewMode === 'list'
-                      ? 'bg-dark-tertiary border-dark-border-light text-white ring-2 ring-accent/40'
+                      ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
                       : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
                   }`}
                 >
@@ -745,7 +745,7 @@ export default function Library() {
                 setEditMode(!editMode);
                 setSelectedPlaylists([]);
               }}
-                className={`filter-btn ${editMode ? 'bg-dark-tertiary text-white border-dark-border-light' : ''}`}
+                className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -947,7 +947,7 @@ export default function Library() {
                             e.stopPropagation();
                             setActiveCategoryMenuId(activeCategoryMenuId === categoryId ? null : categoryId);
                           }}
-                          className="p-2 rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-white transition-colors"
+                          className="p-2 rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary transition-colors"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="12" cy="5" r="2"></circle>
@@ -1160,7 +1160,7 @@ export default function Library() {
                                         e.stopPropagation();
                                         setActiveMenuId(showMenu ? null : playlist.id);
                                       }}
-                                      className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-white rounded-lg transition-colors"
+                                      className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary rounded-lg transition-colors"
                                     >
                                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                         <circle cx="12" cy="5" r="2"></circle>
@@ -1451,7 +1451,7 @@ export default function Library() {
                                     e.stopPropagation();
                                     setActiveMenuId(showMenu ? null : playlist.id);
                                   }}
-                                  className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-white rounded-lg transition-colors"
+                                  className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary rounded-lg transition-colors"
                                 >
                                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                                     <circle cx="12" cy="5" r="2"></circle>

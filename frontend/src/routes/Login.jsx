@@ -98,7 +98,7 @@ function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn bg-gray-700 hover:bg-gray-600 text-white font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn bg-gray-700 hover:bg-gray-600 text-text-primary font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>

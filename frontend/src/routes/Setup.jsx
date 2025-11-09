@@ -132,7 +132,7 @@ function Setup() {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn bg-red-700 hover:bg-red-800 text-white font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn bg-red-700 hover:bg-red-800 text-text-primary font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Saving...' : 'Complete Setup'}
           </button>

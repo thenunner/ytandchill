@@ -177,7 +177,7 @@ export default function Settings() {
             />
             <button
               onClick={handleSave}
-              className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
             >
               Save API Key
             </button>
@@ -325,7 +325,7 @@ export default function Settings() {
         <div className="flex items-center justify-between">
           <button
             onClick={() => setShowPasswordChange(true)}
-            className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
           >
             Reset User
           </button>
@@ -491,7 +491,7 @@ export default function Settings() {
               <button
                 type="submit"
                 disabled={isChangingPassword}
-                className="btn bg-accent hover:bg-accent-hover text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                className="btn bg-accent hover:bg-accent-hover text-text-primary font-bold disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
               </button>
@@ -505,7 +505,7 @@ export default function Settings() {
                   setNewPassword('');
                   setConfirmNewPassword('');
                 }}
-                className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold"
+                className="btn bg-dark-tertiary hover:bg-dark-hover text-text-primary font-bold"
                 disabled={isChangingPassword}
               >
                 Cancel
@@ -616,11 +616,11 @@ export default function Settings() {
                 className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
               <div className="flex justify-between text-xs font-mono mt-1">
-                <span className={logLevel === 'DEBUG' ? 'text-green-500 font-bold' : 'text-white'}>DEBUG</span>
-                <span className={logLevel === 'INFO' ? 'text-green-500 font-bold' : 'text-white'}>INFO</span>
-                <span className={logLevel === 'API' ? 'text-green-500 font-bold' : 'text-white'}>API</span>
-                <span className={logLevel === 'WARNING' ? 'text-green-500 font-bold' : 'text-white'}>WARNING</span>
-                <span className={logLevel === 'ERROR' ? 'text-green-500 font-bold' : 'text-white'}>ERROR</span>
+                <span className={logLevel === 'DEBUG' ? 'text-green-500 font-bold' : 'text-text-primary'}>DEBUG</span>
+                <span className={logLevel === 'INFO' ? 'text-green-500 font-bold' : 'text-text-primary'}>INFO</span>
+                <span className={logLevel === 'API' ? 'text-green-500 font-bold' : 'text-text-primary'}>API</span>
+                <span className={logLevel === 'WARNING' ? 'text-green-500 font-bold' : 'text-text-primary'}>WARNING</span>
+                <span className={logLevel === 'ERROR' ? 'text-green-500 font-bold' : 'text-text-primary'}>ERROR</span>
               </div>
             </div>
 
@@ -629,7 +629,7 @@ export default function Settings() {
               <span className="text-sm text-text-secondary">Logging level</span>
               <button
                 onClick={toggleLogs}
-                className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
               >
                 {showLogs ? 'Hide Logs' : 'View Logs'}
               </button>

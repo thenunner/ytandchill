@@ -286,13 +286,13 @@
   }
 
   .btn-primary {
-    @apply bg-dark-primary/95 text-white border border-dark-border;
+    @apply bg-dark-primary/95 text-text-primary border border-dark-border;
     @apply hover:bg-dark-tertiary/50 hover:border-dark-border-light;
     @apply focus:ring-accent;
   }
 
   .btn-secondary {
-    @apply bg-dark-primary/95 text-white border border-dark-border;
+    @apply bg-dark-primary/95 text-text-primary border border-dark-border;
     @apply hover:bg-dark-tertiary/50 hover:border-dark-border-light;
     @apply focus:ring-text-secondary;
   }
@@ -323,7 +323,7 @@
   .icon-btn {
     @apply w-11 h-11 flex items-center justify-center;
     @apply bg-dark-secondary border border-dark-border rounded-lg;
-    @apply text-text-primary hover:bg-dark-tertiary hover:border-dark-border-light hover:text-white;
+    @apply text-text-primary hover:bg-dark-tertiary hover:border-dark-border-light hover:text-text-primary;
     @apply transition-all duration-200 cursor-pointer;
   }
 
@@ -331,7 +331,7 @@
   .nav-tab {
     @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-t-lg;
     @apply bg-dark-secondary border border-dark-border-light border-b-2 border-b-transparent;
-    @apply text-white font-medium text-sm relative;
+    @apply text-text-primary font-medium text-sm relative;
     @apply transition-all duration-300 ease-out cursor-pointer;
   }
 
@@ -382,13 +382,13 @@
   /* Filter Button */
   .filter-btn {
     @apply flex items-center gap-1 sm:gap-2 px-2 sm:px-3.5 py-2 rounded-lg;
-    @apply bg-dark-primary/95 border border-dark-border text-white;
+    @apply bg-dark-primary/95 border border-dark-border text-text-primary;
     @apply text-xs sm:text-sm cursor-pointer transition-all duration-200;
     @apply hover:bg-dark-tertiary/50;
   }
 
   .filter-btn.active {
-    @apply bg-dark-tertiary border-dark-border-light text-white font-medium;
+    @apply bg-dark-tertiary border-dark-border-light text-text-primary font-medium;
   }
 }
 

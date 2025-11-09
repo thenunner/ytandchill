@@ -240,7 +240,7 @@ export default function Channels() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="w-8 h-8 p-0 flex items-center justify-center bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-white transition-colors"
+            className="w-8 h-8 p-0 flex items-center justify-center bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors"
             title={showAddForm ? 'Cancel' : 'Add Channel'}
           >
             {showAddForm ? (
@@ -392,7 +392,7 @@ export default function Channels() {
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded-lg border transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-dark-tertiary border-dark-border-light text-white ring-2 ring-accent/40'
+                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
                   : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
               }`}
               title="Grid View"
@@ -408,7 +408,7 @@ export default function Channels() {
               onClick={() => setViewMode('list')}
               className={`p-2 rounded-lg border transition-all ${
                 viewMode === 'list'
-                  ? 'bg-dark-tertiary border-dark-border-light text-white ring-2 ring-accent/40'
+                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
                   : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
               }`}
               title="List View"

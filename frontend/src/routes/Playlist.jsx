@@ -184,7 +184,7 @@ export default function Playlist() {
                 );
                 navigate(referrer);
               }}
-              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-white transition-colors"
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors"
               title="Back"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -217,8 +217,8 @@ export default function Playlist() {
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded-lg border transition-all ${
                 viewMode === 'grid'
-                  ? 'bg-dark-tertiary border-dark-border-light text-white'
-                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary'
+                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
               }`}
               title="Grid View"
             >
@@ -233,8 +233,8 @@ export default function Playlist() {
               onClick={() => setViewMode('list')}
               className={`p-2 rounded-lg border transition-all ${
                 viewMode === 'list'
-                  ? 'bg-dark-tertiary border-dark-border-light text-white'
-                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-white'
+                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary'
+                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
               }`}
               title="List View"
             >
@@ -266,7 +266,7 @@ export default function Playlist() {
               setEditMode(!editMode);
               setSelectedVideos([]);
             }}
-            className={`filter-btn ${editMode ? 'bg-dark-tertiary text-white border-dark-border-light' : ''}`}
+            className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
@@ -282,7 +282,7 @@ export default function Playlist() {
               {sortedVideos.length > 0 && (
                 <button
                   onClick={selectAll}
-                  className="btn btn-sm bg-dark-tertiary text-white hover:bg-dark-hover"
+                  className="btn btn-sm bg-dark-tertiary text-text-primary hover:bg-dark-hover"
                 >
                   Select All ({sortedVideos.length})
                 </button>
@@ -312,7 +312,7 @@ export default function Playlist() {
                   </button>
                   <button
                     onClick={clearSelection}
-                    className="btn btn-sm bg-dark-tertiary text-white hover:bg-dark-hover"
+                    className="btn btn-sm bg-dark-tertiary text-text-primary hover:bg-dark-hover"
                   >
                     Clear
                   </button>
