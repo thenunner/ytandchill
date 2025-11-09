@@ -167,14 +167,22 @@ export default function Settings() {
             </svg>
             YouTube Data API Key
           </h3>
-          <input
-            type="text"
-            value={youtubeApiKey}
-            onChange={(e) => setYoutubeApiKey(e.target.value)}
-            placeholder="Enter your YouTube Data API v3 key..."
-            className="input text-sm py-1.5 px-3 w-full font-mono mb-2"
-          />
-          <p className="text-sm text-text-secondary font-medium mb-3">
+          <div className="flex gap-2 mb-2">
+            <input
+              type="text"
+              value={youtubeApiKey}
+              onChange={(e) => setYoutubeApiKey(e.target.value)}
+              placeholder="Enter your YouTube Data API v3 key..."
+              className="input text-sm py-1.5 px-3 flex-1 font-mono"
+            />
+            <button
+              onClick={handleSave}
+              className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+            >
+              Save API Key
+            </button>
+          </div>
+          <p className="text-sm text-text-secondary font-medium">
             Required for fast channel scanning. Get your key at{' '}
             <a
               href="https://console.cloud.google.com/apis/credentials"
@@ -185,156 +193,138 @@ export default function Settings() {
               Google Cloud Console
             </a>
           </p>
+        </div>
 
+      {/* Reset User + Theme */}
+      <div className="card p-4">
+        <div className="flex items-center justify-between gap-4">
+          {/* Left side - Reset User */}
+          <button
+            onClick={() => setShowPasswordChange(true)}
+            className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+          >
+            Reset User
+          </button>
+
+          {/* Right side - Theme buttons */}
           <div className="flex gap-2">
             <button
-              onClick={handleSave}
-              className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold px-6 py-1.5"
+              onClick={() => setTheme('dark')}
+              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+                theme === 'dark'
+                  ? 'bg-black text-white border-2 border-white'
+                  : 'bg-gray-800 text-gray-300 border border-gray-600 hover:bg-black hover:text-white'
+              }`}
             >
-              Save API Key
+              Matrix
             </button>
             <button
-              onClick={() => setShowPasswordChange(true)}
-              className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold px-6 py-1.5"
+              onClick={() => setTheme('youtube')}
+              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+                theme === 'youtube'
+                  ? 'bg-red-600 text-white border-2 border-red-400'
+                  : 'bg-red-800 text-red-200 border border-red-700 hover:bg-red-600 hover:text-white'
+              }`}
             >
-              Reset User
+              Blood
+            </button>
+            <button
+              onClick={() => setTheme('midnight')}
+              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+                theme === 'midnight'
+                  ? 'bg-blue-600 text-white border-2 border-blue-400'
+                  : 'bg-blue-800 text-blue-200 border border-blue-700 hover:bg-blue-600 hover:text-white'
+              }`}
+            >
+              Ocean
             </button>
           </div>
-
-          {showPasswordChange && (
-            <form onSubmit={handlePasswordChange} className="space-y-3 mt-4 pt-4 border-t border-dark-border">
-              <div>
-                <label className="block text-sm text-text-secondary mb-1">Current Password</label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="Enter current password"
-                  className="input text-sm py-1.5 px-3 w-full"
-                  disabled={isChangingPassword}
-                  autoFocus
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-secondary mb-1">New Username</label>
-                <input
-                  type="text"
-                  value={newUsername}
-                  onChange={(e) => setNewUsername(e.target.value)}
-                  placeholder="Enter new username"
-                  className="input text-sm py-1.5 px-3 w-full"
-                  disabled={isChangingPassword}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-secondary mb-1">New Password</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  placeholder="Enter new password"
-                  className="input text-sm py-1.5 px-3 w-full"
-                  disabled={isChangingPassword}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
-                <input
-                  type="password"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  placeholder="Confirm new password"
-                  className="input text-sm py-1.5 px-3 w-full"
-                  disabled={isChangingPassword}
-                />
-              </div>
-
-              {passwordError && (
-                <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
-                  {passwordError}
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <button
-                  type="submit"
-                  disabled={isChangingPassword}
-                  className="btn bg-accent hover:bg-accent-hover text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowPasswordChange(false);
-                    setPasswordError('');
-                    setCurrentPassword('');
-                    setNewUsername('');
-                    setNewPassword('');
-                    setConfirmNewPassword('');
-                  }}
-                  className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold"
-                  disabled={isChangingPassword}
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          )}
         </div>
 
-      {/* Theme Selection Card */}
-      <div className="card p-4">
-        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
-          </svg>
-          Theme
-        </h3>
-        <div className="flex gap-3">
-          <button
-            onClick={() => setTheme('dark')}
-            className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
-              theme === 'dark'
-                ? 'bg-dark-hover border-2 border-accent text-white'
-                : 'bg-dark-tertiary border border-dark-border text-text-secondary hover:bg-dark-hover hover:text-white'
-            }`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-black border border-gray-600"></div>
-              <span>Dark Mode</span>
+        {/* Password Change Form */}
+        {showPasswordChange && (
+          <form onSubmit={handlePasswordChange} className="space-y-3 mt-4 pt-4 border-t border-dark-border">
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">Current Password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+                autoFocus
+              />
             </div>
-          </button>
-          <button
-            onClick={() => setTheme('youtube')}
-            className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
-              theme === 'youtube'
-                ? 'bg-dark-hover border-2 border-accent text-white'
-                : 'bg-dark-tertiary border border-dark-border text-text-secondary hover:bg-dark-hover hover:text-white'
-            }`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 border border-red-500"></div>
-              <span>YouTube Red</span>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">New Username</label>
+              <input
+                type="text"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder="Enter new username"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
             </div>
-          </button>
-          <button
-            onClick={() => setTheme('midnight')}
-            className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
-              theme === 'midnight'
-                ? 'bg-dark-hover border-2 border-accent text-white'
-                : 'bg-dark-tertiary border border-dark-border text-text-secondary hover:bg-dark-hover hover:text-white'
-            }`}
-          >
-            <div className="flex flex-col items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-900 border border-blue-500"></div>
-              <span>Midnight Blue</span>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">New Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
             </div>
-          </button>
-        </div>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
+            </div>
+
+            {passwordError && (
+              <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
+                {passwordError}
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                disabled={isChangingPassword}
+                className="btn bg-accent hover:bg-accent-hover text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasswordChange(false);
+                  setPasswordError('');
+                  setCurrentPassword('');
+                  setNewUsername('');
+                  setNewPassword('');
+                  setConfirmNewPassword('');
+                }}
+                className="btn bg-dark-tertiary hover:bg-dark-hover text-white font-bold"
+                disabled={isChangingPassword}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Auto-Scan Card */}
