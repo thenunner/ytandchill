@@ -148,7 +148,7 @@ function App() {
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
                 <button
                   onClick={() => setShowQuickLogs(!showQuickLogs)}
-                  className="font-semibold text-white hover:text-accent transition-colors cursor-pointer flex items-center gap-1"
+                  className="font-semibold text-text-primary hover:text-accent transition-colors cursor-pointer flex items-center gap-1"
                   title="Click to view recent logs"
                 >
                   Status:
@@ -232,19 +232,19 @@ function App() {
                     <span className="text-green-400">
                       Downloading:
                     </span>
-                    <span className="text-white">
+                    <span className="text-text-primary">
                       {currentDownload.video?.title || 'Unknown'}
                     </span>
-                    <span className="text-white">
+                    <span className="text-text-primary">
                       {Math.round(currentDownload.progress_pct)}%
                     </span>
                     {currentDownload.speed_bps > 0 && (
-                      <span className="text-white">
+                      <span className="text-text-primary">
                         {(currentDownload.speed_bps / 1024 / 1024).toFixed(1)} MB/s
                       </span>
                     )}
                     {currentDownload.eta_seconds > 0 && (
-                      <span className="text-white">
+                      <span className="text-text-primary">
                         ETA: {Math.floor(currentDownload.eta_seconds / 60)}:{Math.floor(currentDownload.eta_seconds % 60).toString().padStart(2, '0')}
                       </span>
                     )}

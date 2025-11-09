@@ -188,13 +188,13 @@
 .theme-light {
   /* Backgrounds */
   --bg-primary: 0 0% 100%;         /* Pure white */
-  --bg-secondary: 0 0% 97%;        /* Very light gray */
-  --bg-tertiary: 0 0% 94%;         /* Light gray */
-  --bg-hover: 0 0% 88%;            /* Gray hover */
+  --bg-secondary: 0 0% 92%;        /* Darker gray for cards/status */
+  --bg-tertiary: 0 0% 88%;         /* Darker gray for elevated */
+  --bg-hover: 0 0% 82%;            /* Gray hover */
 
   /* Borders */
-  --border: 0 0% 85%;              /* Light borders */
-  --border-light: 0 0% 75%;        /* Slightly darker borders */
+  --border: 0 0% 80%;              /* Darker borders */
+  --border-light: 0 0% 70%;        /* Even darker borders */
 
   /* Text - Dark for light theme */
   --text-primary: 0 0% 10%;        /* Nearly black */
