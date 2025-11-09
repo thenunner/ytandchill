@@ -205,7 +205,7 @@ export default function Settings() {
         </h3>
         <div className="flex flex-col gap-3">
           {/* Row 1: ash, chalk, rust, drift */}
-          <div className="flex gap-6 flex-wrap">
+          <div className="grid grid-cols-4 gap-6">
             <button
               onClick={() => setTheme('dark')}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
@@ -253,7 +253,7 @@ export default function Settings() {
           </div>
 
           {/* Row 2: bruise, ember, stain, decay */}
-          <div className="flex gap-6 flex-wrap">
+          <div className="grid grid-cols-4 gap-6">
             <button
               onClick={() => setTheme('purple')}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
@@ -280,7 +280,7 @@ export default function Settings() {
               onClick={() => setTheme('yellow')}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
                 theme === 'yellow'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-500 after:to-yellow-300'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-600 after:to-yellow-400'
                   : ''
               }`}
             >
