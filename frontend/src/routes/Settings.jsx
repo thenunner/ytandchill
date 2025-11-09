@@ -203,10 +203,10 @@ export default function Settings() {
           </svg>
           Theme
         </h3>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-4 flex-wrap">
           <button
             onClick={() => setTheme('dark')}
-            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all text-white bg-gray-800 border border-gray-600 hover:bg-gray-700 w-[100px] ${
+            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
               theme === 'dark'
                 ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                 : ''
@@ -217,7 +217,7 @@ export default function Settings() {
           </button>
           <button
             onClick={() => setTheme('youtube')}
-            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all text-white bg-gray-800 border border-gray-600 hover:bg-gray-700 w-[100px] ${
+            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
               theme === 'youtube'
                 ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
                 : ''
@@ -228,7 +228,7 @@ export default function Settings() {
           </button>
           <button
             onClick={() => setTheme('midnight')}
-            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all text-white bg-gray-800 border border-gray-600 hover:bg-gray-700 w-[100px] ${
+            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
               theme === 'midnight'
                 ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
                 : ''
@@ -239,7 +239,7 @@ export default function Settings() {
           </button>
           <button
             onClick={() => setTheme('purple')}
-            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all text-white bg-gray-800 border border-gray-600 hover:bg-gray-700 w-[100px] ${
+            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
               theme === 'purple'
                 ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-500 after:to-purple-300'
                 : ''
@@ -250,7 +250,7 @@ export default function Settings() {
           </button>
           <button
             onClick={() => setTheme('orange')}
-            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all text-white bg-gray-800 border border-gray-600 hover:bg-gray-700 w-[100px] ${
+            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
               theme === 'orange'
                 ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
                 : ''
@@ -261,7 +261,7 @@ export default function Settings() {
           </button>
           <button
             onClick={() => setTheme('green')}
-            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg font-semibold text-sm transition-all text-white bg-gray-800 border border-gray-600 hover:bg-gray-700 w-[100px] ${
+            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
               theme === 'green'
                 ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
                 : ''
