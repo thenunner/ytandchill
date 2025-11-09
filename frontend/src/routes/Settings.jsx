@@ -273,20 +273,132 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Password */}
+      {/* Password & Auto-Scan */}
       <div className="card p-4">
-        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-          </svg>
-          Password
-        </h3>
-        <button
-          onClick={() => setShowPasswordChange(true)}
-          className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-        >
-          Reset User
-        </button>
+        {/* Row 1: Titles */}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            Password
+          </h3>
+          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 6v6l4 2"></path>
+            </svg>
+            Auto-Scan Daily
+          </h3>
+        </div>
+
+        {/* Row 2: Controls */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setShowPasswordChange(true)}
+            className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+          >
+            Reset User
+          </button>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={refreshHour}
+              onChange={async (e) => {
+                const newHour = parseInt(e.target.value);
+                setRefreshHour(newHour);
+                try {
+                  await updateSettings.mutateAsync({
+                    auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                    auto_refresh_time: `${newHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                    youtube_api_key: youtubeApiKey,
+                    log_level: logLevel,
+                  });
+                } catch (error) {
+                  console.error('Failed to save refresh hour:', error);
+                }
+              }}
+              className="input text-sm font-mono py-1.5 px-2 w-16"
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i}>
+                  {i.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+            <span className="text-text-primary text-sm font-bold">:</span>
+            <select
+              value={refreshMinute}
+              onChange={async (e) => {
+                const newMinute = parseInt(e.target.value);
+                setRefreshMinute(newMinute);
+                try {
+                  await updateSettings.mutateAsync({
+                    auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`,
+                    youtube_api_key: youtubeApiKey,
+                    log_level: logLevel,
+                  });
+                } catch (error) {
+                  console.error('Failed to save refresh minute:', error);
+                }
+              }}
+              className="input text-sm font-mono py-1.5 px-2 w-16"
+            >
+              {Array.from({ length: 60 }, (_, i) => (
+                <option key={i} value={i}>
+                  {i.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+            <div className="flex border border-dark-border rounded-md overflow-hidden">
+              <button
+                onClick={async () => {
+                  setAutoRefresh(false);
+                  try {
+                    await updateSettings.mutateAsync({
+                      auto_refresh_enabled: 'false',
+                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                      youtube_api_key: youtubeApiKey,
+                      log_level: logLevel,
+                    });
+                  } catch (error) {
+                    console.error('Failed to save auto refresh:', error);
+                  }
+                }}
+                className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                  !autoRefresh
+                    ? 'bg-green-600 text-white'
+                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                }`}
+              >
+                OFF
+              </button>
+              <button
+                onClick={async () => {
+                  setAutoRefresh(true);
+                  try {
+                    await updateSettings.mutateAsync({
+                      auto_refresh_enabled: 'true',
+                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                      youtube_api_key: youtubeApiKey,
+                      log_level: logLevel,
+                    });
+                  } catch (error) {
+                    console.error('Failed to save auto refresh:', error);
+                  }
+                }}
+                className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                  autoRefresh
+                    ? 'bg-green-600 text-white'
+                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                }`}
+              >
+                ON
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Password Change Form */}
         {showPasswordChange && (
@@ -372,120 +484,6 @@ export default function Settings() {
             </div>
           </form>
         )}
-      </div>
-
-      {/* Auto-Scan Card */}
-      <div className="card p-4">
-        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 6v6l4 2"></path>
-          </svg>
-          Auto-Scan Channels Daily
-        </h3>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-text-secondary">Scan all channels at</span>
-          <select
-            value={refreshHour}
-            onChange={async (e) => {
-              const newHour = parseInt(e.target.value);
-              setRefreshHour(newHour);
-              // Save immediately
-              try {
-                await updateSettings.mutateAsync({
-                  auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                  auto_refresh_time: `${newHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                  youtube_api_key: youtubeApiKey,
-                  log_level: logLevel,
-                });
-              } catch (error) {
-                console.error('Failed to save refresh hour:', error);
-              }
-            }}
-            className="input text-sm font-mono py-1.5 px-2 w-16"
-          >
-            {Array.from({ length: 24 }, (_, i) => (
-              <option key={i} value={i}>
-                {i.toString().padStart(2, '0')}
-              </option>
-            ))}
-          </select>
-          <span className="text-text-primary text-sm font-bold">:</span>
-          <select
-            value={refreshMinute}
-            onChange={async (e) => {
-              const newMinute = parseInt(e.target.value);
-              setRefreshMinute(newMinute);
-              // Save immediately
-              try {
-                await updateSettings.mutateAsync({
-                  auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                  auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`,
-                  youtube_api_key: youtubeApiKey,
-                  log_level: logLevel,
-                });
-              } catch (error) {
-                console.error('Failed to save refresh minute:', error);
-              }
-            }}
-            className="input text-sm font-mono py-1.5 px-2 w-16"
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i}>
-                {i.toString().padStart(2, '0')}
-              </option>
-            ))}
-          </select>
-          {/* ON/OFF Toggle */}
-          <div className="flex border border-dark-border rounded-md overflow-hidden">
-            <button
-              onClick={async () => {
-                setAutoRefresh(false);
-                // Save immediately
-                try {
-                  await updateSettings.mutateAsync({
-                    auto_refresh_enabled: 'false',
-                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                    youtube_api_key: youtubeApiKey,
-                    log_level: logLevel,
-                  });
-                } catch (error) {
-                  console.error('Failed to save auto refresh:', error);
-                }
-              }}
-              className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                !autoRefresh
-                  ? 'bg-green-600 text-white'
-                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-              }`}
-            >
-              OFF
-            </button>
-            <button
-              onClick={async () => {
-                setAutoRefresh(true);
-                // Save immediately
-                try {
-                  await updateSettings.mutateAsync({
-                    auto_refresh_enabled: 'true',
-                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                    youtube_api_key: youtubeApiKey,
-                    log_level: logLevel,
-                  });
-                } catch (error) {
-                  console.error('Failed to save auto refresh:', error);
-                }
-              }}
-              className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                autoRefresh
-                  ? 'bg-green-600 text-white'
-                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-              }`}
-            >
-              ON
-            </button>
-          </div>
-        </div>
       </div>
 
       {/* System Status Card */}
