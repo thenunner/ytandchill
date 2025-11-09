@@ -490,7 +490,7 @@ export default function Settings() {
             <button
               type="submit"
               disabled={isChangingPassword}
-              className="btn bg-accent hover:bg-accent-hover text-text-primary font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
             </button>
