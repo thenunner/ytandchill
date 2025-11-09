@@ -195,51 +195,75 @@ export default function Settings() {
           </p>
         </div>
 
-      {/* Reset User + Theme */}
+      {/* Theme */}
       <div className="card p-4">
-        <div className="flex items-center justify-between gap-4">
-          {/* Left side - Reset User */}
+        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+          </svg>
+          Theme
+        </h3>
+        <div className="flex gap-2">
           <button
-            onClick={() => setShowPasswordChange(true)}
-            className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+            onClick={() => setTheme('dark')}
+            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+              theme === 'dark'
+                ? 'bg-black text-white border-2 border-green-500'
+                : 'bg-gray-800 text-gray-300 border border-gray-600 hover:bg-black hover:text-white'
+            }`}
           >
-            Reset User
+            Matrix
           </button>
-
-          {/* Right side - Theme buttons */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setTheme('dark')}
-              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-                theme === 'dark'
-                  ? 'bg-black text-white border-2 border-white'
-                  : 'bg-gray-800 text-gray-300 border border-gray-600 hover:bg-black hover:text-white'
-              }`}
-            >
-              Matrix
-            </button>
-            <button
-              onClick={() => setTheme('youtube')}
-              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-                theme === 'youtube'
-                  ? 'bg-red-600 text-white border-2 border-red-400'
-                  : 'bg-red-800 text-red-200 border border-red-700 hover:bg-red-600 hover:text-white'
-              }`}
-            >
-              Blood
-            </button>
-            <button
-              onClick={() => setTheme('midnight')}
-              className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
-                theme === 'midnight'
-                  ? 'bg-blue-600 text-white border-2 border-blue-400'
-                  : 'bg-blue-800 text-blue-200 border border-blue-700 hover:bg-blue-600 hover:text-white'
-              }`}
-            >
-              Ocean
-            </button>
-          </div>
+          <button
+            onClick={() => setTheme('youtube')}
+            style={{ backgroundColor: theme === 'youtube' ? 'hsl(0, 8%, 10%)' : 'hsl(0, 8%, 8%)' }}
+            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+              theme === 'youtube'
+                ? 'text-white border-2 border-green-500'
+                : 'text-red-200 border border-red-900 hover:text-white'
+            }`}
+          >
+            Blood
+          </button>
+          <button
+            onClick={() => setTheme('midnight')}
+            style={{ backgroundColor: theme === 'midnight' ? 'hsl(222, 47%, 11%)' : 'hsl(222, 47%, 9%)' }}
+            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+              theme === 'midnight'
+                ? 'text-white border-2 border-green-500'
+                : 'text-blue-200 border border-blue-900 hover:text-white'
+            }`}
+          >
+            Ocean
+          </button>
+          <button
+            onClick={() => setTheme('purple')}
+            style={{ backgroundColor: theme === 'purple' ? 'hsl(270, 50%, 10%)' : 'hsl(270, 50%, 8%)' }}
+            className={`px-4 py-1.5 rounded-lg font-semibold text-sm transition-all ${
+              theme === 'purple'
+                ? 'text-white border-2 border-green-500'
+                : 'text-purple-200 border border-purple-900 hover:text-white'
+            }`}
+          >
+            Lavender
+          </button>
         </div>
+      </div>
+
+      {/* Password */}
+      <div className="card p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+          </svg>
+          Password
+        </h3>
+        <button
+          onClick={() => setShowPasswordChange(true)}
+          className="btn bg-dark-tertiary text-white hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+        >
+          Reset User
+        </button>
 
         {/* Password Change Form */}
         {showPasswordChange && (
@@ -478,7 +502,7 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className="text-text-primary font-mono text-xs">v2.3.2</span>
+                <span className="text-text-primary font-mono text-xs">v2.3.3</span>
               </div>
             </div>
           </div>

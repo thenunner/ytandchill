@@ -6,6 +6,7 @@ export const themes = {
   dark: 'Dark Mode',
   youtube: 'YouTube Red',
   midnight: 'Midnight Blue',
+  purple: 'Purple Haze',
 };
 
 export function ThemeProvider({ children }) {
@@ -19,7 +20,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-dark', 'theme-youtube', 'theme-midnight');
+    root.classList.remove('theme-dark', 'theme-youtube', 'theme-midnight', 'theme-purple');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

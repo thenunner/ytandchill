@@ -93,6 +93,36 @@
   /* Plyr player */
   --plyr-main: 217 91% 60%;        /* Blue for player */
 }
+
+/* Purple Haze Theme */
+.theme-purple {
+  /* Backgrounds */
+  --bg-primary: 270 50% 10%;       /* Deep purple/violet */
+  --bg-secondary: 270 45% 14%;     /* Lighter purple */
+  --bg-tertiary: 270 40% 17%;      /* Elevated purple */
+  --bg-hover: 270 30% 28%;         /* Purple-tinted hover */
+
+  /* Borders */
+  --border: 270 35% 18%;           /* Purple-tinted borders */
+  --border-light: 270 30% 28%;     /* Purple-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Purple */
+  --accent: 270 70% 60%;           /* #9333EA - Bright purple */
+  --accent-hover: 270 70% 70%;     /* Lighter purple on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 270 45% 14%;
+  --scrollbar-thumb: 270 60% 50%;  /* Purple thumb */
+  --scrollbar-thumb-hover: 270 65% 60%;
+
+  /* Plyr player */
+  --plyr-main: 270 70% 60%;        /* Purple for player */
+}
 /* ===== END THEME SYSTEM ===== */
 
 @layer base {
