@@ -4,10 +4,12 @@ const ThemeContext = createContext();
 
 export const themes = {
   dark: 'Dark Mode',
+  light: 'Light Mode',
   youtube: 'YouTube Red',
   midnight: 'Midnight Blue',
   purple: 'Purple Haze',
   orange: 'Tangerine',
+  yellow: 'Yellow',
   green: 'Tree',
 };
 
@@ -22,7 +24,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-dark', 'theme-youtube', 'theme-midnight', 'theme-purple', 'theme-orange', 'theme-green');
+    root.classList.remove('theme-dark', 'theme-light', 'theme-youtube', 'theme-midnight', 'theme-purple', 'theme-orange', 'theme-yellow', 'theme-green');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

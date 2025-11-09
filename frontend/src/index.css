@@ -183,6 +183,66 @@
   /* Plyr player */
   --plyr-main: 140 70% 50%;        /* Green for player */
 }
+
+/* Chalk Light Theme */
+.theme-light {
+  /* Backgrounds */
+  --bg-primary: 0 0% 100%;         /* Pure white */
+  --bg-secondary: 0 0% 96%;        /* Very light gray */
+  --bg-tertiary: 0 0% 93%;         /* Light gray */
+  --bg-hover: 0 0% 85%;            /* Gray hover */
+
+  /* Borders */
+  --border: 0 0% 88%;              /* Light borders */
+  --border-light: 0 0% 80%;        /* Slightly darker borders */
+
+  /* Text */
+  --text-primary: 0 0% 10%;        /* Nearly black */
+  --text-secondary: 0 0% 30%;      /* Dark gray */
+  --text-muted: 0 0% 50%;          /* Medium gray */
+
+  /* Accent - Dark gray for light theme */
+  --accent: 0 0% 20%;              /* Dark gray accent */
+  --accent-hover: 0 0% 10%;        /* Darker on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 0 0% 96%;
+  --scrollbar-thumb: 0 0% 70%;     /* Gray thumb */
+  --scrollbar-thumb-hover: 0 0% 60%;
+
+  /* Plyr player */
+  --plyr-main: 0 0% 20%;           /* Dark gray for player */
+}
+
+/* Stain Yellow Theme */
+.theme-yellow {
+  /* Backgrounds */
+  --bg-primary: 45 40% 10%;        /* Deep amber/brown */
+  --bg-secondary: 45 35% 13%;      /* Lighter amber/brown */
+  --bg-tertiary: 45 30% 16%;       /* Elevated amber */
+  --bg-hover: 45 20% 27%;          /* Amber-tinted hover */
+
+  /* Borders */
+  --border: 45 25% 17%;            /* Amber-tinted borders */
+  --border-light: 45 20% 27%;      /* Amber-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Yellow */
+  --accent: 45 95% 55%;            /* #EAB308 - Bright yellow */
+  --accent-hover: 45 95% 65%;      /* Lighter yellow on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 45 35% 13%;
+  --scrollbar-thumb: 45 75% 50%;   /* Yellow thumb */
+  --scrollbar-thumb-hover: 45 80% 60%;
+
+  /* Plyr player */
+  --plyr-main: 45 95% 55%;         /* Yellow for player */
+}
 /* ===== END THEME SYSTEM ===== */
 
 @layer base {

@@ -203,73 +203,102 @@ export default function Settings() {
           </svg>
           Theme
         </h3>
-        <div className="flex gap-6 flex-wrap">
-          <button
-            onClick={() => setTheme('dark')}
-            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
-              theme === 'dark'
-                ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
-                : ''
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 9%, 92%)' }}></div>
-            [ ash ]
-          </button>
-          <button
-            onClick={() => setTheme('youtube')}
-            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
-              theme === 'youtube'
-                ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
-                : ''
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-            [ rust ]
-          </button>
-          <button
-            onClick={() => setTheme('midnight')}
-            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
-              theme === 'midnight'
-                ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
-                : ''
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(217, 91%, 60%)' }}></div>
-            [ abyss ]
-          </button>
-          <button
-            onClick={() => setTheme('purple')}
-            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
-              theme === 'purple'
-                ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-500 after:to-purple-300'
-                : ''
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(270, 70%, 60%)' }}></div>
-            [ bruise ]
-          </button>
-          <button
-            onClick={() => setTheme('orange')}
-            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
-              theme === 'orange'
-                ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
-                : ''
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 95%, 55%)' }}></div>
-            [ ember ]
-          </button>
-          <button
-            onClick={() => setTheme('green')}
-            className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
-              theme === 'green'
-                ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
-                : ''
-            }`}
-          >
-            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 70%, 50%)' }}></div>
-            [ decay ]
-          </button>
+        <div className="flex flex-col gap-3">
+          {/* Row 1: ash, chalk, rust, drift */}
+          <div className="flex gap-6 flex-wrap">
+            <button
+              onClick={() => setTheme('dark')}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
+                theme === 'dark'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
+                  : ''
+              }`}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 60%)' }}></div>
+              [ ash ]
+            </button>
+            <button
+              onClick={() => setTheme('light')}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
+                theme === 'light'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-300 after:to-white'
+                  : ''
+              }`}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 100%)' }}></div>
+              [ chalk ]
+            </button>
+            <button
+              onClick={() => setTheme('youtube')}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
+                theme === 'youtube'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
+                  : ''
+              }`}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
+              [ rust ]
+            </button>
+            <button
+              onClick={() => setTheme('midnight')}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
+                theme === 'midnight'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
+                  : ''
+              }`}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(217, 91%, 60%)' }}></div>
+              [ drift ]
+            </button>
+          </div>
+
+          {/* Row 2: bruise, ember, stain, decay */}
+          <div className="flex gap-6 flex-wrap">
+            <button
+              onClick={() => setTheme('purple')}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
+                theme === 'purple'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-500 after:to-purple-300'
+                  : ''
+              }`}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(270, 70%, 60%)' }}></div>
+              [ bruise ]
+            </button>
+            <button
+              onClick={() => setTheme('orange')}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
+                theme === 'orange'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
+                  : ''
+              }`}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 95%, 55%)' }}></div>
+              [ ember ]
+            </button>
+            <button
+              onClick={() => setTheme('yellow')}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
+                theme === 'yellow'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-500 after:to-yellow-300'
+                  : ''
+              }`}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(45, 95%, 55%)' }}></div>
+              [ stain ]
+            </button>
+            <button
+              onClick={() => setTheme('green')}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
+                theme === 'green'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
+                  : ''
+              }`}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 70%, 50%)' }}></div>
+              [ decay ]
+            </button>
+          </div>
         </div>
       </div>
 
