@@ -203,7 +203,7 @@ export default function Settings() {
           </svg>
           Theme
         </h3>
-        <div className="flex gap-4 flex-wrap">
+        <div className="flex gap-6 flex-wrap">
           <button
             onClick={() => setTheme('dark')}
             className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-white cursor-pointer ${
@@ -213,7 +213,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 9%, 92%)' }}></div>
-            ash
+            [ ash ]
           </button>
           <button
             onClick={() => setTheme('youtube')}
@@ -224,7 +224,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-            rust
+            [ rust ]
           </button>
           <button
             onClick={() => setTheme('midnight')}
@@ -235,7 +235,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(217, 91%, 60%)' }}></div>
-            abyss
+            [ abyss ]
           </button>
           <button
             onClick={() => setTheme('purple')}
@@ -246,7 +246,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(270, 70%, 60%)' }}></div>
-            bruise
+            [ bruise ]
           </button>
           <button
             onClick={() => setTheme('orange')}
@@ -257,7 +257,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 95%, 55%)' }}></div>
-            ember
+            [ ember ]
           </button>
           <button
             onClick={() => setTheme('green')}
@@ -268,7 +268,7 @@ export default function Settings() {
             }`}
           >
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 70%, 50%)' }}></div>
-            decay
+            [ decay ]
           </button>
         </div>
       </div>
