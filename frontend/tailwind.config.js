@@ -7,24 +7,23 @@ export default {
   theme: {
     extend: {
       colors: {
-        // YouTube-inspired accent
+        // Theme-aware colors using CSS variables
         accent: {
-          DEFAULT: '#e5e7eb',
-          hover: '#ffffff',
+          DEFAULT: 'hsl(var(--accent))',
+          hover: 'hsl(var(--accent-hover))',
         },
-        // Custom dark palette from test files
         dark: {
-          primary: '#000000',    // Pure black background
-          secondary: '#14161a',  // Card backgrounds
-          tertiary: '#1a1d23',   // Elevated surfaces
-          hover: '#3a3d44',      // Hover states
-          border: '#2a2d32',     // Borders
-          'border-light': '#3a3d44', // Lighter borders
+          primary: 'hsl(var(--bg-primary))',
+          secondary: 'hsl(var(--bg-secondary))',
+          tertiary: 'hsl(var(--bg-tertiary))',
+          hover: 'hsl(var(--bg-hover))',
+          border: 'hsl(var(--border))',
+          'border-light': 'hsl(var(--border-light))',
         },
         text: {
-          primary: '#e6e8f0',
-          secondary: '#9ca3ba',
-          muted: '#6b7280',
+          primary: 'hsl(var(--text-primary))',
+          secondary: 'hsl(var(--text-secondary))',
+          muted: 'hsl(var(--text-muted))',
         }
       },
       fontFamily: {

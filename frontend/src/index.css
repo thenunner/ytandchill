@@ -2,6 +2,99 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ===== THEME SYSTEM ===== */
+/* Default theme (Dark Mode) */
+:root,
+.theme-dark {
+  /* Backgrounds */
+  --bg-primary: 0 0% 0%;           /* #000000 - Pure black */
+  --bg-secondary: 220 10% 8%;      /* #14161a - Card backgrounds */
+  --bg-tertiary: 220 8% 11%;       /* #1a1d23 - Elevated surfaces */
+  --bg-hover: 220 6% 25%;          /* #3a3d44 - Hover states */
+
+  /* Borders */
+  --border: 220 7% 17%;            /* #2a2d32 */
+  --border-light: 220 6% 25%;      /* #3a3d44 */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* #e6e8f0 */
+  --text-secondary: 228 14% 66%;   /* #9ca3ba */
+  --text-muted: 220 9% 46%;        /* #6b7280 */
+
+  /* Accent */
+  --accent: 220 9% 92%;            /* #e5e7eb - Light gray */
+  --accent-hover: 0 0% 100%;       /* #ffffff - White */
+
+  /* Scrollbar */
+  --scrollbar-track: 220 10% 8%;   /* Same as bg-secondary */
+  --scrollbar-thumb: 220 6% 25%;   /* Same as bg-hover */
+  --scrollbar-thumb-hover: 220 5% 30%;
+
+  /* Plyr player */
+  --plyr-main: 220 9% 92%;         /* Same as accent */
+}
+
+/* YouTube Red Theme */
+.theme-youtube {
+  /* Backgrounds */
+  --bg-primary: 0 5% 7%;           /* Slightly red-tinted black */
+  --bg-secondary: 0 8% 10%;        /* Red-tinted dark gray */
+  --bg-tertiary: 0 10% 13%;        /* Red-tinted elevated */
+  --bg-hover: 0 12% 25%;           /* Red-tinted hover */
+
+  /* Borders */
+  --border: 0 10% 17%;             /* Red-tinted borders */
+  --border-light: 0 12% 25%;       /* Red-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - YouTube Red */
+  --accent: 0 100% 50%;            /* #FF0000 - YouTube red */
+  --accent-hover: 0 100% 60%;      /* Lighter red on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 0 8% 10%;
+  --scrollbar-thumb: 0 20% 40%;    /* Red-tinted thumb */
+  --scrollbar-thumb-hover: 0 25% 50%;
+
+  /* Plyr player */
+  --plyr-main: 0 100% 50%;         /* YouTube red for player */
+}
+
+/* Midnight Blue Theme */
+.theme-midnight {
+  /* Backgrounds */
+  --bg-primary: 222 47% 11%;       /* #0f172a - Navy/midnight blue */
+  --bg-secondary: 222 47% 15%;     /* Lighter midnight */
+  --bg-tertiary: 222 47% 18%;      /* Elevated midnight */
+  --bg-hover: 222 30% 30%;         /* Blue-tinted hover */
+
+  /* Borders */
+  --border: 222 40% 20%;           /* Blue-tinted borders */
+  --border-light: 222 30% 30%;     /* Blue-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Blue */
+  --accent: 217 91% 60%;           /* #3B82F6 - Bright blue */
+  --accent-hover: 217 91% 70%;     /* Lighter blue on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 222 47% 15%;
+  --scrollbar-thumb: 217 70% 50%;  /* Blue thumb */
+  --scrollbar-thumb-hover: 217 80% 60%;
+
+  /* Plyr player */
+  --plyr-main: 217 91% 60%;        /* Blue for player */
+}
+/* ===== END THEME SYSTEM ===== */
+
 @layer base {
   body {
     @apply bg-dark-primary text-text-primary;
@@ -156,23 +249,23 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #14161a;
+  background: hsl(var(--scrollbar-track));
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3a3d44;
+  background: hsl(var(--scrollbar-thumb));
   border-radius: 4px;
   transition: background 0.2s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4a4d54;
+  background: hsl(var(--scrollbar-thumb-hover));
 }
 
 /* Plyr customizations */
 .plyr {
   @apply rounded-xl overflow-hidden;
-  --plyr-color-main: #e5e7eb;
+  --plyr-color-main: hsl(var(--plyr-main));
 }
 
 .plyr--video {
@@ -180,11 +273,11 @@
 }
 
 .plyr__control--overlaid {
-  background: rgba(229, 231, 235, 0.9);
+  background: hsla(var(--plyr-main), 0.9);
 }
 
 .plyr__control--overlaid:hover {
-  background: rgba(255, 255, 255, 0.95);
+  background: hsla(var(--plyr-main), 0.95);
 }
 
 /* Focus Visible for Accessibility */

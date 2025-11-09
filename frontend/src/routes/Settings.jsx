@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels, useVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { useTheme, themes } from '../contexts/ThemeContext';
 
 export default function Settings() {
   const { data: settings, isLoading } = useSettings();
@@ -12,6 +13,7 @@ export default function Settings() {
   const { data: libraryVideos } = useVideos({ status: 'library' });
   const updateSettings = useUpdateSettings();
   const { showNotification } = useNotification();
+  const { theme, setTheme } = useTheme();
   const logEndRef = useRef(null);
 
   const [autoRefresh, setAutoRefresh] = useState(false);
@@ -284,6 +286,57 @@ export default function Settings() {
           )}
         </div>
 
+      {/* Theme Selection Card */}
+      <div className="card p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+          </svg>
+          Theme
+        </h3>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setTheme('dark')}
+            className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
+              theme === 'dark'
+                ? 'bg-dark-hover border-2 border-accent text-white'
+                : 'bg-dark-tertiary border border-dark-border text-text-secondary hover:bg-dark-hover hover:text-white'
+            }`}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-black border border-gray-600"></div>
+              <span>Dark Mode</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setTheme('youtube')}
+            className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
+              theme === 'youtube'
+                ? 'bg-dark-hover border-2 border-accent text-white'
+                : 'bg-dark-tertiary border border-dark-border text-text-secondary hover:bg-dark-hover hover:text-white'
+            }`}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-600 to-red-800 border border-red-500"></div>
+              <span>YouTube Red</span>
+            </div>
+          </button>
+          <button
+            onClick={() => setTheme('midnight')}
+            className={`flex-1 px-4 py-3 rounded-lg font-medium text-sm transition-all ${
+              theme === 'midnight'
+                ? 'bg-dark-hover border-2 border-accent text-white'
+                : 'bg-dark-tertiary border border-dark-border text-text-secondary hover:bg-dark-hover hover:text-white'
+            }`}
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-900 border border-blue-500"></div>
+              <span>Midnight Blue</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
       {/* Auto-Scan Card */}
       <div className="card p-4">
         <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
@@ -435,7 +488,7 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className="text-text-primary font-mono text-xs">v2.3.1</span>
+                <span className="text-text-primary font-mono text-xs">v2.3.2</span>
               </div>
             </div>
           </div>
@@ -473,7 +526,7 @@ export default function Settings() {
           <div className="flex flex-col gap-2">
             {/* Row 1: Slider + Level labels */}
             <div
-              className="max-w-sm"
+              className="w-full"
               title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
             >
               <input
@@ -508,7 +561,7 @@ export default function Settings() {
             </div>
 
             {/* Row 2: "Logging level" text + View Logs button */}
-            <div className="flex items-center justify-between max-w-sm">
+            <div className="flex items-center justify-between w-full">
               <span className="text-sm text-text-secondary">Logging level</span>
               <button
                 onClick={toggleLogs}
