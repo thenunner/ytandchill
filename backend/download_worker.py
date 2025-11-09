@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import logging
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
-from models import Video, QueueItem
+from models import Video, QueueItem, Setting
 from sqlalchemy.orm import Session
 import signal
 import glob
@@ -291,6 +291,29 @@ class DownloadWorker:
         else:
             logger.warning('No cookies.txt file found - downloads may be rate-limited')
             # Removed print - using logger instead
+
+        # Add SponsorBlock if enabled
+        sponsorblock_categories = []
+        try:
+            temp_session = self.session_factory()
+            remove_sponsor = temp_session.query(Setting).filter(Setting.key == 'sponsorblock_remove_sponsor').first()
+            remove_selfpromo = temp_session.query(Setting).filter(Setting.key == 'sponsorblock_remove_selfpromo').first()
+            remove_interaction = temp_session.query(Setting).filter(Setting.key == 'sponsorblock_remove_interaction').first()
+
+            if remove_sponsor and remove_sponsor.value == 'true':
+                sponsorblock_categories.append('sponsor')
+            if remove_selfpromo and remove_selfpromo.value == 'true':
+                sponsorblock_categories.append('selfpromo')
+            if remove_interaction and remove_interaction.value == 'true':
+                sponsorblock_categories.append('interaction')
+
+            temp_session.close()
+
+            if sponsorblock_categories:
+                ydl_opts['sponsorblock_remove'] = sponsorblock_categories
+                logger.info(f'SponsorBlock enabled - removing categories: {", ".join(sponsorblock_categories)}')
+        except Exception as sb_error:
+            logger.warning(f'Failed to load SponsorBlock settings: {sb_error}')
 
         download_success = False
         cancelled = False

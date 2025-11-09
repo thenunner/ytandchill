@@ -31,6 +31,12 @@ export default function Settings() {
   const [passwordError, setPasswordError] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // SponsorBlock state
+  const [removeSponsor, setRemoveSponsor] = useState(false);
+  const [removeSelfpromo, setRemoveSelfpromo] = useState(false);
+  const [removeInteraction, setRemoveInteraction] = useState(false);
+  const [showSponsorBlockHelp, setShowSponsorBlockHelp] = useState(false);
+
   // Initialize showLogs from localStorage, default to true (open) if not set
   const [showLogs, setShowLogs] = useState(() => {
     const saved = localStorage.getItem('logsVisible');
@@ -58,6 +64,10 @@ export default function Settings() {
         setRefreshHour(parseInt(hour) || 3);
         setRefreshMinute(parseInt(minute) || 0);
       }
+      // Load SponsorBlock settings
+      setRemoveSponsor(settings.sponsorblock_remove_sponsor === 'true');
+      setRemoveSelfpromo(settings.sponsorblock_remove_selfpromo === 'true');
+      setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
     }
   }, [settings]);
 
@@ -79,6 +89,19 @@ export default function Settings() {
     const newValue = !showLogs;
     setShowLogs(newValue);
     localStorage.setItem('logsVisible', newValue.toString());
+  };
+
+  const handleSponsorBlockToggle = async (setting, currentValue, setValue) => {
+    const newValue = !currentValue;
+    setValue(newValue);
+    try {
+      await updateSettings.mutateAsync({
+        [setting]: newValue ? 'true' : 'false',
+      });
+    } catch (error) {
+      console.error(`Failed to save ${setting}:`, error);
+      setValue(currentValue); // Revert on error
+    }
   };
 
   const handlePasswordChange = async (e) => {
@@ -194,6 +217,53 @@ export default function Settings() {
             </a>
           </p>
         </div>
+
+      {/* SponsorBlock */}
+      <div className="card p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+          </svg>
+          SponsorBlock
+          <button
+            onClick={() => setShowSponsorBlockHelp(true)}
+            className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+            title="What is SponsorBlock?"
+          >
+            ?
+          </button>
+        </h3>
+        <div className="flex flex-wrap gap-6">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={removeSponsor}
+              onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+            />
+            <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={removeSelfpromo}
+              onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+            />
+            <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={removeInteraction}
+              onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+            />
+            <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
+          </label>
+        </div>
+      </div>
 
       {/* Theme */}
       <div className="card p-4">
@@ -668,6 +738,47 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* SponsorBlock Help Modal */}
+      {showSponsorBlockHelp && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowSponsorBlockHelp(false)}>
+          <div className="card p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-text-primary">What is SponsorBlock?</h2>
+              <button
+                onClick={() => setShowSponsorBlockHelp(false)}
+                className="text-text-muted hover:text-text-primary transition-colors"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4 text-sm text-text-secondary">
+              <div className="space-y-3">
+                <div className="bg-dark-tertiary p-3 rounded-lg">
+                  <h3 className="font-semibold text-text-primary mb-1">Remove Sponsors</h3>
+                  <p>Removes paid promotions and sponsorship segments from videos (e.g., "This video is sponsored by...").</p>
+                </div>
+
+                <div className="bg-dark-tertiary p-3 rounded-lg">
+                  <h3 className="font-semibold text-text-primary mb-1">Remove Self-Promo</h3>
+                  <p>Removes unpaid self-promotion segments like merchandise, Patreon links, or references to other channels owned by the creator.</p>
+                </div>
+
+                <div className="bg-dark-tertiary p-3 rounded-lg">
+                  <h3 className="font-semibold text-text-primary mb-1">Remove Like/Sub Requests</h3>
+                  <p>Removes interaction reminders where creators ask you to like, subscribe, or click the notification bell.</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-text-muted mt-4">
+                Data provided by <a href="https://sponsor.ajay.app" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">SponsorBlock API</a> - a community-driven project.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
