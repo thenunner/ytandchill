@@ -232,12 +232,18 @@ class AutoRefreshScheduler:
                     # Check if duration field exists in contentDetails
                     if 'duration' not in video_data['contentDetails']:
                         video_title = video_data.get('snippet', {}).get('title', 'Unknown')
+                        live_broadcast = video_data.get('snippet', {}).get('liveBroadcastContent', 'none')
+
+                        # Handle upcoming premieres - these don't have duration until they air
+                        if live_broadcast == 'upcoming':
+                            scheduled_time = video_data.get('liveStreamingDetails', {}).get('scheduledStartTime', 'unknown')
+                            logger.info(f"Auto-scan: Skipping upcoming premiere '{video_title}' ({video_id}) - scheduled for {scheduled_time}")
+                            continue
+
+                        # For other cases, log detailed diagnostic info
                         status_info = video_data.get('status', {})
                         privacy_status = status_info.get('privacyStatus', 'unknown')
                         upload_status = status_info.get('uploadStatus', 'unknown')
-
-                        # Check for live broadcast details
-                        live_broadcast = video_data.get('snippet', {}).get('liveBroadcastContent', 'none')
                         content_details_keys = list(video_data['contentDetails'].keys())
 
                         logger.warning(f"Auto-scan: Skipping video '{video_title}' ({video_id}) - no duration field (privacyStatus={privacy_status}, uploadStatus={upload_status}, liveBroadcastContent={live_broadcast}, contentDetails has: {content_details_keys})")
