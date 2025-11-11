@@ -400,22 +400,25 @@ export default function Settings() {
             Reset User
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" id="time-selects">
             <select
               value={refreshHour}
               onChange={async (e) => {
                 const newHour = parseInt(e.target.value);
+                // Get current minute from the minute select element (not state)
+                const minuteSelect = document.querySelector('#time-selects select:nth-child(3)');
+                const currentMinute = minuteSelect ? parseInt(minuteSelect.value) : refreshMinute;
                 setRefreshHour(newHour);
                 try {
                   await updateSettings.mutateAsync({
                     auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                    auto_refresh_time: `${newHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                    auto_refresh_time: `${newHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`,
                     youtube_api_key: youtubeApiKey,
                     log_level: logLevel,
                   });
                   const period = newHour >= 12 ? 'pm' : 'am';
                   const hour12 = newHour === 0 ? 12 : newHour > 12 ? newHour - 12 : newHour;
-                  showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
+                  showNotification(`Time changed to ${hour12}:${currentMinute.toString().padStart(2, '0')}${period}`, 'success');
                 } catch (error) {
                   showNotification(error.message || 'Failed to save refresh hour', 'error');
                 }
@@ -433,16 +436,19 @@ export default function Settings() {
               value={refreshMinute}
               onChange={async (e) => {
                 const newMinute = parseInt(e.target.value);
+                // Get current hour from the hour select element (not state)
+                const hourSelect = document.querySelector('#time-selects select:nth-child(1)');
+                const currentHour = hourSelect ? parseInt(hourSelect.value) : refreshHour;
                 setRefreshMinute(newMinute);
                 try {
                   await updateSettings.mutateAsync({
                     auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`,
+                    auto_refresh_time: `${currentHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`,
                     youtube_api_key: youtubeApiKey,
                     log_level: logLevel,
                   });
-                  const period = refreshHour >= 12 ? 'pm' : 'am';
-                  const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
+                  const period = currentHour >= 12 ? 'pm' : 'am';
+                  const hour12 = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
                   showNotification(`Time changed to ${hour12}:${newMinute.toString().padStart(2, '0')}${period}`, 'success');
                 } catch (error) {
                   showNotification(error.message || 'Failed to save refresh minute', 'error');
