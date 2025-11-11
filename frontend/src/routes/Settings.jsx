@@ -15,8 +15,6 @@ export default function Settings() {
   const { showNotification } = useNotification();
   const { theme, setTheme } = useTheme();
   const logEndRef = useRef(null);
-  const hourRef = useRef(null);
-  const minuteRef = useRef(null);
 
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshHour, setRefreshHour] = useState(3);
@@ -454,8 +452,8 @@ export default function Settings() {
 
           <div className="flex items-center gap-2">
             <select
-              ref={hourRef}
-              defaultValue={refreshHour}
+              value={refreshHour}
+              onChange={(e) => setRefreshHour(parseInt(e.target.value))}
               className="input text-sm font-mono py-1.5 px-2 w-16"
             >
               {Array.from({ length: 24 }, (_, i) => (
@@ -466,8 +464,8 @@ export default function Settings() {
             </select>
             <span className="text-text-primary text-sm font-bold">:</span>
             <select
-              ref={minuteRef}
-              defaultValue={refreshMinute}
+              value={refreshMinute}
+              onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
               className="input text-sm font-mono py-1.5 px-2 w-16"
             >
               {Array.from({ length: 60 }, (_, i) => (
@@ -478,25 +476,31 @@ export default function Settings() {
             </select>
             <button
               onClick={async () => {
-                // Read values directly from DOM via refs (not state)
-                const currentHour = hourRef.current ? parseInt(hourRef.current.value) : refreshHour;
-                const currentMinute = minuteRef.current ? parseInt(minuteRef.current.value) : refreshMinute;
+                // Read values from state (updated by onChange handlers)
+                console.log('=== SAVE BUTTON CLICKED ===');
+                console.log('State values - refreshHour:', refreshHour, 'refreshMinute:', refreshMinute);
+
+                const timeString = `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`;
+                console.log('Time string to save:', timeString);
 
                 try {
-                  await updateSettings.mutateAsync({
+                  const payload = {
                     auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                    auto_refresh_time: `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`,
+                    auto_refresh_time: timeString,
                     youtube_api_key: youtubeApiKey,
                     log_level: logLevel,
-                  });
-                  const period = currentHour >= 12 ? 'pm' : 'am';
-                  const hour12 = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
-                  showNotification(`Time changed to ${hour12}:${currentMinute.toString().padStart(2, '0')}${period}`, 'success');
+                  };
+                  console.log('API payload:', payload);
 
-                  // Update state to match what we just saved
-                  setRefreshHour(currentHour);
-                  setRefreshMinute(currentMinute);
+                  await updateSettings.mutateAsync(payload);
+
+                  const period = refreshHour >= 12 ? 'pm' : 'am';
+                  const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
+                  showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
+
+                  console.log('Save successful!');
                 } catch (error) {
+                  console.error('Save failed:', error);
                   showNotification(error.message || 'Failed to save time', 'error');
                 }
               }}
