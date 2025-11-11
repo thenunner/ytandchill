@@ -413,7 +413,9 @@ export default function Settings() {
                     youtube_api_key: youtubeApiKey,
                     log_level: logLevel,
                   });
-                  showNotification(`Auto-scan hour changed to ${newHour.toString().padStart(2, '0')}`, 'success');
+                  const period = newHour >= 12 ? 'pm' : 'am';
+                  const hour12 = newHour === 0 ? 12 : newHour > 12 ? newHour - 12 : newHour;
+                  showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
                 } catch (error) {
                   showNotification(error.message || 'Failed to save refresh hour', 'error');
                 }
@@ -439,7 +441,9 @@ export default function Settings() {
                     youtube_api_key: youtubeApiKey,
                     log_level: logLevel,
                   });
-                  showNotification(`Auto-scan minute changed to ${newMinute.toString().padStart(2, '0')}`, 'success');
+                  const period = refreshHour >= 12 ? 'pm' : 'am';
+                  const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
+                  showNotification(`Time changed to ${hour12}:${newMinute.toString().padStart(2, '0')}${period}`, 'success');
                 } catch (error) {
                   showNotification(error.message || 'Failed to save refresh minute', 'error');
                 }
