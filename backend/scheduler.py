@@ -204,54 +204,69 @@ class AutoRefreshScheduler:
             for video_data in videos_response.get('items', []):
                 video_id = video_data['id']
 
-                # Check if video already exists
-                existing = session.query(Video).filter(Video.yt_id == video_id).first()
-                if existing:
+                try:
+                    # Check if video already exists
+                    existing = session.query(Video).filter(Video.yt_id == video_id).first()
+                    if existing:
+                        continue
+
+                    # Check if contentDetails exists (missing for restricted/private/deleted videos)
+                    if 'contentDetails' not in video_data:
+                        video_title = video_data.get('snippet', {}).get('title', 'Unknown')
+                        logger.warning(f"Auto-scan: Skipping video '{video_title}' ({video_id}) - no contentDetails (likely restricted/private/deleted)")
+                        continue
+
+                    # Parse duration
+                    duration_str = video_data['contentDetails']['duration']
+                    duration_sec = parse_iso8601_duration(duration_str)
+                    duration_min = duration_sec / 60
+
+                    # Skip videos under 2 minutes (120 seconds)
+                    # This filters out YouTube Shorts and very short videos
+                    if duration_sec < 120:
+                        logger.debug(f"Auto-scan: Skipping video {video_id}: duration {duration_sec}s (<2 min)")
+                        continue
+
+                    # Parse upload date
+                    upload_date = video_data['snippet']['publishedAt'][:10].replace('-', '')
+                    # Track the latest upload date found
+                    if upload_date:
+                        upload_dt = datetime.strptime(upload_date, '%Y%m%d')
+                        if latest_upload_date is None or upload_dt > latest_upload_date:
+                            latest_upload_date = upload_dt
+
+                    # Check duration filters and set status
+                    status = 'discovered'
+                    if channel.min_minutes > 0 and duration_min < channel.min_minutes:
+                        status = 'ignored'
+                    elif channel.max_minutes > 0 and duration_min > channel.max_minutes:
+                        status = 'ignored'
+
+                    # Create video record
+                    video = Video(
+                        yt_id=video_id,
+                        channel_id=channel.id,
+                        title=video_data['snippet']['title'],
+                        duration_sec=duration_sec,
+                        upload_date=upload_date,
+                        thumb_url=video_data['snippet']['thumbnails'].get('high', {}).get('url'),
+                        status=status
+                    )
+                    session.add(video)
+
+                    if status == 'ignored':
+                        ignored_count += 1
+                    else:
+                        new_videos_count += 1
+
+                except KeyError as e:
+                    video_title = video_data.get('snippet', {}).get('title', 'Unknown')
+                    logger.error(f"Auto-scan: Missing field {e} for video '{video_title}' ({video_id}) - skipping")
                     continue
-
-                # Parse duration
-                duration_str = video_data['contentDetails']['duration']
-                duration_sec = parse_iso8601_duration(duration_str)
-                duration_min = duration_sec / 60
-
-                # Skip videos under 2 minutes (120 seconds)
-                # This filters out YouTube Shorts and very short videos
-                if duration_sec < 120:
-                    print(f"Skipping video {video_id}: duration {duration_sec}s (<2 min)")
+                except Exception as e:
+                    video_title = video_data.get('snippet', {}).get('title', 'Unknown')
+                    logger.error(f"Auto-scan: Error processing video '{video_title}' ({video_id}): {e}")
                     continue
-
-                # Parse upload date
-                upload_date = video_data['snippet']['publishedAt'][:10].replace('-', '')
-
-                # Track the latest upload date found
-                if upload_date:
-                    upload_dt = datetime.strptime(upload_date, '%Y%m%d')
-                    if latest_upload_date is None or upload_dt > latest_upload_date:
-                        latest_upload_date = upload_dt
-
-                # Check duration filters and set status
-                status = 'discovered'
-                if channel.min_minutes > 0 and duration_min < channel.min_minutes:
-                    status = 'ignored'
-                elif channel.max_minutes > 0 and duration_min > channel.max_minutes:
-                    status = 'ignored'
-
-                # Create video record
-                video = Video(
-                    yt_id=video_id,
-                    channel_id=channel.id,
-                    title=video_data['snippet']['title'],
-                    duration_sec=duration_sec,
-                    upload_date=upload_date,
-                    thumb_url=video_data['snippet']['thumbnails'].get('high', {}).get('url'),
-                    status=status
-                )
-                session.add(video)
-
-                if status == 'ignored':
-                    ignored_count += 1
-                else:
-                    new_videos_count += 1
 
             # Update last scan time to the latest video upload date found
             # This ensures the next scan picks up from the last video, not the scan time
