@@ -1959,6 +1959,11 @@ def update_settings():
     data = request.json
     session = get_db()
 
+    # Track which scheduler actions need to be taken AFTER commit
+    needs_enable = False
+    needs_disable = False
+    needs_reschedule = False
+
     for key, value in data.items():
         # Handle log level changes separately (update_log_level manages its own DB session)
         if key == 'log_level':
@@ -1971,19 +1976,29 @@ def update_settings():
         else:
             session.add(Setting(key=key, value=value))
 
-        # Handle auto-refresh toggle
+        # Track auto-refresh toggle (execute AFTER commit)
         if key == 'auto_refresh_enabled':
             if value == 'true':
-                scheduler.enable()
+                needs_enable = True
             else:
-                scheduler.disable()
+                needs_disable = True
 
-        # Handle auto-refresh time change
+        # Track auto-refresh time change (execute AFTER commit)
         if key == 'auto_refresh_time':
-            scheduler.reschedule()
+            needs_reschedule = True
 
+    # Commit changes to database FIRST
     session.commit()
     session.close()
+
+    # Now execute scheduler actions with committed values
+    if needs_enable:
+        scheduler.enable()
+    elif needs_disable:
+        scheduler.disable()
+
+    if needs_reschedule:
+        scheduler.reschedule()
 
     return jsonify({'success': True})
 
