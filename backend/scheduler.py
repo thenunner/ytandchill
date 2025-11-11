@@ -19,22 +19,36 @@ class AutoRefreshScheduler:
         self.set_operation = set_operation_callback
         self.clear_operation = clear_operation_callback
     
+    def _get_refresh_time(self):
+        """Get auto-refresh time from database settings"""
+        session = self.session_factory()
+        try:
+            time_setting = session.query(Setting).filter(Setting.key == 'auto_refresh_time').first()
+            if time_setting and time_setting.value:
+                hour, minute = time_setting.value.split(':')
+                return int(hour), int(minute)
+        finally:
+            session.close()
+        return 3, 0  # Default fallback to 3:00 AM
+
     def start(self):
         # Check if auto-refresh is enabled
         session = self.session_factory()
         setting = session.query(Setting).filter(Setting.key == 'auto_refresh_enabled').first()
         if setting and setting.value == 'true':
             self.enabled = True
-            # Schedule daily scan at 3 AM
+            # Get user-configured time from database
+            hour, minute = self._get_refresh_time()
             self.scheduler.add_job(
                 self.scan_all_channels,
                 'cron',
-                hour=3,
-                minute=0,
+                hour=hour,
+                minute=minute,
                 id='auto_refresh'
             )
+            logger.info(f"Auto-refresh scheduled for {hour:02d}:{minute:02d}")
         session.close()
-        
+
         self.scheduler.start()
     
     def stop(self):
@@ -44,19 +58,39 @@ class AutoRefreshScheduler:
         if not self.enabled:
             self.enabled = True
             if not self.scheduler.get_job('auto_refresh'):
+                # Get user-configured time from database
+                hour, minute = self._get_refresh_time()
                 self.scheduler.add_job(
                     self.scan_all_channels,
                     'cron',
-                    hour=3,
-                    minute=0,
+                    hour=hour,
+                    minute=minute,
                     id='auto_refresh'
                 )
+                logger.info(f"Auto-refresh enabled and scheduled for {hour:02d}:{minute:02d}")
     
     def disable(self):
         self.enabled = False
         if self.scheduler.get_job('auto_refresh'):
             self.scheduler.remove_job('auto_refresh')
-    
+
+    def reschedule(self):
+        """Reschedule the auto-refresh job with updated time from database"""
+        if self.enabled and self.scheduler.get_job('auto_refresh'):
+            # Remove existing job
+            self.scheduler.remove_job('auto_refresh')
+            # Get updated time from database
+            hour, minute = self._get_refresh_time()
+            # Add job with new time
+            self.scheduler.add_job(
+                self.scan_all_channels,
+                'cron',
+                hour=hour,
+                minute=minute,
+                id='auto_refresh'
+            )
+            logger.info(f"Auto-refresh rescheduled to {hour:02d}:{minute:02d}")
+
     def update_ytdlp(self):
         """Update yt-dlp to the latest version"""
         try:

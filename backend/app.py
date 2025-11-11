@@ -1978,6 +1978,10 @@ def update_settings():
             else:
                 scheduler.disable()
 
+        # Handle auto-refresh time change
+        if key == 'auto_refresh_time':
+            scheduler.reschedule()
+
     session.commit()
     session.close()
 

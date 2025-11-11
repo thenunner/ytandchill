@@ -142,7 +142,7 @@ function App() {
         </div>
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
-        {(downloading > 0 || pending > 0 || currentOperation?.type || health?.auto_refresh_enabled || notification || isAutoRefreshing || delayInfo) && (
+        {(downloading > 0 || pending > 0 || currentOperation?.type || notification || isAutoRefreshing || delayInfo || health) && (
           <div className="px-4 py-2 border-t border-dark-border bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
