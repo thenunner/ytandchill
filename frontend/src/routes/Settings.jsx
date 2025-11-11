@@ -15,8 +15,6 @@ export default function Settings() {
   const { showNotification } = useNotification();
   const { theme, setTheme } = useTheme();
   const logEndRef = useRef(null);
-  const hourSelectRef = useRef(null);
-  const minuteSelectRef = useRef(null);
 
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshHour, setRefreshHour] = useState(3);
@@ -402,14 +400,15 @@ export default function Settings() {
             Reset User
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" id="auto-scan-time">
             <select
-              ref={hourSelectRef}
               value={refreshHour}
               onChange={async (e) => {
                 const newHour = parseInt(e.target.value);
-                // Get current minute directly from the ref
-                const currentMinute = minuteSelectRef.current ? parseInt(minuteSelectRef.current.value) : refreshMinute;
+                // Get minute select from parent container - sibling after the span
+                const container = e.target.parentElement;
+                const minuteSelect = container.querySelector('select:nth-child(3)');
+                const currentMinute = minuteSelect ? parseInt(minuteSelect.value) : 0;
                 setRefreshHour(newHour);
                 try {
                   await updateSettings.mutateAsync({
@@ -435,12 +434,13 @@ export default function Settings() {
             </select>
             <span className="text-text-primary text-sm font-bold">:</span>
             <select
-              ref={minuteSelectRef}
               value={refreshMinute}
               onChange={async (e) => {
                 const newMinute = parseInt(e.target.value);
-                // Get current hour directly from the ref
-                const currentHour = hourSelectRef.current ? parseInt(hourSelectRef.current.value) : refreshHour;
+                // Get hour select from parent container - first select
+                const container = e.target.parentElement;
+                const hourSelect = container.querySelector('select:nth-child(1)');
+                const currentHour = hourSelect ? parseInt(hourSelect.value) : 0;
                 setRefreshMinute(newMinute);
                 try {
                   await updateSettings.mutateAsync({
