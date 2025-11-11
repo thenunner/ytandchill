@@ -229,6 +229,20 @@ class AutoRefreshScheduler:
                         logger.warning(f"Auto-scan: Skipping video '{video_title}' ({video_id}) - no contentDetails ({reason})")
                         continue
 
+                    # Check if duration field exists in contentDetails
+                    if 'duration' not in video_data['contentDetails']:
+                        video_title = video_data.get('snippet', {}).get('title', 'Unknown')
+                        status_info = video_data.get('status', {})
+                        privacy_status = status_info.get('privacyStatus', 'unknown')
+                        upload_status = status_info.get('uploadStatus', 'unknown')
+
+                        # Check for live broadcast details
+                        live_broadcast = video_data.get('snippet', {}).get('liveBroadcastContent', 'none')
+                        content_details_keys = list(video_data['contentDetails'].keys())
+
+                        logger.warning(f"Auto-scan: Skipping video '{video_title}' ({video_id}) - no duration field (privacyStatus={privacy_status}, uploadStatus={upload_status}, liveBroadcastContent={live_broadcast}, contentDetails has: {content_details_keys})")
+                        continue
+
                     # Parse duration
                     duration_str = video_data['contentDetails']['duration']
                     duration_sec = parse_iso8601_duration(duration_str)
