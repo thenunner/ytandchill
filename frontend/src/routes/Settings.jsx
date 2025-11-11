@@ -277,7 +277,7 @@ export default function Settings() {
           {/* Row 1: ash, chalk, rust, drift */}
           <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => setTheme('dark')}
+              onClick={() => { setTheme('dark'); showNotification('Theme changed to ash', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
                 theme === 'dark'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
@@ -288,7 +288,7 @@ export default function Settings() {
               [ ash ]
             </button>
             <button
-              onClick={() => setTheme('light')}
+              onClick={() => { setTheme('light'); showNotification('Theme changed to chalk', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
                 theme === 'light'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-600 after:to-gray-400'
@@ -299,7 +299,7 @@ export default function Settings() {
               [ chalk ]
             </button>
             <button
-              onClick={() => setTheme('youtube')}
+              onClick={() => { setTheme('youtube'); showNotification('Theme changed to rust', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
                 theme === 'youtube'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
@@ -310,7 +310,7 @@ export default function Settings() {
               [ rust ]
             </button>
             <button
-              onClick={() => setTheme('midnight')}
+              onClick={() => { setTheme('midnight'); showNotification('Theme changed to drift', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
                 theme === 'midnight'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
@@ -325,7 +325,7 @@ export default function Settings() {
           {/* Row 2: bruise, ember, stain, decay */}
           <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => setTheme('purple')}
+              onClick={() => { setTheme('purple'); showNotification('Theme changed to bruise', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
                 theme === 'purple'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-500 after:to-purple-300'
@@ -336,7 +336,7 @@ export default function Settings() {
               [ bruise ]
             </button>
             <button
-              onClick={() => setTheme('orange')}
+              onClick={() => { setTheme('orange'); showNotification('Theme changed to ember', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
                 theme === 'orange'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
@@ -347,7 +347,7 @@ export default function Settings() {
               [ ember ]
             </button>
             <button
-              onClick={() => setTheme('yellow')}
+              onClick={() => { setTheme('yellow'); showNotification('Theme changed to stain', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
                 theme === 'yellow'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-600 after:to-yellow-400'
@@ -358,7 +358,7 @@ export default function Settings() {
               [ stain ]
             </button>
             <button
-              onClick={() => setTheme('green')}
+              onClick={() => { setTheme('green'); showNotification('Theme changed to decay', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
                 theme === 'green'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
@@ -413,8 +413,9 @@ export default function Settings() {
                     youtube_api_key: youtubeApiKey,
                     log_level: logLevel,
                   });
+                  showNotification(`Auto-scan hour changed to ${newHour.toString().padStart(2, '0')}`, 'success');
                 } catch (error) {
-                  console.error('Failed to save refresh hour:', error);
+                  showNotification(error.message || 'Failed to save refresh hour', 'error');
                 }
               }}
               className="input text-sm font-mono py-1.5 px-2 w-16"
@@ -438,8 +439,9 @@ export default function Settings() {
                     youtube_api_key: youtubeApiKey,
                     log_level: logLevel,
                   });
+                  showNotification(`Auto-scan minute changed to ${newMinute.toString().padStart(2, '0')}`, 'success');
                 } catch (error) {
-                  console.error('Failed to save refresh minute:', error);
+                  showNotification(error.message || 'Failed to save refresh minute', 'error');
                 }
               }}
               className="input text-sm font-mono py-1.5 px-2 w-16"
@@ -461,8 +463,9 @@ export default function Settings() {
                       youtube_api_key: youtubeApiKey,
                       log_level: logLevel,
                     });
+                    showNotification('Auto-scan disabled', 'success');
                   } catch (error) {
-                    console.error('Failed to save auto refresh:', error);
+                    showNotification(error.message || 'Failed to save auto refresh', 'error');
                   }
                 }}
                 className={`px-3 py-1.5 text-xs font-bold transition-all ${
@@ -483,8 +486,9 @@ export default function Settings() {
                       youtube_api_key: youtubeApiKey,
                       log_level: logLevel,
                     });
+                    showNotification('Auto-scan enabled', 'success');
                   } catch (error) {
-                    console.error('Failed to save auto refresh:', error);
+                    showNotification(error.message || 'Failed to save auto refresh', 'error');
                   }
                 }}
                 className={`px-3 py-1.5 text-xs font-bold transition-all ${
@@ -662,8 +666,9 @@ export default function Settings() {
                       youtube_api_key: youtubeApiKey,
                       log_level: newLevel,
                     });
+                    showNotification(`Log level changed to ${newLevel}`, 'success');
                   } catch (error) {
-                    console.error('Failed to save log level:', error);
+                    showNotification(error.message || 'Failed to save log level', 'error');
                   }
                 }}
                 className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
