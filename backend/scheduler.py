@@ -136,14 +136,23 @@ class AutoRefreshScheduler:
             channels = session.query(Channel).all()
             logger.info(f"Auto-scan: Scanning {len(channels)} channels")
 
+            total_new_videos = 0
+            total_ignored = 0
+
             for i, channel in enumerate(channels, 1):
                 logger.debug(f"Auto-scan: Processing channel {i}/{len(channels)}: {channel.title}")
                 if self.set_operation:
                     self.set_operation('auto_refresh', f'Auto-scan: {channel.title} ({i}/{len(channels)})', channel_id=channel.id)
-                self._scan_channel_with_api(session, youtube, channel)
+                new_count, ignored_count = self._scan_channel_with_api(session, youtube, channel)
+                total_new_videos += new_count
+                total_ignored += ignored_count
 
             session.commit()
-            logger.info("Auto-scan: Completed successfully")
+
+            # Log and display final summary
+            logger.info(f"Auto-scan: Completed - {total_new_videos} new videos added, {total_ignored} ignored")
+            if self.set_operation:
+                self.set_operation('auto_refresh', f'Auto-scan complete: {total_new_videos} new videos added')
             if self.clear_operation:
                 self.clear_operation()
         except Exception as e:
@@ -165,7 +174,7 @@ class AutoRefreshScheduler:
 
             if not channel_response.get('items'):
                 print(f"Channel not found: {channel.title}")
-                return
+                return 0, 0
 
             uploads_playlist_id = channel_response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
 
@@ -180,7 +189,7 @@ class AutoRefreshScheduler:
 
             if not video_ids:
                 print(f"No videos found for channel: {channel.title}")
-                return
+                return 0, 0
 
             # Get detailed video info
             videos_response = youtube.videos().list(
@@ -255,8 +264,11 @@ class AutoRefreshScheduler:
                 logger.debug(f"Auto-scan: Set initial last_scan_at for '{channel.title}' to now")
 
             logger.info(f"Auto-scan: Channel '{channel.title}' - {new_videos_count} new videos, {ignored_count} ignored")
+            return new_videos_count, ignored_count
 
         except HttpError as api_error:
             logger.error(f"Auto-scan: YouTube API error for channel '{channel.title}': {api_error}")
+            return 0, 0
         except Exception as e:
             logger.error(f"Auto-scan: Error scanning channel '{channel.title}': {e}")
+            return 0, 0
