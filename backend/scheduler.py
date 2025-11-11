@@ -188,14 +188,20 @@ class AutoRefreshScheduler:
             video_ids = [item['contentDetails']['videoId'] for item in playlist_response.get('items', [])]
 
             if not video_ids:
-                print(f"No videos found for channel: {channel.title}")
+                logger.debug(f"Auto-scan: No videos found for channel: {channel.title}")
                 return 0, 0
 
-            # Get detailed video info
+            # Get detailed video info including status to diagnose issues
             videos_response = youtube.videos().list(
-                part='snippet,contentDetails',
+                part='snippet,contentDetails,status',
                 id=','.join(video_ids)
             ).execute()
+
+            # Check if any videos are completely missing from the response (deleted/unavailable)
+            returned_video_ids = {item['id'] for item in videos_response.get('items', [])}
+            missing_video_ids = set(video_ids) - returned_video_ids
+            if missing_video_ids:
+                logger.warning(f"Auto-scan: {len(missing_video_ids)} video(s) not returned by API for channel '{channel.title}' (likely deleted): {', '.join(list(missing_video_ids)[:5])}")
 
             new_videos_count = 0
             ignored_count = 0
@@ -213,7 +219,14 @@ class AutoRefreshScheduler:
                     # Check if contentDetails exists (missing for restricted/private/deleted videos)
                     if 'contentDetails' not in video_data:
                         video_title = video_data.get('snippet', {}).get('title', 'Unknown')
-                        logger.warning(f"Auto-scan: Skipping video '{video_title}' ({video_id}) - no contentDetails (likely restricted/private/deleted)")
+
+                        # Get exact reason from status field
+                        status_info = video_data.get('status', {})
+                        privacy_status = status_info.get('privacyStatus', 'unknown')
+                        upload_status = status_info.get('uploadStatus', 'unknown')
+
+                        reason = f"privacyStatus={privacy_status}, uploadStatus={upload_status}"
+                        logger.warning(f"Auto-scan: Skipping video '{video_title}' ({video_id}) - no contentDetails ({reason})")
                         continue
 
                     # Parse duration
@@ -261,11 +274,17 @@ class AutoRefreshScheduler:
 
                 except KeyError as e:
                     video_title = video_data.get('snippet', {}).get('title', 'Unknown')
-                    logger.error(f"Auto-scan: Missing field {e} for video '{video_title}' ({video_id}) - skipping")
+                    status_info = video_data.get('status', {})
+                    privacy_status = status_info.get('privacyStatus', 'unknown')
+                    upload_status = status_info.get('uploadStatus', 'unknown')
+                    logger.error(f"Auto-scan: Missing field {e} for video '{video_title}' ({video_id}) - privacyStatus={privacy_status}, uploadStatus={upload_status}")
                     continue
                 except Exception as e:
                     video_title = video_data.get('snippet', {}).get('title', 'Unknown')
-                    logger.error(f"Auto-scan: Error processing video '{video_title}' ({video_id}): {e}")
+                    status_info = video_data.get('status', {})
+                    privacy_status = status_info.get('privacyStatus', 'unknown')
+                    upload_status = status_info.get('uploadStatus', 'unknown')
+                    logger.error(f"Auto-scan: Error processing video '{video_title}' ({video_id}): {e} - privacyStatus={privacy_status}, uploadStatus={upload_status}")
                     continue
 
             # Update last scan time to the latest video upload date found
