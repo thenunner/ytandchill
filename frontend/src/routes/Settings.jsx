@@ -15,6 +15,8 @@ export default function Settings() {
   const { showNotification } = useNotification();
   const { theme, setTheme } = useTheme();
   const logEndRef = useRef(null);
+  const hourSelectRef = useRef(null);
+  const minuteSelectRef = useRef(null);
 
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshHour, setRefreshHour] = useState(3);
@@ -400,14 +402,14 @@ export default function Settings() {
             Reset User
           </button>
 
-          <div className="flex items-center gap-2" id="time-selects">
+          <div className="flex items-center gap-2">
             <select
+              ref={hourSelectRef}
               value={refreshHour}
               onChange={async (e) => {
                 const newHour = parseInt(e.target.value);
-                // Get current minute from the minute select element (not state)
-                const minuteSelect = document.querySelector('#time-selects select:nth-child(3)');
-                const currentMinute = minuteSelect ? parseInt(minuteSelect.value) : refreshMinute;
+                // Get current minute directly from the ref
+                const currentMinute = minuteSelectRef.current ? parseInt(minuteSelectRef.current.value) : refreshMinute;
                 setRefreshHour(newHour);
                 try {
                   await updateSettings.mutateAsync({
@@ -433,12 +435,12 @@ export default function Settings() {
             </select>
             <span className="text-text-primary text-sm font-bold">:</span>
             <select
+              ref={minuteSelectRef}
               value={refreshMinute}
               onChange={async (e) => {
                 const newMinute = parseInt(e.target.value);
-                // Get current hour from the hour select element (not state)
-                const hourSelect = document.querySelector('#time-selects select:nth-child(1)');
-                const currentHour = hourSelect ? parseInt(hourSelect.value) : refreshHour;
+                // Get current hour directly from the ref
+                const currentHour = hourSelectRef.current ? parseInt(hourSelectRef.current.value) : refreshHour;
                 setRefreshMinute(newMinute);
                 try {
                   await updateSettings.mutateAsync({
