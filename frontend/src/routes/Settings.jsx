@@ -455,8 +455,7 @@ export default function Settings() {
           <div className="flex items-center gap-2">
             <select
               ref={hourRef}
-              value={refreshHour}
-              onChange={(e) => setRefreshHour(parseInt(e.target.value))}
+              defaultValue={refreshHour}
               className="input text-sm font-mono py-1.5 px-2 w-16"
             >
               {Array.from({ length: 24 }, (_, i) => (
@@ -468,8 +467,7 @@ export default function Settings() {
             <span className="text-text-primary text-sm font-bold">:</span>
             <select
               ref={minuteRef}
-              value={refreshMinute}
-              onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
+              defaultValue={refreshMinute}
               className="input text-sm font-mono py-1.5 px-2 w-16"
             >
               {Array.from({ length: 60 }, (_, i) => (
