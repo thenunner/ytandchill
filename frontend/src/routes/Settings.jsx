@@ -382,88 +382,14 @@ export default function Settings() {
             </svg>
             Password
           </h3>
-          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12 6v6l4 2"></path>
-            </svg>
-            Auto-Scan Daily
-          </h3>
-        </div>
-
-        {/* Row 2: Controls */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setShowPasswordChange(!showPasswordChange)}
-            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-          >
-            Reset User
-          </button>
-
-          <div className="flex items-center gap-2" id="auto-scan-time">
-            <select
-              value={refreshHour}
-              onChange={async (e) => {
-                const newHour = parseInt(e.target.value);
-                // Get minute select from parent container - sibling after the span
-                const container = e.target.parentElement;
-                const minuteSelect = container.querySelector('select:nth-child(3)');
-                const currentMinute = minuteSelect ? parseInt(minuteSelect.value) : 0;
-                setRefreshHour(newHour);
-                try {
-                  await updateSettings.mutateAsync({
-                    auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                    auto_refresh_time: `${newHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`,
-                    youtube_api_key: youtubeApiKey,
-                    log_level: logLevel,
-                  });
-                  const period = newHour >= 12 ? 'pm' : 'am';
-                  const hour12 = newHour === 0 ? 12 : newHour > 12 ? newHour - 12 : newHour;
-                  showNotification(`Time changed to ${hour12}:${currentMinute.toString().padStart(2, '0')}${period}`, 'success');
-                } catch (error) {
-                  showNotification(error.message || 'Failed to save refresh hour', 'error');
-                }
-              }}
-              className="input text-sm font-mono py-1.5 px-2 w-16"
-            >
-              {Array.from({ length: 24 }, (_, i) => (
-                <option key={i} value={i}>
-                  {i.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-            <span className="text-text-primary text-sm font-bold">:</span>
-            <select
-              value={refreshMinute}
-              onChange={async (e) => {
-                const newMinute = parseInt(e.target.value);
-                // Get hour select from parent container - first select
-                const container = e.target.parentElement;
-                const hourSelect = container.querySelector('select:nth-child(1)');
-                const currentHour = hourSelect ? parseInt(hourSelect.value) : 0;
-                setRefreshMinute(newMinute);
-                try {
-                  await updateSettings.mutateAsync({
-                    auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                    auto_refresh_time: `${currentHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`,
-                    youtube_api_key: youtubeApiKey,
-                    log_level: logLevel,
-                  });
-                  const period = currentHour >= 12 ? 'pm' : 'am';
-                  const hour12 = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
-                  showNotification(`Time changed to ${hour12}:${newMinute.toString().padStart(2, '0')}${period}`, 'success');
-                } catch (error) {
-                  showNotification(error.message || 'Failed to save refresh minute', 'error');
-                }
-              }}
-              className="input text-sm font-mono py-1.5 px-2 w-16"
-            >
-              {Array.from({ length: 60 }, (_, i) => (
-                <option key={i} value={i}>
-                  {i.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </select>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+              </svg>
+              Auto-Scan Daily
+            </h3>
             <div className="flex border border-dark-border rounded-md overflow-hidden">
               <button
                 onClick={async () => {
@@ -512,6 +438,62 @@ export default function Settings() {
                 ON
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Row 2: Controls */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => setShowPasswordChange(!showPasswordChange)}
+            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+          >
+            Reset User
+          </button>
+
+          <div className="flex items-center gap-2">
+            <select
+              value={refreshHour}
+              onChange={(e) => setRefreshHour(parseInt(e.target.value))}
+              className="input text-sm font-mono py-1.5 px-2 w-16"
+            >
+              {Array.from({ length: 24 }, (_, i) => (
+                <option key={i} value={i}>
+                  {i.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+            <span className="text-text-primary text-sm font-bold">:</span>
+            <select
+              value={refreshMinute}
+              onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
+              className="input text-sm font-mono py-1.5 px-2 w-16"
+            >
+              {Array.from({ length: 60 }, (_, i) => (
+                <option key={i} value={i}>
+                  {i.toString().padStart(2, '0')}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={async () => {
+                try {
+                  await updateSettings.mutateAsync({
+                    auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                    youtube_api_key: youtubeApiKey,
+                    log_level: logLevel,
+                  });
+                  const period = refreshHour >= 12 ? 'pm' : 'am';
+                  const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
+                  showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
+                } catch (error) {
+                  showNotification(error.message || 'Failed to save time', 'error');
+                }
+              }}
+              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+            >
+              Save
+            </button>
           </div>
         </div>
 
