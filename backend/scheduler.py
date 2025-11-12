@@ -94,7 +94,36 @@ class AutoRefreshScheduler:
     def update_ytdlp(self):
         """Update yt-dlp to the latest version"""
         try:
-            logger.info("Auto-scan: Updating yt-dlp...")
+            # Get current yt-dlp version
+            try:
+                version_result = subprocess.run(
+                    ['yt-dlp', '--version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                current_version = version_result.stdout.strip() if version_result.returncode == 0 else "unknown"
+            except Exception:
+                current_version = "unknown"
+
+            logger.info(f"Auto-scan: Updating yt-dlp (current version: {current_version})...")
+
+            # Check if Deno is available
+            try:
+                deno_result = subprocess.run(
+                    ['deno', '--version'],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if deno_result.returncode == 0:
+                    deno_version = deno_result.stdout.split('\n')[0].strip()
+                    logger.info(f"Auto-scan: Deno available - {deno_version}")
+                else:
+                    logger.warning("Auto-scan: Deno not found - YouTube downloads may fail")
+            except Exception:
+                logger.warning("Auto-scan: Deno not found - YouTube downloads may fail")
+
             # Run pip upgrade using --user flag for non-root permissions
             # Use [default] extras to include yt-dlp-ejs for JavaScript runtime support
             result = subprocess.run(
@@ -105,8 +134,22 @@ class AutoRefreshScheduler:
             )
 
             if result.returncode == 0:
-                logger.info("Auto-scan: yt-dlp updated successfully")
-                logger.debug(f"yt-dlp update output: {result.stdout}")
+                # Check if it was already up-to-date or actually updated
+                if "already satisfied" in result.stdout.lower() or "requirement already satisfied" in result.stdout.lower():
+                    logger.info(f"Auto-scan: yt-dlp already up-to-date (version {current_version})")
+                else:
+                    # Get new version
+                    try:
+                        new_version_result = subprocess.run(
+                            ['yt-dlp', '--version'],
+                            capture_output=True,
+                            text=True,
+                            timeout=10
+                        )
+                        new_version = new_version_result.stdout.strip() if new_version_result.returncode == 0 else "unknown"
+                        logger.info(f"Auto-scan: yt-dlp updated successfully ({current_version} → {new_version})")
+                    except Exception:
+                        logger.info("Auto-scan: yt-dlp updated successfully")
             else:
                 logger.warning(f"Auto-scan: yt-dlp update failed: {result.stderr}")
         except Exception as e:
