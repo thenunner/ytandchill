@@ -95,9 +95,10 @@ class AutoRefreshScheduler:
         """Update yt-dlp to the latest version"""
         try:
             logger.info("Auto-scan: Updating yt-dlp...")
-            # Run pip upgrade using the current environment's pip
+            # Run pip upgrade using --user flag for non-root permissions
+            # Use [default] extras to include yt-dlp-ejs for JavaScript runtime support
             result = subprocess.run(
-                ['pip', 'install', '--upgrade', 'yt-dlp'],
+                ['pip', 'install', '--user', '--upgrade', 'yt-dlp[default]'],
                 capture_output=True,
                 text=True,
                 timeout=300  # 5 minute timeout
