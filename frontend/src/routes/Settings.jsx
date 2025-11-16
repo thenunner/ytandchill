@@ -269,7 +269,7 @@ export default function Settings() {
       </div>
 
       {/* Theme */}
-      <div className="card p-4">
+      <div className="card p-4 h-full">
         <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
@@ -376,7 +376,7 @@ export default function Settings() {
       </div>
 
       {/* Password & Auto-Scan */}
-      <div className="card p-4">
+      <div className="card p-4 h-full flex flex-col justify-center">
         {/* Row 1: Titles */}
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
@@ -583,8 +583,8 @@ export default function Settings() {
         )}
       </div>
 
-      {/* System Status Card - spans both columns on desktop */}
-      <div className="card p-4 md:col-span-2">
+      {/* System Status Card - stays same width as other cards */}
+      <div className="card p-4">
         <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-4">
           {/* Left column - System Status */}
           <div className="flex-shrink-0">
@@ -707,9 +707,9 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Log Viewer Card - Collapsible - spans both columns on desktop */}
+      {/* Log Viewer Card - Collapsible - same width as other cards */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out md:col-span-2 ${
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
           showLogs ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
