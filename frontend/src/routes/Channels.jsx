@@ -686,6 +686,15 @@ export default function Channels() {
                       updateChannel.mutate({
                         id: channel.id,
                         data: { auto_download: newValue }
+                      }, {
+                        onSuccess: () => {
+                          showNotification(
+                            newValue
+                              ? `Auto-download enabled for ${channel.title}`
+                              : `Auto-download disabled for ${channel.title}`,
+                            'success'
+                          );
+                        }
                       });
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"

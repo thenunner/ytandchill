@@ -847,7 +847,13 @@ def update_channel(channel_id):
     if 'max_minutes' in data:
         channel.max_minutes = int(data['max_minutes'] or 0)
     if 'auto_download' in data:
+        old_value = channel.auto_download
         channel.auto_download = bool(data['auto_download'])
+        if channel.auto_download != old_value:
+            if channel.auto_download:
+                logger.info(f"Auto-download enabled for channel '{channel.title}'")
+            else:
+                logger.info(f"Auto-download disabled for channel '{channel.title}'")
     if 'folder_name' in data:
         channel.folder_name = data['folder_name']
 
