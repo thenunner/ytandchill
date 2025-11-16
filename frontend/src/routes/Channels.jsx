@@ -238,6 +238,10 @@ export default function Channels() {
           return (b.discovered_count || 0) - (a.discovered_count || 0);
         case 'least_to_review':
           return (a.discovered_count || 0) - (b.discovered_count || 0);
+        case 'newest_scanned':
+          return new Date(b.last_scan_at || 0) - new Date(a.last_scan_at || 0);
+        case 'oldest_scanned':
+          return new Date(a.last_scan_at || 0) - new Date(b.last_scan_at || 0);
         default:
           return 0;
       }
@@ -367,6 +371,33 @@ export default function Channels() {
                         onClick={() => { setSortBy('least_to_review'); setShowSortMenu(false); }}
                         className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
                         title="Least To Review"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                          <path d="M12 19V5M5 12l7 7 7-7"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Last Scanned */}
+                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-primary">Last Scanned</span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => { setSortBy('newest_scanned'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Newest Scanned"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                          <path d="M12 5v14M5 12l7-7 7 7"></path>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => { setSortBy('oldest_scanned'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Oldest Scanned"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 19V5M5 12l7 7 7-7"></path>

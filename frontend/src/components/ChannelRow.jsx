@@ -105,6 +105,9 @@ export default function ChannelRow({ channel, onScan, onEditFilters, onDelete, n
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-1 leading-tight" title={channel.title}>
             {channel.title}
+            {channel.auto_download && (
+              <span className="text-green-500 ml-1">(AUTO)</span>
+            )}
           </h3>
 
           {/* Stats Row */}

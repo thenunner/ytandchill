@@ -195,6 +195,10 @@ export default function Library() {
           return b.videoCount - a.videoCount;
         case 'least_videos':
           return a.videoCount - b.videoCount;
+        case 'newest_added':
+          return new Date(b.lastAddedAt || 0) - new Date(a.lastAddedAt || 0);
+        case 'oldest_added':
+          return new Date(a.lastAddedAt || 0) - new Date(b.lastAddedAt || 0);
         default:
           return 0;
       }
@@ -526,7 +530,7 @@ export default function Library() {
 
               {/* Sort Dropdown Menu */}
               {showChannelSortMenu && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-50">
+                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
                   <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
 
                   {/* A-Z / Z-A */}
@@ -567,6 +571,33 @@ export default function Library() {
                           onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
                           className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
                           title="Least Videos"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M12 19V5M5 12l7 7 7-7"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Added */}
+                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-text-primary">Added</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
+                          className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                          title="Newest Added"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M12 5v14M5 12l7-7 7 7"></path>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
+                          className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                          title="Oldest Added"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                             <path d="M12 19V5M5 12l7 7 7-7"></path>
