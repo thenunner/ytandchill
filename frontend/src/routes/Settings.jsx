@@ -176,14 +176,17 @@ export default function Settings() {
 
   return (
     <>
-    <div className="max-w-lg space-y-4 animate-fade-in">
+    <div className="animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
       </div>
 
-      {/* YouTube Data API Key */}
-      <div className="card p-4">
+      {/* Two-column grid for desktop, single column for mobile */}
+      {/* Each column is max-w-lg (512px) to maintain original card width */}
+      <div className="grid grid-cols-1 md:grid-cols-[512px_512px] gap-4">
+        {/* YouTube Data API Key */}
+        <div className="card p-4">
           <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
@@ -580,8 +583,8 @@ export default function Settings() {
         )}
       </div>
 
-      {/* System Status Card */}
-      <div className="card p-4">
+      {/* System Status Card - spans both columns on desktop */}
+      <div className="card p-4 md:col-span-2">
         <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-4">
           {/* Left column - System Status */}
           <div className="flex-shrink-0">
@@ -704,9 +707,9 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Log Viewer Card - Collapsible */}
+      {/* Log Viewer Card - Collapsible - spans both columns on desktop */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`overflow-hidden transition-all duration-300 ease-in-out md:col-span-2 ${
           showLogs ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
@@ -750,6 +753,7 @@ export default function Settings() {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* SponsorBlock Help Modal */}
