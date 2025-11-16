@@ -541,7 +541,7 @@ export default function Channels() {
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
           {filteredAndSortedChannels.map(channel => (
-          <div key={channel.id} className="relative group channel-card-container z-50">
+          <div key={channel.id} className="relative group channel-card-container">
             <div className="card overflow-hidden hover:scale-100">
               <Link
                 to={`/channel/${channel.id}`}
