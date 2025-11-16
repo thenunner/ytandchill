@@ -843,9 +843,15 @@ def update_channel(channel_id):
         return jsonify({'error': 'Channel not found'}), 404
     
     if 'min_minutes' in data:
+        old_min = channel.min_minutes
         channel.min_minutes = int(data['min_minutes'] or 0)
+        if channel.min_minutes != old_min:
+            logger.info(f"Duration filter updated for '{channel.title}': min_minutes {old_min} -> {channel.min_minutes}")
     if 'max_minutes' in data:
+        old_max = channel.max_minutes
         channel.max_minutes = int(data['max_minutes'] or 0)
+        if channel.max_minutes != old_max:
+            logger.info(f"Duration filter updated for '{channel.title}': max_minutes {old_max} -> {channel.max_minutes}")
     if 'auto_download' in data:
         old_value = channel.auto_download
         channel.auto_download = bool(data['auto_download'])

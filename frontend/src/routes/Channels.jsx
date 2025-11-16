@@ -543,11 +543,42 @@ export default function Channels() {
           {filteredAndSortedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
             <div className="card overflow-hidden hover:scale-100">
+              {/* Top Header Bar - AUTO and Last Scanned with 3-dot menu */}
+              <div className="flex items-center justify-between px-3 py-2 bg-dark-tertiary/50">
+                {/* Left: AUTO badge */}
+                <div>
+                  {channel.auto_download && (
+                    <span className="text-green-500 text-[10px] font-bold tracking-wide">AUTO</span>
+                  )}
+                </div>
+
+                {/* Right: Last Scanned + 3-dot menu */}
+                <div className="flex items-center gap-2">
+                  <span className="text-text-secondary text-[10px] font-medium">
+                    {formatLastScan(channel.last_scan_at)}
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setMenuOpen(menuOpen === channel.id ? null : channel.id);
+                    }}
+                    className="p-1 rounded hover:bg-dark-hover transition-colors"
+                  >
+                    <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                      <circle cx="12" cy="5" r="2"></circle>
+                      <circle cx="12" cy="12" r="2"></circle>
+                      <circle cx="12" cy="19" r="2"></circle>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
               <Link
                 to={`/channel/${channel.id}`}
                 className="block"
               >
-                {/* Top: Channel Logo Banner */}
+                {/* Channel Logo Banner */}
                 <div className="relative w-full h-24 bg-dark-tertiary">
                   {channel.thumbnail ? (
                     <img
@@ -562,45 +593,14 @@ export default function Channels() {
                       </svg>
                     </div>
                   )}
-
-                  {/* Auto-Download Badge - Top Left */}
-                  {channel.auto_download && (
-                    <div className="absolute top-2 left-2 bg-green-600/90 text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
-                      AUTO
-                    </div>
-                  )}
-
-                  {/* Last Scan Badge - Bottom Left */}
-                  <div className="absolute bottom-2 left-2 bg-dark-secondary/90 text-text-primary px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
-                    {formatLastScan(channel.last_scan_at)}
-                  </div>
                 </div>
 
                 {/* Content Section */}
                 <div className="p-3 space-y-2">
-                  {/* Row 1: Title and 3-Dot Menu */}
-                  <div className="flex items-center justify-between gap-2">
-                    {/* Title - single line with ellipsis */}
-                    <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent transition-colors flex-1" title={channel.title}>
-                      {channel.title}
-                    </h3>
-
-                    {/* 3-Dot Menu Button */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setMenuOpen(menuOpen === channel.id ? null : channel.id);
-                      }}
-                      className="p-1.5 rounded-full bg-dark-tertiary/50 backdrop-blur-sm border border-dark-border opacity-100 hover:bg-dark-hover transition-all flex-shrink-0"
-                    >
-                      <svg className="w-4 h-4 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="5" r="1"></circle>
-                        <circle cx="12" cy="12" r="1"></circle>
-                        <circle cx="12" cy="19" r="1"></circle>
-                      </svg>
-                    </button>
-                  </div>
+                  {/* Title */}
+                  <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent transition-colors" title={channel.title}>
+                    {channel.title}
+                  </h3>
 
                   {/* Row 2: Stats - Downloaded (left), Discovered (middle), Ignored (right) */}
                   <div className="flex items-center justify-between">
@@ -791,12 +791,10 @@ export default function Channels() {
               key={channel.id}
               channel={channel}
               onScan={handleScanChannel}
-              onEditFilters={(ch) => {
-                setEditingChannel({ ...ch });
-                setShowDurationSettings(ch.id);
-              }}
+              onUpdateChannel={updateChannel.mutateAsync}
               onDelete={setDeleteConfirm}
               navigate={navigate}
+              showNotification={showNotification}
             />
           ))}
         </div>

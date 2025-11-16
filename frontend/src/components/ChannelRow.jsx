@@ -1,13 +1,51 @@
 import { useState } from 'react';
 
-export default function ChannelRow({ channel, onScan, onEditFilters, onDelete, navigate }) {
+export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete, navigate, showNotification }) {
   const [showMenu, setShowMenu] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [minMinutes, setMinMinutes] = useState(channel.min_minutes || 0);
+  const [maxMinutes, setMaxMinutes] = useState(channel.max_minutes || 0);
+
+  const handleSaveSettings = async (e) => {
+    e.stopPropagation();
+    try {
+      await onUpdateChannel({
+        id: channel.id,
+        data: {
+          min_minutes: minMinutes,
+          max_minutes: maxMinutes,
+        }
+      });
+      showNotification('Duration settings saved', 'success');
+    } catch (error) {
+      showNotification(error.message || 'Failed to save settings', 'error');
+    }
+  };
+
+  const handleToggleAutoDownload = async (e) => {
+    e.stopPropagation();
+    const newValue = !channel.auto_download;
+    try {
+      await onUpdateChannel({
+        id: channel.id,
+        data: { auto_download: newValue }
+      });
+      showNotification(
+        newValue
+          ? `Auto-download enabled for ${channel.title}`
+          : `Auto-download disabled for ${channel.title}`,
+        'success'
+      );
+    } catch (error) {
+      showNotification(error.message || 'Failed to update auto-download', 'error');
+    }
+  };
 
   return (
     <div
       className="card flex items-center gap-3 p-0 w-full cursor-pointer transition-colors group"
       onClick={(e) => {
-        if (!e.target.closest('button')) {
+        if (!e.target.closest('button') && !e.target.closest('input')) {
           navigate(`/channel/${channel.id}`);
         }
       }}
@@ -18,6 +56,7 @@ export default function ChannelRow({ channel, onScan, onEditFilters, onDelete, n
           onClick={(e) => {
             e.stopPropagation();
             setShowMenu(!showMenu);
+            if (showSettings) setShowSettings(false);
           }}
           className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary rounded-lg transition-colors"
         >
@@ -58,12 +97,12 @@ export default function ChannelRow({ channel, onScan, onEditFilters, onDelete, n
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onEditFilters(channel);
+            setShowSettings(!showSettings);
             setShowMenu(false);
           }}
           className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
         >
-          Edit Filters
+          Channel Settings
         </button>
         <button
           onClick={(e) => {
@@ -74,6 +113,55 @@ export default function ChannelRow({ channel, onScan, onEditFilters, onDelete, n
           className="px-3 py-1.5 text-left text-xs text-red-400 hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
         >
           Delete
+        </button>
+      </div>
+
+      {/* Channel Settings Slide-out */}
+      <div
+        className={`flex flex-col gap-2 overflow-hidden transition-all duration-200 ease-in-out ${
+          showSettings ? 'w-[200px] opacity-100 pr-3' : 'w-0 opacity-0'
+        }`}
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-secondary whitespace-nowrap">Min</span>
+          <input
+            type="number"
+            value={minMinutes}
+            onChange={(e) => setMinMinutes(parseInt(e.target.value) || 0)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 text-xs bg-dark-tertiary border border-dark-border rounded text-text-primary"
+            min="0"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-text-secondary whitespace-nowrap">Max</span>
+          <input
+            type="number"
+            value={maxMinutes}
+            onChange={(e) => setMaxMinutes(parseInt(e.target.value) || 0)}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full px-2 py-1 text-xs bg-dark-tertiary border border-dark-border rounded text-text-primary"
+            min="0"
+          />
+        </div>
+        <button
+          onClick={handleSaveSettings}
+          className="px-3 py-1.5 text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors"
+        >
+          Save
+        </button>
+        <button
+          onClick={handleToggleAutoDownload}
+          className="px-3 py-1.5 text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors flex items-center gap-2"
+        >
+          <input
+            type="checkbox"
+            checked={channel.auto_download || false}
+            readOnly
+            onClick={(e) => e.stopPropagation()}
+            className="w-3 h-3 rounded border-dark-border bg-dark-tertiary text-accent"
+          />
+          <span>Auto-Download</span>
         </button>
       </div>
 
@@ -94,20 +182,27 @@ export default function ChannelRow({ channel, onScan, onEditFilters, onDelete, n
               </svg>
             </div>
           )}
-
-          {/* Last Scan Badge - Bottom Left */}
-          <div className="absolute bottom-1.5 left-1.5 bg-dark-secondary/90 text-text-primary px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
-            {channel.last_scan_at ? new Date(channel.last_scan_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
-          </div>
         </div>
 
         {/* Info Section */}
         <div className="flex-1 min-w-0">
           <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-1 leading-tight" title={channel.title}>
-            {channel.title}
             {channel.auto_download && (
-              <span className="text-green-500 ml-1">(AUTO)</span>
+              <span className="text-green-500 mr-1">(AUTO)</span>
             )}
+            {channel.title}
+            <span className="text-text-secondary font-normal ml-2 text-xs">
+              Last: {channel.last_scan_at ? (() => {
+                const date = new Date(channel.last_scan_at);
+                const now = new Date();
+                const diffTime = now - date;
+                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays <= 0) return 'Today';
+                if (diffDays === 1) return 'Yesterday';
+                if (diffDays < 7) return `${diffDays} days ago`;
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+              })() : 'Never'}
+            </span>
           </h3>
 
           {/* Stats Row */}
