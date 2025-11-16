@@ -1,10 +1,29 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete, navigate, showNotification }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [minMinutes, setMinMinutes] = useState(channel.min_minutes || 0);
   const [maxMinutes, setMaxMinutes] = useState(channel.max_minutes || 0);
+  const cardRef = useRef(null);
+
+  // Click outside to progressively close menus
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (cardRef.current && !cardRef.current.contains(event.target)) {
+        if (showSettings) {
+          setShowSettings(false);
+        } else if (showMenu) {
+          setShowMenu(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu, showSettings]);
 
   const handleSaveSettings = async (e) => {
     e.stopPropagation();
@@ -43,6 +62,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
 
   return (
     <div
+      ref={cardRef}
       className="card flex items-center gap-3 p-0 w-full cursor-pointer transition-colors group"
       onClick={(e) => {
         if (!e.target.closest('button') && !e.target.closest('input')) {
@@ -71,7 +91,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
       {/* Sliding Drawer Menu - slides in from left, pushing content right */}
       <div
         className={`flex flex-col gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
-          showMenu ? 'w-[140px] opacity-100 pr-3' : 'w-0 opacity-0'
+          showMenu ? 'w-[140px] opacity-100' : 'w-0 opacity-0'
         }`}
       >
         <button
@@ -79,6 +99,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             e.stopPropagation();
             onScan(channel.id, false);
             setShowMenu(false);
+            setShowSettings(false);
           }}
           className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
         >
@@ -89,6 +110,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             e.stopPropagation();
             onScan(channel.id, true);
             setShowMenu(false);
+            setShowSettings(false);
           }}
           className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
         >
@@ -98,9 +120,8 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
           onClick={(e) => {
             e.stopPropagation();
             setShowSettings(!showSettings);
-            setShowMenu(false);
           }}
-          className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+          className={`px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap ${showSettings ? 'ring-1 ring-accent' : ''}`}
         >
           Channel Settings
         </button>
@@ -109,6 +130,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             e.stopPropagation();
             onDelete(channel.id);
             setShowMenu(false);
+            setShowSettings(false);
           }}
           className="px-3 py-1.5 text-left text-xs text-red-400 hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
         >
@@ -116,10 +138,10 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
         </button>
       </div>
 
-      {/* Channel Settings Slide-out */}
+      {/* Channel Settings Slide-out - appears to the right of menu */}
       <div
         className={`flex flex-col gap-2 overflow-hidden transition-all duration-200 ease-in-out ${
-          showSettings ? 'w-[200px] opacity-100 pr-3' : 'w-0 opacity-0'
+          showSettings && showMenu ? 'w-[200px] opacity-100 pr-3' : 'w-0 opacity-0'
         }`}
       >
         <div className="flex items-center gap-2">
