@@ -532,6 +532,13 @@ export default function Channels() {
                     </div>
                   )}
 
+                  {/* Auto-Download Badge - Top Left */}
+                  {channel.auto_download && (
+                    <div className="absolute top-2 left-2 bg-green-600/90 text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
+                      AUTO
+                    </div>
+                  )}
+
                   {/* Last Scan Badge - Bottom Left */}
                   <div className="absolute bottom-2 left-2 bg-dark-secondary/90 text-text-primary px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
                     {formatLastScan(channel.last_scan_at)}

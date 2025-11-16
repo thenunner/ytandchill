@@ -961,6 +961,15 @@ def scan_channel(channel_id):
                 status=status
             )
             session.add(video)
+            session.flush()  # Get video.id for queue item
+
+            # Auto-queue if channel has auto_download enabled and video passed filters
+            if status == 'discovered' and channel.auto_download:
+                video.status = 'queued'
+                max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
+                queue_item = QueueItem(video_id=video.id, queue_position=max_pos + 1)
+                session.add(queue_item)
+                logger.info(f"Auto-queued '{video.title}' for channel '{channel.title}'")
 
             if status == 'ignored':
                 ignored_count += 1
