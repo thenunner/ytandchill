@@ -497,6 +497,7 @@ def serialize_channel(channel):
         'folder_name': channel.folder_name,
         'min_minutes': channel.min_minutes,
         'max_minutes': channel.max_minutes,
+        'auto_download': channel.auto_download or False,
         'last_scan_at': channel.last_scan_at.isoformat() if channel.last_scan_at else None,
         'last_video_date': last_video_date,
         'created_at': channel.created_at.isoformat(),
@@ -845,6 +846,8 @@ def update_channel(channel_id):
         channel.min_minutes = int(data['min_minutes'] or 0)
     if 'max_minutes' in data:
         channel.max_minutes = int(data['max_minutes'] or 0)
+    if 'auto_download' in data:
+        channel.auto_download = bool(data['auto_download'])
     if 'folder_name' in data:
         channel.folder_name = data['folder_name']
 

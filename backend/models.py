@@ -16,6 +16,7 @@ class Channel(Base):
     folder_name = Column(String(200), nullable=False)
     min_minutes = Column(Integer, default=0)
     max_minutes = Column(Integer, default=0)  # 0 means no limit
+    auto_download = Column(Boolean, default=False)  # Auto-queue new videos during scan
     last_scan_at = Column(DateTime)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
