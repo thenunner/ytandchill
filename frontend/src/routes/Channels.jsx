@@ -475,11 +475,22 @@ export default function Channels() {
         </div>
       )}
 
+      {/* Overlay for Duration Settings - closes on click outside */}
+      {showDurationSettings !== null && (
+        <div
+          className="fixed inset-0 z-40 bg-transparent"
+          onClick={() => {
+            setShowDurationSettings(null);
+            setEditingChannel(null);
+          }}
+        />
+      )}
+
       {/* Channels Grid/List */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
           {filteredAndSortedChannels.map(channel => (
-          <div key={channel.id} className="relative group channel-card-container">
+          <div key={channel.id} className="relative group channel-card-container z-50">
             <div className="card overflow-hidden hover:scale-100">
               <Link
                 to={`/channel/${channel.id}`}
@@ -568,7 +579,10 @@ export default function Channels() {
 
               {/* Duration Settings Panel - inside card */}
               {showDurationSettings === channel.id && editingChannel?.id === channel.id && (
-                <div className="border-t border-dark-border p-4 bg-dark-tertiary/50 animate-slide-down">
+                <div
+                  className="border-t border-dark-border p-4 bg-dark-tertiary/50 animate-slide-down"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <div className="flex items-end gap-2">
                     <div className="flex-1">
                       <label className="block text-xs font-medium text-text-secondary mb-1">
