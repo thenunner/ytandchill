@@ -196,6 +196,26 @@ export default function Channels() {
     localStorage.setItem('channels_sortBy', sortBy);
   }, [sortBy]);
 
+  // Helper function to format last scan date
+  const formatLastScan = (dateString) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      // Format as Mon DD (e.g., "Nov 14")
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
+
   // Filter and sort channels
   const filteredAndSortedChannels = (() => {
     // First filter by search
@@ -514,7 +534,7 @@ export default function Channels() {
 
                   {/* Last Scan Badge - Bottom Left */}
                   <div className="absolute bottom-2 left-2 bg-dark-secondary/90 text-text-primary px-2 py-0.5 rounded text-[10px] font-bold tracking-wide backdrop-blur-sm">
-                    {channel.last_scan_at ? new Date(channel.last_scan_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Never'}
+                    {formatLastScan(channel.last_scan_at)}
                   </div>
                 </div>
 

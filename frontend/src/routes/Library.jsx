@@ -101,6 +101,29 @@ export default function Library() {
     return `${gb.toFixed(1)} GB`;
   };
 
+  // Helper function to format last added date
+  const formatLastAdded = (dateString) => {
+    if (!dateString) return null;
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = now - date;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      return 'Today';
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      return `${diffDays} days ago`;
+    } else {
+      // Format as MM/DD/YY
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const year = String(date.getFullYear()).slice(-2);
+      return `${month}/${day}/${year}`;
+    }
+  };
+
   // Fetch only library videos to get channels that have downloads
   const { data: videos, isLoading} = useVideos({
     status: 'library',
@@ -123,6 +146,7 @@ export default function Library() {
           totalSizeBytes: 0,
           videos: [],  // Store all videos for random thumbnail selection
           watchedCount: 0,
+          lastAddedAt: null,
         };
       }
       acc[channelId].videoCount++;
@@ -130,6 +154,12 @@ export default function Library() {
       acc[channelId].videos.push(video);
       if (video.watched) {
         acc[channelId].watchedCount++;
+      }
+      // Track most recent downloaded_at
+      if (video.downloaded_at) {
+        if (!acc[channelId].lastAddedAt || new Date(video.downloaded_at) > new Date(acc[channelId].lastAddedAt)) {
+          acc[channelId].lastAddedAt = video.downloaded_at;
+        }
       }
       return acc;
     }, {})).map(channel => {
@@ -840,6 +870,12 @@ export default function Library() {
                     </svg>
                   </div>
                 )}
+                {/* Last Added Badge */}
+                {channel.lastAddedAt && (
+                  <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                    Last: {formatLastAdded(channel.lastAddedAt)}
+                  </div>
+                )}
               </div>
 
               {/* Channel Info */}
@@ -887,6 +923,9 @@ export default function Library() {
                 </h3>
                 <p className="text-sm text-text-secondary">
                   {channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''}
+                  {channel.lastAddedAt && (
+                    <> • Last Added: {formatLastAdded(channel.lastAddedAt)}</>
+                  )}
                 </p>
               </div>
 
