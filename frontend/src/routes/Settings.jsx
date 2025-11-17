@@ -185,7 +185,7 @@ export default function Settings() {
       {/* Two-column layout for desktop */}
       <div className="flex flex-col md:flex-row gap-4">
         {/* Column 1: System Status, YouTube API Key, SponsorBlock */}
-        <div className="flex flex-col gap-4 md:w-[512px]">
+        <div className="flex flex-col gap-4 md:w-[420px]">
           {/* System Status Card */}
           <div className="card p-4">
             <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
@@ -504,7 +504,7 @@ export default function Settings() {
         </div>
 
         {/* Column 2: Theme, Stats & Logging */}
-        <div className="flex flex-col gap-4 md:w-[512px]">
+        <div className="flex flex-col gap-4 md:w-[420px]">
           {/* Theme */}
           <div className="card p-4">
             <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
@@ -515,7 +515,7 @@ export default function Settings() {
             </h3>
         <div className="flex flex-col gap-3">
           {/* Row 1: Dark themes - kernel, fatal, subnet, archive */}
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-3">
             <button
               onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -567,7 +567,7 @@ export default function Settings() {
           </div>
 
           {/* Row 2: Dark themes - buffer, init, gateway */}
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-3">
             <button
               onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -611,7 +611,7 @@ export default function Settings() {
           <div className="border-t border-dark-border"></div>
 
           {/* Row 3: Light themes - online, pixel, standby, debug */}
-          <div className="grid grid-cols-4 gap-6">
+          <div className="grid grid-cols-4 gap-3">
             <button
               onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -749,7 +749,7 @@ export default function Settings() {
 
       {/* Log Viewer Card - Collapsible - outside columns so it spans full width */}
       <div
-        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+        className={`overflow-hidden transition-all duration-300 ease-in-out max-w-[856px] ${
           showLogs ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
         }`}
       >

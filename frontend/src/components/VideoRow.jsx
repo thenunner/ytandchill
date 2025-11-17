@@ -106,7 +106,7 @@ export default function VideoRow({
 
   return (
     <div
-      className={`card flex items-center gap-3 p-0 w-full cursor-pointer transition-colors ${
+      className={`card flex items-center gap-3 p-0 w-full max-w-2xl cursor-pointer transition-colors ${
         isSelected ? 'ring-2 ring-accent/60' : ''
       } ${onToggleSelect ? 'hover:ring-2 hover:ring-accent/50' : ''}`}
       onClick={handleCardClick}
