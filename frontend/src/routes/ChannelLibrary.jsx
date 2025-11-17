@@ -6,6 +6,7 @@ import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
+import Pagination from '../components/Pagination';
 
 export default function ChannelLibrary() {
   const { channelId } = useParams();
@@ -45,6 +46,11 @@ export default function ChannelLibrary() {
   const [showDurationSettings, setShowDurationSettings] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    const stored = localStorage.getItem('channelLibrary_itemsPerPage');
+    return stored ? Number(stored) : 50;
+  });
   const menuRef = useRef(null);
 
   const channel = channels?.find(c => c.id === Number(channelId));
@@ -349,6 +355,17 @@ export default function ChannelLibrary() {
     }
   });
   }, [videos, searchInput, hideWatched, hidePlaylisted, sort]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [videos, searchInput, hideWatched, hidePlaylisted, sort, contentFilter]);
+
+  // Paginate videos
+  const paginatedVideos = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedVideos, currentPage, itemsPerPage]);
 
   const handleFilterChange = (key, value) => {
     const newParams = new URLSearchParams(searchParams);
@@ -722,6 +739,19 @@ export default function ChannelLibrary() {
             </button>
           </div>
 
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={sortedVideos.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              localStorage.setItem('channelLibrary_itemsPerPage', value);
+              setCurrentPage(1);
+            }}
+          />
+
           {/* Filters Button - Show for both videos and playlists */}
           <button
             onClick={() => setShowFiltersModal(true)}
@@ -1054,7 +1084,7 @@ export default function ChannelLibrary() {
           </div>
         ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-            {sortedVideos.map(video => (
+            {paginatedVideos.map(video => (
               <VideoCard
                 key={video.id}
                 video={video}
@@ -1068,7 +1098,7 @@ export default function ChannelLibrary() {
           </div>
         ) : (
           <div className="flex flex-col gap-2 items-start">
-            {sortedVideos.map(video => (
+            {paginatedVideos.map(video => (
               <VideoRow
                 key={video.id}
                 video={video}

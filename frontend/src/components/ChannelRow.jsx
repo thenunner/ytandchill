@@ -64,7 +64,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
     <div
       ref={cardRef}
       className={`card flex items-stretch p-0 w-full cursor-pointer transition-all group ${
-        showMenu ? 'max-w-4xl' : 'max-w-2xl'
+        showMenu ? 'max-w-5xl' : 'max-w-3xl'
       }`}
       onClick={(e) => {
         if (!e.target.closest('button') && !e.target.closest('input')) {
@@ -194,7 +194,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
               <span className="text-green-500 mr-1">(AUTO)</span>
             )}
             {channel.title}
-            <span className="text-text-secondary font-normal ml-2 text-xs">
+            <span className="text-text-secondary font-normal ml-2 text-sm">
               Last: {channel.last_scan_at ? (() => {
                 const date = new Date(channel.last_scan_at);
                 const now = new Date();

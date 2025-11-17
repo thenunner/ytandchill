@@ -199,7 +199,7 @@ export default function VideoCard({
       {isDownloaded && !editMode && (
         <div className="flex items-center justify-between px-3 py-2">
           {/* Left side badges */}
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-sm">
             {video.playlist_ids && video.playlist_ids.length > 0 && (
               <span>
                 <span className="text-text-secondary">[</span>

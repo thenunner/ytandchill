@@ -623,7 +623,7 @@ export default function Channels() {
 
                 {/* Right: Last Scanned + 3-dot menu */}
                 <div className="flex items-center gap-2">
-                  <span className="text-text-secondary text-[10px] font-medium">
+                  <span className="text-text-secondary text-xs font-medium">
                     {formatLastScan(channel.last_scan_at)}
                   </span>
                   <div className="relative">

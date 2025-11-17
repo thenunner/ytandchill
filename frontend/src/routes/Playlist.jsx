@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
+import Pagination from '../components/Pagination';
 
 export default function Playlist() {
   const { id } = useParams();
@@ -23,6 +24,11 @@ export default function Playlist() {
   const [hideWatched, setHideWatched] = useState(localStorage.getItem('playlist_hideWatched') === 'true');
   const [editMode, setEditMode] = useState(false);
   const [selectedVideos, setSelectedVideos] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    const stored = localStorage.getItem('playlist_itemsPerPage');
+    return stored ? Number(stored) : 50;
+  });
 
   useEffect(() => {
     localStorage.setItem('viewMode', viewMode);
@@ -168,6 +174,17 @@ export default function Playlist() {
       }
     });
 
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchInput, sort, hideWatched]);
+
+  // Paginate videos
+  const paginatedVideos = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedVideos, currentPage, itemsPerPage]);
+
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Sticky Header Row */}
@@ -249,6 +266,19 @@ export default function Playlist() {
             </button>
           </div>
 
+          {/* Pagination */}
+          <Pagination
+            currentPage={currentPage}
+            totalItems={sortedVideos.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              localStorage.setItem('playlist_itemsPerPage', value);
+              setCurrentPage(1);
+            }}
+          />
+
           {/* Filters Button */}
           <button
             onClick={() => setShowFiltersModal(true)}
@@ -327,7 +357,7 @@ export default function Playlist() {
       {sortedVideos.length > 0 ? (
         viewMode === 'grid' ? (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
-            {sortedVideos.map((video) => (
+            {paginatedVideos.map((video) => (
               <VideoCard
                 key={video.id}
                 video={video}
@@ -342,7 +372,7 @@ export default function Playlist() {
           </div>
         ) : (
           <div className="flex flex-col gap-2 items-start">
-            {sortedVideos.map((video) => (
+            {paginatedVideos.map((video) => (
               <VideoRow
                 key={video.id}
                 video={video}

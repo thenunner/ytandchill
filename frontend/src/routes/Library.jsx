@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import Pagination from '../components/Pagination';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
@@ -60,6 +61,13 @@ export default function Library() {
   const [renameCategoryId, setRenameCategoryId] = useState(null);
   const [renameCategoryValue, setRenameCategoryValue] = useState('');
   const [showRenameCategoryModal, setShowRenameCategoryModal] = useState(false);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(() => {
+    const stored = localStorage.getItem('library_itemsPerPage');
+    return stored ? Number(stored) : 50;
+  });
 
   // Sync activeTab with URL parameter
   useEffect(() => {
@@ -206,6 +214,17 @@ export default function Library() {
 
     return sorted;
   }, [allChannelsList, searchInput, channelSortBy]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchInput, channelSortBy, playlistSortBy, activeTab]);
+
+  // Paginate channels list
+  const paginatedChannelsList = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return channelsList.slice(startIndex, startIndex + itemsPerPage);
+  }, [channelsList, currentPage, itemsPerPage]);
 
   // Filter and sort playlists
   const filteredPlaylists = useMemo(() => {
@@ -645,6 +664,19 @@ export default function Library() {
                 </svg>
               </button>
             </div>
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={channelsList.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(value) => {
+                setItemsPerPage(value);
+                localStorage.setItem('library_itemsPerPage', value);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         ) : (
           /* Playlists: Responsive layout - wraps on mobile */
@@ -880,7 +912,7 @@ export default function Library() {
             </div>
           ) : viewMode === 'grid' ? (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
-          {channelsList.map(channel => (
+          {paginatedChannelsList.map(channel => (
             <Link
               key={channel.id}
               to={`/channel/${channel.id}/library`}
@@ -924,11 +956,11 @@ export default function Library() {
             </div>
           ) : (
             <div className="flex flex-col gap-2">
-          {channelsList.map(channel => (
+          {paginatedChannelsList.map(channel => (
             <Link
               key={channel.id}
               to={`/channel/${channel.id}/library`}
-              className="card p-0 group hover:bg-dark-hover transition-colors flex items-stretch gap-3 w-full max-w-2xl"
+              className="card p-0 group hover:bg-dark-hover transition-colors flex items-stretch gap-3 w-full max-w-3xl"
             >
               {/* Thumbnail - Full height */}
               <div className="relative w-32 bg-dark-tertiary rounded-l-lg overflow-hidden flex-shrink-0">
@@ -949,10 +981,10 @@ export default function Library() {
 
               {/* Channel Info */}
               <div className="py-2">
-                <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors whitespace-nowrap">
+                <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors whitespace-nowrap">
                   {channel.title}
                 </h3>
-                <p className="text-xs text-text-secondary whitespace-nowrap">
+                <p className="text-sm text-text-secondary whitespace-nowrap">
                   {channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''}
                   {channel.lastAddedAt && (
                     <> • Last Added: {formatLastAdded(channel.lastAddedAt)}</>
