@@ -295,12 +295,12 @@ export default function Settings() {
               onClick={() => { setTheme('sand'); showNotification('Theme changed to sand', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'sand'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-600 after:to-amber-400'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-teal-600 after:to-teal-400'
                   : ''
               }`}
-              style={{ color: 'hsl(35, 35%, 72%)' }}
+              style={{ color: 'hsl(180, 45%, 35%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 35%, 72%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(180, 45%, 35%)' }}></div>
               sand
             </button>
             <button

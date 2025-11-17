@@ -127,14 +127,14 @@
 /* Ember Orange Theme */
 .theme-ember {
   /* Backgrounds */
-  --bg-primary: 42 24% 8%;         /* Dark earthy umber */
-  --bg-secondary: 41 21% 12%;      /* Natural dark olive-brown */
-  --bg-tertiary: 40 27% 16%;       /* Muted warm tan/earth */
-  --bg-hover: 39 98% 43%;          /* Saffron highlight */
+  --bg-primary: 25 45% 8%;         /* Deep orange-brown */
+  --bg-secondary: 25 40% 11%;      /* Orange-tinted dark */
+  --bg-tertiary: 25 35% 14%;       /* Orange elevated */
+  --bg-hover: 30 98% 43%;          /* Saffron highlight */
 
   /* Borders */
-  --border: 40 22% 14%;            /* Earthy borders */
-  --border-light: 40 27% 16%;      /* Warm tan borders */
+  --border: 25 35% 13%;            /* Orange-tinted borders */
+  --border-light: 25 30% 16%;      /* Orange tan borders */
 
   /* Text */
   --text-primary: 40 68% 89%;      /* Warm parchment/cream */
@@ -142,16 +142,16 @@
   --text-muted: 40 20% 50%;        /* Warm muted */
 
   /* Accent - Saffron Orange */
-  --accent: 39 98% 43%;            /* #D98E04 - Saffron orange */
-  --accent-hover: 38 81% 54%;      /* #E8A42A - Lighter saffron */
+  --accent: 30 98% 45%;            /* Bright saffron orange */
+  --accent-hover: 30 85% 55%;      /* Lighter saffron */
 
   /* Scrollbar */
-  --scrollbar-track: 41 21% 12%;
-  --scrollbar-thumb: 39 80% 40%;   /* Saffron thumb */
-  --scrollbar-thumb-hover: 38 85% 50%;
+  --scrollbar-track: 25 40% 11%;
+  --scrollbar-thumb: 30 85% 42%;   /* Saffron thumb */
+  --scrollbar-thumb-hover: 30 90% 52%;
 
   /* Plyr player */
-  --plyr-main: 39 98% 43%;         /* Saffron for player */
+  --plyr-main: 30 98% 45%;         /* Saffron for player */
 }
 
 /* Reed Green Theme */
@@ -187,31 +187,31 @@
 /* Sand Light Theme */
 .theme-sand {
   /* Backgrounds */
-  --bg-primary: 35 35% 72%;        /* Darker sand/cream color */
-  --bg-secondary: 35 30% 68%;      /* Slightly darker for cards */
-  --bg-tertiary: 35 25% 64%;       /* Elevated surfaces */
-  --bg-hover: 35 20% 58%;          /* Sand-tinted hover */
+  --bg-primary: 35 30% 65%;        /* Darker sand/cream color */
+  --bg-secondary: 35 28% 58%;      /* Light brown for cards */
+  --bg-tertiary: 35 25% 52%;       /* Elevated surfaces */
+  --bg-hover: 35 22% 48%;          /* Sand-tinted hover */
 
   /* Borders */
-  --border: 35 22% 60%;            /* Warm borders */
-  --border-light: 35 18% 52%;      /* Darker warm borders */
+  --border: 35 24% 50%;            /* Warm borders */
+  --border-light: 35 20% 45%;      /* Darker warm borders */
 
   /* Text - Dark for light theme */
-  --text-primary: 30 25% 12%;      /* Warm dark brown */
-  --text-secondary: 30 20% 30%;    /* Warm medium brown */
-  --text-muted: 30 15% 45%;        /* Warm gray */
+  --text-primary: 30 30% 10%;      /* Warm dark brown */
+  --text-secondary: 30 25% 25%;    /* Warm medium brown */
+  --text-muted: 30 18% 40%;        /* Warm gray */
 
-  /* Accent - Warm brown for light theme */
-  --accent: 30 45% 28%;            /* Dark warm brown accent */
-  --accent-hover: 30 45% 18%;      /* Darker on hover */
+  /* Accent - Teal for visibility on light brown */
+  --accent: 180 45% 35%;           /* Teal accent for contrast */
+  --accent-hover: 180 50% 45%;     /* Lighter teal on hover */
 
   /* Scrollbar */
-  --scrollbar-track: 35 30% 68%;
-  --scrollbar-thumb: 35 25% 48%;   /* Warm thumb */
-  --scrollbar-thumb-hover: 35 30% 38%;
+  --scrollbar-track: 35 28% 58%;
+  --scrollbar-thumb: 180 40% 40%;  /* Teal thumb */
+  --scrollbar-thumb-hover: 180 45% 50%;
 
   /* Plyr player */
-  --plyr-main: 30 45% 28%;         /* Warm brown for player */
+  --plyr-main: 180 45% 35%;        /* Teal for player */
 }
 
 /* Pollen Yellow Theme */
