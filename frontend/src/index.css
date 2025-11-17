@@ -5,7 +5,7 @@
 /* ===== THEME SYSTEM ===== */
 /* Default theme (Dark Mode) */
 :root,
-.theme-null {
+.theme-void {
   /* Backgrounds */
   --bg-primary: 0 0% 0%;           /* #000000 - Pure black */
   --bg-secondary: 220 10% 8%;      /* #14161a - Card backgrounds */
@@ -34,8 +34,8 @@
   --plyr-main: 220 10% 70%;        /* Same as accent */
 }
 
-/* Bleed Red Theme */
-.theme-bleed {
+/* Burn Red Theme */
+.theme-burn {
   /* Backgrounds */
   --bg-primary: 0 8% 7%;           /* Slightly red-tinted black */
   --bg-secondary: 0 12% 10%;       /* Red-tinted dark gray */
@@ -64,8 +64,8 @@
   --plyr-main: 0 100% 50%;         /* YouTube red for player */
 }
 
-/* Cryo Deep Blue Theme */
-.theme-cryo {
+/* Ice Deep Blue Theme */
+.theme-ice {
   /* Backgrounds */
   --bg-primary: 220 50% 5%;        /* Very deep blue-gray */
   --bg-secondary: 220 45% 8%;      /* Slightly lighter overcast */
@@ -94,8 +94,8 @@
   --plyr-main: 220 50% 40%;        /* Overcast blue for player - distinct from tide */
 }
 
-/* Rust Brown Theme */
-.theme-rust {
+/* Spore Brown Theme */
+.theme-spore {
   /* Backgrounds */
   --bg-primary: 25 30% 6%;         /* Very deep bark brown */
   --bg-secondary: 25 28% 9%;       /* Natural dark brown for cards */
@@ -124,38 +124,8 @@
   --plyr-main: 95 20% 45%;         /* Sage for player */
 }
 
-/* Phase Blue/Sand Theme */
-.theme-phase {
-  /* Backgrounds */
-  --bg-primary: 205 40% 14%;       /* ~#1B3C53 */
-  --bg-secondary: 205 38% 18%;     /* ~#234C6A */
-  --bg-tertiary: 205 35% 22%;      /* darker blue-gray */
-  --bg-hover: 205 25% 32%;         /* lighter blue hover */
-
-  /* Borders */
-  --border: 205 28% 22%;
-  --border-light: 205 24% 30%;
-
-  /* Text */
-  --text-primary: 30 20% 85%;      /* warm sand */
-  --text-secondary: 30 15% 70%;
-  --text-muted: 30 10% 55%;
-
-  /* Accent */
-  --accent: 30 25% 78%;            /* #D2C1B6 – warm beige */
-  --accent-hover: 30 30% 88%;
-
-  /* Scrollbar */
-  --scrollbar-track: 205 38% 18%;
-  --scrollbar-thumb: 205 30% 32%;
-  --scrollbar-thumb-hover: 205 30% 40%;
-
-  /* Plyr player */
-  --plyr-main: 30 25% 78%;         /* beige for contrast */
-}
-
-/* Slate Gray/Beige Theme */
-.theme-slate {
+/* Hush Gray/Beige Theme */
+.theme-hush {
   /* Backgrounds */
   --bg-primary: 215 15% 14%;       /* #222831 */
   --bg-secondary: 215 12% 22%;     /* #393E46 */
@@ -184,8 +154,8 @@
   --plyr-main: 35 40% 75%;
 }
 
-/* Grove Green/Wheat Theme */
-.theme-grove {
+/* Sector Green/Wheat Theme */
+.theme-sector {
   /* Backgrounds */
   --bg-primary: 100 10% 10%;       /* #181C14 */
   --bg-secondary: 100 7% 20%;      /* #3C3D37 */
@@ -202,8 +172,8 @@
   --text-muted: 40 15% 55%;
 
   /* Accent */
-  --accent: 40 40% 82%;            /* soft pale wheat */
-  --accent-hover: 40 45% 90%;
+  --accent: 40 40% 68%;            /* darker wheat for better button visibility */
+  --accent-hover: 40 45% 78%;
 
   /* Scrollbar */
   --scrollbar-track: 100 7% 20%;
@@ -211,11 +181,11 @@
   --scrollbar-thumb-hover: 100 10% 45%;
 
   /* Plyr player */
-  --plyr-main: 40 40% 82%;         /* wheat tone */
+  --plyr-main: 40 40% 68%;         /* wheat tone */
 }
 
-/* Reef Gray/Teal Theme */
-.theme-reef {
+/* Nexus Gray/Teal Theme */
+.theme-nexus {
   /* Backgrounds */
   --bg-primary: 215 15% 14%;       /* #222831 */
   --bg-secondary: 215 12% 22%;     /* #393E46 */
@@ -244,8 +214,8 @@
   --plyr-main: 182 100% 35%;
 }
 
-/* Thicket Light Green Theme */
-.theme-thicket {
+/* Lumen Light Green Theme */
+.theme-lumen {
   /* Backgrounds */
   --bg-primary: 105 35% 90%;       /* Light sage green background */
   --bg-secondary: 105 30% 85%;     /* Soft green (cards) */
@@ -274,8 +244,8 @@
   --plyr-main: 115 25% 50%;        /* Same as accent */
 }
 
-/* Pulse Light Pink/Cream Theme */
-.theme-pulse {
+/* Vela Light Pink/Cream Theme */
+.theme-vela {
   /* Backgrounds */
   --bg-primary: 330 50% 92%;       /* Light pink background */
   --bg-secondary: 330 45% 88%;     /* Soft pink (cards) */
@@ -304,8 +274,8 @@
   --plyr-main: 315 80% 75%;        /* Same as accent */
 }
 
-/* Harvest Light Wheat/Orange Theme */
-.theme-harvest {
+/* Node Light Wheat/Orange Theme */
+.theme-node {
   /* Backgrounds */
   --bg-primary: 38 65% 88%;        /* Golden wheat background */
   --bg-secondary: 36 60% 82%;      /* Soft amber (cards) */
@@ -364,8 +334,8 @@
   --plyr-main: 25 30% 65%;         /* Same as accent */
 }
 
-/* Marina Light Cream/Blue Theme */
-.theme-marina {
+/* Trace Light Cream/Blue Theme */
+.theme-trace {
   /* Backgrounds */
   --bg-primary: 200 35% 88%;       /* Light desaturated blue background */
   --bg-secondary: 200 30% 82%;     /* Soft blue-gray (cards) */

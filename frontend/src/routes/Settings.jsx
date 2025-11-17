@@ -277,175 +277,171 @@ export default function Settings() {
           Theme
         </h3>
         <div className="flex flex-col gap-3">
-          {/* Row 1: Dark themes - null, bleed, cryo, rust */}
+          {/* Row 1: Dark themes - void, burn, ice */}
           <div className="grid grid-cols-4 gap-6">
+            <span className="flex items-center py-1.5 font-semibold text-sm" style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}>
+              Dark:
+            </span>
             <button
-              onClick={() => { setTheme('null'); showNotification('Theme changed to null', 'success'); }}
+              onClick={() => { setTheme('void'); showNotification('Theme changed to Void', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'null'
+                theme === 'void'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'null' ? 'hsl(220, 10%, 70%)' : 'hsl(0, 0%, 0%)' }}></div>
-              null
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
+              Void
             </button>
             <button
-              onClick={() => { setTheme('bleed'); showNotification('Theme changed to bleed', 'success'); }}
+              onClick={() => { setTheme('burn'); showNotification('Theme changed to Burn', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'bleed'
+                theme === 'burn'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'bleed' ? 'hsl(0, 100%, 50%)' : 'hsl(0, 8%, 7%)' }}></div>
-              bleed
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
+              Burn
             </button>
             <button
-              onClick={() => { setTheme('cryo'); showNotification('Theme changed to cryo', 'success'); }}
+              onClick={() => { setTheme('ice'); showNotification('Theme changed to Ice', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'cryo'
+                theme === 'ice'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'cryo' ? 'hsl(220, 50%, 40%)' : 'hsl(220, 50%, 5%)' }}></div>
-              cryo
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
+              Ice
             </button>
+          </div>
+
+          {/* Row 2: Dark themes - spore, hush, sector, nexus */}
+          <div className="grid grid-cols-5 gap-4">
+            <span></span>
             <button
-              onClick={() => { setTheme('rust'); showNotification('Theme changed to rust', 'success'); }}
+              onClick={() => { setTheme('spore'); showNotification('Theme changed to Spore', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'rust'
+                theme === 'spore'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'rust' ? 'hsl(95, 20%, 45%)' : 'hsl(25, 30%, 6%)' }}></div>
-              rust
-            </button>
-          </div>
-
-          {/* Row 2: Dark themes - phase, slate, grove, reef */}
-          <div className="grid grid-cols-4 gap-6">
-            <button
-              onClick={() => { setTheme('phase'); showNotification('Theme changed to phase', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'phase'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-200 after:to-amber-100'
-                  : ''
-              }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'phase' ? 'hsl(30, 25%, 78%)' : 'hsl(205, 40%, 14%)' }}></div>
-              phase
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
+              Spore
             </button>
             <button
-              onClick={() => { setTheme('slate'); showNotification('Theme changed to slate', 'success'); }}
+              onClick={() => { setTheme('hush'); showNotification('Theme changed to Hush', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'slate'
+                theme === 'hush'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'slate' ? 'hsl(35, 40%, 75%)' : 'hsl(215, 15%, 14%)' }}></div>
-              slate
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 40%, 75%)' }}></div>
+              Hush
             </button>
             <button
-              onClick={() => { setTheme('grove'); showNotification('Theme changed to grove', 'success'); }}
+              onClick={() => { setTheme('sector'); showNotification('Theme changed to Sector', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'grove'
+                theme === 'sector'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-200 after:to-yellow-100'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'grove' ? 'hsl(40, 40%, 82%)' : 'hsl(100, 10%, 10%)' }}></div>
-              grove
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 40%, 68%)' }}></div>
+              Sector
             </button>
             <button
-              onClick={() => { setTheme('reef'); showNotification('Theme changed to reef', 'success'); }}
+              onClick={() => { setTheme('nexus'); showNotification('Theme changed to Nexus', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'reef'
+                theme === 'nexus'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-400 after:to-cyan-200'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'reef' ? 'hsl(182, 100%, 35%)' : 'hsl(215, 15%, 14%)' }}></div>
-              reef
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
+              Nexus
             </button>
           </div>
 
-          {/* Row 3: Light themes - thicket, pulse, harvest, almond */}
+          {/* Row 3: Light themes - lumen, vela, node */}
           <div className="grid grid-cols-4 gap-6">
+            <span className="flex items-center py-1.5 font-semibold text-sm" style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}>
+              Light:
+            </span>
             <button
-              onClick={() => { setTheme('thicket'); showNotification('Theme changed to thicket', 'success'); }}
+              onClick={() => { setTheme('lumen'); showNotification('Theme changed to Lumen', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'thicket'
+                theme === 'lumen'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'thicket' ? 'hsl(115, 25%, 50%)' : 'hsl(105, 35%, 90%)' }}></div>
-              thicket
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
+              Lumen
             </button>
             <button
-              onClick={() => { setTheme('pulse'); showNotification('Theme changed to pulse', 'success'); }}
+              onClick={() => { setTheme('vela'); showNotification('Theme changed to Vela', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'pulse'
+                theme === 'vela'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'pulse' ? 'hsl(315, 80%, 75%)' : 'hsl(330, 50%, 92%)' }}></div>
-              pulse
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
+              Vela
             </button>
             <button
-              onClick={() => { setTheme('harvest'); showNotification('Theme changed to harvest', 'success'); }}
+              onClick={() => { setTheme('node'); showNotification('Theme changed to Node', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'harvest'
+                theme === 'node'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'harvest' ? 'hsl(35, 100%, 55%)' : 'hsl(38, 65%, 88%)' }}></div>
-              harvest
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 100%, 55%)' }}></div>
+              Node
             </button>
+          </div>
+
+          {/* Row 4: Light themes - almond, trace */}
+          <div className="grid grid-cols-4 gap-6">
+            <span></span>
             <button
-              onClick={() => { setTheme('almond'); showNotification('Theme changed to almond', 'success'); }}
+              onClick={() => { setTheme('almond'); showNotification('Theme changed to Almond', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'almond'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-400 after:to-amber-200'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'almond' ? 'hsl(25, 30%, 65%)' : 'hsl(30, 40%, 85%)' }}></div>
-              almond
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 30%, 65%)' }}></div>
+              Almond
             </button>
-          </div>
-
-          {/* Row 4: Light themes - marina */}
-          <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => { setTheme('marina'); showNotification('Theme changed to marina', 'success'); }}
+              onClick={() => { setTheme('trace'); showNotification('Theme changed to Trace', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'marina'
+                theme === 'trace'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
                   : ''
               }`}
-              style={{ color: theme === 'thicket' || theme === 'pulse' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'marina' ? 'hsl(210, 30%, 55%)' : 'hsl(200, 35%, 88%)' }}></div>
-              marina
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
+              Trace
             </button>
           </div>
         </div>
@@ -674,29 +670,29 @@ export default function Settings() {
               </h3>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">FFmpeg</span>
-                <span className={`font-medium ${health?.ffmpeg_available ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`font-medium ${health?.ffmpeg_available ? 'text-green-700' : 'text-red-400'}`}>
                   {health?.ffmpeg_available ? '✓' : '✗'}
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">Worker</span>
-                <span className={`font-medium ${health?.download_worker_running ? 'text-green-400' : 'text-red-400'}`}>
+                <span className={`font-medium ${health?.download_worker_running ? 'text-green-700' : 'text-red-400'}`}>
                   {health?.download_worker_running ? '✓' : '✗'}
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">Cookies</span>
-                <span className={`font-medium ${health?.cookies_available ? 'text-green-400' : 'text-yellow-400'}`}>
+                <span className={`font-medium ${health?.cookies_available ? 'text-green-700' : 'text-yellow-400'}`}>
                   {health?.cookies_available ? '✓' : '!'}
                 </span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">yt-dlp</span>
-                <span className="text-text-primary font-mono text-xs">{health?.ytdlp_version || 'Unknown'}</span>
+                <span className={`font-mono text-xs ${theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className="text-text-primary font-mono text-xs">v3.0.4</span>
+                <span className={`font-mono text-xs ${theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? 'text-black' : 'text-text-primary'}`}>v3.0.4</span>
               </div>
             </div>
           </div>
