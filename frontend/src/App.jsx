@@ -123,7 +123,7 @@ function App() {
   return (
     <div className="min-h-screen flex flex-col bg-dark-primary">
       {/* Top Navigation Bar */}
-      <header className="bg-dark-primary border-b border-dark-border sticky top-0 z-50">
+      <header className="bg-dark-primary sticky top-0 z-50">
         {/* Main Nav Row */}
         <div className="flex items-center gap-2 md:gap-8 px-4 h-[60px]">
           {/* Nav Tabs - Horizontally scrollable on mobile */}
