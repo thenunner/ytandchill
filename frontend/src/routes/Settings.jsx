@@ -398,63 +398,66 @@ export default function Settings() {
             <div className="border-t border-dark-border my-4"></div>
 
             {/* Auto-Scan Section */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M12 6v6l4 2"></path>
-                </svg>
-                Auto-Scan Daily
-              </h3>
-              <div className="flex border border-dark-border rounded-md overflow-hidden">
-                <button
-                  onClick={async () => {
-                    setAutoRefresh(false);
-                    try {
-                      await updateSettings.mutateAsync({
-                        auto_refresh_enabled: 'false',
-                        auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                        youtube_api_key: youtubeApiKey,
-                        log_level: logLevel,
-                      });
-                      showNotification('Auto-scan disabled', 'success');
-                    } catch (error) {
-                      showNotification(error.message || 'Failed to save auto refresh', 'error');
-                    }
-                  }}
-                  className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                    !autoRefresh
-                      ? 'bg-accent text-white'
-                      : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                  }`}
-                >
-                  OFF
-                </button>
-                <button
-                  onClick={async () => {
-                    setAutoRefresh(true);
-                    try {
-                      await updateSettings.mutateAsync({
-                        auto_refresh_enabled: 'true',
-                        auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                        youtube_api_key: youtubeApiKey,
-                        log_level: logLevel,
-                      });
-                      showNotification('Auto-scan enabled', 'success');
-                    } catch (error) {
-                      showNotification(error.message || 'Failed to save auto refresh', 'error');
-                    }
-                  }}
-                  className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                    autoRefresh
-                      ? 'bg-accent text-white'
-                      : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                  }`}
-                >
-                  ON
-                </button>
+            <div className="space-y-3">
+              <div className="flex items-center gap-4">
+                <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                  </svg>
+                  Auto-Scan Daily
+                </h3>
+                <div className="flex border border-dark-border rounded-md overflow-hidden">
+                  <button
+                    onClick={async () => {
+                      setAutoRefresh(false);
+                      try {
+                        await updateSettings.mutateAsync({
+                          auto_refresh_enabled: 'false',
+                          auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                          youtube_api_key: youtubeApiKey,
+                          log_level: logLevel,
+                        });
+                        showNotification('Auto-scan disabled', 'success');
+                      } catch (error) {
+                        showNotification(error.message || 'Failed to save auto refresh', 'error');
+                      }
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                      !autoRefresh
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    OFF
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setAutoRefresh(true);
+                      try {
+                        await updateSettings.mutateAsync({
+                          auto_refresh_enabled: 'true',
+                          auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                          youtube_api_key: youtubeApiKey,
+                          log_level: logLevel,
+                        });
+                        showNotification('Auto-scan enabled', 'success');
+                      } catch (error) {
+                        showNotification(error.message || 'Failed to save auto refresh', 'error');
+                      }
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                      autoRefresh
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    ON
+                  </button>
+                </div>
               </div>
-              <select
+              <div className="flex items-center gap-2">
+                <select
                 value={refreshHour}
                 onChange={(e) => setRefreshHour(parseInt(e.target.value))}
                 className="input text-sm font-mono py-1.5 px-2 w-16"
@@ -499,6 +502,7 @@ export default function Settings() {
               >
                 Save
               </button>
+              </div>
             </div>
           </div>
         </div>

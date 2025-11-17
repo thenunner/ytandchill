@@ -368,14 +368,14 @@ export default function VideoCard({
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
           // Library view: 3 columns - duration (left), date (center), size (right)
-          <div className="grid grid-cols-3 gap-1 text-xs text-text-secondary">
+          <div className="grid grid-cols-3 gap-1 text-sm text-text-secondary">
             <span className="text-left">{formatDuration(video.duration_sec)}</span>
             <span className="text-center">{formatDate(video.upload_date)}</span>
             <span className="text-right">{formatFileSize(video.file_size_bytes)}</span>
           </div>
         ) : (
           // Channel view: 2 columns - duration (left), date (right)
-          <div className="flex justify-between text-xs text-text-secondary">
+          <div className="flex justify-between text-sm text-text-secondary">
             <span>{formatDuration(video.duration_sec)}</span>
             <span>{formatDate(video.upload_date)}</span>
           </div>

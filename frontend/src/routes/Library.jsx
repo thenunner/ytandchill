@@ -946,7 +946,7 @@ export default function Library() {
                 <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors truncate mb-1" title={channel.title}>
                   {channel.title}
                 </h3>
-                <div className="flex items-center justify-between text-xs text-text-secondary">
+                <div className="flex items-center justify-between text-sm text-text-secondary">
                   <span>{channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''}</span>
                   <span>{formatFileSize(channel.totalSizeBytes)}</span>
                 </div>
@@ -1229,17 +1229,13 @@ export default function Library() {
 
                                 {/* Playlist info */}
                                 <div className="p-3">
-                                  <div className="flex items-center justify-between gap-2 mb-1">
-                                    <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2" title={playlist.title || playlist.name}>
-                                      {playlist.title || playlist.name}
-                                    </h3>
-                                    <span className="text-xs text-text-secondary whitespace-nowrap flex-shrink-0">
-                                      {playlist.video_count || 0} videos
-                                    </span>
+                                  <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2 mb-1" title={playlist.title || playlist.name}>
+                                    {playlist.title || playlist.name}
+                                  </h3>
+                                  <div className="flex items-center justify-between text-sm text-text-secondary">
+                                    <span>{playlist.video_count || 0} videos</span>
+                                    <span title={playlist.channel_title}>{playlist.channel_title}</span>
                                   </div>
-                                  <p className="text-xs text-text-secondary" title={playlist.channel_title}>
-                                    {playlist.channel_title}
-                                  </p>
                                 </div>
                               </div>
                             );
@@ -1360,13 +1356,13 @@ export default function Library() {
                                     {playlist.title || playlist.name}
                                   </h3>
                                   <div className="flex items-center gap-3 mt-1">
-                                    <span className="text-xs text-text-secondary">
+                                    <span className="text-sm text-text-secondary">
                                       {playlist.video_count || 0} videos
                                     </span>
                                     {playlist.channel_title && (
                                       <>
-                                        <span className="text-xs text-text-muted">•</span>
-                                        <span className="text-xs text-text-secondary truncate" title={playlist.channel_title}>
+                                        <span className="text-sm text-text-muted">•</span>
+                                        <span className="text-sm text-text-secondary truncate" title={playlist.channel_title}>
                                           {playlist.channel_title}
                                         </span>
                                       </>
@@ -1520,17 +1516,13 @@ export default function Library() {
                             </div>
                             {/* Playlist info */}
                             <div className="p-3">
-                              <div className="flex items-center justify-between gap-2 mb-1">
-                                <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2" title={playlist.title || playlist.name}>
-                                  {playlist.title || playlist.name}
-                                </h3>
-                                <span className="text-xs text-text-secondary whitespace-nowrap flex-shrink-0">
-                                  {playlist.video_count || 0} videos
-                                </span>
+                              <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2 mb-1" title={playlist.title || playlist.name}>
+                                {playlist.title || playlist.name}
+                              </h3>
+                              <div className="flex items-center justify-between text-sm text-text-secondary">
+                                <span>{playlist.video_count || 0} videos</span>
+                                <span title={playlist.channel_title}>{playlist.channel_title}</span>
                               </div>
-                              <p className="text-xs text-text-secondary" title={playlist.channel_title}>
-                                {playlist.channel_title}
-                              </p>
                             </div>
                           </div>
                         );
@@ -1651,13 +1643,13 @@ export default function Library() {
                                 {playlist.title || playlist.name}
                               </h3>
                               <div className="flex items-center gap-3 mt-1">
-                                <span className="text-xs text-text-secondary">
+                                <span className="text-sm text-text-secondary">
                                   {playlist.video_count || 0} videos
                                 </span>
                                 {playlist.channel_title && (
                                   <>
-                                    <span className="text-xs text-text-muted">•</span>
-                                    <span className="text-xs text-text-secondary truncate" title={playlist.channel_title}>
+                                    <span className="text-sm text-text-muted">•</span>
+                                    <span className="text-sm text-text-secondary truncate" title={playlist.channel_title}>
                                       {playlist.channel_title}
                                     </span>
                                   </>
