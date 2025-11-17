@@ -286,33 +286,33 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
               }`}
-              style={{ color: 'hsl(220, 10%, 70%)' }}
+              style={{ color: 'hsl(220, 10%, 25%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 25%)' }}></div>
               soot
             </button>
             <button
               onClick={() => { setTheme('sand'); showNotification('Theme changed to sand', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'sand'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-teal-600 after:to-teal-400'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-700 after:to-gray-500'
                   : ''
               }`}
-              style={{ color: 'hsl(180, 45%, 35%)' }}
+              style={{ color: 'hsl(0, 0%, 15%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(180, 45%, 35%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 15%)' }}></div>
               sand
             </button>
             <button
               onClick={() => { setTheme('pollen'); showNotification('Theme changed to pollen', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'pollen'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-600 after:to-yellow-400'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-800 after:to-yellow-600'
                   : ''
               }`}
-              style={{ color: 'hsl(50, 90%, 50%)' }}
+              style={{ color: 'hsl(50, 45%, 25%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(50, 90%, 50%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(50, 45%, 25%)' }}></div>
               pollen
             </button>
             <button
@@ -381,19 +381,19 @@ export default function Settings() {
             </button>
           </div>
 
-          {/* Row 3: brook, moss, tide, fen */}
+          {/* Row 3: lichen, moss, tide, fen */}
           <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => { setTheme('reed'); showNotification('Theme changed to reed', 'success'); }}
+              onClick={() => { setTheme('lichen'); showNotification('Theme changed to lichen', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'reed'
+                theme === 'lichen'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-500 after:to-yellow-300'
                   : ''
               }`}
               style={{ color: 'hsl(45, 80%, 55%)' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(45, 80%, 55%)' }}></div>
-              reed
+              lichen
             </button>
             <button
               onClick={() => { setTheme('moss'); showNotification('Theme changed to moss', 'success'); }}

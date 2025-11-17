@@ -154,8 +154,8 @@
   --plyr-main: 30 98% 45%;         /* Saffron for player */
 }
 
-/* Reed Green Theme */
-.theme-reed {
+/* Lichen Green Theme */
+.theme-lichen {
   /* Backgrounds */
   --bg-primary: 105 28% 12%;       /* Deep prairie grass green */
   --bg-secondary: 105 25% 15%;     /* Lighter prairie green */
@@ -201,47 +201,47 @@
   --text-secondary: 30 25% 25%;    /* Warm medium brown */
   --text-muted: 30 18% 40%;        /* Warm gray */
 
-  /* Accent - Teal for visibility on light brown */
-  --accent: 180 45% 35%;           /* Teal accent for contrast */
-  --accent-hover: 180 50% 45%;     /* Lighter teal on hover */
+  /* Accent - Dark gray for visibility on light brown */
+  --accent: 0 0% 15%;              /* Dark gray/charcoal accent */
+  --accent-hover: 0 0% 25%;        /* Lighter gray on hover */
 
   /* Scrollbar */
   --scrollbar-track: 35 28% 58%;
-  --scrollbar-thumb: 180 40% 40%;  /* Teal thumb */
-  --scrollbar-thumb-hover: 180 45% 50%;
+  --scrollbar-thumb: 0 0% 30%;     /* Dark gray thumb */
+  --scrollbar-thumb-hover: 0 0% 40%;
 
   /* Plyr player */
-  --plyr-main: 180 45% 35%;        /* Teal for player */
+  --plyr-main: 0 0% 15%;           /* Dark gray for player */
 }
 
-/* Pollen Yellow Theme */
+/* Pollen Yellow Light Theme */
 .theme-pollen {
-  /* Backgrounds */
-  --bg-primary: 50 45% 10%;        /* Deep golden/yellow-brown */
-  --bg-secondary: 50 40% 13%;      /* Lighter golden/brown */
-  --bg-tertiary: 50 35% 16%;       /* Elevated yellow */
-  --bg-hover: 50 25% 27%;          /* Yellow-tinted hover */
+  /* Backgrounds - Light muted yellow */
+  --bg-primary: 50 35% 72%;        /* Muted light yellow/cream */
+  --bg-secondary: 50 32% 65%;      /* Slightly darker yellow for cards */
+  --bg-tertiary: 50 28% 58%;       /* Elevated surfaces */
+  --bg-hover: 50 25% 52%;          /* Yellow-tinted hover */
 
   /* Borders */
-  --border: 50 30% 17%;            /* Yellow-tinted borders */
-  --border-light: 50 25% 27%;      /* Yellow-tinted light borders */
+  --border: 50 22% 55%;            /* Yellow-tinted borders */
+  --border-light: 50 20% 50%;      /* Darker warm borders */
 
-  /* Text */
-  --text-primary: 230 10% 91%;     /* Same as dark theme */
-  --text-secondary: 228 14% 66%;   /* Same as dark theme */
-  --text-muted: 220 9% 46%;        /* Same as dark theme */
+  /* Text - Dark for light theme */
+  --text-primary: 45 50% 12%;      /* Dark golden-brown */
+  --text-secondary: 45 35% 25%;    /* Medium golden-brown */
+  --text-muted: 45 20% 40%;        /* Muted golden-brown */
 
-  /* Accent - Bright Yellow for readability */
-  --accent: 50 90% 50%;            /* Brighter yellow - more yellow hue */
-  --accent-hover: 50 90% 60%;      /* Slightly lighter on hover */
+  /* Accent - Deep golden/brown (previous background color) */
+  --accent: 50 45% 25%;            /* Deep golden-brown accent */
+  --accent-hover: 50 45% 35%;      /* Lighter golden-brown on hover */
 
   /* Scrollbar */
-  --scrollbar-track: 50 40% 13%;
-  --scrollbar-thumb: 50 75% 45%;   /* Yellow thumb */
-  --scrollbar-thumb-hover: 50 80% 55%;
+  --scrollbar-track: 50 32% 65%;
+  --scrollbar-thumb: 50 40% 35%;   /* Golden-brown thumb */
+  --scrollbar-thumb-hover: 50 42% 45%;
 
   /* Plyr player */
-  --plyr-main: 50 90% 50%;         /* Bright yellow for player */
+  --plyr-main: 50 45% 25%;         /* Deep golden-brown for player */
 }
 
 /* Moss Deep Green Theme */
