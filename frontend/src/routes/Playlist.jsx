@@ -113,6 +113,63 @@ export default function Playlist() {
     }
   };
 
+  // Helper to parse upload_date (YYYYMMDD format)
+  const parseVideoDate = (video) => {
+    if (video.upload_date && video.upload_date.length === 8) {
+      const year = video.upload_date.substring(0, 4);
+      const month = video.upload_date.substring(4, 6);
+      const day = video.upload_date.substring(6, 8);
+      return new Date(`${year}-${month}-${day}`);
+    }
+    return new Date(video.discovered_at);
+  };
+
+  // Filter and sort videos - must be before any early returns
+  const sortedVideos = useMemo(() => {
+    if (!playlist?.videos) return [];
+    return playlist.videos
+      .filter(video => {
+        // Search filter
+        if (!(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+          return false;
+        }
+        // Hide watched filter
+        if (hideWatched && video.watched) {
+          return false;
+        }
+        return true;
+      })
+      .sort((a, b) => {
+        switch (sort) {
+          case 'date-desc':
+            return parseVideoDate(b) - parseVideoDate(a);
+          case 'date-asc':
+            return parseVideoDate(a) - parseVideoDate(b);
+          case 'duration-desc':
+            return b.duration_sec - a.duration_sec;
+          case 'duration-asc':
+            return a.duration_sec - b.duration_sec;
+          case 'title-asc':
+            return a.title.localeCompare(b.title);
+          case 'title-desc':
+            return b.title.localeCompare(a.title);
+          default:
+            return 0;
+        }
+      });
+  }, [playlist?.videos, searchInput, hideWatched, sort]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchInput, sort, hideWatched]);
+
+  // Paginate videos
+  const paginatedVideos = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
+  }, [sortedVideos, currentPage, itemsPerPage]);
+
   if (isLoading) {
     return <div className="text-center py-20 text-text-secondary">Loading playlist...</div>;
   }
@@ -130,60 +187,6 @@ export default function Playlist() {
       </div>
     );
   }
-
-  // Helper to parse upload_date (YYYYMMDD format)
-  const parseVideoDate = (video) => {
-    if (video.upload_date && video.upload_date.length === 8) {
-      const year = video.upload_date.substring(0, 4);
-      const month = video.upload_date.substring(4, 6);
-      const day = video.upload_date.substring(6, 8);
-      return new Date(`${year}-${month}-${day}`);
-    }
-    return new Date(video.discovered_at);
-  };
-
-  // Filter and sort videos
-  const sortedVideos = (playlist.videos || [])
-    .filter(video => {
-      // Search filter
-      if (!(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
-        return false;
-      }
-      // Hide watched filter
-      if (hideWatched && video.watched) {
-        return false;
-      }
-      return true;
-    })
-    .sort((a, b) => {
-      switch (sort) {
-        case 'date-desc':
-          return parseVideoDate(b) - parseVideoDate(a);
-        case 'date-asc':
-          return parseVideoDate(a) - parseVideoDate(b);
-        case 'duration-desc':
-          return b.duration_sec - a.duration_sec;
-        case 'duration-asc':
-          return a.duration_sec - b.duration_sec;
-        case 'title-asc':
-          return a.title.localeCompare(b.title);
-        case 'title-desc':
-          return b.title.localeCompare(a.title);
-        default:
-          return 0;
-      }
-    });
-
-  // Reset page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchInput, sort, hideWatched]);
-
-  // Paginate videos
-  const paginatedVideos = useMemo(() => {
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedVideos, currentPage, itemsPerPage]);
 
   return (
     <div className="space-y-4 animate-fade-in">
