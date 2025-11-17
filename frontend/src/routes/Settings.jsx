@@ -286,9 +286,9 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
               }`}
-              style={{ color: 'hsl(220, 10%, 25%)' }}
+              style={{ color: theme === 'soot' ? 'hsl(220, 10%, 70%)' : 'hsl(220, 10%, 25%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 25%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'soot' ? 'hsl(220, 10%, 70%)' : 'hsl(220, 10%, 25%)' }}></div>
               soot
             </button>
             <button
@@ -298,9 +298,9 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-700 after:to-gray-500'
                   : ''
               }`}
-              style={{ color: 'hsl(0, 0%, 15%)' }}
+              style={{ color: theme === 'sand' || theme === 'pollen' ? 'hsl(0, 0%, 15%)' : 'hsl(0, 0%, 70%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 15%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'sand' || theme === 'pollen' ? 'hsl(0, 0%, 15%)' : 'hsl(0, 0%, 70%)' }}></div>
               sand
             </button>
             <button
@@ -430,6 +430,34 @@ export default function Settings() {
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
               fen
+            </button>
+          </div>
+
+          {/* Row 4: test, test2 */}
+          <div className="grid grid-cols-4 gap-6">
+            <button
+              onClick={() => { setTheme('test'); showNotification('Theme changed to test', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'test'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-600 after:to-gray-400'
+                  : ''
+              }`}
+              style={{ color: 'hsl(0, 0%, 49%)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 49%)' }}></div>
+              test
+            </button>
+            <button
+              onClick={() => { setTheme('test2'); showNotification('Theme changed to test2', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'test2'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-800 after:to-amber-600'
+                  : ''
+              }`}
+              style={{ color: theme === 'test2' ? 'hsl(28, 36%, 29%)' : 'hsl(28, 36%, 55%)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'test2' ? 'hsl(28, 36%, 29%)' : 'hsl(28, 36%, 55%)' }}></div>
+              test2
             </button>
           </div>
         </div>
