@@ -154,34 +154,34 @@
   --plyr-main: 39 98% 43%;         /* Saffron for player */
 }
 
-/* Brook Green Theme */
-.theme-brook {
+/* Reed Green Theme */
+.theme-reed {
   /* Backgrounds */
-  --bg-primary: 140 40% 10%;       /* Deep forest green */
-  --bg-secondary: 140 35% 13%;     /* Lighter forest green */
-  --bg-tertiary: 140 30% 16%;      /* Elevated green */
-  --bg-hover: 140 20% 27%;         /* Green-tinted hover */
+  --bg-primary: 105 28% 12%;       /* Deep prairie grass green */
+  --bg-secondary: 105 25% 15%;     /* Lighter prairie green */
+  --bg-tertiary: 105 22% 18%;      /* Elevated green */
+  --bg-hover: 105 20% 27%;         /* Soft field-green hover */
 
   /* Borders */
-  --border: 140 25% 17%;           /* Green-tinted borders */
-  --border-light: 140 20% 27%;     /* Green-tinted light borders */
+  --border: 105 20% 19%;           /* Prairie borders */
+  --border-light: 105 18% 27%;     /* Prairie light borders */
 
   /* Text */
-  --text-primary: 230 10% 91%;     /* Same as dark theme */
-  --text-secondary: 228 14% 66%;   /* Same as dark theme */
-  --text-muted: 220 9% 46%;        /* Same as dark theme */
+  --text-primary: 230 10% 91%;     /* Light gray */
+  --text-secondary: 228 14% 66%;   /* Medium gray */
+  --text-muted: 220 9% 46%;        /* Dark muted gray */
 
-  /* Accent - Green */
-  --accent: 140 70% 50%;           /* #22C55E - Bright green */
-  --accent-hover: 140 70% 60%;     /* Lighter green on hover */
+  /* Accent - Goldenrod */
+  --accent: 45 80% 55%;            /* Goldenrod (sunlit prairie grass) */
+  --accent-hover: 45 85% 65%;      /* Brighter golden hover */
 
   /* Scrollbar */
-  --scrollbar-track: 140 35% 13%;
-  --scrollbar-thumb: 140 60% 45%;  /* Green thumb */
-  --scrollbar-thumb-hover: 140 65% 55%;
+  --scrollbar-track: 105 25% 15%;
+  --scrollbar-thumb: 45 70% 45%;   /* Goldenrod thumb */
+  --scrollbar-thumb-hover: 45 75% 55%;
 
   /* Plyr player */
-  --plyr-main: 140 70% 50%;        /* Green for player */
+  --plyr-main: 45 80% 55%;         /* Goldenrod for player */
 }
 
 /* Sand Light Theme */
@@ -307,31 +307,31 @@
 /* Bark Brown Theme */
 .theme-bark {
   /* Backgrounds */
-  --bg-primary: 25 50% 7%;         /* Deep rich brown */
-  --bg-secondary: 25 45% 10%;      /* Lighter brown */
-  --bg-tertiary: 25 40% 13%;       /* Elevated brown */
-  --bg-hover: 25 30% 22%;          /* Brown-tinted hover */
+  --bg-primary: 25 30% 6%;         /* Very deep bark brown */
+  --bg-secondary: 25 28% 9%;       /* Natural dark brown for cards */
+  --bg-tertiary: 25 26% 12%;       /* Slightly lifted brown */
+  --bg-hover: 25 22% 20%;          /* Muted brown hover */
 
   /* Borders */
-  --border: 25 35% 14%;            /* Brown-tinted borders */
-  --border-light: 25 30% 22%;      /* Brown-tinted light borders */
+  --border: 25 24% 14%;            /* Brown borders */
+  --border-light: 25 20% 20%;      /* Brown light borders */
 
   /* Text */
-  --text-primary: 230 10% 91%;     /* Same as dark theme */
-  --text-secondary: 228 14% 66%;   /* Same as dark theme */
-  --text-muted: 220 9% 46%;        /* Same as dark theme */
+  --text-primary: 230 10% 91%;     /* Light gray */
+  --text-secondary: 228 14% 66%;   /* Medium gray */
+  --text-muted: 220 9% 46%;        /* Dark muted gray */
 
-  /* Accent - Rich Brown */
-  --accent: 25 70% 40%;            /* Rich tree bark brown */
-  --accent-hover: 25 70% 50%;      /* Lighter on hover */
+  /* Accent - Sage Green */
+  --accent: 95 20% 45%;            /* Natural sage */
+  --accent-hover: 95 22% 55%;      /* Brighter sage hover */
 
   /* Scrollbar */
-  --scrollbar-track: 25 45% 10%;
-  --scrollbar-thumb: 25 60% 35%;   /* Brown thumb */
-  --scrollbar-thumb-hover: 25 65% 45%;
+  --scrollbar-track: 25 28% 9%;
+  --scrollbar-thumb: 95 18% 38%;   /* Sage thumb */
+  --scrollbar-thumb-hover: 95 20% 48%;
 
   /* Plyr player */
-  --plyr-main: 25 70% 40%;         /* Rich brown for player */
+  --plyr-main: 95 20% 45%;         /* Sage for player */
 }
 
 /* Marrow Maroon Theme */

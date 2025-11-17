@@ -10,7 +10,7 @@ export const themes = {
   thorn: 'Thorn',
   ember: 'Ember',
   pollen: 'Pollen',
-  brook: 'Brook',
+  reed: 'Reed',
   moss: 'Moss',
   fen: 'Fen',
   bark: 'Bark',
@@ -28,7 +28,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-soot', 'theme-sand', 'theme-clay', 'theme-tide', 'theme-thorn', 'theme-ember', 'theme-pollen', 'theme-brook', 'theme-moss', 'theme-fen', 'theme-bark', 'theme-marrow');
+    root.classList.remove('theme-soot', 'theme-sand', 'theme-clay', 'theme-tide', 'theme-thorn', 'theme-ember', 'theme-pollen', 'theme-reed', 'theme-moss', 'theme-fen', 'theme-bark', 'theme-marrow');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

@@ -347,12 +347,12 @@ export default function Settings() {
               onClick={() => { setTheme('bark'); showNotification('Theme changed to bark', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'bark'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-700 after:to-amber-500'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
                   : ''
               }`}
-              style={{ color: 'hsl(25, 70%, 40%)' }}
+              style={{ color: 'hsl(95, 20%, 45%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 70%, 40%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
               bark
             </button>
             <button
@@ -384,16 +384,16 @@ export default function Settings() {
           {/* Row 3: brook, moss, tide, fen */}
           <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => { setTheme('brook'); showNotification('Theme changed to brook', 'success'); }}
+              onClick={() => { setTheme('reed'); showNotification('Theme changed to reed', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'brook'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
+                theme === 'reed'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-500 after:to-yellow-300'
                   : ''
               }`}
-              style={{ color: 'hsl(140, 70%, 50%)' }}
+              style={{ color: 'hsl(45, 80%, 55%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 70%, 50%)' }}></div>
-              brook
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(45, 80%, 55%)' }}></div>
+              reed
             </button>
             <button
               onClick={() => { setTheme('moss'); showNotification('Theme changed to moss', 'success'); }}
