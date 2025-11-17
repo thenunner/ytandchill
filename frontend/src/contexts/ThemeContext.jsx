@@ -13,7 +13,6 @@ export const themes = {
   online: 'Online',
   pixel: 'Pixel',
   standby: 'Standby',
-  manifest: 'Manifest',
   debug: 'Debug',
 };
 
@@ -28,7 +27,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-kernel', 'theme-fatal', 'theme-subnet', 'theme-archive', 'theme-buffer', 'theme-init', 'theme-gateway', 'theme-online', 'theme-pixel', 'theme-standby', 'theme-manifest', 'theme-debug');
+    root.classList.remove('theme-kernel', 'theme-fatal', 'theme-subnet', 'theme-archive', 'theme-buffer', 'theme-init', 'theme-gateway', 'theme-online', 'theme-pixel', 'theme-standby', 'theme-debug');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

@@ -1,6 +1,7 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useQueue, useHealth, useLogs, useAuthCheck, useFirstRunCheck } from './api/queries';
 import { useNotification } from './contexts/NotificationContext';
+import { useTheme } from './contexts/ThemeContext';
 import { useEffect, useState } from 'react';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
@@ -19,7 +20,11 @@ function App() {
   const { data: health } = useHealth();
   const { data: logsData } = useLogs(500);
   const { notification } = useNotification();
+  const { theme } = useTheme();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
+
+  // Check if current theme is a light theme
+  const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
 
   // Auth checks using React Query (following autobrr/qui pattern)
   const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();
@@ -143,7 +148,7 @@ function App() {
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
         {(downloading > 0 || pending > 0 || currentOperation?.type || notification || isAutoRefreshing || delayInfo || health) && (
-          <div className="px-4 py-2 border-t border-dark-border bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
+          <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
                 <button
@@ -309,7 +314,7 @@ function App() {
 
             {/* Quick Logs Slide-Down Panel */}
             {showQuickLogs && (
-              <div className="absolute left-0 right-0 top-full bg-dark-secondary border-t border-dark-border shadow-lg animate-slide-down z-50">
+              <div className={`absolute left-0 right-0 top-full ${isLightTheme ? 'bg-gray-800' : 'bg-dark-secondary'} border-t border-dark-border shadow-lg animate-slide-down z-50`}>
                 <div className="px-4 py-3 max-h-64 overflow-auto font-mono text-xs">
                   {logsData?.logs && logsData.logs.length > 0 ? (
                     <div className="space-y-0.5">
@@ -322,7 +327,7 @@ function App() {
                             line.includes('INFO') ? 'text-blue-400' :
                             line.includes('API') ? 'text-purple-400' :
                             line.includes('DEBUG') ? 'text-gray-400' :
-                            'text-text-secondary'
+                            isLightTheme ? 'text-gray-300' : 'text-text-secondary'
                           }`}
                         >
                           {line}

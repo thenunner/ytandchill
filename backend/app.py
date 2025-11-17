@@ -1162,8 +1162,20 @@ def delete_video(video_id):
             except Exception as e:
                 print(f"Error deleting thumbnail: {e}")
 
-    # Delete video from database (cascade will remove playlist entries, queue items, etc.)
-    session.delete(video)
+    # Remove from queue if present
+    queue_item = session.query(QueueItem).filter(QueueItem.video_id == video.id).first()
+    if queue_item:
+        session.delete(queue_item)
+        print(f"Removed video from queue")
+
+    # Soft-delete: Set status to 'ignored' instead of removing record
+    # This prevents the video from being re-queued on future scans
+    # The video stays in DB so scans see it already exists and skip it
+    video.status = 'ignored'
+    video.file_path = None  # Clear file path since file is deleted
+    video.file_size_bytes = None
+    video.downloaded_at = None
+
     session.commit()
     session.close()
 

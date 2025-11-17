@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useQueue, usePauseQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -140,7 +141,11 @@ export default function Queue() {
   const moveToBottom = useMoveToBottom();
   const clearQueue = useClearQueue();
   const { showNotification } = useNotification();
+  const { theme } = useTheme();
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Check if current theme is a light theme
+  const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
 
   // Track scroll position to preserve it during queue updates from move operations
   const scrollPositionRef = useRef(null);
@@ -353,15 +358,15 @@ export default function Queue() {
 
       {/* Show message if worker is paused with items in queue */}
       {workerPaused && hasQueuedItems && (
-        <div className="card p-4 bg-yellow-600/10 border-2 border-yellow-600/40">
+        <div className={`card p-4 ${isLightTheme ? 'bg-yellow-900/30 border-2 border-yellow-700' : 'bg-yellow-600/10 border-2 border-yellow-600/40'}`}>
           <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 text-yellow-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className={`w-6 h-6 ${isLightTheme ? 'text-yellow-700' : 'text-yellow-500'} flex-shrink-0 mt-0.5`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-yellow-500 mb-1">Downloads Paused</h3>
-              <p className="text-sm text-text-secondary">
-                The program was closed with items in the queue. Press <span className="font-semibold text-text-primary">Resume</span> to start downloading.
+              <h3 className={`text-lg font-semibold ${isLightTheme ? 'text-yellow-800' : 'text-yellow-500'} mb-1`}>Downloads Paused</h3>
+              <p className={`text-sm ${isLightTheme ? 'text-gray-800' : 'text-text-secondary'}`}>
+                The program was closed with items in the queue. Press <span className={`font-semibold ${isLightTheme ? 'text-black' : 'text-text-primary'}`}>Resume</span> to start downloading.
               </p>
             </div>
           </div>

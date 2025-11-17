@@ -142,8 +142,8 @@
   --text-muted: 35 12% 55%;
 
   /* Accent */
-  --accent: 35 40% 75%;            /* #DFD0B8-ish */
-  --accent-hover: 35 45% 85%;
+  --accent: 35 45% 58%;            /* Darker beige for better visibility */
+  --accent-hover: 35 50% 68%;
 
   /* Scrollbar */
   --scrollbar-track: 215 12% 22%;
@@ -302,36 +302,6 @@
 
   /* Plyr player */
   --plyr-main: 35 100% 55%;        /* Same as accent */
-}
-
-/* Manifest Light Cream/Tan Theme */
-.theme-manifest {
-  /* Backgrounds */
-  --bg-primary: 30 40% 85%;        /* Light tan/beige background */
-  --bg-secondary: 28 35% 78%;      /* Warm tan (cards) */
-  --bg-tertiary: 25 32% 72%;       /* Deeper beige (elevated) */
-  --bg-hover: 25 38% 68%;          /* Tan hover */
-
-  /* Borders */
-  --border: 25 25% 65%;
-  --border-light: 25 30% 72%;
-
-  /* Text - Dark for light theme */
-  --text-primary: 25 20% 22%;      /* dark brown text */
-  --text-secondary: 25 15% 38%;
-  --text-muted: 25 10% 55%;
-
-  /* Accent */
-  --accent: 25 30% 65%;            /* #CEAB93 toned accent */
-  --accent-hover: 25 35% 75%;
-
-  /* Scrollbar */
-  --scrollbar-track: 28 35% 78%;
-  --scrollbar-thumb: 25 30% 60%;
-  --scrollbar-thumb-hover: 25 35% 52%;
-
-  /* Plyr player */
-  --plyr-main: 25 30% 65%;         /* Same as accent */
 }
 
 /* Debug Light Cream/Blue Theme */
