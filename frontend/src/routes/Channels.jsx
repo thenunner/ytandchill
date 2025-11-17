@@ -27,6 +27,7 @@ export default function Channels() {
   const [isScanningAll, setIsScanningAll] = useState(false); // Scan all progress
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 }); // X/Y progress
   const [viewMode, setViewMode] = useState(localStorage.getItem('channelsViewMode') || 'grid'); // Grid or list view
+  const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
   const sortMenuRef = useRef(null);
 
   const handleAddChannel = async (e) => {
@@ -120,27 +121,38 @@ export default function Channels() {
     }
   };
 
-  const handleScanAllChannels = async () => {
+  const handleScanAllChannels = async (forceFull = false) => {
     if (!channels || channels.length === 0) {
       showNotification('No channels to scan', 'info');
       return;
     }
 
+    // Use selected channels if any, otherwise scan all
+    const channelsToScan = selectedChannels.length > 0
+      ? channels.filter(c => selectedChannels.includes(c.id))
+      : channels;
+
+    if (channelsToScan.length === 0) {
+      showNotification('No channels selected', 'info');
+      return;
+    }
+
+    const scanType = forceFull ? 'full scan' : 'new videos scan';
     setIsScanningAll(true);
-    setScanProgress({ current: 0, total: channels.length });
-    showNotification(`Starting scan of ${channels.length} channels...`, 'info', { persistent: true });
+    setScanProgress({ current: 0, total: channelsToScan.length });
+    showNotification(`Starting ${scanType} of ${channelsToScan.length} channel${channelsToScan.length > 1 ? 's' : ''}...`, 'info', { persistent: true });
 
     let totalNew = 0;
     let totalIgnored = 0;
     let errorCount = 0;
 
-    for (let i = 0; i < channels.length; i++) {
-      const channel = channels[i];
-      setScanProgress({ current: i + 1, total: channels.length });
+    for (let i = 0; i < channelsToScan.length; i++) {
+      const channel = channelsToScan[i];
+      setScanProgress({ current: i + 1, total: channelsToScan.length });
 
       // Format last video date
       let lastVideoText = '';
-      if (channel.last_video_date) {
+      if (!forceFull && channel.last_video_date) {
         const date = new Date(channel.last_video_date.slice(0, 4),
                                parseInt(channel.last_video_date.slice(4, 6)) - 1,
                                channel.last_video_date.slice(6, 8));
@@ -150,7 +162,7 @@ export default function Channels() {
       }
 
       showNotification(
-        `Scanning "${channel.title}"${lastVideoText} (${i + 1}/${channels.length})`,
+        `${forceFull ? 'Full scanning' : 'Scanning'} "${channel.title}"${lastVideoText} (${i + 1}/${channelsToScan.length})`,
         'info',
         { persistent: true }
       );
@@ -158,7 +170,7 @@ export default function Channels() {
       try {
         const result = await scanChannel.mutateAsync({
           id: channel.id,
-          forceFull: false
+          forceFull: forceFull
         });
         totalNew += result.new_videos || 0;
         totalIgnored += result.ignored_videos || 0;
@@ -432,12 +444,19 @@ export default function Channels() {
             )}
           </div>
 
-          {/* Scan All Button */}
+          {/* Selection indicator */}
+          {selectedChannels.length > 0 && (
+            <span className="text-xs text-accent font-medium">
+              {selectedChannels.length} selected
+            </span>
+          )}
+
+          {/* Scan New Button */}
           <button
-            onClick={handleScanAllChannels}
+            onClick={() => handleScanAllChannels(false)}
             disabled={isScanningAll || !channels || channels.length === 0}
             className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
-            title={isScanningAll ? `Scanning ${scanProgress.current}/${scanProgress.total}...` : 'Scan all channels for new videos'}
+            title={isScanningAll ? `Scanning ${scanProgress.current}/${scanProgress.total}...` : 'Scan for new videos since last scan'}
           >
             {isScanningAll ? (
               <>
@@ -450,13 +469,27 @@ export default function Channels() {
             ) : (
               <>
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   <polyline points="23 4 23 10 17 10"></polyline>
                   <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
                 </svg>
-                <span>Scan All</span>
+                <span>Scan New</span>
               </>
             )}
+          </button>
+
+          {/* Scan All Button */}
+          <button
+            onClick={() => handleScanAllChannels(true)}
+            disabled={isScanningAll || !channels || channels.length === 0}
+            className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Full scan - rescan all videos"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
+            </svg>
+            <span>Scan All</span>
           </button>
 
           {/* View Toggle */}
@@ -565,10 +598,24 @@ export default function Channels() {
           {filteredAndSortedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
             <div className="card overflow-hidden hover:scale-100">
-              {/* Top Header Bar - AUTO and Last Scanned with 3-dot menu */}
+              {/* Top Header Bar - Checkbox, AUTO and Last Scanned with 3-dot menu */}
               <div className="flex items-center justify-between px-3 py-2 bg-dark-tertiary/50">
-                {/* Left: AUTO badge */}
-                <div>
+                {/* Left: Checkbox + AUTO badge */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={selectedChannels.includes(channel.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      if (selectedChannels.includes(channel.id)) {
+                        setSelectedChannels(selectedChannels.filter(id => id !== channel.id));
+                      } else {
+                        setSelectedChannels([...selectedChannels, channel.id]);
+                      }
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent cursor-pointer"
+                  />
                   {channel.auto_download && (
                     <span className="text-green-500 text-[10px] font-bold tracking-wide">AUTO</span>
                   )}
@@ -579,20 +626,87 @@ export default function Channels() {
                   <span className="text-text-secondary text-[10px] font-medium">
                     {formatLastScan(channel.last_scan_at)}
                   </span>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setMenuOpen(menuOpen === channel.id ? null : channel.id);
-                    }}
-                    className="p-1 rounded hover:bg-dark-hover transition-colors"
-                  >
-                    <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-                      <circle cx="12" cy="5" r="2"></circle>
-                      <circle cx="12" cy="12" r="2"></circle>
-                      <circle cx="12" cy="19" r="2"></circle>
-                    </svg>
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setMenuOpen(menuOpen === channel.id ? null : channel.id);
+                      }}
+                      className="p-1 rounded hover:bg-dark-hover transition-colors"
+                    >
+                      <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="5" r="2"></circle>
+                        <circle cx="12" cy="12" r="2"></circle>
+                        <circle cx="12" cy="19" r="2"></circle>
+                      </svg>
+                    </button>
+
+                    {/* Dropdown Menu - appears below 3-dot button */}
+                    {menuOpen === channel.id && (
+                      <div className="absolute top-full right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 w-[200px] animate-scale-in">
+                        <div className="py-1">
+                          {/* Duration Settings */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setShowDurationSettings(showDurationSettings === channel.id ? null : channel.id);
+                              setEditingChannel(channel);
+                              setMenuOpen(null);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
+                          >
+                            <span className="font-medium">Duration Settings</span>
+                          </button>
+
+                          {/* Auto-Download Toggle */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              const newValue = !channel.auto_download;
+                              updateChannel.mutate({
+                                id: channel.id,
+                                data: { auto_download: newValue }
+                              }, {
+                                onSuccess: () => {
+                                  showNotification(
+                                    newValue
+                                      ? `Auto-download enabled for ${channel.title}`
+                                      : `Auto-download disabled for ${channel.title}`,
+                                    'success'
+                                  );
+                                }
+                              });
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={channel.auto_download || false}
+                              readOnly
+                              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                            />
+                            <span className="font-medium">Auto-Download</span>
+                          </button>
+
+                          {/* Delete Channel */}
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setDeleteConfirm({ id: channel.id, title: channel.title });
+                              setMenuOpen(null);
+                            }}
+                            className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/30 transition-colors border-t border-dark-border"
+                          >
+                            <span className="font-medium">Delete Channel</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -707,107 +821,11 @@ export default function Channels() {
                 </div>
               )}
             </div>
-
-            {/* Dropdown Menu - outside card, left edge starts at 3-dot button */}
-            {menuOpen === channel.id && (
-              <div className="absolute bottom-[calc(100%-106px)] right-[-16px] bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 w-[200px] animate-scale-in">
-                <div className="py-1">
-                  {/* Scan New */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleScanChannel(channel.id, false);
-                      setMenuOpen(null);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex flex-col"
-                  >
-                    <span className="font-medium">Scan</span>
-                    {channel.last_scan_at && (
-                      <span className="text-xs text-text-secondary mt-0.5">
-                        Since {new Date(channel.last_scan_at).toLocaleDateString()} video
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Scan All */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleScanChannel(channel.id, true);
-                      setMenuOpen(null);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
-                  >
-                    <span className="font-medium">Scan All</span>
-                  </button>
-
-                  {/* Duration Settings */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowDurationSettings(showDurationSettings === channel.id ? null : channel.id);
-                      setEditingChannel(channel);
-                      setMenuOpen(null);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
-                  >
-                    <span className="font-medium">Duration Settings</span>
-                  </button>
-
-                  {/* Auto-Download Toggle */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const newValue = !channel.auto_download;
-                      updateChannel.mutate({
-                        id: channel.id,
-                        data: { auto_download: newValue }
-                      }, {
-                        onSuccess: () => {
-                          showNotification(
-                            newValue
-                              ? `Auto-download enabled for ${channel.title}`
-                              : `Auto-download disabled for ${channel.title}`,
-                            'success'
-                          );
-                        }
-                      });
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={channel.auto_download || false}
-                      readOnly
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
-                    />
-                    <span className="font-medium">Auto-Download</span>
-                  </button>
-
-                  {/* Delete Channel */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDeleteConfirm({ id: channel.id, title: channel.title });
-                      setMenuOpen(null);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/30 transition-colors border-t border-dark-border"
-                  >
-                    <span className="font-medium">Delete Channel</span>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
           ))}
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {filteredAndSortedChannels.map(channel => (
             <ChannelRow
               key={channel.id}

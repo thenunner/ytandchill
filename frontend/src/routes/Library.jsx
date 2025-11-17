@@ -928,7 +928,7 @@ export default function Library() {
             <Link
               key={channel.id}
               to={`/channel/${channel.id}/library`}
-              className="card p-4 group hover:bg-dark-hover transition-colors flex items-center gap-4"
+              className="card p-4 group hover:bg-dark-hover transition-colors flex items-center gap-4 w-fit"
             >
               {/* Thumbnail */}
               <div className="relative w-32 h-20 bg-dark-tertiary rounded-lg overflow-hidden flex-shrink-0">
@@ -948,11 +948,11 @@ export default function Library() {
               </div>
 
               {/* Channel Info */}
-              <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-semibold text-text-primary group-hover:text-accent transition-colors truncate">
+              <div className="pr-[50px]">
+                <h3 className="text-lg font-semibold text-text-primary group-hover:text-accent transition-colors whitespace-nowrap">
                   {channel.title}
                 </h3>
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-text-secondary whitespace-nowrap">
                   {channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''}
                   {channel.lastAddedAt && (
                     <> • Last Added: {formatLastAdded(channel.lastAddedAt)}</>

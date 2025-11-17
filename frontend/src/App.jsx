@@ -322,7 +322,7 @@ function App() {
           showQuickLogs ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
         }`}
       >
-        <div className={`${isLightTheme ? 'bg-gray-800' : 'bg-dark-primary'} border-b border-dark-border shadow-lg`}>
+        <div className={`${isLightTheme ? 'bg-gray-800' : 'bg-dark-primary'} shadow-lg`}>
           <div className="px-4 py-3 max-h-64 overflow-auto font-mono text-xs">
             {logsData?.logs && logsData.logs.length > 0 ? (
               <div className="space-y-0.5">
