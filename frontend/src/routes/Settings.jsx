@@ -286,9 +286,9 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
               }`}
-              style={{ color: theme === 'soot' ? 'hsl(220, 10%, 70%)' : 'hsl(220, 10%, 25%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'soot' ? 'hsl(220, 10%, 70%)' : 'hsl(220, 10%, 25%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
               soot
             </button>
             <button
@@ -298,9 +298,9 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-700 after:to-gray-500'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' ? 'hsl(0, 0%, 15%)' : 'hsl(0, 0%, 70%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'sand' || theme === 'pollen' ? 'hsl(0, 0%, 15%)' : 'hsl(0, 0%, 70%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 15%)' }}></div>
               sand
             </button>
             <button
@@ -310,7 +310,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-800 after:to-yellow-600'
                   : ''
               }`}
-              style={{ color: 'hsl(50, 45%, 25%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(50, 45%, 25%)' }}></div>
               pollen
@@ -322,7 +322,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-500 after:to-purple-300'
                   : ''
               }`}
-              style={{ color: 'hsl(270, 70%, 60%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(270, 70%, 60%)' }}></div>
               thorn
@@ -338,7 +338,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
                   : ''
               }`}
-              style={{ color: 'hsl(39, 98%, 43%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(39, 98%, 43%)' }}></div>
               ember
@@ -350,7 +350,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
                   : ''
               }`}
-              style={{ color: 'hsl(95, 20%, 45%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
               bark
@@ -362,7 +362,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
                   : ''
               }`}
-              style={{ color: 'hsl(0, 100%, 50%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
               clay
@@ -374,7 +374,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-800 after:to-red-600'
                   : ''
               }`}
-              style={{ color: 'hsl(0, 65%, 40%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 65%, 40%)' }}></div>
               marrow
@@ -390,7 +390,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-500 after:to-yellow-300'
                   : ''
               }`}
-              style={{ color: 'hsl(45, 80%, 55%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(45, 80%, 55%)' }}></div>
               lichen
@@ -402,7 +402,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
                   : ''
               }`}
-              style={{ color: 'hsl(140, 60%, 32%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 60%, 32%)' }}></div>
               moss
@@ -414,7 +414,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
                   : ''
               }`}
-              style={{ color: 'hsl(217, 91%, 60%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(217, 91%, 60%)' }}></div>
               tide
@@ -426,7 +426,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
                   : ''
               }`}
-              style={{ color: 'hsl(220, 50%, 40%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
               fen
@@ -442,9 +442,9 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-800 after:to-gray-600'
                   : ''
               }`}
-              style={{ color: theme === 'test' || theme === 'sand' || theme === 'pollen' ? 'hsl(0, 0%, 15%)' : 'hsl(0, 0%, 70%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'test' || theme === 'sand' || theme === 'pollen' ? 'hsl(0, 0%, 15%)' : 'hsl(0, 0%, 70%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 15%)' }}></div>
               test
             </button>
             <button
@@ -454,7 +454,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-100'
                   : ''
               }`}
-              style={{ color: 'hsl(28, 100%, 87%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(28, 100%, 87%)' }}></div>
               test2
@@ -466,7 +466,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
                   : ''
               }`}
-              style={{ color: 'hsl(28, 97%, 63%)' }}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(28, 97%, 63%)' }}></div>
               test3
