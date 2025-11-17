@@ -364,36 +364,6 @@
   --plyr-main: 0 65% 32%;          /* Maroon for player - distinct from clay */
 }
 
-/* Test Grayscale Light Theme */
-.theme-test {
-  /* Backgrounds - Light grays */
-  --bg-primary: 0 0% 81%;          /* #cfcfcf - Light gray */
-  --bg-secondary: 0 0% 73%;        /* Medium-light gray */
-  --bg-tertiary: 0 0% 66%;         /* Slightly darker */
-  --bg-hover: 0 0% 59%;            /* Hover state */
-
-  /* Borders */
-  --border: 0 0% 65%;              /* Gray borders */
-  --border-light: 0 0% 58%;        /* Darker gray borders */
-
-  /* Text - Dark for light theme */
-  --text-primary: 0 0% 15%;        /* #252525 - Dark gray */
-  --text-secondary: 0 0% 25%;      /* Medium-dark gray */
-  --text-muted: 0 0% 33%;          /* #545454 - Medium gray */
-
-  /* Accent */
-  --accent: 0 0% 15%;              /* #252525 - Dark gray accent */
-  --accent-hover: 0 0% 25%;        /* Lighter on hover */
-
-  /* Scrollbar */
-  --scrollbar-track: 0 0% 73%;
-  --scrollbar-thumb: 0 0% 33%;     /* Dark gray thumb */
-  --scrollbar-thumb-hover: 0 0% 43%;
-
-  /* Plyr player */
-  --plyr-main: 0 0% 15%;           /* Dark gray for player */
-}
-
 /* Test 2 Warm Dark Theme */
 .theme-test2 {
   /* Backgrounds - Dark browns */
@@ -424,34 +394,124 @@
   --plyr-main: 28 100% 87%;        /* Light peach for player */
 }
 
-/* Test 3 Rust/Orange Dark Theme */
-.theme-test3 {
-  /* Backgrounds - Dark browns */
-  --bg-primary: 18 38% 27%;        /* #5c3c2c - Dark brown */
-  --bg-secondary: 15 70% 27%;      /* #742f14 - Rust/terracotta */
-  --bg-tertiary: 15 65% 32%;       /* Slightly lighter rust */
-  --bg-hover: 15 60% 38%;          /* Hover state */
+/* Coast Blue/Sand Theme */
+.theme-coast {
+  /* Backgrounds */
+  --bg-primary: 205 40% 14%;       /* ~#1B3C53 */
+  --bg-secondary: 205 38% 18%;     /* ~#234C6A */
+  --bg-tertiary: 205 30% 26%;      /* ~#456882 */
+  --bg-hover: 205 25% 32%;         /* lighter blue hover */
 
   /* Borders */
-  --border: 15 55% 32%;            /* Rust borders */
-  --border-light: 15 50% 40%;      /* Lighter rust borders */
+  --border: 205 28% 22%;
+  --border-light: 205 24% 30%;
 
-  /* Text - Light tan for dark theme */
-  --text-primary: 20 30% 70%;      /* #c7ac9f - Warm light gray/tan */
-  --text-secondary: 20 25% 60%;    /* Medium warm gray */
-  --text-muted: 20 20% 50%;        /* Muted warm gray */
+  /* Text */
+  --text-primary: 30 20% 85%;      /* warm sand */
+  --text-secondary: 30 15% 70%;
+  --text-muted: 30 10% 55%;
 
-  /* Accent - Bright orange */
-  --accent: 28 97% 63%;            /* #fc9c44 - Bright orange */
-  --accent-hover: 28 97% 73%;      /* Lighter orange on hover */
+  /* Accent */
+  --accent: 30 25% 78%;            /* #D2C1B6 – warm beige */
+  --accent-hover: 30 30% 88%;
 
   /* Scrollbar */
-  --scrollbar-track: 15 70% 27%;
-  --scrollbar-thumb: 209 32% 51%;  /* #5a84ac - Muted blue thumb */
-  --scrollbar-thumb-hover: 209 35% 61%;
+  --scrollbar-track: 205 38% 18%;
+  --scrollbar-thumb: 205 30% 32%;
+  --scrollbar-thumb-hover: 205 30% 40%;
 
   /* Plyr player */
-  --plyr-main: 28 97% 63%;         /* Bright orange for player */
+  --plyr-main: 30 25% 78%;         /* beige for contrast */
+}
+
+/* Slate Gray/Beige Theme */
+.theme-slate {
+  /* Backgrounds */
+  --bg-primary: 215 15% 14%;       /* #222831 */
+  --bg-secondary: 215 12% 22%;     /* #393E46 */
+  --bg-tertiary: 30 12% 38%;       /* #948979 softened */
+  --bg-hover: 30 15% 45%;          /* slightly warmer hover */
+
+  /* Borders */
+  --border: 215 10% 26%;
+  --border-light: 215 10% 34%;
+
+  /* Text */
+  --text-primary: 35 25% 88%;      /* soft warm beige */
+  --text-secondary: 35 18% 70%;
+  --text-muted: 35 12% 55%;
+
+  /* Accent */
+  --accent: 35 40% 75%;            /* #DFD0B8-ish */
+  --accent-hover: 35 45% 85%;
+
+  /* Scrollbar */
+  --scrollbar-track: 215 12% 22%;
+  --scrollbar-thumb: 30 12% 38%;
+  --scrollbar-thumb-hover: 30 15% 48%;
+
+  /* Plyr player */
+  --plyr-main: 35 40% 75%;
+}
+
+/* Grove Green/Wheat Theme */
+.theme-grove {
+  /* Backgrounds */
+  --bg-primary: 100 10% 10%;       /* #181C14 */
+  --bg-secondary: 100 7% 20%;      /* #3C3D37 */
+  --bg-tertiary: 100 8% 38%;       /* #697565 muted */
+  --bg-hover: 100 10% 45%;
+
+  /* Borders */
+  --border: 100 8% 25%;
+  --border-light: 100 10% 35%;
+
+  /* Text */
+  --text-primary: 40 30% 88%;      /* #ECDFCC tone */
+  --text-secondary: 40 20% 70%;
+  --text-muted: 40 15% 55%;
+
+  /* Accent */
+  --accent: 40 40% 82%;            /* soft pale wheat */
+  --accent-hover: 40 45% 90%;
+
+  /* Scrollbar */
+  --scrollbar-track: 100 7% 20%;
+  --scrollbar-thumb: 100 8% 38%;
+  --scrollbar-thumb-hover: 100 10% 45%;
+
+  /* Plyr player */
+  --plyr-main: 40 40% 82%;         /* wheat tone */
+}
+
+/* Reef Gray/Teal Theme */
+.theme-reef {
+  /* Backgrounds */
+  --bg-primary: 215 15% 14%;       /* #222831 */
+  --bg-secondary: 215 12% 22%;     /* #393E46 */
+  --bg-tertiary: 182 40% 30%;      /* muted teal behind accent */
+  --bg-hover: 182 40% 40%;
+
+  /* Borders */
+  --border: 215 10% 26%;
+  --border-light: 215 10% 32%;
+
+  /* Text */
+  --text-primary: 0 0% 95%;        /* from #EEEEEE */
+  --text-secondary: 0 0% 75%;
+  --text-muted: 0 0% 60%;
+
+  /* Accent */
+  --accent: 182 100% 35%;          /* #00ADB5 */
+  --accent-hover: 182 100% 45%;
+
+  /* Scrollbar */
+  --scrollbar-track: 215 12% 22%;
+  --scrollbar-thumb: 182 40% 40%;
+  --scrollbar-thumb-hover: 182 40% 48%;
+
+  /* Plyr player */
+  --plyr-main: 182 100% 35%;
 }
 
 @layer base {

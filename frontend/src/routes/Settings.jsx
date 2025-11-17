@@ -433,20 +433,8 @@ export default function Settings() {
             </button>
           </div>
 
-          {/* Row 4: test, test2, test3 */}
+          {/* Row 4: test2, coast, slate, grove */}
           <div className="grid grid-cols-4 gap-6">
-            <button
-              onClick={() => { setTheme('test'); showNotification('Theme changed to test', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'test'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-800 after:to-gray-600'
-                  : ''
-              }`}
-              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 15%)' }}></div>
-              test
-            </button>
             <button
               onClick={() => { setTheme('test2'); showNotification('Theme changed to test2', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -460,16 +448,56 @@ export default function Settings() {
               test2
             </button>
             <button
-              onClick={() => { setTheme('test3'); showNotification('Theme changed to test3', 'success'); }}
+              onClick={() => { setTheme('coast'); showNotification('Theme changed to coast', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'test3'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
+                theme === 'coast'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-200 after:to-amber-100'
                   : ''
               }`}
               style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(28, 97%, 63%)' }}></div>
-              test3
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(30, 25%, 78%)' }}></div>
+              coast
+            </button>
+            <button
+              onClick={() => { setTheme('slate'); showNotification('Theme changed to slate', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'slate'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
+                  : ''
+              }`}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 40%, 75%)' }}></div>
+              slate
+            </button>
+            <button
+              onClick={() => { setTheme('grove'); showNotification('Theme changed to grove', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'grove'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-200 after:to-yellow-100'
+                  : ''
+              }`}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 40%, 82%)' }}></div>
+              grove
+            </button>
+          </div>
+
+          {/* Row 5: reef */}
+          <div className="grid grid-cols-4 gap-6">
+            <button
+              onClick={() => { setTheme('reef'); showNotification('Theme changed to reef', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'reef'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-400 after:to-cyan-200'
+                  : ''
+              }`}
+              style={{ color: theme === 'soot' ? '#ffffff' : '#000000' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
+              reef
             </button>
           </div>
         </div>
