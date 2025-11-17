@@ -31,9 +31,31 @@ export default function Channels() {
 
   const handleAddChannel = async (e) => {
     e.preventDefault();
+
+    // Process the URL input
+    let processedUrl = newChannelUrl.trim();
+
+    // Auto-complete bare @handles to full URL
+    if (processedUrl.startsWith('@') && !processedUrl.includes('youtube.com')) {
+      processedUrl = `https://www.youtube.com/${processedUrl}`;
+    }
+
+    // Reject URLs with subpaths like /videos, /playlists, /streams, etc.
+    const invalidSuffixes = ['/videos', '/playlists', '/streams', '/shorts', '/community', '/about', '/channels', '/featured'];
+    const hasInvalidSuffix = invalidSuffixes.some(suffix => {
+      // Check if URL contains these suffixes after the channel identifier
+      const lowerUrl = processedUrl.toLowerCase();
+      return lowerUrl.includes(suffix);
+    });
+
+    if (hasInvalidSuffix) {
+      showNotification('Invalid URL: Remove /videos, /playlists, or /streams from the channel URL', 'error');
+      return;
+    }
+
     try {
       const result = await createChannel.mutateAsync({
-        url: newChannelUrl,
+        url: processedUrl,
         min_minutes: minMinutes,
         max_minutes: maxMinutes,
       });

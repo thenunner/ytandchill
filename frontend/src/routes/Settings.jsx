@@ -672,7 +672,7 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.0.4</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.1.0</span>
               </div>
             </div>
           </div>
@@ -778,24 +778,41 @@ export default function Settings() {
               </span>
             )}
           </h3>
-          <div className="bg-dark-tertiary rounded-lg p-3 overflow-auto max-h-96 font-mono text-xs">
+          <div className="bg-dark-primary rounded-lg p-3 overflow-auto max-h-96 font-mono text-xs">
             {logsData?.logs && logsData.logs.length > 0 ? (
               <div className="space-y-0.5">
-                {logsData.logs.map((line, index) => (
-                  <div
-                    key={index}
-                    className={`${
-                      line.includes('ERROR') ? 'text-red-400' :
-                      line.includes('WARNING') ? 'text-yellow-400' :
-                      line.includes('INFO') ? 'text-blue-400' :
-                      line.includes('API') ? 'text-purple-400' :
-                      line.includes('DEBUG') ? 'text-gray-400' :
-                      'text-text-secondary'
-                    }`}
-                  >
-                    {line}
-                  </div>
-                ))}
+                {logsData.logs.map((line, index) => {
+                  // Parse log line to color only the [LEVEL] part
+                  const isLight = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
+                  const baseTextColor = isLight ? 'text-black' : 'text-white';
+
+                  // Match pattern: "timestamp - [LEVEL] - message"
+                  const levelMatch = line.match(/^(.* - )(\[(?:ERROR|WARNING|INFO|API|DEBUG)\])( - .*)$/);
+
+                  if (levelMatch) {
+                    const [, before, level, after] = levelMatch;
+                    const levelColor =
+                      level.includes('ERROR') ? 'text-red-400' :
+                      level.includes('WARNING') ? 'text-yellow-400' :
+                      level.includes('INFO') ? 'text-blue-400' :
+                      level.includes('API') ? 'text-purple-400' :
+                      level.includes('DEBUG') ? 'text-gray-400' :
+                      baseTextColor;
+
+                    return (
+                      <div key={index} className={baseTextColor}>
+                        {before}<span className={levelColor}>{level}</span>{after}
+                      </div>
+                    );
+                  }
+
+                  // Fallback for non-matching lines
+                  return (
+                    <div key={index} className={baseTextColor}>
+                      {line}
+                    </div>
+                  );
+                })}
                 <div ref={logEndRef} />
               </div>
             ) : (

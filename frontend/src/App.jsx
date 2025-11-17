@@ -312,39 +312,61 @@ function App() {
               </div>
             </div>
 
-            {/* Quick Logs Slide-Down Panel */}
-            {showQuickLogs && (
-              <div className={`absolute left-0 right-0 top-full ${isLightTheme ? 'bg-gray-800' : 'bg-dark-secondary'} border-t border-dark-border shadow-lg animate-slide-down z-50`}>
-                <div className="px-4 py-3 max-h-64 overflow-auto font-mono text-xs">
-                  {logsData?.logs && logsData.logs.length > 0 ? (
-                    <div className="space-y-0.5">
-                      {logsData.logs.slice(-5).map((line, index) => (
-                        <div
-                          key={index}
-                          className={`${
-                            line.includes('ERROR') ? 'text-red-400' :
-                            line.includes('WARNING') ? 'text-yellow-400' :
-                            line.includes('INFO') ? 'text-blue-400' :
-                            line.includes('API') ? 'text-purple-400' :
-                            line.includes('DEBUG') ? 'text-gray-400' :
-                            isLightTheme ? 'text-gray-300' : 'text-text-secondary'
-                          }`}
-                        >
-                          {line}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-text-muted text-center py-4">
-                      No logs available
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         )}
       </header>
+
+      {/* Quick Logs Slide-Down Panel - Pushes content down */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ease-in-out ${
+          showQuickLogs ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+        }`}
+      >
+        <div className={`${isLightTheme ? 'bg-gray-800' : 'bg-dark-primary'} border-b border-dark-border shadow-lg`}>
+          <div className="px-4 py-3 max-h-64 overflow-auto font-mono text-xs">
+            {logsData?.logs && logsData.logs.length > 0 ? (
+              <div className="space-y-0.5">
+                {logsData.logs.slice(-5).map((line, index) => {
+                  // Parse log line to color only the [LEVEL] part
+                  // Background is always dark, so text is white
+                  const baseTextColor = 'text-white';
+
+                  // Match pattern: "timestamp - [LEVEL] - message"
+                  const levelMatch = line.match(/^(.* - )(\[(?:ERROR|WARNING|INFO|API|DEBUG)\])( - .*)$/);
+
+                  if (levelMatch) {
+                    const [, before, level, after] = levelMatch;
+                    const levelColor =
+                      level.includes('ERROR') ? 'text-red-400' :
+                      level.includes('WARNING') ? 'text-yellow-400' :
+                      level.includes('INFO') ? 'text-blue-400' :
+                      level.includes('API') ? 'text-purple-400' :
+                      level.includes('DEBUG') ? 'text-gray-400' :
+                      baseTextColor;
+
+                    return (
+                      <div key={index} className={baseTextColor}>
+                        {before}<span className={levelColor}>{level}</span>{after}
+                      </div>
+                    );
+                  }
+
+                  // Fallback for non-matching lines
+                  return (
+                    <div key={index} className={baseTextColor}>
+                      {line}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-text-muted text-center py-4">
+                No logs available
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 w-full px-4 py-6 max-w-[1600px]">
