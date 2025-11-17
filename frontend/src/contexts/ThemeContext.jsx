@@ -3,28 +3,32 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext();
 
 export const themes = {
-  dark: 'Dark Mode',
-  light: 'Light Mode',
-  youtube: 'YouTube Red',
-  midnight: 'Midnight Blue',
-  purple: 'Purple Haze',
-  orange: 'Tangerine',
-  yellow: 'Yellow',
-  green: 'Tree',
+  soot: 'Soot',
+  bone: 'Bone',
+  clay: 'Clay',
+  tide: 'Tide',
+  thorn: 'Thorn',
+  ember: 'Ember',
+  pollen: 'Pollen',
+  brook: 'Brook',
+  moss: 'Moss',
+  fen: 'Fen',
+  bark: 'Bark',
+  marrow: 'Marrow',
 };
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
-    // Load theme from localStorage or default to 'dark'
+    // Load theme from localStorage or default to 'soot'
     const savedTheme = localStorage.getItem('ytandchill-theme');
-    return savedTheme && themes[savedTheme] ? savedTheme : 'dark';
+    return savedTheme && themes[savedTheme] ? savedTheme : 'soot';
   });
 
   useEffect(() => {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-dark', 'theme-light', 'theme-youtube', 'theme-midnight', 'theme-purple', 'theme-orange', 'theme-yellow', 'theme-green');
+    root.classList.remove('theme-soot', 'theme-bone', 'theme-clay', 'theme-tide', 'theme-thorn', 'theme-ember', 'theme-pollen', 'theme-brook', 'theme-moss', 'theme-fen', 'theme-bark', 'theme-marrow');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

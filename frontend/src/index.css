@@ -5,7 +5,7 @@
 /* ===== THEME SYSTEM ===== */
 /* Default theme (Dark Mode) */
 :root,
-.theme-dark {
+.theme-soot {
   /* Backgrounds */
   --bg-primary: 0 0% 0%;           /* #000000 - Pure black */
   --bg-secondary: 220 10% 8%;      /* #14161a - Card backgrounds */
@@ -22,8 +22,8 @@
   --text-muted: 220 9% 46%;        /* #6b7280 */
 
   /* Accent */
-  --accent: 220 9% 92%;            /* #e5e7eb - Light gray */
-  --accent-hover: 0 0% 100%;       /* #ffffff - White */
+  --accent: 220 10% 50%;           /* #6b7a8a - Medium gray */
+  --accent-hover: 220 10% 60%;     /* #8a96a6 - Lighter gray */
 
   /* Scrollbar */
   --scrollbar-track: 220 10% 8%;   /* Same as bg-secondary */
@@ -31,11 +31,11 @@
   --scrollbar-thumb-hover: 220 5% 30%;
 
   /* Plyr player */
-  --plyr-main: 220 9% 92%;         /* Same as accent */
+  --plyr-main: 220 10% 50%;        /* Same as accent */
 }
 
-/* YouTube Red Theme */
-.theme-youtube {
+/* Clay Red Theme */
+.theme-clay {
   /* Backgrounds */
   --bg-primary: 0 8% 7%;           /* Slightly red-tinted black */
   --bg-secondary: 0 12% 10%;       /* Red-tinted dark gray */
@@ -64,8 +64,8 @@
   --plyr-main: 0 100% 50%;         /* YouTube red for player */
 }
 
-/* Midnight Blue Theme */
-.theme-midnight {
+/* Tide Blue Theme */
+.theme-tide {
   /* Backgrounds */
   --bg-primary: 222 47% 11%;       /* #0f172a - Navy/midnight blue */
   --bg-secondary: 222 47% 15%;     /* Lighter midnight */
@@ -94,8 +94,8 @@
   --plyr-main: 217 91% 60%;        /* Blue for player */
 }
 
-/* Purple Haze Theme */
-.theme-purple {
+/* Thorn Purple Theme */
+.theme-thorn {
   /* Backgrounds */
   --bg-primary: 270 50% 10%;       /* Deep purple/violet */
   --bg-secondary: 270 45% 14%;     /* Lighter purple */
@@ -124,8 +124,8 @@
   --plyr-main: 270 70% 60%;        /* Purple for player */
 }
 
-/* Tangerine Orange Theme */
-.theme-orange {
+/* Ember Orange Theme */
+.theme-ember {
   /* Backgrounds */
   --bg-primary: 25 45% 9%;         /* Deep orange/brown */
   --bg-secondary: 25 40% 12%;      /* Lighter orange/brown */
@@ -154,8 +154,8 @@
   --plyr-main: 25 95% 55%;         /* Orange for player */
 }
 
-/* Tree Green Theme */
-.theme-green {
+/* Brook Green Theme */
+.theme-brook {
   /* Backgrounds */
   --bg-primary: 140 40% 10%;       /* Deep forest green */
   --bg-secondary: 140 35% 13%;     /* Lighter forest green */
@@ -184,17 +184,17 @@
   --plyr-main: 140 70% 50%;        /* Green for player */
 }
 
-/* Chalk Light Theme */
-.theme-light {
+/* Bone Light Theme */
+.theme-bone {
   /* Backgrounds */
-  --bg-primary: 0 0% 100%;         /* Pure white */
-  --bg-secondary: 0 0% 92%;        /* Darker gray for cards/status */
-  --bg-tertiary: 0 0% 88%;         /* Darker gray for elevated */
-  --bg-hover: 0 0% 82%;            /* Gray hover */
+  --bg-primary: 0 0% 92%;          /* Same as cards - less bright */
+  --bg-secondary: 0 0% 88%;        /* Slightly darker for cards */
+  --bg-tertiary: 0 0% 84%;         /* Elevated surfaces */
+  --bg-hover: 0 0% 78%;            /* Gray hover */
 
   /* Borders */
-  --border: 0 0% 80%;              /* Darker borders */
-  --border-light: 0 0% 70%;        /* Even darker borders */
+  --border: 0 0% 75%;              /* Darker borders */
+  --border-light: 0 0% 68%;        /* Even darker borders */
 
   /* Text - Dark for light theme */
   --text-primary: 0 0% 10%;        /* Nearly black */
@@ -214,8 +214,8 @@
   --plyr-main: 0 0% 15%;           /* Dark gray for player */
 }
 
-/* Stain Yellow Theme */
-.theme-yellow {
+/* Pollen Yellow Theme */
+.theme-pollen {
   /* Backgrounds */
   --bg-primary: 45 40% 10%;        /* Deep amber/brown */
   --bg-secondary: 45 35% 13%;      /* Lighter amber/brown */
@@ -242,6 +242,126 @@
 
   /* Plyr player */
   --plyr-main: 45 85% 45%;         /* Darker yellow for player */
+}
+
+/* Moss Deep Green Theme */
+.theme-moss {
+  /* Backgrounds */
+  --bg-primary: 140 50% 6%;        /* Very deep forest green */
+  --bg-secondary: 140 45% 9%;      /* Slightly lighter moss */
+  --bg-tertiary: 140 40% 12%;      /* Elevated moss */
+  --bg-hover: 140 30% 22%;         /* Moss-tinted hover */
+
+  /* Borders */
+  --border: 140 35% 13%;           /* Moss-tinted borders */
+  --border-light: 140 30% 22%;     /* Moss-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Deep Green */
+  --accent: 140 60% 40%;           /* Darker moss green */
+  --accent-hover: 140 60% 50%;     /* Lighter on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 140 45% 9%;
+  --scrollbar-thumb: 140 50% 35%;  /* Moss thumb */
+  --scrollbar-thumb-hover: 140 55% 45%;
+
+  /* Plyr player */
+  --plyr-main: 140 60% 40%;        /* Moss green for player */
+}
+
+/* Fen Deep Blue Theme */
+.theme-fen {
+  /* Backgrounds */
+  --bg-primary: 220 50% 7%;        /* Very deep blue-gray */
+  --bg-secondary: 220 45% 10%;     /* Slightly lighter overcast */
+  --bg-tertiary: 220 40% 13%;      /* Elevated overcast */
+  --bg-hover: 220 30% 23%;         /* Overcast-tinted hover */
+
+  /* Borders */
+  --border: 220 35% 14%;           /* Overcast-tinted borders */
+  --border-light: 220 30% 23%;     /* Overcast-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Muted Blue */
+  --accent: 220 50% 50%;           /* Muted overcast blue */
+  --accent-hover: 220 50% 60%;     /* Lighter on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 220 45% 10%;
+  --scrollbar-thumb: 220 45% 40%;  /* Overcast thumb */
+  --scrollbar-thumb-hover: 220 50% 50%;
+
+  /* Plyr player */
+  --plyr-main: 220 50% 50%;        /* Overcast blue for player */
+}
+
+/* Bark Brown Theme */
+.theme-bark {
+  /* Backgrounds */
+  --bg-primary: 30 40% 8%;         /* Deep brown/dirt */
+  --bg-secondary: 30 35% 11%;      /* Lighter brown */
+  --bg-tertiary: 30 30% 14%;       /* Elevated brown */
+  --bg-hover: 30 20% 24%;          /* Brown-tinted hover */
+
+  /* Borders */
+  --border: 30 25% 15%;            /* Brown-tinted borders */
+  --border-light: 30 20% 24%;      /* Brown-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Warm Brown */
+  --accent: 30 60% 45%;            /* Warm dirt brown */
+  --accent-hover: 30 60% 55%;      /* Lighter on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 30 35% 11%;
+  --scrollbar-thumb: 30 50% 38%;   /* Brown thumb */
+  --scrollbar-thumb-hover: 30 55% 48%;
+
+  /* Plyr player */
+  --plyr-main: 30 60% 45%;         /* Brown for player */
+}
+
+/* Marrow Maroon Theme */
+.theme-marrow {
+  /* Backgrounds */
+  --bg-primary: 0 50% 5%;          /* Very deep maroon/blood red */
+  --bg-secondary: 0 45% 8%;        /* Slightly lighter oxide */
+  --bg-tertiary: 0 40% 11%;        /* Elevated oxide */
+  --bg-hover: 0 30% 20%;           /* Oxide-tinted hover */
+
+  /* Borders */
+  --border: 0 35% 12%;             /* Oxide-tinted borders */
+  --border-light: 0 30% 20%;       /* Oxide-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Dark Maroon */
+  --accent: 0 65% 40%;             /* Dark maroon/oxide red */
+  --accent-hover: 0 65% 50%;       /* Lighter on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 0 45% 8%;
+  --scrollbar-thumb: 0 55% 32%;    /* Maroon thumb */
+  --scrollbar-thumb-hover: 0 60% 42%;
+
+  /* Plyr player */
+  --plyr-main: 0 65% 40%;          /* Maroon for player */
 }
 /* ===== END THEME SYSTEM ===== */
 
