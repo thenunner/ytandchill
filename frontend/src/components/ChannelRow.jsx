@@ -63,7 +63,9 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
   return (
     <div
       ref={cardRef}
-      className="card flex items-stretch p-0 w-full max-w-2xl cursor-pointer transition-colors group"
+      className={`card flex items-stretch p-0 w-full cursor-pointer transition-all group ${
+        showMenu ? 'max-w-4xl' : 'max-w-2xl'
+      }`}
       onClick={(e) => {
         if (!e.target.closest('button') && !e.target.closest('input')) {
           navigate(`/channel/${channel.id}`);

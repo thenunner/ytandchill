@@ -199,7 +199,7 @@ export default function Settings() {
               value={youtubeApiKey}
               onChange={(e) => setYoutubeApiKey(e.target.value)}
               placeholder="Enter your YouTube Data API v3 key..."
-              className="input text-sm py-1.5 px-3 flex-1 font-mono"
+              className="input text-sm py-1.5 px-3 w-64 font-mono"
             />
             <button
               onClick={handleSave}
@@ -209,7 +209,7 @@ export default function Settings() {
             </button>
           </div>
           <p className="text-sm text-text-secondary font-medium">
-            Required for fast channel scanning. Get your key at{' '}
+            Get your key at{' '}
             <a
               href="https://console.cloud.google.com/apis/credentials"
               target="_blank"
@@ -221,8 +221,9 @@ export default function Settings() {
           </p>
         </div>
 
-      {/* SponsorBlock */}
+      {/* SponsorBlock + Password + Auto-Scan */}
       <div className="card p-4">
+        {/* SponsorBlock Section */}
         <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -265,6 +266,211 @@ export default function Settings() {
             />
             <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
           </label>
+        </div>
+
+        {/* Separator */}
+        <div className="border-t border-dark-border my-4"></div>
+
+        {/* Password Section */}
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            Password
+          </h3>
+          <button
+            onClick={() => setShowPasswordChange(!showPasswordChange)}
+            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+          >
+            Reset User
+          </button>
+        </div>
+
+        {/* Password Change Form */}
+        {showPasswordChange && (
+          <form onSubmit={handlePasswordChange} className="space-y-3 mb-4">
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">Current Password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                placeholder="Enter current password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">New Username</label>
+              <input
+                type="text"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                placeholder="Enter new username"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">New Password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Enter new password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
+              <input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="input text-sm py-1.5 px-3 w-full"
+                disabled={isChangingPassword}
+              />
+            </div>
+
+            {passwordError && (
+              <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
+                {passwordError}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isChangingPassword}
+              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
+            </button>
+          </form>
+        )}
+
+        {/* Separator */}
+        <div className="border-t border-dark-border my-4"></div>
+
+        {/* Auto-Scan Section */}
+        <div className="flex items-center gap-4 flex-wrap">
+          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 6v6l4 2"></path>
+            </svg>
+            Auto-Scan Daily
+          </h3>
+          <div className="flex border border-dark-border rounded-md overflow-hidden">
+            <button
+              onClick={async () => {
+                setAutoRefresh(false);
+                try {
+                  await updateSettings.mutateAsync({
+                    auto_refresh_enabled: 'false',
+                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                    youtube_api_key: youtubeApiKey,
+                    log_level: logLevel,
+                  });
+                  showNotification('Auto-scan disabled', 'success');
+                } catch (error) {
+                  showNotification(error.message || 'Failed to save auto refresh', 'error');
+                }
+              }}
+              className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                !autoRefresh
+                  ? 'bg-accent text-white'
+                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+              }`}
+            >
+              OFF
+            </button>
+            <button
+              onClick={async () => {
+                setAutoRefresh(true);
+                try {
+                  await updateSettings.mutateAsync({
+                    auto_refresh_enabled: 'true',
+                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                    youtube_api_key: youtubeApiKey,
+                    log_level: logLevel,
+                  });
+                  showNotification('Auto-scan enabled', 'success');
+                } catch (error) {
+                  showNotification(error.message || 'Failed to save auto refresh', 'error');
+                }
+              }}
+              className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                autoRefresh
+                  ? 'bg-accent text-white'
+                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+              }`}
+            >
+              ON
+            </button>
+          </div>
+          <select
+            value={refreshHour}
+            onChange={(e) => setRefreshHour(parseInt(e.target.value))}
+            className="input text-sm font-mono py-1.5 px-2 w-16"
+          >
+            {Array.from({ length: 24 }, (_, i) => (
+              <option key={i} value={i}>
+                {i.toString().padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+          <span className="text-text-primary text-sm font-bold">:</span>
+          <select
+            value={refreshMinute}
+            onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
+            className="input text-sm font-mono py-1.5 px-2 w-16"
+          >
+            {Array.from({ length: 60 }, (_, i) => (
+              <option key={i} value={i}>
+                {i.toString().padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={async () => {
+              console.log('=== SAVE BUTTON CLICKED ===');
+              console.log('State values - refreshHour:', refreshHour, 'refreshMinute:', refreshMinute);
+
+              const timeString = `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`;
+              console.log('Time string to save:', timeString);
+
+              try {
+                const payload = {
+                  auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                  auto_refresh_time: timeString,
+                  youtube_api_key: youtubeApiKey,
+                  log_level: logLevel,
+                };
+                console.log('API payload:', payload);
+
+                await updateSettings.mutateAsync(payload);
+
+                const period = refreshHour >= 12 ? 'pm' : 'am';
+                const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
+                showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
+
+                console.log('Save successful!');
+              } catch (error) {
+                console.error('Save failed:', error);
+                showNotification(error.message || 'Failed to save time', 'error');
+              }
+            }}
+            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+          >
+            Save
+          </button>
         </div>
       </div>
 
@@ -427,291 +633,81 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Password & Auto-Scan */}
-      <div className="card p-4 h-full flex flex-col justify-center">
-        {/* Row 1: Titles */}
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-            </svg>
-            Password
-          </h3>
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <path d="M12 6v6l4 2"></path>
-              </svg>
-              Auto-Scan Daily
-            </h3>
-            <div className="flex border border-dark-border rounded-md overflow-hidden">
-              <button
-                onClick={async () => {
-                  setAutoRefresh(false);
-                  try {
-                    await updateSettings.mutateAsync({
-                      auto_refresh_enabled: 'false',
-                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                      youtube_api_key: youtubeApiKey,
-                      log_level: logLevel,
-                    });
-                    showNotification('Auto-scan disabled', 'success');
-                  } catch (error) {
-                    showNotification(error.message || 'Failed to save auto refresh', 'error');
-                  }
-                }}
-                className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                  !autoRefresh
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                }`}
-              >
-                OFF
-              </button>
-              <button
-                onClick={async () => {
-                  setAutoRefresh(true);
-                  try {
-                    await updateSettings.mutateAsync({
-                      auto_refresh_enabled: 'true',
-                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                      youtube_api_key: youtubeApiKey,
-                      log_level: logLevel,
-                    });
-                    showNotification('Auto-scan enabled', 'success');
-                  } catch (error) {
-                    showNotification(error.message || 'Failed to save auto refresh', 'error');
-                  }
-                }}
-                className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                  autoRefresh
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                }`}
-              >
-                ON
-              </button>
-            </div>
+
+      {/* System Status Card */}
+      <div className="card p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 6v6l4 2"></path>
+          </svg>
+          System Status
+        </h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          {/* Column 1: FFmpeg, Worker, Cookies */}
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary w-16">FFmpeg</span>
+            <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
+              {health?.ffmpeg_available ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary w-24">yt-dlp</span>
+            <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary w-16">Worker</span>
+            <span className={`font-medium text-xs ${health?.download_worker_running ? 'text-text-primary' : 'text-red-400'}`}>
+              {health?.download_worker_running ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary w-24">YT and Chill</span>
+            <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.1.0</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary w-16">Cookies</span>
+            <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
+              {health?.cookies_available ? 'Active' : 'Inactive'}
+            </span>
           </div>
         </div>
-
-        {/* Row 2: Controls */}
-        <div className="flex items-center justify-between">
-          <button
-            onClick={() => setShowPasswordChange(!showPasswordChange)}
-            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-          >
-            Reset User
-          </button>
-
-          <div className="flex items-center gap-2">
-            <select
-              value={refreshHour}
-              onChange={(e) => setRefreshHour(parseInt(e.target.value))}
-              className="input text-sm font-mono py-1.5 px-2 w-16"
-            >
-              {Array.from({ length: 24 }, (_, i) => (
-                <option key={i} value={i}>
-                  {i.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-            <span className="text-text-primary text-sm font-bold">:</span>
-            <select
-              value={refreshMinute}
-              onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
-              className="input text-sm font-mono py-1.5 px-2 w-16"
-            >
-              {Array.from({ length: 60 }, (_, i) => (
-                <option key={i} value={i}>
-                  {i.toString().padStart(2, '0')}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={async () => {
-                // Read values from state (updated by onChange handlers)
-                console.log('=== SAVE BUTTON CLICKED ===');
-                console.log('State values - refreshHour:', refreshHour, 'refreshMinute:', refreshMinute);
-
-                const timeString = `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`;
-                console.log('Time string to save:', timeString);
-
-                try {
-                  const payload = {
-                    auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                    auto_refresh_time: timeString,
-                    youtube_api_key: youtubeApiKey,
-                    log_level: logLevel,
-                  };
-                  console.log('API payload:', payload);
-
-                  await updateSettings.mutateAsync(payload);
-
-                  const period = refreshHour >= 12 ? 'pm' : 'am';
-                  const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
-                  showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
-
-                  console.log('Save successful!');
-                } catch (error) {
-                  console.error('Save failed:', error);
-                  showNotification(error.message || 'Failed to save time', 'error');
-                }
-              }}
-              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-
-        {/* Password Change Form */}
-        {showPasswordChange && (
-          <form onSubmit={handlePasswordChange} className="space-y-3 mt-4 pt-4 border-t border-dark-border">
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">Current Password</label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
-                className="input text-sm py-1.5 px-3 w-full"
-                disabled={isChangingPassword}
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">New Username</label>
-              <input
-                type="text"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="Enter new username"
-                className="input text-sm py-1.5 px-3 w-full"
-                disabled={isChangingPassword}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                className="input text-sm py-1.5 px-3 w-full"
-                disabled={isChangingPassword}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
-              <input
-                type="password"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                placeholder="Confirm new password"
-                className="input text-sm py-1.5 px-3 w-full"
-                disabled={isChangingPassword}
-              />
-            </div>
-
-            {passwordError && (
-              <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
-                {passwordError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isChangingPassword}
-              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
-            </button>
-          </form>
-        )}
       </div>
 
-      {/* System Status Card - stays same width as other cards */}
+      {/* Stats & Logging Card */}
       <div className="card p-4">
-        <div className="flex flex-col md:flex-row gap-4 md:gap-8 mb-4">
-          {/* Left column - System Status */}
-          <div className="flex-shrink-0">
-            <div className="space-y-2 text-sm">
-              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <path d="M12 6v6l4 2"></path>
-                </svg>
-                System Status
-              </h3>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-24">FFmpeg</span>
-                <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
-                  {health?.ffmpeg_available ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-24">Worker</span>
-                <span className={`font-medium text-xs ${health?.download_worker_running ? 'text-text-primary' : 'text-red-400'}`}>
-                  {health?.download_worker_running ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-24">Cookies</span>
-                <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
-                  {health?.cookies_available ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-24">yt-dlp</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.1.0</span>
-              </div>
-            </div>
+        <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
+          {/* Column 1: Videos to Review, Videos Ignored, Videos in Library */}
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos to Review</span>
+            <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
           </div>
-
-          {/* Right column - Stats */}
-          <div className="flex-shrink-0">
-            <div className="space-y-2 text-sm">
-              <h3 className="text-sm font-semibold text-text-primary">Stats</h3>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-40">Videos to Review</span>
-                <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-40">Videos Ignored</span>
-                <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-40">Videos in Library</span>
-                <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-40">Total Channels</span>
-                <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-40">Total Storage</span>
-                <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
-              </div>
-            </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Total Channels</span>
+            <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos Ignored</span>
+            <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Total Storage</span>
+            <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos in Library</span>
+            <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
           </div>
         </div>
 
         {/* Logging Level */}
-        <div className="pt-2 border-t border-dark-border mt-2">
+        <div className="pt-2 border-t border-dark-border">
           <div className="flex flex-col gap-2">
             {/* Row 1: Slider + Level labels */}
             <div
-              className="w-full"
-              title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARNING: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+              className="w-full max-w-sm"
+              title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
             >
               <input
                 type="range"
@@ -740,13 +736,13 @@ export default function Settings() {
                 <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
                 <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
                 <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
-                <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARNING</span>
+                <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
                 <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
               </div>
             </div>
 
             {/* Row 2: "Logging level" text + View Logs button */}
-            <div className="flex items-center justify-between w-full">
+            <div className="flex items-center justify-between w-full max-w-sm">
               <span className="text-sm text-text-secondary">Logging level</span>
               <button
                 onClick={toggleLogs}
