@@ -416,6 +416,14 @@
 .plyr {
   @apply rounded-xl overflow-hidden;
   --plyr-color-main: hsl(var(--plyr-main));
+  --plyr-range-fill-background: hsl(var(--plyr-main));
+  --plyr-video-control-background-hover: hsl(var(--plyr-main));
+  --plyr-badge-background: hsl(var(--plyr-main));
+  --plyr-menu-background: hsl(var(--dark-secondary));
+  --plyr-menu-color: hsl(var(--text-primary));
+  --plyr-control-color: hsl(var(--text-primary));
+  --plyr-tooltip-background: hsl(var(--dark-tertiary));
+  --plyr-tooltip-color: hsl(var(--text-primary));
 }
 
 .plyr--video {

@@ -312,13 +312,13 @@ export default function Channels() {
                     <div className="flex gap-4">
                       <button
                         onClick={() => { setSortBy('a_z'); setShowSortMenu(false); }}
-                        className={`${sortBy === 'a_z' ? 'text-green-500' : 'text-text-primary hover:text-green-500'}`}
+                        className={`${sortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
                       >
                         A-Z
                       </button>
                       <button
                         onClick={() => { setSortBy('z_a'); setShowSortMenu(false); }}
-                        className={`${sortBy === 'z_a' ? 'text-green-500' : 'text-text-primary hover:text-green-500'}`}
+                        className={`${sortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
                       >
                         Z-A
                       </button>
@@ -333,7 +333,7 @@ export default function Channels() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => { setSortBy('most_downloaded'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_downloaded' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'most_downloaded' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                         title="Most Downloaded"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -342,7 +342,7 @@ export default function Channels() {
                       </button>
                       <button
                         onClick={() => { setSortBy('least_downloaded'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_downloaded' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'least_downloaded' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                         title="Least Downloaded"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -360,7 +360,7 @@ export default function Channels() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => { setSortBy('most_to_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                         title="Most To Review"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -369,7 +369,7 @@ export default function Channels() {
                       </button>
                       <button
                         onClick={() => { setSortBy('least_to_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                         title="Least To Review"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -387,7 +387,7 @@ export default function Channels() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => { setSortBy('newest_scanned'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                         title="Newest Scanned"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -396,7 +396,7 @@ export default function Channels() {
                       </button>
                       <button
                         onClick={() => { setSortBy('oldest_scanned'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                         title="Oldest Scanned"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -605,7 +605,7 @@ export default function Channels() {
                   {/* Row 2: Stats - Downloaded (left), Discovered (middle), Ignored (right) */}
                   <div className="flex items-center justify-between">
                     {/* Downloaded - Far Left */}
-                    <div className="flex items-center gap-1 text-sm font-semibold text-green-400" title="Downloaded videos">
+                    <div className="flex items-center gap-1 text-sm font-semibold text-accent" title="Downloaded videos">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>

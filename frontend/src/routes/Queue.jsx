@@ -465,7 +465,7 @@ export default function Queue() {
             <div
               key={item.id}
               onClick={() => handleRemove(item.id)}
-              className="card p-3 bg-green-600/5 border-green-600/20 cursor-pointer hover:bg-green-600/10 transition-colors group"
+              className="card p-3 bg-accent/5 border-accent/20 cursor-pointer hover:bg-accent/10 transition-colors group"
             >
               <div className="flex items-center gap-3">
                 {/* Thumbnail with checkmark overlay */}
@@ -485,7 +485,7 @@ export default function Queue() {
                   )}
                   {/* Checkmark overlay */}
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <svg className="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                       <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
                   </div>
@@ -493,10 +493,10 @@ export default function Queue() {
 
                 {/* Video Info */}
                 <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-                  <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-green-400 transition-colors">
+                  <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-accent transition-colors">
                     {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
                   </p>
-                  <span className="text-xs text-green-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <span className="text-xs text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                     Click to remove
                   </span>
                 </div>

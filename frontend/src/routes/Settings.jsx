@@ -411,7 +411,7 @@ export default function Settings() {
                 }}
                 className={`px-3 py-1.5 text-xs font-bold transition-all ${
                   !autoRefresh
-                    ? 'bg-green-600 text-white'
+                    ? 'bg-accent text-white'
                     : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
                 }`}
               >
@@ -434,7 +434,7 @@ export default function Settings() {
                 }}
                 className={`px-3 py-1.5 text-xs font-bold transition-all ${
                   autoRefresh
-                    ? 'bg-green-600 text-white'
+                    ? 'bg-accent text-white'
                     : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
                 }`}
               >
@@ -682,14 +682,14 @@ export default function Settings() {
                     showNotification(error.message || 'Failed to save log level', 'error');
                   }
                 }}
-                className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-green-500 [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-green-500 [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
               <div className="flex justify-between text-xs font-mono mt-1">
-                <span className={logLevel === 'DEBUG' ? 'text-green-500 font-bold' : 'text-text-primary'}>DEBUG</span>
-                <span className={logLevel === 'INFO' ? 'text-green-500 font-bold' : 'text-text-primary'}>INFO</span>
-                <span className={logLevel === 'API' ? 'text-green-500 font-bold' : 'text-text-primary'}>API</span>
-                <span className={logLevel === 'WARNING' ? 'text-green-500 font-bold' : 'text-text-primary'}>WARNING</span>
-                <span className={logLevel === 'ERROR' ? 'text-green-500 font-bold' : 'text-text-primary'}>ERROR</span>
+                <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
+                <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
+                <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
+                <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARNING</span>
+                <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
               </div>
             </div>
 

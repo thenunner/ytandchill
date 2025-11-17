@@ -539,13 +539,13 @@ export default function Library() {
                       <div className="flex gap-4">
                         <button
                           onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
-                          className={`${channelSortBy === 'a_z' ? 'text-green-500' : 'text-text-primary hover:text-green-500'}`}
+                          className={`${channelSortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
                         >
                           A-Z
                         </button>
                         <button
                           onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
-                          className={`${channelSortBy === 'z_a' ? 'text-green-500' : 'text-text-primary hover:text-green-500'}`}
+                          className={`${channelSortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
                         >
                           Z-A
                         </button>
@@ -560,7 +560,7 @@ export default function Library() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                          className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                           title="Most Videos"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -569,7 +569,7 @@ export default function Library() {
                         </button>
                         <button
                           onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                          className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                           title="Least Videos"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -587,7 +587,7 @@ export default function Library() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                          className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                           title="Newest Added"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -596,7 +596,7 @@ export default function Library() {
                         </button>
                         <button
                           onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                          className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                           title="Oldest Added"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -756,13 +756,13 @@ export default function Library() {
                         <div className="flex gap-4">
                           <button
                             onClick={() => { setPlaylistSortBy('a_z'); setShowPlaylistSortMenu(false); }}
-                            className={`${playlistSortBy === 'a_z' ? 'text-green-500' : 'text-text-primary hover:text-green-500'}`}
+                            className={`${playlistSortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
                           >
                             A-Z
                           </button>
                           <button
                             onClick={() => { setPlaylistSortBy('z_a'); setShowPlaylistSortMenu(false); }}
-                            className={`${playlistSortBy === 'z_a' ? 'text-green-500' : 'text-text-primary hover:text-green-500'}`}
+                            className={`${playlistSortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
                           >
                             Z-A
                           </button>
@@ -777,7 +777,7 @@ export default function Library() {
                         <div className="flex gap-1">
                           <button
                             onClick={() => { setPlaylistSortBy('most_videos'); setShowPlaylistSortMenu(false); }}
-                            className={`p-1 rounded ${playlistSortBy === 'most_videos' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                            className={`p-1 rounded ${playlistSortBy === 'most_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                             title="Most Videos"
                           >
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -786,7 +786,7 @@ export default function Library() {
                           </button>
                           <button
                             onClick={() => { setPlaylistSortBy('least_videos'); setShowPlaylistSortMenu(false); }}
-                            className={`p-1 rounded ${playlistSortBy === 'least_videos' ? 'text-green-500' : 'text-text-muted hover:text-text-primary'}`}
+                            className={`p-1 rounded ${playlistSortBy === 'least_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
                             title="Least Videos"
                           >
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">

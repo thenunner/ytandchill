@@ -215,7 +215,7 @@ export default function Player() {
           {/* Back Arrow */}
           <button
             onClick={handleBack}
-            className="icon-btn hover:bg-red-600 hover:border-red-700"
+            className="icon-btn hover:bg-accent hover:border-accent"
             title="Back"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -225,7 +225,7 @@ export default function Player() {
 
           <button
             onClick={toggleWatched}
-            className={`icon-btn hover:bg-red-600 hover:border-red-700 ${video.watched ? 'bg-green-600 hover:bg-red-600' : ''}`}
+            className={`icon-btn hover:bg-accent hover:border-accent ${video.watched ? 'bg-accent hover:bg-accent' : ''}`}
             title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -247,7 +247,7 @@ export default function Player() {
 
           <button
             ref={addToPlaylistButtonRef}
-            className="icon-btn hover:bg-red-600 hover:border-red-700"
+            className="icon-btn hover:bg-accent hover:border-accent"
             title="Add to playlist"
             onClick={() => setShowPlaylistMenu(true)}
           >
@@ -262,7 +262,7 @@ export default function Player() {
           {/* Back Arrow */}
           <button
             onClick={handleBack}
-            className="icon-btn hover:bg-red-600 hover:border-red-700"
+            className="icon-btn hover:bg-accent hover:border-accent"
             title="Back"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -273,8 +273,8 @@ export default function Player() {
           {/* Mark Watched/Unwatched */}
           <button
             onClick={toggleWatched}
-            className={`icon-btn hover:bg-red-600 hover:border-red-700 ${
-              video.watched ? 'bg-green-600/20 border-green-600/40 text-green-400' : ''
+            className={`icon-btn hover:bg-accent hover:border-accent ${
+              video.watched ? 'bg-accent/20 border-accent/40 text-accent' : ''
             }`}
             title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
           >
@@ -300,7 +300,7 @@ export default function Player() {
           <button
             ref={addToPlaylistButtonRef}
             onClick={() => setShowPlaylistMenu(true)}
-            className="icon-btn hover:bg-red-600 hover:border-red-700"
+            className="icon-btn hover:bg-accent hover:border-accent"
             title="Add to playlist"
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -361,7 +361,7 @@ export default function Player() {
               <span
                 className={`stat-pill ${
                   video.watched
-                    ? 'bg-green-600/20 border-green-600/40 text-green-400'
+                    ? 'bg-accent/20 border-accent/40 text-accent'
                     : 'bg-yellow-600/20 border-yellow-600/40 text-yellow-400'
                 }`}
               >
