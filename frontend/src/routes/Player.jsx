@@ -112,18 +112,30 @@ export default function Player() {
         }, 5000);
       });
 
-      // Mark as watched when video completes
-      player.on('ended', async () => {
-        try {
-          await updateVideo.mutateAsync({
-            id: video.id,
-            data: { watched: true, playback_seconds: 0 },
-          });
-          showNotification('Video marked as watched', 'success');
-        } catch (error) {
-          console.error('Error marking video as watched:', error);
+      // Mark as watched when video reaches 90% (or ends)
+      let hasMarkedWatched = video.watched;
+      const checkWatchedThreshold = async () => {
+        if (hasMarkedWatched) return;
+
+        const currentTime = player.currentTime;
+        const duration = player.duration;
+
+        if (duration > 0 && currentTime >= duration * 0.9) {
+          hasMarkedWatched = true;
+          try {
+            await updateVideo.mutateAsync({
+              id: video.id,
+              data: { watched: true },
+            });
+            showNotification('Video marked as watched', 'success');
+          } catch (error) {
+            console.error('Error marking video as watched:', error);
+          }
         }
-      });
+      };
+
+      player.on('timeupdate', checkWatchedThreshold);
+      player.on('ended', checkWatchedThreshold);
 
       // Cleanup
       return () => {
