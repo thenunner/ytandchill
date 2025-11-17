@@ -182,90 +182,372 @@ export default function Settings() {
         <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
       </div>
 
-      {/* Two-column grid for desktop, single column for mobile */}
-      {/* Each column is max-w-lg (512px) to maintain original card width */}
-      <div className="grid grid-cols-1 md:grid-cols-[512px_512px] gap-4">
-        {/* YouTube Data API Key */}
-        <div className="card p-4">
-          <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
-            </svg>
-            YouTube Data API Key
-          </h3>
-          <div className="flex gap-2 mb-2">
-            <input
-              type="text"
-              value={youtubeApiKey}
-              onChange={(e) => setYoutubeApiKey(e.target.value)}
-              placeholder="Enter your YouTube Data API v3 key..."
-              className="input text-sm py-1.5 px-3 w-64 font-mono"
-            />
-            <button
-              onClick={handleSave}
-              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-            >
-              Save API Key
-            </button>
+      {/* Two-column layout for desktop */}
+      <div className="flex flex-col md:flex-row gap-4">
+        {/* Column 1: System Status, YouTube API Key, SponsorBlock */}
+        <div className="flex flex-col gap-4 md:w-[512px]">
+          {/* System Status Card */}
+          <div className="card p-4">
+            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 6v6l4 2"></path>
+              </svg>
+              System Status
+            </h3>
+            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary w-16">FFmpeg</span>
+                <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
+                  {health?.ffmpeg_available ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary w-24">yt-dlp</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary w-16">Worker</span>
+                <span className={`font-medium text-xs ${health?.download_worker_running ? 'text-text-primary' : 'text-red-400'}`}>
+                  {health?.download_worker_running ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary w-24">YT and Chill</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.1.0</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary w-16">Cookies</span>
+                <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
+                  {health?.cookies_available ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="text-sm text-text-secondary font-medium">
-            Get your key at{' '}
-            <a
-              href="https://console.cloud.google.com/apis/credentials"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-accent hover:underline font-semibold"
-            >
-              Google Cloud Console
-            </a>
-          </p>
+
+          {/* YouTube Data API Key */}
+          <div className="card p-4">
+            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
+              </svg>
+              YouTube Data API Key
+            </h3>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={youtubeApiKey}
+                onChange={(e) => setYoutubeApiKey(e.target.value)}
+                placeholder="Enter your YouTube Data API v3 key..."
+                className="input text-sm py-1.5 px-3 w-64 font-mono"
+              />
+              <button
+                onClick={handleSave}
+                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+              >
+                Save API Key
+              </button>
+            </div>
+            <p className="text-sm text-text-secondary font-medium">
+              Get your key at{' '}
+              <a
+                href="https://console.cloud.google.com/apis/credentials"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:underline font-semibold"
+              >
+                Google Cloud Console
+              </a>
+            </p>
+          </div>
+
+          {/* SponsorBlock */}
+          <div className="card p-4">
+            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+              SponsorBlock
+              <button
+                onClick={() => setShowSponsorBlockHelp(true)}
+                className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                title="What is SponsorBlock?"
+              >
+                ?
+              </button>
+            </h3>
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={removeSponsor}
+                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                />
+                <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={removeSelfpromo}
+                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                />
+                <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={removeInteraction}
+                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                />
+                <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
+              </label>
+            </div>
+          </div>
         </div>
 
-      {/* SponsorBlock + Password + Auto-Scan */}
-      <div className="card p-4">
-        {/* SponsorBlock Section */}
-        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-            <line x1="1" y1="1" x2="23" y2="23"></line>
-          </svg>
-          SponsorBlock
-          <button
-            onClick={() => setShowSponsorBlockHelp(true)}
-            className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
-            title="What is SponsorBlock?"
-          >
-            ?
-          </button>
-        </h3>
-        <div className="flex flex-wrap gap-6">
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={removeSponsor}
-              onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-            />
-            <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={removeSelfpromo}
-              onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-            />
-            <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
-          </label>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={removeInteraction}
-              onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-            />
-            <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
-          </label>
+        {/* Column 2: Theme, Stats & Logging */}
+        <div className="flex flex-col gap-4 md:w-[512px]">
+          {/* Theme */}
+          <div className="card p-4">
+            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
+              </svg>
+              Theme
+            </h3>
+        <div className="flex flex-col gap-3">
+          {/* Row 1: Dark themes - kernel, fatal, subnet, archive */}
+          <div className="grid grid-cols-4 gap-6">
+            <button
+              onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'kernel'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
+              Kernel
+            </button>
+            <button
+              onClick={() => { setTheme('fatal'); showNotification('Theme changed to Fatal', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'fatal'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
+              Fatal
+            </button>
+            <button
+              onClick={() => { setTheme('subnet'); showNotification('Theme changed to Subnet', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'subnet'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
+              Subnet
+            </button>
+            <button
+              onClick={() => { setTheme('archive'); showNotification('Theme changed to Archive', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'archive'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
+              Archive
+            </button>
+          </div>
+
+          {/* Row 2: Dark themes - buffer, init, gateway */}
+          <div className="grid grid-cols-4 gap-6">
+            <button
+              onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'buffer'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
+              Buffer
+            </button>
+            <button
+              onClick={() => { setTheme('init'); showNotification('Theme changed to Init', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'init'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-200 after:to-yellow-100'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 40%, 68%)' }}></div>
+              Init
+            </button>
+            <button
+              onClick={() => { setTheme('gateway'); showNotification('Theme changed to Gateway', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'gateway'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-400 after:to-cyan-200'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
+              Gateway
+            </button>
+            <span></span>
+          </div>
+
+          {/* Separator between dark and light themes */}
+          <div className="border-t border-dark-border"></div>
+
+          {/* Row 3: Light themes - online, pixel, standby, debug */}
+          <div className="grid grid-cols-4 gap-6">
+            <button
+              onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'online'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
+              Online
+            </button>
+            <button
+              onClick={() => { setTheme('pixel'); showNotification('Theme changed to Pixel', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'pixel'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
+              Pixel
+            </button>
+            <button
+              onClick={() => { setTheme('standby'); showNotification('Theme changed to Standby', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'standby'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 100%, 55%)' }}></div>
+              Standby
+            </button>
+            <button
+              onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'debug'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
+              Debug
+            </button>
+          </div>
+            </div>
+          </div>
+
+          {/* Stats & Logging Card */}
+          <div className="card p-4">
+        <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
+          {/* Column 1: Videos to Review, Videos Ignored, Videos in Library */}
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos to Review</span>
+            <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Total Channels</span>
+            <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos Ignored</span>
+            <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Total Storage</span>
+            <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos in Library</span>
+            <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
+          </div>
+        </div>
+
+        {/* Logging Level */}
+        <div className="pt-2 border-t border-dark-border">
+          <div className="flex flex-col gap-2">
+            {/* Row 1: Slider + Level labels */}
+            <div
+              className="w-full max-w-sm"
+              title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+            >
+              <input
+                type="range"
+                min="0"
+                max="4"
+                value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
+                onChange={async (e) => {
+                  const newLevel = ['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)];
+                  setLogLevel(newLevel);
+                  // Save immediately instead of using setTimeout
+                  try {
+                    await updateSettings.mutateAsync({
+                      auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                      youtube_api_key: youtubeApiKey,
+                      log_level: newLevel,
+                    });
+                    showNotification(`Log level changed to ${newLevel}`, 'success');
+                  } catch (error) {
+                    showNotification(error.message || 'Failed to save log level', 'error');
+                  }
+                }}
+                className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+              />
+              <div className="flex justify-between text-xs font-mono mt-1">
+                <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
+                <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
+                <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
+                <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
+                <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
+              </div>
+            </div>
+
+            {/* Row 2: "Logging level" text + View Logs button */}
+            <div className="flex items-center justify-between w-full max-w-sm">
+              <span className="text-sm text-text-secondary">Logging level</span>
+              <button
+                onClick={toggleLogs}
+                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+              >
+                {showLogs ? 'Hide Logs' : 'View Logs'}
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Separator */}
@@ -440,12 +722,7 @@ export default function Settings() {
           </select>
           <button
             onClick={async () => {
-              console.log('=== SAVE BUTTON CLICKED ===');
-              console.log('State values - refreshHour:', refreshHour, 'refreshMinute:', refreshMinute);
-
               const timeString = `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`;
-              console.log('Time string to save:', timeString);
-
               try {
                 const payload = {
                   auto_refresh_enabled: autoRefresh ? 'true' : 'false',
@@ -453,17 +730,11 @@ export default function Settings() {
                   youtube_api_key: youtubeApiKey,
                   log_level: logLevel,
                 };
-                console.log('API payload:', payload);
-
                 await updateSettings.mutateAsync(payload);
-
                 const period = refreshHour >= 12 ? 'pm' : 'am';
                 const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
                 showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
-
-                console.log('Save successful!');
               } catch (error) {
-                console.error('Save failed:', error);
                 showNotification(error.message || 'Failed to save time', 'error');
               }
             }}
@@ -472,290 +743,11 @@ export default function Settings() {
             Save
           </button>
         </div>
-      </div>
-
-      {/* Theme */}
-      <div className="card p-4 h-full">
-        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
-          </svg>
-          Theme
-        </h3>
-        <div className="flex flex-col gap-3">
-          {/* Row 1: Dark themes - kernel, fatal, subnet, archive */}
-          <div className="grid grid-cols-4 gap-6">
-            <button
-              onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'kernel'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
-              Kernel
-            </button>
-            <button
-              onClick={() => { setTheme('fatal'); showNotification('Theme changed to Fatal', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'fatal'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-              Fatal
-            </button>
-            <button
-              onClick={() => { setTheme('subnet'); showNotification('Theme changed to Subnet', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'subnet'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
-              Subnet
-            </button>
-            <button
-              onClick={() => { setTheme('archive'); showNotification('Theme changed to Archive', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'archive'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
-              Archive
-            </button>
-          </div>
-
-          {/* Row 2: Dark themes - buffer, init, gateway */}
-          <div className="grid grid-cols-4 gap-6">
-            <button
-              onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'buffer'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
-              Buffer
-            </button>
-            <button
-              onClick={() => { setTheme('init'); showNotification('Theme changed to Init', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'init'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-200 after:to-yellow-100'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 40%, 68%)' }}></div>
-              Init
-            </button>
-            <button
-              onClick={() => { setTheme('gateway'); showNotification('Theme changed to Gateway', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'gateway'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-400 after:to-cyan-200'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
-              Gateway
-            </button>
-            <span></span>
-          </div>
-
-          {/* Separator between dark and light themes */}
-          <div className="border-t border-dark-border"></div>
-
-          {/* Row 3: Light themes - online, pixel, standby, debug */}
-          <div className="grid grid-cols-4 gap-6">
-            <button
-              onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'online'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
-              Online
-            </button>
-            <button
-              onClick={() => { setTheme('pixel'); showNotification('Theme changed to Pixel', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'pixel'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
-              Pixel
-            </button>
-            <button
-              onClick={() => { setTheme('standby'); showNotification('Theme changed to Standby', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'standby'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 100%, 55%)' }}></div>
-              Standby
-            </button>
-            <button
-              onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'debug'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
-              Debug
-            </button>
           </div>
         </div>
       </div>
 
-
-      {/* System Status Card */}
-      <div className="card p-4">
-        <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M12 6v6l4 2"></path>
-          </svg>
-          System Status
-        </h3>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-          {/* Column 1: FFmpeg, Worker, Cookies */}
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary w-16">FFmpeg</span>
-            <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
-              {health?.ffmpeg_available ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary w-24">yt-dlp</span>
-            <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary w-16">Worker</span>
-            <span className={`font-medium text-xs ${health?.download_worker_running ? 'text-text-primary' : 'text-red-400'}`}>
-              {health?.download_worker_running ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary w-24">YT and Chill</span>
-            <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.1.0</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary w-16">Cookies</span>
-            <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
-              {health?.cookies_available ? 'Active' : 'Inactive'}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Stats & Logging Card */}
-      <div className="card p-4">
-        <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
-          {/* Column 1: Videos to Review, Videos Ignored, Videos in Library */}
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos to Review</span>
-            <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Total Channels</span>
-            <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos Ignored</span>
-            <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Total Storage</span>
-            <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos in Library</span>
-            <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
-          </div>
-        </div>
-
-        {/* Logging Level */}
-        <div className="pt-2 border-t border-dark-border">
-          <div className="flex flex-col gap-2">
-            {/* Row 1: Slider + Level labels */}
-            <div
-              className="w-full max-w-sm"
-              title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
-            >
-              <input
-                type="range"
-                min="0"
-                max="4"
-                value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
-                onChange={async (e) => {
-                  const newLevel = ['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)];
-                  setLogLevel(newLevel);
-                  // Save immediately instead of using setTimeout
-                  try {
-                    await updateSettings.mutateAsync({
-                      auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                      youtube_api_key: youtubeApiKey,
-                      log_level: newLevel,
-                    });
-                    showNotification(`Log level changed to ${newLevel}`, 'success');
-                  } catch (error) {
-                    showNotification(error.message || 'Failed to save log level', 'error');
-                  }
-                }}
-                className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-              />
-              <div className="flex justify-between text-xs font-mono mt-1">
-                <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
-                <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
-                <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
-                <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
-                <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
-              </div>
-            </div>
-
-            {/* Row 2: "Logging level" text + View Logs button */}
-            <div className="flex items-center justify-between w-full max-w-sm">
-              <span className="text-sm text-text-secondary">Logging level</span>
-              <button
-                onClick={toggleLogs}
-                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
-              >
-                {showLogs ? 'Hide Logs' : 'View Logs'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Log Viewer Card - Collapsible - same width as other cards */}
+      {/* Log Viewer Card - Collapsible - outside columns so it spans full width */}
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out ${
           showLogs ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
@@ -818,7 +810,6 @@ export default function Settings() {
             )}
           </div>
         </div>
-      </div>
       </div>
 
       {/* SponsorBlock Help Modal */}

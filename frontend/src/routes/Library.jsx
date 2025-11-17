@@ -928,10 +928,10 @@ export default function Library() {
             <Link
               key={channel.id}
               to={`/channel/${channel.id}/library`}
-              className="card p-4 group hover:bg-dark-hover transition-colors flex items-center gap-4 w-full max-w-2xl"
+              className="card p-0 group hover:bg-dark-hover transition-colors flex items-stretch gap-3 w-full max-w-2xl"
             >
-              {/* Thumbnail */}
-              <div className="relative w-32 h-20 bg-dark-tertiary rounded-lg overflow-hidden flex-shrink-0">
+              {/* Thumbnail - Full height */}
+              <div className="relative w-32 bg-dark-tertiary rounded-l-lg overflow-hidden flex-shrink-0">
                 {channel.thumbnail ? (
                   <img
                     src={channel.thumbnail}
@@ -948,22 +948,17 @@ export default function Library() {
               </div>
 
               {/* Channel Info */}
-              <div>
-                <h3 className="text-lg font-semibold text-text-primary group-hover:text-accent transition-colors whitespace-nowrap">
+              <div className="py-2">
+                <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors whitespace-nowrap">
                   {channel.title}
                 </h3>
-                <p className="text-sm text-text-secondary whitespace-nowrap">
+                <p className="text-xs text-text-secondary whitespace-nowrap">
                   {channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''}
                   {channel.lastAddedAt && (
                     <> • Last Added: {formatLastAdded(channel.lastAddedAt)}</>
                   )}
                 </p>
               </div>
-
-              {/* Arrow */}
-              <svg className="w-5 h-5 text-text-muted group-hover:text-accent transition-colors flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-              </svg>
             </Link>
           ))}
             </div>
