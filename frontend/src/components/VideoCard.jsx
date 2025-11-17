@@ -22,8 +22,11 @@ export default function VideoCard({
   const [showMenu, setShowMenu] = useState(false);
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [previewPlaying, setPreviewPlaying] = useState(false);
   const menuRef = useRef(null);
   const threeDotButtonRef = useRef(null);
+  const videoPreviewRef = useRef(null);
+  const previewTimeoutRef = useRef(null);
 
   const formatDuration = (seconds) => {
     const hrs = Math.floor(seconds / 3600);
@@ -99,6 +102,52 @@ export default function VideoCard({
     }
   }, [showMenu]);
 
+  // Cleanup preview on unmount
+  useEffect(() => {
+    return () => {
+      if (previewTimeoutRef.current) {
+        clearTimeout(previewTimeoutRef.current);
+      }
+      if (videoPreviewRef.current) {
+        videoPreviewRef.current.pause();
+        videoPreviewRef.current.src = '';
+      }
+    };
+  }, []);
+
+  const handlePreviewStart = () => {
+    if (!isDownloaded || !video.file_path) return;
+
+    // Delay preview start slightly to avoid accidental triggers
+    previewTimeoutRef.current = setTimeout(() => {
+      setPreviewPlaying(true);
+      if (videoPreviewRef.current) {
+        // Build video source URL
+        const pathParts = video.file_path.replace(/\\/g, '/').split('/');
+        const videoSrc = `/api/media/${pathParts.slice(-2).join('/')}`;
+        videoPreviewRef.current.src = videoSrc;
+        // Start at ~15% into the video
+        const startTime = Math.min(video.duration_sec * 0.15, video.duration_sec - 15);
+        videoPreviewRef.current.currentTime = Math.max(0, startTime);
+        videoPreviewRef.current.play().catch(() => {
+          // Autoplay blocked, just show thumbnail
+          setPreviewPlaying(false);
+        });
+      }
+    }, 500);
+  };
+
+  const handlePreviewStop = () => {
+    if (previewTimeoutRef.current) {
+      clearTimeout(previewTimeoutRef.current);
+    }
+    setPreviewPlaying(false);
+    if (videoPreviewRef.current) {
+      videoPreviewRef.current.pause();
+      videoPreviewRef.current.src = '';
+    }
+  };
+
   const isDownloaded = video.status === 'library';
   const isDownloading = video.status === 'downloading';
 
@@ -128,53 +177,29 @@ export default function VideoCard({
       } ${onToggleSelect ? 'hover:ring-2 hover:ring-accent/50' : ''}`}
       onClick={handleCardClick}
     >
-      {/* Thumbnail */}
-      <div className="relative aspect-video bg-dark-tertiary overflow-hidden rounded-t-xl">
-        {video.thumb_url ? (
-          <img
-            src={video.thumb_url}
-            alt={video.title}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <svg className="w-10 h-10 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-            </svg>
+      {/* Header with badges and menu - Only show for library videos */}
+      {isDownloaded && !editMode && (
+        <div className="flex items-center justify-between px-3 py-2">
+          {/* Left side badges */}
+          <div className="flex items-center gap-2 text-xs">
+            {video.playlist_ids && video.playlist_ids.length > 0 && (
+              <span>
+                <span className="text-text-secondary">[</span>
+                <span className="text-accent font-medium">Playlist</span>
+                <span className="text-text-secondary">]</span>
+              </span>
+            )}
+            {video.watched && (
+              <span>
+                <span className="text-text-secondary">[</span>
+                <span className="text-accent font-medium">Watched</span>
+                <span className="text-text-secondary">]</span>
+              </span>
+            )}
           </div>
-        )}
 
-        {/* Playlist Badge - Top Left (only if not selected and has playlists) */}
-        {!isSelected && video.playlist_ids && video.playlist_ids.length > 0 && (
-          <div className="absolute top-2 left-2 bg-green-600/95 text-white px-2 py-0.5 rounded text-xs font-bold tracking-wide backdrop-blur-sm z-10">
-            PLAYLIST
-          </div>
-        )}
-
-        {/* Status Badge - Position based on status type */}
-        {statusBadge && statusBadge.position === 'top' && (
-          <div className={`absolute ${!isSelected && video.playlist_ids && video.playlist_ids.length > 0 ? 'top-8' : 'top-2'} left-2 ${statusBadge.bg} text-white px-3 py-1 rounded text-xs font-bold tracking-wide backdrop-blur-sm z-10`}>
-            {statusBadge.text}
-          </div>
-        )}
-        {statusBadge && statusBadge.position === 'bottom' && (
-          <div className={`absolute bottom-0 left-0 right-0 ${statusBadge.bg} text-white px-3 py-1.5 text-center text-xs font-bold tracking-wide backdrop-blur-sm z-10`}>
-            {statusBadge.text}
-          </div>
-        )}
-
-        {/* Selection Checkmark - Top Right (Show when selection is active) */}
-        {isSelected && onToggleSelect && (
-          <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
-            <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-              <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-          </div>
-        )}
-
-        {/* 3-Dot Menu Button - Top Right (only for downloaded videos, not in edit mode) */}
-        {isDownloaded && !editMode && (
-          <div className="absolute top-2 right-2 z-20" ref={menuRef}>
+          {/* Right side 3-dot menu */}
+          <div className="relative" ref={menuRef}>
             <button
               ref={threeDotButtonRef}
               onClick={(e) => {
@@ -182,7 +207,7 @@ export default function VideoCard({
                 setShowMenu(!showMenu);
               }}
               title="Video options"
-              className="bg-black hover:bg-black text-white rounded-full p-1.5 transition-colors"
+              className="text-text-secondary hover:text-text-primary transition-colors p-1"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <circle cx="12" cy="5" r="2"></circle>
@@ -247,12 +272,70 @@ export default function VideoCard({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Thumbnail with video preview */}
+      <div
+        className={`relative aspect-video bg-dark-tertiary overflow-hidden ${isDownloaded && !editMode ? '' : 'rounded-t-xl'}`}
+        onMouseEnter={handlePreviewStart}
+        onMouseLeave={handlePreviewStop}
+      >
+        {/* Video Preview Element (hidden until hover) */}
+        {isDownloaded && video.file_path && (
+          <video
+            ref={videoPreviewRef}
+            className={`absolute inset-0 w-full h-full object-cover ${previewPlaying ? 'block' : 'hidden'}`}
+            muted
+            playsInline
+            loop
+          />
         )}
 
-        {/* Watched Badge - Bottom Banner */}
-        {video.watched && !statusBadge && (
-          <div className="absolute bottom-0 left-0 right-0 bg-green-500/95 text-white px-3 py-1.5 text-center text-xs font-bold tracking-wide backdrop-blur-sm z-10">
-            WATCHED
+        {/* Thumbnail Image */}
+        {!previewPlaying && (
+          <>
+            {video.thumb_url ? (
+              <img
+                src={video.thumb_url}
+                alt={video.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <svg className="w-10 h-10 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                </svg>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Selection Checkmark - Top Right (Show when selection is active) */}
+        {isSelected && onToggleSelect && (
+          <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
+            <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+        )}
+
+        {/* Status Badge - For non-library videos (channels view) */}
+        {statusBadge && statusBadge.position === 'top' && (
+          <div className={`absolute top-2 left-2 ${statusBadge.bg} text-white px-3 py-1 rounded text-xs font-bold tracking-wide backdrop-blur-sm z-10`}>
+            {statusBadge.text}
+          </div>
+        )}
+        {statusBadge && statusBadge.position === 'bottom' && (
+          <div className={`absolute bottom-0 left-0 right-0 ${statusBadge.bg} text-white px-3 py-1.5 text-center text-xs font-bold tracking-wide backdrop-blur-sm z-10`}>
+            {statusBadge.text}
+          </div>
+        )}
+
+        {/* Playlist Badge for non-library videos (no header) */}
+        {!isDownloaded && !isSelected && video.playlist_ids && video.playlist_ids.length > 0 && (
+          <div className="absolute top-2 left-2 bg-green-600/95 text-white px-2 py-0.5 rounded text-xs font-bold tracking-wide backdrop-blur-sm z-10">
+            PLAYLIST
           </div>
         )}
       </div>
