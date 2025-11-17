@@ -206,13 +206,6 @@ export default function VideoRow({
             {statusBadge.text}
           </div>
         )}
-
-        {/* Watched Badge - Bottom Banner */}
-        {video.watched && !statusBadge && (
-          <div className="absolute bottom-0 left-0 right-0 bg-green-500/95 text-white px-2 py-1 text-center text-[10px] font-bold tracking-wide backdrop-blur-sm">
-            WATCHED
-          </div>
-        )}
       </div>
 
       {/* Content */}
@@ -224,6 +217,26 @@ export default function VideoRow({
 
         {/* Metadata */}
         <div className="flex items-center gap-2 text-xs text-text-secondary flex-wrap">
+          {video.playlist_ids && video.playlist_ids.length > 0 && (
+            <>
+              <span>
+                <span className="text-text-secondary">[</span>
+                <span className="text-text-primary font-medium">PLAYLIST</span>
+                <span className="text-text-secondary">]</span>
+              </span>
+              <span className="text-text-muted">•</span>
+            </>
+          )}
+          {video.watched && (
+            <>
+              <span>
+                <span className="text-text-secondary">[</span>
+                <span className="text-text-primary font-medium">WATCHED</span>
+                <span className="text-text-secondary">]</span>
+              </span>
+              <span className="text-text-muted">•</span>
+            </>
+          )}
           <span>{formatDuration(video.duration_sec)}</span>
           <span className="text-text-muted">•</span>
           <span>{formatDate(video.upload_date)}</span>
@@ -231,12 +244,6 @@ export default function VideoRow({
             <>
               <span className="text-text-muted">•</span>
               <span>{formatFileSize(video.file_size_bytes)}</span>
-            </>
-          )}
-          {video.playlist_ids && video.playlist_ids.length > 0 && (
-            <>
-              <span className="text-text-muted">•</span>
-              <span className="text-green-500 font-semibold">In Playlist</span>
             </>
           )}
         </div>
