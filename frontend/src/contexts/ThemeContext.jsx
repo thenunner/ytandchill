@@ -3,32 +3,32 @@ import { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext();
 
 export const themes = {
-  void: 'Void',
-  burn: 'Burn',
-  ice: 'Ice',
-  spore: 'Spore',
-  hush: 'Hush',
-  sector: 'Sector',
-  nexus: 'Nexus',
-  lumen: 'Lumen',
-  vela: 'Vela',
-  node: 'Node',
-  almond: 'Almond',
-  trace: 'Trace',
+  kernel: 'Kernel',
+  fatal: 'Fatal',
+  subnet: 'Subnet',
+  archive: 'Archive',
+  buffer: 'Buffer',
+  init: 'Init',
+  gateway: 'Gateway',
+  online: 'Online',
+  pixel: 'Pixel',
+  standby: 'Standby',
+  manifest: 'Manifest',
+  debug: 'Debug',
 };
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState(() => {
     // Load theme from localStorage or default to 'void'
     const savedTheme = localStorage.getItem('ytandchill-theme');
-    return savedTheme && themes[savedTheme] ? savedTheme : 'void';
+    return savedTheme && themes[savedTheme] ? savedTheme : 'kernel';
   });
 
   useEffect(() => {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-void', 'theme-burn', 'theme-ice', 'theme-spore', 'theme-hush', 'theme-sector', 'theme-nexus', 'theme-lumen', 'theme-vela', 'theme-node', 'theme-almond', 'theme-trace');
+    root.classList.remove('theme-kernel', 'theme-fatal', 'theme-subnet', 'theme-archive', 'theme-buffer', 'theme-init', 'theme-gateway', 'theme-online', 'theme-pixel', 'theme-standby', 'theme-manifest', 'theme-debug');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

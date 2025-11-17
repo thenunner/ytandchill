@@ -277,171 +277,167 @@ export default function Settings() {
           Theme
         </h3>
         <div className="flex flex-col gap-3">
-          {/* Row 1: Dark themes - void, burn, ice */}
+          {/* Row 1: Dark themes - kernel, fatal, subnet, archive */}
           <div className="grid grid-cols-4 gap-6">
-            <span className="flex items-center py-1.5 font-semibold text-sm" style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}>
-              Dark:
-            </span>
             <button
-              onClick={() => { setTheme('void'); showNotification('Theme changed to Void', 'success'); }}
+              onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'void'
+                theme === 'kernel'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
-              Void
+              Kernel
             </button>
             <button
-              onClick={() => { setTheme('burn'); showNotification('Theme changed to Burn', 'success'); }}
+              onClick={() => { setTheme('fatal'); showNotification('Theme changed to Fatal', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'burn'
+                theme === 'fatal'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-              Burn
+              Fatal
             </button>
             <button
-              onClick={() => { setTheme('ice'); showNotification('Theme changed to Ice', 'success'); }}
+              onClick={() => { setTheme('subnet'); showNotification('Theme changed to Subnet', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'ice'
+                theme === 'subnet'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
-              Ice
+              Subnet
             </button>
-          </div>
-
-          {/* Row 2: Dark themes - spore, hush, sector, nexus */}
-          <div className="grid grid-cols-5 gap-4">
-            <span></span>
             <button
-              onClick={() => { setTheme('spore'); showNotification('Theme changed to Spore', 'success'); }}
+              onClick={() => { setTheme('archive'); showNotification('Theme changed to Archive', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'spore'
+                theme === 'archive'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
-              Spore
+              Archive
             </button>
+          </div>
+
+          {/* Row 2: Dark themes - buffer, init, gateway */}
+          <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => { setTheme('hush'); showNotification('Theme changed to Hush', 'success'); }}
+              onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'hush'
+                theme === 'buffer'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 40%, 75%)' }}></div>
-              Hush
+              Buffer
             </button>
             <button
-              onClick={() => { setTheme('sector'); showNotification('Theme changed to Sector', 'success'); }}
+              onClick={() => { setTheme('init'); showNotification('Theme changed to Init', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'sector'
+                theme === 'init'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-200 after:to-yellow-100'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 40%, 68%)' }}></div>
-              Sector
+              Init
             </button>
             <button
-              onClick={() => { setTheme('nexus'); showNotification('Theme changed to Nexus', 'success'); }}
+              onClick={() => { setTheme('gateway'); showNotification('Theme changed to Gateway', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'nexus'
+                theme === 'gateway'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-400 after:to-cyan-200'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
-              Nexus
+              Gateway
             </button>
+            <span></span>
           </div>
 
-          {/* Row 3: Light themes - lumen, vela, node */}
+          {/* Separator between dark and light themes */}
+          <div className="border-t border-dark-border"></div>
+
+          {/* Row 3: Light themes - online, pixel, standby, manifest */}
           <div className="grid grid-cols-4 gap-6">
-            <span className="flex items-center py-1.5 font-semibold text-sm" style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}>
-              Light:
-            </span>
             <button
-              onClick={() => { setTheme('lumen'); showNotification('Theme changed to Lumen', 'success'); }}
+              onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'lumen'
+                theme === 'online'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
-              Lumen
+              Online
             </button>
             <button
-              onClick={() => { setTheme('vela'); showNotification('Theme changed to Vela', 'success'); }}
+              onClick={() => { setTheme('pixel'); showNotification('Theme changed to Pixel', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'vela'
+                theme === 'pixel'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
-              Vela
+              Pixel
             </button>
             <button
-              onClick={() => { setTheme('node'); showNotification('Theme changed to Node', 'success'); }}
+              onClick={() => { setTheme('standby'); showNotification('Theme changed to Standby', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'node'
+                theme === 'standby'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 100%, 55%)' }}></div>
-              Node
+              Standby
             </button>
-          </div>
-
-          {/* Row 4: Light themes - almond, trace */}
-          <div className="grid grid-cols-4 gap-6">
-            <span></span>
             <button
-              onClick={() => { setTheme('almond'); showNotification('Theme changed to Almond', 'success'); }}
+              onClick={() => { setTheme('manifest'); showNotification('Theme changed to Manifest', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'almond'
+                theme === 'manifest'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-400 after:to-amber-200'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 30%, 65%)' }}></div>
-              Almond
+              Manifest
             </button>
+          </div>
+
+          {/* Row 4: Light themes - debug */}
+          <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => { setTheme('trace'); showNotification('Theme changed to Trace', 'success'); }}
+              onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'trace'
+                theme === 'debug'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
                   : ''
               }`}
-              style={{ color: theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
-              Trace
+              Debug
             </button>
           </div>
         </div>
@@ -688,11 +684,11 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">yt-dlp</span>
-                <span className={`font-mono text-xs ${theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'lumen' || theme === 'vela' || theme === 'node' || theme === 'almond' || theme === 'trace' ? 'text-black' : 'text-text-primary'}`}>v3.0.4</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'manifest' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.0.4</span>
               </div>
             </div>
           </div>

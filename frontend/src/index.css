@@ -5,7 +5,7 @@
 /* ===== THEME SYSTEM ===== */
 /* Default theme (Dark Mode) */
 :root,
-.theme-void {
+.theme-kernel {
   /* Backgrounds */
   --bg-primary: 0 0% 0%;           /* #000000 - Pure black */
   --bg-secondary: 220 10% 8%;      /* #14161a - Card backgrounds */
@@ -34,8 +34,8 @@
   --plyr-main: 220 10% 70%;        /* Same as accent */
 }
 
-/* Burn Red Theme */
-.theme-burn {
+/* Fatal Red Theme */
+.theme-fatal {
   /* Backgrounds */
   --bg-primary: 0 8% 7%;           /* Slightly red-tinted black */
   --bg-secondary: 0 12% 10%;       /* Red-tinted dark gray */
@@ -64,8 +64,8 @@
   --plyr-main: 0 100% 50%;         /* YouTube red for player */
 }
 
-/* Ice Deep Blue Theme */
-.theme-ice {
+/* Subnet Deep Blue Theme */
+.theme-subnet {
   /* Backgrounds */
   --bg-primary: 220 50% 5%;        /* Very deep blue-gray */
   --bg-secondary: 220 45% 8%;      /* Slightly lighter overcast */
@@ -94,8 +94,8 @@
   --plyr-main: 220 50% 40%;        /* Overcast blue for player - distinct from tide */
 }
 
-/* Spore Brown Theme */
-.theme-spore {
+/* Archive Brown Theme */
+.theme-archive {
   /* Backgrounds */
   --bg-primary: 25 30% 6%;         /* Very deep bark brown */
   --bg-secondary: 25 28% 9%;       /* Natural dark brown for cards */
@@ -124,8 +124,8 @@
   --plyr-main: 95 20% 45%;         /* Sage for player */
 }
 
-/* Hush Gray/Beige Theme */
-.theme-hush {
+/* Buffer Gray/Beige Theme */
+.theme-buffer {
   /* Backgrounds */
   --bg-primary: 215 15% 14%;       /* #222831 */
   --bg-secondary: 215 12% 22%;     /* #393E46 */
@@ -154,8 +154,8 @@
   --plyr-main: 35 40% 75%;
 }
 
-/* Sector Green/Wheat Theme */
-.theme-sector {
+/* Init Green/Wheat Theme */
+.theme-init {
   /* Backgrounds */
   --bg-primary: 100 10% 10%;       /* #181C14 */
   --bg-secondary: 100 7% 20%;      /* #3C3D37 */
@@ -184,8 +184,8 @@
   --plyr-main: 40 40% 68%;         /* wheat tone */
 }
 
-/* Nexus Gray/Teal Theme */
-.theme-nexus {
+/* Gateway Gray/Teal Theme */
+.theme-gateway {
   /* Backgrounds */
   --bg-primary: 215 15% 14%;       /* #222831 */
   --bg-secondary: 215 12% 22%;     /* #393E46 */
@@ -214,8 +214,8 @@
   --plyr-main: 182 100% 35%;
 }
 
-/* Lumen Light Green Theme */
-.theme-lumen {
+/* Online Light Green Theme */
+.theme-online {
   /* Backgrounds */
   --bg-primary: 105 35% 90%;       /* Light sage green background */
   --bg-secondary: 105 30% 85%;     /* Soft green (cards) */
@@ -244,8 +244,8 @@
   --plyr-main: 115 25% 50%;        /* Same as accent */
 }
 
-/* Vela Light Pink/Cream Theme */
-.theme-vela {
+/* Pixel Light Pink/Cream Theme */
+.theme-pixel {
   /* Backgrounds */
   --bg-primary: 330 50% 92%;       /* Light pink background */
   --bg-secondary: 330 45% 88%;     /* Soft pink (cards) */
@@ -274,8 +274,8 @@
   --plyr-main: 315 80% 75%;        /* Same as accent */
 }
 
-/* Node Light Wheat/Orange Theme */
-.theme-node {
+/* Standby Light Wheat/Orange Theme */
+.theme-standby {
   /* Backgrounds */
   --bg-primary: 38 65% 88%;        /* Golden wheat background */
   --bg-secondary: 36 60% 82%;      /* Soft amber (cards) */
@@ -304,8 +304,8 @@
   --plyr-main: 35 100% 55%;        /* Same as accent */
 }
 
-/* Almond Light Cream/Tan Theme */
-.theme-almond {
+/* Manifest Light Cream/Tan Theme */
+.theme-manifest {
   /* Backgrounds */
   --bg-primary: 30 40% 85%;        /* Light tan/beige background */
   --bg-secondary: 28 35% 78%;      /* Warm tan (cards) */
@@ -334,8 +334,8 @@
   --plyr-main: 25 30% 65%;         /* Same as accent */
 }
 
-/* Trace Light Cream/Blue Theme */
-.theme-trace {
+/* Debug Light Cream/Blue Theme */
+.theme-debug {
   /* Backgrounds */
   --bg-primary: 200 35% 88%;       /* Light desaturated blue background */
   --bg-secondary: 200 30% 82%;     /* Soft blue-gray (cards) */
