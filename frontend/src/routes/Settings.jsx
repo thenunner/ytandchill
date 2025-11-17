@@ -214,7 +214,7 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.1.0</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.1.1</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-16">Cookies</span>
@@ -305,6 +305,200 @@ export default function Settings() {
                 />
                 <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
               </label>
+            </div>
+
+            {/* Separator */}
+            <div className="border-t border-dark-border my-4"></div>
+
+            {/* Password Section */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                </svg>
+                Password
+              </h3>
+              <button
+                onClick={() => setShowPasswordChange(!showPasswordChange)}
+                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+              >
+                Reset User
+              </button>
+            </div>
+
+            {/* Password Change Form */}
+            {showPasswordChange && (
+              <form onSubmit={handlePasswordChange} className="space-y-3 mb-4">
+                <div>
+                  <label className="block text-sm text-text-secondary mb-1">Current Password</label>
+                  <input
+                    type="password"
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Enter current password"
+                    className="input text-sm py-1.5 px-3 w-full"
+                    disabled={isChangingPassword}
+                    autoFocus
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-text-secondary mb-1">New Username</label>
+                  <input
+                    type="text"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    placeholder="Enter new username"
+                    className="input text-sm py-1.5 px-3 w-full"
+                    disabled={isChangingPassword}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-text-secondary mb-1">New Password</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Enter new password"
+                    className="input text-sm py-1.5 px-3 w-full"
+                    disabled={isChangingPassword}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
+                  <input
+                    type="password"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="input text-sm py-1.5 px-3 w-full"
+                    disabled={isChangingPassword}
+                  />
+                </div>
+
+                {passwordError && (
+                  <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
+                    {passwordError}
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
+                </button>
+              </form>
+            )}
+
+            {/* Separator */}
+            <div className="border-t border-dark-border my-4"></div>
+
+            {/* Auto-Scan Section */}
+            <div className="flex items-center gap-4 flex-wrap">
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 6v6l4 2"></path>
+                </svg>
+                Auto-Scan Daily
+              </h3>
+              <div className="flex border border-dark-border rounded-md overflow-hidden">
+                <button
+                  onClick={async () => {
+                    setAutoRefresh(false);
+                    try {
+                      await updateSettings.mutateAsync({
+                        auto_refresh_enabled: 'false',
+                        auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                        youtube_api_key: youtubeApiKey,
+                        log_level: logLevel,
+                      });
+                      showNotification('Auto-scan disabled', 'success');
+                    } catch (error) {
+                      showNotification(error.message || 'Failed to save auto refresh', 'error');
+                    }
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                    !autoRefresh
+                      ? 'bg-accent text-white'
+                      : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                  }`}
+                >
+                  OFF
+                </button>
+                <button
+                  onClick={async () => {
+                    setAutoRefresh(true);
+                    try {
+                      await updateSettings.mutateAsync({
+                        auto_refresh_enabled: 'true',
+                        auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                        youtube_api_key: youtubeApiKey,
+                        log_level: logLevel,
+                      });
+                      showNotification('Auto-scan enabled', 'success');
+                    } catch (error) {
+                      showNotification(error.message || 'Failed to save auto refresh', 'error');
+                    }
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                    autoRefresh
+                      ? 'bg-accent text-white'
+                      : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                  }`}
+                >
+                  ON
+                </button>
+              </div>
+              <select
+                value={refreshHour}
+                onChange={(e) => setRefreshHour(parseInt(e.target.value))}
+                className="input text-sm font-mono py-1.5 px-2 w-16"
+              >
+                {Array.from({ length: 24 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i.toString().padStart(2, '0')}
+                  </option>
+                ))}
+              </select>
+              <span className="text-text-primary text-sm font-bold">:</span>
+              <select
+                value={refreshMinute}
+                onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
+                className="input text-sm font-mono py-1.5 px-2 w-16"
+              >
+                {Array.from({ length: 60 }, (_, i) => (
+                  <option key={i} value={i}>
+                    {i.toString().padStart(2, '0')}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={async () => {
+                  const timeString = `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`;
+                  try {
+                    const payload = {
+                      auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                      auto_refresh_time: timeString,
+                      youtube_api_key: youtubeApiKey,
+                      log_level: logLevel,
+                    };
+                    await updateSettings.mutateAsync(payload);
+                    const period = refreshHour >= 12 ? 'pm' : 'am';
+                    const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
+                    showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
+                  } catch (error) {
+                    showNotification(error.message || 'Failed to save time', 'error');
+                  }
+                }}
+                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+              >
+                Save
+              </button>
             </div>
           </div>
         </div>
@@ -548,200 +742,6 @@ export default function Settings() {
               </button>
             </div>
           </div>
-        </div>
-
-        {/* Separator */}
-        <div className="border-t border-dark-border my-4"></div>
-
-        {/* Password Section */}
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
-            </svg>
-            Password
-          </h3>
-          <button
-            onClick={() => setShowPasswordChange(!showPasswordChange)}
-            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-          >
-            Reset User
-          </button>
-        </div>
-
-        {/* Password Change Form */}
-        {showPasswordChange && (
-          <form onSubmit={handlePasswordChange} className="space-y-3 mb-4">
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">Current Password</label>
-              <input
-                type="password"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder="Enter current password"
-                className="input text-sm py-1.5 px-3 w-full"
-                disabled={isChangingPassword}
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">New Username</label>
-              <input
-                type="text"
-                value={newUsername}
-                onChange={(e) => setNewUsername(e.target.value)}
-                placeholder="Enter new username"
-                className="input text-sm py-1.5 px-3 w-full"
-                disabled={isChangingPassword}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                className="input text-sm py-1.5 px-3 w-full"
-                disabled={isChangingPassword}
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
-              <input
-                type="password"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                placeholder="Confirm new password"
-                className="input text-sm py-1.5 px-3 w-full"
-                disabled={isChangingPassword}
-              />
-            </div>
-
-            {passwordError && (
-              <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
-                {passwordError}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isChangingPassword}
-              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
-            </button>
-          </form>
-        )}
-
-        {/* Separator */}
-        <div className="border-t border-dark-border my-4"></div>
-
-        {/* Auto-Scan Section */}
-        <div className="flex items-center gap-4 flex-wrap">
-          <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <path d="M12 6v6l4 2"></path>
-            </svg>
-            Auto-Scan Daily
-          </h3>
-          <div className="flex border border-dark-border rounded-md overflow-hidden">
-            <button
-              onClick={async () => {
-                setAutoRefresh(false);
-                try {
-                  await updateSettings.mutateAsync({
-                    auto_refresh_enabled: 'false',
-                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                    youtube_api_key: youtubeApiKey,
-                    log_level: logLevel,
-                  });
-                  showNotification('Auto-scan disabled', 'success');
-                } catch (error) {
-                  showNotification(error.message || 'Failed to save auto refresh', 'error');
-                }
-              }}
-              className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                !autoRefresh
-                  ? 'bg-accent text-white'
-                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-              }`}
-            >
-              OFF
-            </button>
-            <button
-              onClick={async () => {
-                setAutoRefresh(true);
-                try {
-                  await updateSettings.mutateAsync({
-                    auto_refresh_enabled: 'true',
-                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                    youtube_api_key: youtubeApiKey,
-                    log_level: logLevel,
-                  });
-                  showNotification('Auto-scan enabled', 'success');
-                } catch (error) {
-                  showNotification(error.message || 'Failed to save auto refresh', 'error');
-                }
-              }}
-              className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                autoRefresh
-                  ? 'bg-accent text-white'
-                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-              }`}
-            >
-              ON
-            </button>
-          </div>
-          <select
-            value={refreshHour}
-            onChange={(e) => setRefreshHour(parseInt(e.target.value))}
-            className="input text-sm font-mono py-1.5 px-2 w-16"
-          >
-            {Array.from({ length: 24 }, (_, i) => (
-              <option key={i} value={i}>
-                {i.toString().padStart(2, '0')}
-              </option>
-            ))}
-          </select>
-          <span className="text-text-primary text-sm font-bold">:</span>
-          <select
-            value={refreshMinute}
-            onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
-            className="input text-sm font-mono py-1.5 px-2 w-16"
-          >
-            {Array.from({ length: 60 }, (_, i) => (
-              <option key={i} value={i}>
-                {i.toString().padStart(2, '0')}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={async () => {
-              const timeString = `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`;
-              try {
-                const payload = {
-                  auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                  auto_refresh_time: timeString,
-                  youtube_api_key: youtubeApiKey,
-                  log_level: logLevel,
-                };
-                await updateSettings.mutateAsync(payload);
-                const period = refreshHour >= 12 ? 'pm' : 'am';
-                const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
-                showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
-              } catch (error) {
-                showNotification(error.message || 'Failed to save time', 'error');
-              }
-            }}
-            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-          >
-            Save
-          </button>
         </div>
           </div>
         </div>
