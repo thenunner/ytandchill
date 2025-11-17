@@ -62,6 +62,10 @@ export default function Player() {
             fallback: true,
             iosNative: true, // Enable native fullscreen on iOS
           },
+          tooltips: {
+            controls: true,
+            seek: true,
+          },
         });
 
         console.log('Plyr player object:', player);

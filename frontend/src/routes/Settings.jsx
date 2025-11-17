@@ -298,9 +298,9 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-600 after:to-amber-400'
                   : ''
               }`}
-              style={{ color: 'hsl(40, 30%, 85%)' }}
+              style={{ color: 'hsl(35, 35%, 72%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 30%, 85%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 35%, 72%)' }}></div>
               sand
             </button>
             <button
@@ -338,9 +338,9 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
                   : ''
               }`}
-              style={{ color: 'hsl(25, 95%, 55%)' }}
+              style={{ color: 'hsl(39, 98%, 43%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 95%, 55%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(39, 98%, 43%)' }}></div>
               ember
             </button>
             <button

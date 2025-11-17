@@ -127,31 +127,31 @@
 /* Ember Orange Theme */
 .theme-ember {
   /* Backgrounds */
-  --bg-primary: 25 45% 9%;         /* Deep orange/brown */
-  --bg-secondary: 25 40% 12%;      /* Lighter orange/brown */
-  --bg-tertiary: 25 35% 15%;       /* Elevated orange/brown */
-  --bg-hover: 25 25% 26%;          /* Orange-tinted hover */
+  --bg-primary: 42 24% 8%;         /* Dark earthy umber */
+  --bg-secondary: 41 21% 12%;      /* Natural dark olive-brown */
+  --bg-tertiary: 40 27% 16%;       /* Muted warm tan/earth */
+  --bg-hover: 39 98% 43%;          /* Saffron highlight */
 
   /* Borders */
-  --border: 25 30% 16%;            /* Orange-tinted borders */
-  --border-light: 25 25% 26%;      /* Orange-tinted light borders */
+  --border: 40 22% 14%;            /* Earthy borders */
+  --border-light: 40 27% 16%;      /* Warm tan borders */
 
   /* Text */
-  --text-primary: 230 10% 91%;     /* Same as dark theme */
-  --text-secondary: 228 14% 66%;   /* Same as dark theme */
-  --text-muted: 220 9% 46%;        /* Same as dark theme */
+  --text-primary: 40 68% 89%;      /* Warm parchment/cream */
+  --text-secondary: 40 35% 69%;    /* Warm medium */
+  --text-muted: 40 20% 50%;        /* Warm muted */
 
-  /* Accent - Orange */
-  --accent: 25 95% 55%;            /* #F97316 - Bright orange */
-  --accent-hover: 25 95% 65%;      /* Lighter orange on hover */
+  /* Accent - Saffron Orange */
+  --accent: 39 98% 43%;            /* #D98E04 - Saffron orange */
+  --accent-hover: 38 81% 54%;      /* #E8A42A - Lighter saffron */
 
   /* Scrollbar */
-  --scrollbar-track: 25 40% 12%;
-  --scrollbar-thumb: 25 75% 50%;   /* Orange thumb */
-  --scrollbar-thumb-hover: 25 80% 60%;
+  --scrollbar-track: 41 21% 12%;
+  --scrollbar-thumb: 39 80% 40%;   /* Saffron thumb */
+  --scrollbar-thumb-hover: 38 85% 50%;
 
   /* Plyr player */
-  --plyr-main: 25 95% 55%;         /* Orange for player */
+  --plyr-main: 39 98% 43%;         /* Saffron for player */
 }
 
 /* Brook Green Theme */
@@ -187,31 +187,31 @@
 /* Sand Light Theme */
 .theme-sand {
   /* Backgrounds */
-  --bg-primary: 40 30% 85%;        /* Warm cream/bone color */
-  --bg-secondary: 40 25% 80%;      /* Slightly darker cream for cards */
-  --bg-tertiary: 40 20% 75%;       /* Elevated surfaces */
-  --bg-hover: 40 15% 68%;          /* Cream-tinted hover */
+  --bg-primary: 35 35% 72%;        /* Darker sand/cream color */
+  --bg-secondary: 35 30% 68%;      /* Slightly darker for cards */
+  --bg-tertiary: 35 25% 64%;       /* Elevated surfaces */
+  --bg-hover: 35 20% 58%;          /* Sand-tinted hover */
 
   /* Borders */
-  --border: 40 18% 70%;            /* Warm borders */
-  --border-light: 40 15% 62%;      /* Darker warm borders */
+  --border: 35 22% 60%;            /* Warm borders */
+  --border-light: 35 18% 52%;      /* Darker warm borders */
 
   /* Text - Dark for light theme */
-  --text-primary: 30 20% 15%;      /* Warm dark brown */
-  --text-secondary: 30 15% 35%;    /* Warm medium brown */
-  --text-muted: 30 10% 50%;        /* Warm gray */
+  --text-primary: 30 25% 12%;      /* Warm dark brown */
+  --text-secondary: 30 20% 30%;    /* Warm medium brown */
+  --text-muted: 30 15% 45%;        /* Warm gray */
 
   /* Accent - Warm brown for light theme */
-  --accent: 30 40% 30%;            /* Dark warm brown accent */
-  --accent-hover: 30 40% 20%;      /* Darker on hover */
+  --accent: 30 45% 28%;            /* Dark warm brown accent */
+  --accent-hover: 30 45% 18%;      /* Darker on hover */
 
   /* Scrollbar */
-  --scrollbar-track: 40 25% 80%;
-  --scrollbar-thumb: 40 20% 55%;   /* Warm thumb */
-  --scrollbar-thumb-hover: 40 25% 45%;
+  --scrollbar-track: 35 30% 68%;
+  --scrollbar-thumb: 35 25% 48%;   /* Warm thumb */
+  --scrollbar-thumb-hover: 35 30% 38%;
 
   /* Plyr player */
-  --plyr-main: 30 40% 30%;         /* Warm brown for player */
+  --plyr-main: 30 45% 28%;         /* Warm brown for player */
 }
 
 /* Pollen Yellow Theme */
