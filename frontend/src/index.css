@@ -5,7 +5,7 @@
 /* ===== THEME SYSTEM ===== */
 /* Default theme (Dark Mode) */
 :root,
-.theme-soot {
+.theme-null {
   /* Backgrounds */
   --bg-primary: 0 0% 0%;           /* #000000 - Pure black */
   --bg-secondary: 220 10% 8%;      /* #14161a - Card backgrounds */
@@ -34,8 +34,8 @@
   --plyr-main: 220 10% 70%;        /* Same as accent */
 }
 
-/* Clay Red Theme */
-.theme-clay {
+/* Bleed Red Theme */
+.theme-bleed {
   /* Backgrounds */
   --bg-primary: 0 8% 7%;           /* Slightly red-tinted black */
   --bg-secondary: 0 12% 10%;       /* Red-tinted dark gray */
@@ -64,38 +64,8 @@
   --plyr-main: 0 100% 50%;         /* YouTube red for player */
 }
 
-/* Pollen Yellow Light Theme */
-.theme-pollen {
-  /* Backgrounds - Light muted yellow */
-  --bg-primary: 50 35% 72%;        /* Muted light yellow/cream */
-  --bg-secondary: 50 32% 65%;      /* Slightly darker yellow for cards */
-  --bg-tertiary: 50 28% 58%;       /* Elevated surfaces */
-  --bg-hover: 50 25% 52%;          /* Yellow-tinted hover */
-
-  /* Borders */
-  --border: 50 22% 55%;            /* Yellow-tinted borders */
-  --border-light: 50 20% 50%;      /* Darker warm borders */
-
-  /* Text - Dark for light theme */
-  --text-primary: 45 50% 12%;      /* Dark golden-brown */
-  --text-secondary: 45 35% 25%;    /* Medium golden-brown */
-  --text-muted: 45 20% 40%;        /* Muted golden-brown */
-
-  /* Accent - Deep golden/brown (previous background color) */
-  --accent: 50 45% 25%;            /* Deep golden-brown accent */
-  --accent-hover: 50 45% 35%;      /* Lighter golden-brown on hover */
-
-  /* Scrollbar */
-  --scrollbar-track: 50 32% 65%;
-  --scrollbar-thumb: 50 40% 35%;   /* Golden-brown thumb */
-  --scrollbar-thumb-hover: 50 42% 45%;
-
-  /* Plyr player */
-  --plyr-main: 50 45% 25%;         /* Deep golden-brown for player */
-}
-
-/* Fen Deep Blue Theme */
-.theme-fen {
+/* Cryo Deep Blue Theme */
+.theme-cryo {
   /* Backgrounds */
   --bg-primary: 220 50% 5%;        /* Very deep blue-gray */
   --bg-secondary: 220 45% 8%;      /* Slightly lighter overcast */
@@ -124,8 +94,8 @@
   --plyr-main: 220 50% 40%;        /* Overcast blue for player - distinct from tide */
 }
 
-/* Bark Brown Theme */
-.theme-bark {
+/* Rust Brown Theme */
+.theme-rust {
   /* Backgrounds */
   --bg-primary: 25 30% 6%;         /* Very deep bark brown */
   --bg-secondary: 25 28% 9%;       /* Natural dark brown for cards */
@@ -154,8 +124,8 @@
   --plyr-main: 95 20% 45%;         /* Sage for player */
 }
 
-/* Coast Blue/Sand Theme */
-.theme-coast {
+/* Phase Blue/Sand Theme */
+.theme-phase {
   /* Backgrounds */
   --bg-primary: 205 40% 14%;       /* ~#1B3C53 */
   --bg-secondary: 205 38% 18%;     /* ~#234C6A */
@@ -304,8 +274,8 @@
   --plyr-main: 115 25% 50%;        /* Same as accent */
 }
 
-/* Nectar Light Pink/Cream Theme */
-.theme-nectar {
+/* Pulse Light Pink/Cream Theme */
+.theme-pulse {
   /* Backgrounds */
   --bg-primary: 330 50% 92%;       /* Light pink background */
   --bg-secondary: 330 45% 88%;     /* Soft pink (cards) */
