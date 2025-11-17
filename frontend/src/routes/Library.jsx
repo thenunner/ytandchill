@@ -928,7 +928,7 @@ export default function Library() {
             <Link
               key={channel.id}
               to={`/channel/${channel.id}/library`}
-              className="card p-4 group hover:bg-dark-hover transition-colors flex items-center gap-4 w-fit"
+              className="card p-4 group hover:bg-dark-hover transition-colors flex items-center gap-4 w-full max-w-2xl"
             >
               {/* Thumbnail */}
               <div className="relative w-32 h-20 bg-dark-tertiary rounded-lg overflow-hidden flex-shrink-0">
@@ -948,7 +948,7 @@ export default function Library() {
               </div>
 
               {/* Channel Info */}
-              <div className="pr-[50px]">
+              <div>
                 <h3 className="text-lg font-semibold text-text-primary group-hover:text-accent transition-colors whitespace-nowrap">
                   {channel.title}
                 </h3>
