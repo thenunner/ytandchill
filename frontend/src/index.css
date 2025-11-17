@@ -337,14 +337,14 @@
 /* Skyfall Light Blue/Cream Theme */
 .theme-skyfall {
   /* Backgrounds */
-  --bg-primary: 50 70% 95%;        /* Soft warm off-white */
-  --bg-secondary: 50 80% 90%;      /* Light cream (cards) */
-  --bg-tertiary: 210 40% 92%;      /* Very light blue (elevated) */
-  --bg-hover: 210 45% 88%;         /* Blue-tinted hover */
+  --bg-primary: 210 50% 92%;       /* Light blue background */
+  --bg-secondary: 210 45% 88%;     /* Slightly deeper blue (cards) */
+  --bg-tertiary: 210 40% 82%;      /* Blue-gray (elevated) */
+  --bg-hover: 210 45% 78%;         /* Blue-tinted hover */
 
   /* Borders */
-  --border: 210 30% 80%;           /* Soft blue-gray border */
-  --border-light: 50 35% 85%;      /* Subtle warm border */
+  --border: 210 30% 75%;           /* Soft blue-gray border */
+  --border-light: 210 35% 80%;     /* Light blue border */
 
   /* Text - Dark for light theme */
   --text-primary: 220 40% 22%;     /* Dark navy text */
@@ -356,9 +356,9 @@
   --accent-hover: 210 60% 60%;     /* Brighter blue (#578FCA) */
 
   /* Scrollbar */
-  --scrollbar-track: 50 80% 90%;
-  --scrollbar-thumb: 210 35% 75%;
-  --scrollbar-thumb-hover: 210 40% 70%;
+  --scrollbar-track: 210 45% 88%;
+  --scrollbar-thumb: 210 35% 70%;
+  --scrollbar-thumb-hover: 210 40% 65%;
 
   /* Plyr player */
   --plyr-main: 210 55% 50%;        /* Same as accent */
@@ -367,14 +367,14 @@
 /* Thicket Light Green Theme */
 .theme-thicket {
   /* Backgrounds */
-  --bg-primary: 90 40% 97%;        /* Very pale greenish white */
-  --bg-secondary: 100 40% 93%;     /* Soft mint (cards) */
-  --bg-tertiary: 105 30% 88%;      /* Light sage (inputs/elevated) */
-  --bg-hover: 105 30% 82%;         /* Slightly deeper sage hover */
+  --bg-primary: 105 35% 90%;       /* Light sage green background */
+  --bg-secondary: 105 30% 85%;     /* Soft green (cards) */
+  --bg-tertiary: 105 25% 78%;      /* Deeper sage (inputs/elevated) */
+  --bg-hover: 105 30% 72%;         /* Sage hover */
 
   /* Borders */
-  --border: 105 20% 75%;           /* Sage-gray border */
-  --border-light: 105 25% 85%;
+  --border: 105 20% 70%;           /* Sage-gray border */
+  --border-light: 105 25% 78%;
 
   /* Text - Dark for light theme */
   --text-primary: 130 15% 20%;     /* Dark desaturated green */
@@ -386,9 +386,9 @@
   --accent-hover: 115 30% 60%;     /* Brighter leaf green */
 
   /* Scrollbar */
-  --scrollbar-track: 100 40% 93%;
-  --scrollbar-thumb: 105 25% 75%;
-  --scrollbar-thumb-hover: 105 25% 68%;
+  --scrollbar-track: 105 30% 85%;
+  --scrollbar-thumb: 105 25% 68%;
+  --scrollbar-thumb-hover: 105 25% 60%;
 
   /* Plyr player */
   --plyr-main: 115 25% 50%;        /* Same as accent */
@@ -397,28 +397,28 @@
 /* Nectar Light Pink/Cream Theme */
 .theme-nectar {
   /* Backgrounds */
-  --bg-primary: 45 100% 97%;       /* Soft warm cream */
-  --bg-secondary: 48 90% 94%;      /* Slightly deeper cream (cards) */
-  --bg-tertiary: 210 100% 95%;     /* Very light icy blue (elevated) */
-  --bg-hover: 210 90% 90%;         /* Blue-tinted hover */
+  --bg-primary: 330 50% 92%;       /* Light pink background */
+  --bg-secondary: 330 45% 88%;     /* Soft pink (cards) */
+  --bg-tertiary: 330 40% 82%;      /* Deeper pink (elevated) */
+  --bg-hover: 330 45% 78%;         /* Pink-tinted hover */
 
   /* Borders */
-  --border: 210 30% 82%;           /* Pale blue-gray border */
-  --border-light: 45 50% 88%;
+  --border: 330 30% 75%;           /* Pale pink-gray border */
+  --border-light: 330 35% 80%;
 
   /* Text - Dark for light theme */
-  --text-primary: 250 25% 22%;     /* Deep desaturated violet-gray */
-  --text-secondary: 250 20% 35%;   /* Softer purple-gray */
-  --text-muted: 250 15% 50%;       /* Muted gray-lilac */
+  --text-primary: 330 25% 22%;     /* Deep desaturated pink-gray */
+  --text-secondary: 330 20% 35%;   /* Softer purple-gray */
+  --text-muted: 330 15% 50%;       /* Muted gray-lilac */
 
   /* Accent */
   --accent: 315 80% 75%;           /* Pastel pink (#FFCDEA) */
   --accent-hover: 315 85% 82%;     /* Lighter pastel pink */
 
   /* Scrollbar */
-  --scrollbar-track: 48 90% 94%;
-  --scrollbar-thumb: 315 50% 75%;
-  --scrollbar-thumb-hover: 315 55% 70%;
+  --scrollbar-track: 330 45% 88%;
+  --scrollbar-thumb: 330 40% 70%;
+  --scrollbar-thumb-hover: 330 45% 65%;
 
   /* Plyr player */
   --plyr-main: 315 80% 75%;        /* Same as accent */
@@ -427,14 +427,14 @@
 /* Harvest Light Wheat/Orange Theme */
 .theme-harvest {
   /* Backgrounds */
-  --bg-primary: 42 80% 95%;        /* pale wheat */
-  --bg-secondary: 38 70% 88%;      /* soft golden tan */
-  --bg-tertiary: 36 65% 82%;       /* warm light amber */
-  --bg-hover: 35 80% 75%;          /* gentle warm hover */
+  --bg-primary: 38 65% 88%;        /* Golden wheat background */
+  --bg-secondary: 36 60% 82%;      /* Soft amber (cards) */
+  --bg-tertiary: 35 55% 75%;       /* Warm amber (elevated) */
+  --bg-hover: 35 60% 70%;          /* Orange-tinted hover */
 
   /* Borders */
-  --border: 35 35% 70%;
-  --border-light: 35 40% 78%;
+  --border: 35 35% 68%;
+  --border-light: 35 40% 75%;
 
   /* Text - Dark for light theme */
   --text-primary: 25 35% 25%;      /* deep brown text */
@@ -446,9 +446,9 @@
   --accent-hover: 35 100% 65%;
 
   /* Scrollbar */
-  --scrollbar-track: 38 70% 88%;
-  --scrollbar-thumb: 35 40% 70%;
-  --scrollbar-thumb-hover: 35 45% 60%;
+  --scrollbar-track: 36 60% 82%;
+  --scrollbar-thumb: 35 45% 65%;
+  --scrollbar-thumb-hover: 35 50% 58%;
 
   /* Plyr player */
   --plyr-main: 35 100% 55%;        /* Same as accent */
@@ -457,14 +457,14 @@
 /* Almond Light Cream/Tan Theme */
 .theme-almond {
   /* Backgrounds */
-  --bg-primary: 45 75% 96%;        /* cream */
-  --bg-secondary: 35 45% 88%;      /* warm tan */
-  --bg-tertiary: 33 40% 82%;       /* soft beige */
-  --bg-hover: 33 45% 75%;          /* warm hover */
+  --bg-primary: 30 40% 85%;        /* Light tan/beige background */
+  --bg-secondary: 28 35% 78%;      /* Warm tan (cards) */
+  --bg-tertiary: 25 32% 72%;       /* Deeper beige (elevated) */
+  --bg-hover: 25 38% 68%;          /* Tan hover */
 
   /* Borders */
-  --border: 33 20% 75%;
-  --border-light: 33 25% 82%;
+  --border: 25 25% 65%;
+  --border-light: 25 30% 72%;
 
   /* Text - Dark for light theme */
   --text-primary: 25 20% 22%;      /* dark brown text */
@@ -476,9 +476,9 @@
   --accent-hover: 25 35% 75%;
 
   /* Scrollbar */
-  --scrollbar-track: 35 45% 88%;
-  --scrollbar-thumb: 25 30% 65%;
-  --scrollbar-thumb-hover: 25 35% 55%;
+  --scrollbar-track: 28 35% 78%;
+  --scrollbar-thumb: 25 30% 60%;
+  --scrollbar-thumb-hover: 25 35% 52%;
 
   /* Plyr player */
   --plyr-main: 25 30% 65%;         /* Same as accent */
@@ -487,14 +487,14 @@
 /* Marina Light Cream/Blue Theme */
 .theme-marina {
   /* Backgrounds */
-  --bg-primary: 40 60% 96%;        /* soft cream */
-  --bg-secondary: 40 45% 90%;      /* pale sand */
-  --bg-tertiary: 210 25% 78%;      /* soft desaturated blue */
-  --bg-hover: 210 25% 72%;         /* slightly darker blue hover */
+  --bg-primary: 200 35% 88%;       /* Light desaturated blue background */
+  --bg-secondary: 200 30% 82%;     /* Soft blue-gray (cards) */
+  --bg-tertiary: 200 28% 75%;      /* Deeper blue-gray (elevated) */
+  --bg-hover: 200 32% 70%;         /* Blue-gray hover */
 
   /* Borders */
-  --border: 40 20% 80%;
-  --border-light: 40 25% 87%;
+  --border: 200 22% 68%;
+  --border-light: 200 25% 75%;
 
   /* Text - Dark for light theme */
   --text-primary: 210 25% 25%;     /* deep slate-blue */
@@ -506,9 +506,9 @@
   --accent-hover: 210 30% 65%;
 
   /* Scrollbar */
-  --scrollbar-track: 40 45% 90%;
-  --scrollbar-thumb: 210 25% 72%;
-  --scrollbar-thumb-hover: 210 25% 65%;
+  --scrollbar-track: 200 30% 82%;
+  --scrollbar-thumb: 200 28% 65%;
+  --scrollbar-thumb-hover: 200 30% 58%;
 
   /* Plyr player */
   --plyr-main: 210 30% 55%;        /* Same as accent */
