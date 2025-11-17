@@ -6,20 +6,21 @@ export const themes = {
   soot: 'Soot',
   sand: 'Sand',
   clay: 'Clay',
-  tide: 'Tide',
-  thorn: 'Thorn',
-  ember: 'Ember',
   pollen: 'Pollen',
   lichen: 'Lichen',
-  moss: 'Moss',
   fen: 'Fen',
   bark: 'Bark',
-  marrow: 'Marrow',
-  test2: 'Test 2',
   coast: 'Coast',
   slate: 'Slate',
   grove: 'Grove',
   reef: 'Reef',
+  skyfall: 'Skyfall',
+  thicket: 'Thicket',
+  nectar: 'Nectar',
+  harvest: 'Harvest',
+  almond: 'Almond',
+  marina: 'Marina',
+  bloodmoon: 'Bloodmoon',
 };
 
 export function ThemeProvider({ children }) {
@@ -33,7 +34,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-soot', 'theme-sand', 'theme-clay', 'theme-tide', 'theme-thorn', 'theme-ember', 'theme-pollen', 'theme-lichen', 'theme-moss', 'theme-fen', 'theme-bark', 'theme-marrow', 'theme-test2', 'theme-coast', 'theme-slate', 'theme-grove', 'theme-reef');
+    root.classList.remove('theme-soot', 'theme-sand', 'theme-clay', 'theme-pollen', 'theme-lichen', 'theme-fen', 'theme-bark', 'theme-coast', 'theme-slate', 'theme-grove', 'theme-reef', 'theme-skyfall', 'theme-thicket', 'theme-nectar', 'theme-harvest', 'theme-almond', 'theme-marina', 'theme-bloodmoon');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);
