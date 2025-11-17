@@ -439,24 +439,24 @@ export default function Settings() {
               onClick={() => { setTheme('test'); showNotification('Theme changed to test', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'test'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-600 after:to-gray-400'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-800 after:to-gray-600'
                   : ''
               }`}
-              style={{ color: 'hsl(0, 0%, 49%)' }}
+              style={{ color: theme === 'test' || theme === 'sand' || theme === 'pollen' ? 'hsl(0, 0%, 15%)' : 'hsl(0, 0%, 70%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 49%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'test' || theme === 'sand' || theme === 'pollen' ? 'hsl(0, 0%, 15%)' : 'hsl(0, 0%, 70%)' }}></div>
               test
             </button>
             <button
               onClick={() => { setTheme('test2'); showNotification('Theme changed to test2', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'test2'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-800 after:to-amber-600'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-100'
                   : ''
               }`}
-              style={{ color: theme === 'test2' ? 'hsl(28, 36%, 29%)' : 'hsl(28, 36%, 55%)' }}
+              style={{ color: 'hsl(28, 100%, 87%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme === 'test2' ? 'hsl(28, 36%, 29%)' : 'hsl(28, 36%, 55%)' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(28, 100%, 87%)' }}></div>
               test2
             </button>
           </div>
