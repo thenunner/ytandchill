@@ -4,7 +4,7 @@ const ThemeContext = createContext();
 
 export const themes = {
   soot: 'Soot',
-  bone: 'Bone',
+  sand: 'Sand',
   clay: 'Clay',
   tide: 'Tide',
   thorn: 'Thorn',
@@ -28,7 +28,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-soot', 'theme-bone', 'theme-clay', 'theme-tide', 'theme-thorn', 'theme-ember', 'theme-pollen', 'theme-brook', 'theme-moss', 'theme-fen', 'theme-bark', 'theme-marrow');
+    root.classList.remove('theme-soot', 'theme-sand', 'theme-clay', 'theme-tide', 'theme-thorn', 'theme-ember', 'theme-pollen', 'theme-brook', 'theme-moss', 'theme-fen', 'theme-bark', 'theme-marrow');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

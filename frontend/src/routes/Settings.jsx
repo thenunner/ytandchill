@@ -277,147 +277,159 @@ export default function Settings() {
           Theme
         </h3>
         <div className="flex flex-col gap-3">
-          {/* Row 1: soot, bone, clay, tide */}
+          {/* Row 1: soot, sand, pollen, thorn */}
           <div className="grid grid-cols-4 gap-6">
             <button
               onClick={() => { setTheme('soot'); showNotification('Theme changed to soot', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'soot'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
               }`}
+              style={{ color: 'hsl(220, 10%, 70%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 60%)' }}></div>
-              [ soot ]
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
+              soot
             </button>
             <button
-              onClick={() => { setTheme('bone'); showNotification('Theme changed to bone', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
-                theme === 'bone'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-600 after:to-gray-400'
+              onClick={() => { setTheme('sand'); showNotification('Theme changed to sand', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'sand'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-600 after:to-amber-400'
                   : ''
               }`}
+              style={{ color: 'hsl(40, 30%, 85%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 100%)' }}></div>
-              [ bone ]
-            </button>
-            <button
-              onClick={() => { setTheme('clay'); showNotification('Theme changed to clay', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
-                theme === 'clay'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
-                  : ''
-              }`}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-              [ clay ]
-            </button>
-            <button
-              onClick={() => { setTheme('tide'); showNotification('Theme changed to tide', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
-                theme === 'tide'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
-                  : ''
-              }`}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(217, 91%, 60%)' }}></div>
-              [ tide ]
-            </button>
-          </div>
-
-          {/* Row 2: thorn, ember, pollen, brook */}
-          <div className="grid grid-cols-4 gap-6">
-            <button
-              onClick={() => { setTheme('thorn'); showNotification('Theme changed to thorn', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
-                theme === 'thorn'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-500 after:to-purple-300'
-                  : ''
-              }`}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(270, 70%, 60%)' }}></div>
-              [ thorn ]
-            </button>
-            <button
-              onClick={() => { setTheme('ember'); showNotification('Theme changed to ember', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
-                theme === 'ember'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
-                  : ''
-              }`}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 95%, 55%)' }}></div>
-              [ ember ]
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 30%, 85%)' }}></div>
+              sand
             </button>
             <button
               onClick={() => { setTheme('pollen'); showNotification('Theme changed to pollen', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'pollen'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-600 after:to-yellow-400'
                   : ''
               }`}
+              style={{ color: 'hsl(50, 90%, 50%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(45, 95%, 55%)' }}></div>
-              [ pollen ]
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(50, 90%, 50%)' }}></div>
+              pollen
             </button>
             <button
-              onClick={() => { setTheme('brook'); showNotification('Theme changed to brook', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
-                theme === 'brook'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
+              onClick={() => { setTheme('thorn'); showNotification('Theme changed to thorn', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'thorn'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-purple-500 after:to-purple-300'
                   : ''
               }`}
+              style={{ color: 'hsl(270, 70%, 60%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 70%, 50%)' }}></div>
-              [ brook ]
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(270, 70%, 60%)' }}></div>
+              thorn
             </button>
           </div>
 
-          {/* Row 3: moss, fen, bark, marrow */}
+          {/* Row 2: ember, bark, clay, marrow */}
           <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => { setTheme('moss'); showNotification('Theme changed to moss', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
-                theme === 'moss'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
+              onClick={() => { setTheme('ember'); showNotification('Theme changed to ember', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'ember'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
                   : ''
               }`}
+              style={{ color: 'hsl(25, 95%, 55%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 60%, 40%)' }}></div>
-              [ moss ]
-            </button>
-            <button
-              onClick={() => { setTheme('fen'); showNotification('Theme changed to fen', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
-                theme === 'fen'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
-                  : ''
-              }`}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 50%)' }}></div>
-              [ fen ]
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 95%, 55%)' }}></div>
+              ember
             </button>
             <button
               onClick={() => { setTheme('bark'); showNotification('Theme changed to bark', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'bark'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-700 after:to-amber-500'
                   : ''
               }`}
+              style={{ color: 'hsl(25, 70%, 40%)' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(30, 60%, 45%)' }}></div>
-              [ bark ]
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 70%, 40%)' }}></div>
+              bark
+            </button>
+            <button
+              onClick={() => { setTheme('clay'); showNotification('Theme changed to clay', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'clay'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
+                  : ''
+              }`}
+              style={{ color: 'hsl(0, 100%, 50%)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
+              clay
             </button>
             <button
               onClick={() => { setTheme('marrow'); showNotification('Theme changed to marrow', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all text-text-primary cursor-pointer ${
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'marrow'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-800 after:to-red-600'
                   : ''
               }`}
+              style={{ color: 'hsl(0, 65%, 40%)' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 65%, 40%)' }}></div>
-              [ marrow ]
+              marrow
+            </button>
+          </div>
+
+          {/* Row 3: brook, moss, tide, fen */}
+          <div className="grid grid-cols-4 gap-6">
+            <button
+              onClick={() => { setTheme('brook'); showNotification('Theme changed to brook', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'brook'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
+                  : ''
+              }`}
+              style={{ color: 'hsl(140, 70%, 50%)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 70%, 50%)' }}></div>
+              brook
+            </button>
+            <button
+              onClick={() => { setTheme('moss'); showNotification('Theme changed to moss', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'moss'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
+                  : ''
+              }`}
+              style={{ color: 'hsl(140, 60%, 32%)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(140, 60%, 32%)' }}></div>
+              moss
+            </button>
+            <button
+              onClick={() => { setTheme('tide'); showNotification('Theme changed to tide', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'tide'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
+                  : ''
+              }`}
+              style={{ color: 'hsl(217, 91%, 60%)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(217, 91%, 60%)' }}></div>
+              tide
+            </button>
+            <button
+              onClick={() => { setTheme('fen'); showNotification('Theme changed to fen', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'fen'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
+                  : ''
+              }`}
+              style={{ color: 'hsl(220, 50%, 40%)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
+              fen
             </button>
           </div>
         </div>
