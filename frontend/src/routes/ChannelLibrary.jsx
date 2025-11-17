@@ -1110,6 +1110,23 @@ export default function ChannelLibrary() {
           </div>
         )}
 
+      {/* Bottom Pagination */}
+      {sortedVideos.length > 0 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={sortedVideos.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              localStorage.setItem('channelLibrary_itemsPerPage', value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+      )}
+
       {/* Filters Modal */}
       <FiltersModal
         isOpen={showFiltersModal}

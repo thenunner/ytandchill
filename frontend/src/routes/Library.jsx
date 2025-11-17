@@ -995,6 +995,23 @@ export default function Library() {
           ))}
             </div>
           )}
+
+          {/* Bottom Pagination */}
+          {channelsList.length > 0 && (
+            <div className="flex justify-center mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={channelsList.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value);
+                  localStorage.setItem('library_itemsPerPage', value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          )}
         </>
       )}
 

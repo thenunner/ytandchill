@@ -26,7 +26,7 @@ export default function Pagination({
 
       {/* Page Info */}
       {totalItems > 0 && (
-        <span className="text-xs text-text-secondary whitespace-nowrap">
+        <span className="text-sm text-text-secondary whitespace-nowrap">
           {startItem}-{endItem} of {totalItems}
         </span>
       )}
@@ -44,7 +44,7 @@ export default function Pagination({
             </svg>
           </button>
 
-          <span className="text-xs text-text-secondary px-2">
+          <span className="text-sm text-text-secondary px-2">
             {currentPage} / {totalPages}
           </span>
 

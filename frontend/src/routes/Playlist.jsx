@@ -398,6 +398,23 @@ export default function Playlist() {
         </div>
       )}
 
+      {/* Bottom Pagination */}
+      {sortedVideos.length > 0 && (
+        <div className="flex justify-center mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalItems={sortedVideos.length}
+            itemsPerPage={itemsPerPage}
+            onPageChange={setCurrentPage}
+            onItemsPerPageChange={(value) => {
+              setItemsPerPage(value);
+              localStorage.setItem('playlist_itemsPerPage', value);
+              setCurrentPage(1);
+            }}
+          />
+        </div>
+      )}
+
       {/* Filters Modal */}
       <FiltersModal
         isOpen={showFiltersModal}
