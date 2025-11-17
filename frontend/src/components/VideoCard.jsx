@@ -118,23 +118,41 @@ export default function VideoCard({
   const handlePreviewStart = () => {
     if (!isDownloaded || !video.file_path) return;
 
-    // Delay preview start slightly to avoid accidental triggers
-    previewTimeoutRef.current = setTimeout(() => {
-      setPreviewPlaying(true);
-      if (videoPreviewRef.current) {
-        // Build video source URL
-        const pathParts = video.file_path.replace(/\\/g, '/').split('/');
-        const videoSrc = `/api/media/${pathParts.slice(-2).join('/')}`;
-        videoPreviewRef.current.src = videoSrc;
-        // Start at ~15% into the video
-        const startTime = Math.min(video.duration_sec * 0.15, video.duration_sec - 15);
-        videoPreviewRef.current.currentTime = Math.max(0, startTime);
-        videoPreviewRef.current.play().catch(() => {
-          // Autoplay blocked, just show thumbnail
+    if (videoPreviewRef.current) {
+      // Build video source URL
+      const pathParts = video.file_path.replace(/\\/g, '/').split('/');
+      const videoSrc = `/api/media/${pathParts.slice(-2).join('/')}`;
+
+      const video_el = videoPreviewRef.current;
+
+      // Only set src if not already set
+      if (video_el.src !== window.location.origin + videoSrc) {
+        video_el.src = videoSrc;
+      }
+
+      // Start at ~15% into the video
+      const startTime = Math.min(video.duration_sec * 0.15, video.duration_sec - 15);
+
+      // Wait for video to be ready before showing
+      const playPreview = () => {
+        video_el.currentTime = Math.max(0, startTime);
+        setPreviewPlaying(true);
+        video_el.play().catch(() => {
           setPreviewPlaying(false);
         });
+      };
+
+      // If video already has data, play immediately
+      if (video_el.readyState >= 2) {
+        playPreview();
+      } else {
+        // Wait for enough data to play
+        video_el.oncanplay = () => {
+          playPreview();
+          video_el.oncanplay = null;
+        };
       }
-    }, 500);
+    }
   };
 
   const handlePreviewStop = () => {
@@ -144,7 +162,7 @@ export default function VideoCard({
     setPreviewPlaying(false);
     if (videoPreviewRef.current) {
       videoPreviewRef.current.pause();
-      videoPreviewRef.current.src = '';
+      videoPreviewRef.current.oncanplay = null;
     }
   };
 
@@ -185,14 +203,14 @@ export default function VideoCard({
             {video.playlist_ids && video.playlist_ids.length > 0 && (
               <span>
                 <span className="text-text-secondary">[</span>
-                <span className="text-accent font-medium">Playlist</span>
+                <span className="text-text-primary font-medium">PLAYLIST</span>
                 <span className="text-text-secondary">]</span>
               </span>
             )}
             {video.watched && (
               <span>
                 <span className="text-text-secondary">[</span>
-                <span className="text-accent font-medium">Watched</span>
+                <span className="text-text-primary font-medium">WATCHED</span>
                 <span className="text-text-secondary">]</span>
               </span>
             )}
