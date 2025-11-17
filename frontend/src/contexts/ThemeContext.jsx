@@ -4,23 +4,19 @@ const ThemeContext = createContext();
 
 export const themes = {
   soot: 'Soot',
-  sand: 'Sand',
   clay: 'Clay',
   pollen: 'Pollen',
-  lichen: 'Lichen',
   fen: 'Fen',
   bark: 'Bark',
   coast: 'Coast',
   slate: 'Slate',
   grove: 'Grove',
   reef: 'Reef',
-  skyfall: 'Skyfall',
   thicket: 'Thicket',
   nectar: 'Nectar',
   harvest: 'Harvest',
   almond: 'Almond',
   marina: 'Marina',
-  bloodmoon: 'Bloodmoon',
 };
 
 export function ThemeProvider({ children }) {
@@ -34,7 +30,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-soot', 'theme-sand', 'theme-clay', 'theme-pollen', 'theme-lichen', 'theme-fen', 'theme-bark', 'theme-coast', 'theme-slate', 'theme-grove', 'theme-reef', 'theme-skyfall', 'theme-thicket', 'theme-nectar', 'theme-harvest', 'theme-almond', 'theme-marina', 'theme-bloodmoon');
+    root.classList.remove('theme-soot', 'theme-clay', 'theme-pollen', 'theme-fen', 'theme-bark', 'theme-coast', 'theme-slate', 'theme-grove', 'theme-reef', 'theme-thicket', 'theme-nectar', 'theme-harvest', 'theme-almond', 'theme-marina');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

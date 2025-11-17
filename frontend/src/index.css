@@ -64,66 +64,6 @@
   --plyr-main: 0 100% 50%;         /* YouTube red for player */
 }
 
-/* Lichen Green Theme */
-.theme-lichen {
-  /* Backgrounds */
-  --bg-primary: 105 28% 12%;       /* Deep prairie grass green */
-  --bg-secondary: 105 25% 15%;     /* Lighter prairie green */
-  --bg-tertiary: 105 22% 18%;      /* Elevated green */
-  --bg-hover: 105 20% 27%;         /* Soft field-green hover */
-
-  /* Borders */
-  --border: 105 20% 19%;           /* Prairie borders */
-  --border-light: 105 18% 27%;     /* Prairie light borders */
-
-  /* Text */
-  --text-primary: 230 10% 91%;     /* Light gray */
-  --text-secondary: 228 14% 66%;   /* Medium gray */
-  --text-muted: 220 9% 46%;        /* Dark muted gray */
-
-  /* Accent - Goldenrod */
-  --accent: 45 80% 55%;            /* Goldenrod (sunlit prairie grass) */
-  --accent-hover: 45 85% 65%;      /* Brighter golden hover */
-
-  /* Scrollbar */
-  --scrollbar-track: 105 25% 15%;
-  --scrollbar-thumb: 45 70% 45%;   /* Goldenrod thumb */
-  --scrollbar-thumb-hover: 45 75% 55%;
-
-  /* Plyr player */
-  --plyr-main: 45 80% 55%;         /* Goldenrod for player */
-}
-
-/* Sand Light Theme */
-.theme-sand {
-  /* Backgrounds */
-  --bg-primary: 35 30% 65%;        /* Darker sand/cream color */
-  --bg-secondary: 35 28% 58%;      /* Light brown for cards */
-  --bg-tertiary: 35 25% 52%;       /* Elevated surfaces */
-  --bg-hover: 35 22% 48%;          /* Sand-tinted hover */
-
-  /* Borders */
-  --border: 35 24% 50%;            /* Warm borders */
-  --border-light: 35 20% 45%;      /* Darker warm borders */
-
-  /* Text - Dark for light theme */
-  --text-primary: 30 30% 10%;      /* Warm dark brown */
-  --text-secondary: 30 25% 25%;    /* Warm medium brown */
-  --text-muted: 30 18% 40%;        /* Warm gray */
-
-  /* Accent - Dark gray for visibility on light brown */
-  --accent: 0 0% 15%;              /* Dark gray/charcoal accent */
-  --accent-hover: 0 0% 25%;        /* Lighter gray on hover */
-
-  /* Scrollbar */
-  --scrollbar-track: 35 28% 58%;
-  --scrollbar-thumb: 0 0% 30%;     /* Dark gray thumb */
-  --scrollbar-thumb-hover: 0 0% 40%;
-
-  /* Plyr player */
-  --plyr-main: 0 0% 15%;           /* Dark gray for player */
-}
-
 /* Pollen Yellow Light Theme */
 .theme-pollen {
   /* Backgrounds - Light muted yellow */
@@ -334,36 +274,6 @@
   --plyr-main: 182 100% 35%;
 }
 
-/* Skyfall Light Blue/Cream Theme */
-.theme-skyfall {
-  /* Backgrounds */
-  --bg-primary: 210 50% 92%;       /* Light blue background */
-  --bg-secondary: 210 45% 88%;     /* Slightly deeper blue (cards) */
-  --bg-tertiary: 210 40% 82%;      /* Blue-gray (elevated) */
-  --bg-hover: 210 45% 78%;         /* Blue-tinted hover */
-
-  /* Borders */
-  --border: 210 30% 75%;           /* Soft blue-gray border */
-  --border-light: 210 35% 80%;     /* Light blue border */
-
-  /* Text - Dark for light theme */
-  --text-primary: 220 40% 22%;     /* Dark navy text */
-  --text-secondary: 220 25% 35%;   /* Mid blue-gray */
-  --text-muted: 220 15% 50%;       /* Muted gray-blue */
-
-  /* Accent */
-  --accent: 210 55% 50%;           /* Medium blue (#3674B5) */
-  --accent-hover: 210 60% 60%;     /* Brighter blue (#578FCA) */
-
-  /* Scrollbar */
-  --scrollbar-track: 210 45% 88%;
-  --scrollbar-thumb: 210 35% 70%;
-  --scrollbar-thumb-hover: 210 40% 65%;
-
-  /* Plyr player */
-  --plyr-main: 210 55% 50%;        /* Same as accent */
-}
-
 /* Thicket Light Green Theme */
 .theme-thicket {
   /* Backgrounds */
@@ -512,36 +422,6 @@
 
   /* Plyr player */
   --plyr-main: 210 30% 55%;        /* Same as accent */
-}
-
-/* Bloodmoon Dark Black/Red Theme */
-.theme-bloodmoon {
-  /* Backgrounds */
-  --bg-primary: 0 0% 0%;           /* full black */
-  --bg-secondary: 0 100% 12%;      /* #3D0000 deep crimson black */
-  --bg-tertiary: 0 100% 28%;       /* #950101 strong dark red */
-  --bg-hover: 0 100% 38%;          /* brighter blood red */
-
-  /* Borders */
-  --border: 0 70% 18%;
-  --border-light: 0 70% 26%;
-
-  /* Text */
-  --text-primary: 0 0% 92%;        /* light gray/white */
-  --text-secondary: 0 0% 70%;
-  --text-muted: 0 0% 50%;
-
-  /* Accent */
-  --accent: 0 100% 50%;            /* full red #FF0000 */
-  --accent-hover: 0 100% 60%;
-
-  /* Scrollbar */
-  --scrollbar-track: 0 100% 12%;
-  --scrollbar-thumb: 0 100% 28%;
-  --scrollbar-thumb-hover: 0 100% 38%;
-
-  /* Plyr player */
-  --plyr-main: 0 100% 50%;         /* Same as accent */
 }
 /* ===== END THEME SYSTEM ===== */
 

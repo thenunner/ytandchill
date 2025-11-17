@@ -277,7 +277,7 @@ export default function Settings() {
           Theme
         </h3>
         <div className="flex flex-col gap-3">
-          {/* Row 1: soot, sand, pollen, thorn */}
+          {/* Row 1: soot, clay, pollen, fen */}
           <div className="grid grid-cols-4 gap-6">
             <button
               onClick={() => { setTheme('soot'); showNotification('Theme changed to soot', 'success'); }}
@@ -286,34 +286,10 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
               soot
-            </button>
-            <button
-              onClick={() => { setTheme('sand'); showNotification('Theme changed to sand', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'sand'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-700 after:to-gray-500'
-                  : ''
-              }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 0%, 15%)' }}></div>
-              sand
-            </button>
-            <button
-              onClick={() => { setTheme('pollen'); showNotification('Theme changed to pollen', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'pollen'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-800 after:to-yellow-600'
-                  : ''
-              }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(50, 45%, 25%)' }}></div>
-              pollen
             </button>
             <button
               onClick={() => { setTheme('clay'); showNotification('Theme changed to clay', 'success'); }}
@@ -322,38 +298,22 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
               clay
             </button>
-          </div>
-
-          {/* Row 2: bark, lichen, fen, coast */}
-          <div className="grid grid-cols-4 gap-6">
             <button
-              onClick={() => { setTheme('bark'); showNotification('Theme changed to bark', 'success'); }}
+              onClick={() => { setTheme('pollen'); showNotification('Theme changed to pollen', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'bark'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
+                theme === 'pollen'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-800 after:to-yellow-600'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
-              bark
-            </button>
-            <button
-              onClick={() => { setTheme('lichen'); showNotification('Theme changed to lichen', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'lichen'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-500 after:to-yellow-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(45, 80%, 55%)' }}></div>
-              lichen
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(50, 45%, 25%)' }}></div>
+              pollen
             </button>
             <button
               onClick={() => { setTheme('fen'); showNotification('Theme changed to fen', 'success'); }}
@@ -362,10 +322,26 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
               fen
+            </button>
+          </div>
+
+          {/* Row 2: bark, coast, slate, grove */}
+          <div className="grid grid-cols-4 gap-6">
+            <button
+              onClick={() => { setTheme('bark'); showNotification('Theme changed to bark', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'bark'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
+                  : ''
+              }`}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
+              bark
             </button>
             <button
               onClick={() => { setTheme('coast'); showNotification('Theme changed to coast', 'success'); }}
@@ -374,15 +350,11 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-200 after:to-amber-100'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(30, 25%, 78%)' }}></div>
               coast
             </button>
-          </div>
-
-          {/* Row 3: slate, grove, reef, bloodmoon */}
-          <div className="grid grid-cols-4 gap-6">
             <button
               onClick={() => { setTheme('slate'); showNotification('Theme changed to slate', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -390,7 +362,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 40%, 75%)' }}></div>
               slate
@@ -402,11 +374,15 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-200 after:to-yellow-100'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 40%, 82%)' }}></div>
               grove
             </button>
+          </div>
+
+          {/* Row 3: reef, thicket, nectar, harvest */}
+          <div className="grid grid-cols-4 gap-6">
             <button
               onClick={() => { setTheme('reef'); showNotification('Theme changed to reef', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -414,38 +390,10 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-400 after:to-cyan-200'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
               reef
-            </button>
-            <button
-              onClick={() => { setTheme('bloodmoon'); showNotification('Theme changed to bloodmoon', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'bloodmoon'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-600 after:to-red-400'
-                  : ''
-              }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-              bloodmoon
-            </button>
-          </div>
-
-          {/* Row 4: skyfall, thicket, nectar, harvest */}
-          <div className="grid grid-cols-4 gap-6">
-            <button
-              onClick={() => { setTheme('skyfall'); showNotification('Theme changed to skyfall', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'skyfall'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-500 after:to-blue-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 55%, 50%)' }}></div>
-              skyfall
             </button>
             <button
               onClick={() => { setTheme('thicket'); showNotification('Theme changed to thicket', 'success'); }}
@@ -454,7 +402,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
               thicket
@@ -466,7 +414,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
               nectar
@@ -478,14 +426,14 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 100%, 55%)' }}></div>
               harvest
             </button>
           </div>
 
-          {/* Row 5: almond, marina */}
+          {/* Row 4: almond, marina */}
           <div className="grid grid-cols-4 gap-6">
             <button
               onClick={() => { setTheme('almond'); showNotification('Theme changed to almond', 'success'); }}
@@ -494,7 +442,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-400 after:to-amber-200'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(25, 30%, 65%)' }}></div>
               almond
@@ -506,7 +454,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
                   : ''
               }`}
-              style={{ color: theme === 'sand' || theme === 'pollen' || theme === 'skyfall' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'pollen' || theme === 'thicket' || theme === 'nectar' || theme === 'harvest' || theme === 'almond' || theme === 'marina' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
               marina
