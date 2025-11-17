@@ -433,7 +433,7 @@ export default function Settings() {
             </button>
           </div>
 
-          {/* Row 4: test, test2 */}
+          {/* Row 4: test, test2, test3 */}
           <div className="grid grid-cols-4 gap-6">
             <button
               onClick={() => { setTheme('test'); showNotification('Theme changed to test', 'success'); }}
@@ -458,6 +458,18 @@ export default function Settings() {
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(28, 100%, 87%)' }}></div>
               test2
+            </button>
+            <button
+              onClick={() => { setTheme('test3'); showNotification('Theme changed to test3', 'success'); }}
+              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'test3'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
+                  : ''
+              }`}
+              style={{ color: 'hsl(28, 97%, 63%)' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(28, 97%, 63%)' }}></div>
+              test3
             </button>
           </div>
         </div>

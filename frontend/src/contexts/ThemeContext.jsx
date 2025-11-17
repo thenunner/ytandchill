@@ -17,6 +17,7 @@ export const themes = {
   marrow: 'Marrow',
   test: 'Test',
   test2: 'Test 2',
+  test3: 'Test 3',
 };
 
 export function ThemeProvider({ children }) {
@@ -30,7 +31,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-soot', 'theme-sand', 'theme-clay', 'theme-tide', 'theme-thorn', 'theme-ember', 'theme-pollen', 'theme-lichen', 'theme-moss', 'theme-fen', 'theme-bark', 'theme-marrow', 'theme-test', 'theme-test2');
+    root.classList.remove('theme-soot', 'theme-sand', 'theme-clay', 'theme-tide', 'theme-thorn', 'theme-ember', 'theme-pollen', 'theme-lichen', 'theme-moss', 'theme-fen', 'theme-bark', 'theme-marrow', 'theme-test', 'theme-test2', 'theme-test3');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

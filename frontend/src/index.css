@@ -423,7 +423,36 @@
   /* Plyr player */
   --plyr-main: 28 100% 87%;        /* Light peach for player */
 }
-/* ===== END THEME SYSTEM ===== */
+
+/* Test 3 Rust/Orange Dark Theme */
+.theme-test3 {
+  /* Backgrounds - Dark browns */
+  --bg-primary: 18 38% 27%;        /* #5c3c2c - Dark brown */
+  --bg-secondary: 15 70% 27%;      /* #742f14 - Rust/terracotta */
+  --bg-tertiary: 15 65% 32%;       /* Slightly lighter rust */
+  --bg-hover: 15 60% 38%;          /* Hover state */
+
+  /* Borders */
+  --border: 15 55% 32%;            /* Rust borders */
+  --border-light: 15 50% 40%;      /* Lighter rust borders */
+
+  /* Text - Light tan for dark theme */
+  --text-primary: 20 30% 70%;      /* #c7ac9f - Warm light gray/tan */
+  --text-secondary: 20 25% 60%;    /* Medium warm gray */
+  --text-muted: 20 20% 50%;        /* Muted warm gray */
+
+  /* Accent - Bright orange */
+  --accent: 28 97% 63%;            /* #fc9c44 - Bright orange */
+  --accent-hover: 28 97% 73%;      /* Lighter orange on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 15 70% 27%;
+  --scrollbar-thumb: 209 32% 51%;  /* #5a84ac - Muted blue thumb */
+  --scrollbar-thumb-hover: 209 35% 61%;
+
+  /* Plyr player */
+  --plyr-main: 28 97% 63%;         /* Bright orange for player */
+}
 
 @layer base {
   body {
