@@ -440,7 +440,7 @@ def clear_operation():
     }
 
 # Initialize scheduler with operation tracking callbacks
-scheduler = AutoRefreshScheduler(session_factory, set_operation, clear_operation)
+scheduler = AutoRefreshScheduler(session_factory, download_worker, set_operation, clear_operation)
 scheduler.start()
 
 # Initialize default settings
@@ -927,6 +927,7 @@ def scan_channel(channel_id):
         new_count = 0
         ignored_count = 0
         existing_count = 0
+        auto_queued_count = 0
         latest_upload_date = None
 
         logger.debug(f"Processing videos for channel: {channel.title}")
@@ -975,6 +976,7 @@ def scan_channel(channel_id):
                 max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
                 queue_item = QueueItem(video_id=video.id, queue_position=max_pos + 1)
                 session.add(queue_item)
+                auto_queued_count += 1
                 logger.info(f"Auto-queued '{video.title}' for channel '{channel.title}'")
 
             if status == 'ignored':
@@ -996,6 +998,11 @@ def scan_channel(channel_id):
 
         session.commit()
         logger.debug(f"Scan complete for channel: {channel.title}")
+
+        # Auto-resume the download worker if videos were auto-queued
+        if auto_queued_count > 0 and download_worker.paused:
+            download_worker.resume()
+            logger.info(f"Auto-resumed download worker after auto-queueing {auto_queued_count} video(s) from scan")
 
         clear_operation()
         return jsonify({

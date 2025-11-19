@@ -13,8 +13,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 class AutoRefreshScheduler:
-    def __init__(self, session_factory, set_operation_callback=None, clear_operation_callback=None):
+    def __init__(self, session_factory, download_worker=None, set_operation_callback=None, clear_operation_callback=None):
         self.session_factory = session_factory
+        self.download_worker = download_worker
         self.scheduler = BackgroundScheduler()
         self.enabled = False
         self.set_operation = set_operation_callback
@@ -183,19 +184,26 @@ class AutoRefreshScheduler:
 
             total_new_videos = 0
             total_ignored = 0
+            total_auto_queued = 0
 
             for i, channel in enumerate(channels, 1):
                 logger.debug(f"Auto-scan: Processing channel {i}/{len(channels)}: {channel.title}")
                 if self.set_operation:
                     self.set_operation('auto_refresh', f'Auto-scan: {channel.title} ({i}/{len(channels)})', channel_id=channel.id)
-                new_count, ignored_count = self._scan_channel_with_api(session, youtube, channel)
+                new_count, ignored_count, auto_queued_count = self._scan_channel_with_api(session, youtube, channel)
                 total_new_videos += new_count
                 total_ignored += ignored_count
+                total_auto_queued += auto_queued_count
 
             session.commit()
 
+            # Auto-resume the download worker if videos were auto-queued
+            if total_auto_queued > 0 and self.download_worker and self.download_worker.paused:
+                self.download_worker.resume()
+                logger.info(f"Auto-scan: Auto-resumed download worker after auto-queueing {total_auto_queued} video(s) from daily scan")
+
             # Log and display final summary
-            logger.info(f"Auto-scan: Completed - {total_new_videos} new videos added, {total_ignored} ignored")
+            logger.info(f"Auto-scan: Completed - {total_new_videos} new videos added, {total_ignored} ignored, {total_auto_queued} auto-queued")
             if self.set_operation:
                 self.set_operation('auto_refresh', f'Auto-scan complete: {total_new_videos} new videos added')
             if self.clear_operation:
@@ -250,6 +258,7 @@ class AutoRefreshScheduler:
 
             new_videos_count = 0
             ignored_count = 0
+            auto_queued_count = 0
             latest_upload_date = None
 
             for video_data in videos_response.get('items', []):
@@ -339,6 +348,7 @@ class AutoRefreshScheduler:
                         max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
                         queue_item = QueueItem(video_id=video.id, queue_position=max_pos + 1)
                         session.add(queue_item)
+                        auto_queued_count += 1
                         logger.info(f"Auto-scan: Auto-queued '{video.title}' for channel '{channel.title}'")
 
                     if status == 'ignored':
@@ -371,12 +381,12 @@ class AutoRefreshScheduler:
                 channel.last_scan_at = datetime.now(timezone.utc)
                 logger.debug(f"Auto-scan: Set initial last_scan_at for '{channel.title}' to now")
 
-            logger.info(f"Auto-scan: Channel '{channel.title}' - {new_videos_count} new videos, {ignored_count} ignored")
-            return new_videos_count, ignored_count
+            logger.info(f"Auto-scan: Channel '{channel.title}' - {new_videos_count} new videos, {ignored_count} ignored, {auto_queued_count} auto-queued")
+            return new_videos_count, ignored_count, auto_queued_count
 
         except HttpError as api_error:
             logger.error(f"Auto-scan: YouTube API error for channel '{channel.title}': {api_error}")
-            return 0, 0
+            return 0, 0, 0
         except Exception as e:
             logger.error(f"Auto-scan: Error scanning channel '{channel.title}': {e}")
-            return 0, 0
+            return 0, 0, 0
