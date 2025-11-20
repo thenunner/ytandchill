@@ -193,32 +193,37 @@ export default function Settings() {
               </svg>
               System Status
             </h3>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
+            <div className="grid grid-cols-3 gap-x-8 gap-y-2 text-sm">
+              {/* Column 1: FFmpeg, Worker */}
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-16">FFmpeg</span>
                 <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
                   {health?.ffmpeg_available ? 'Active' : 'Inactive'}
                 </span>
               </div>
+              {/* Column 2: Cookies */}
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-24">yt-dlp</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
+                <span className="text-text-secondary w-16">Cookies</span>
+                <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
+                  {health?.cookies_available ? 'Active' : 'Inactive'}
+                </span>
               </div>
+              {/* Column 3: YT and Chill */}
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary w-24">YT and Chill</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.2.1</span>
+              </div>
+              {/* Row 2, Column 1: Worker */}
               <div className="flex items-center gap-3">
                 <span className="text-text-secondary w-16">Worker</span>
                 <span className={`font-medium text-xs ${health?.download_worker_running ? 'text-text-primary' : 'text-red-400'}`}>
                   {health?.download_worker_running ? 'Active' : 'Inactive'}
                 </span>
               </div>
+              {/* Row 2, Column 2: yt-dlp */}
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.2.1</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-16">Cookies</span>
-                <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
-                  {health?.cookies_available ? 'Active' : 'Inactive'}
-                </span>
+                <span className="text-text-secondary w-24">yt-dlp</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
             </div>
           </div>
@@ -261,30 +266,39 @@ export default function Settings() {
 
           {/* Stats Card */}
           <div className="card p-4">
-        <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
-          {/* Column 1: Videos to Review, Videos Ignored, Videos in Library */}
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos to Review</span>
-            <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Total Channels</span>
-            <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos Ignored</span>
-            <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Total Storage</span>
-            <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos in Library</span>
-            <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
-          </div>
-        </div>
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
+            <div className="grid grid-cols-3 gap-x-8 gap-y-2 text-sm">
+              {/* Column 1: Videos to Review */}
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary">Videos to Review</span>
+                <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
+              </div>
+              {/* Column 2: Videos Ignored */}
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary">Videos Ignored</span>
+                <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
+              </div>
+              {/* Column 3: Total Playlists */}
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary">Total Playlists</span>
+                <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
+              </div>
+              {/* Row 2, Column 1: Videos in Library */}
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary">Videos in Library</span>
+                <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
+              </div>
+              {/* Row 2, Column 2: Total Channels */}
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary">Total Channels</span>
+                <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
+              </div>
+              {/* Row 2, Column 3: Total Storage */}
+              <div className="flex items-center gap-3">
+                <span className="text-text-secondary">Total Storage</span>
+                <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
+              </div>
+            </div>
           </div>
 
           {/* Theme Card will go here */}
@@ -379,66 +393,15 @@ export default function Settings() {
             <div className="border-t border-dark-border my-4"></div>
 
             {/* Auto-Scan Section */}
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M12 6v6l4 2"></path>
-                  </svg>
-                  Auto-Scan Daily
-                </h3>
-                <div className="flex border border-dark-border rounded-md overflow-hidden">
-                  <button
-                    onClick={async () => {
-                      setAutoRefresh(false);
-                      try {
-                        await updateSettings.mutateAsync({
-                          auto_refresh_enabled: 'false',
-                          auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                          youtube_api_key: youtubeApiKey,
-                          log_level: logLevel,
-                        });
-                        showNotification('Auto-scan disabled', 'success');
-                      } catch (error) {
-                        showNotification(error.message || 'Failed to save auto refresh', 'error');
-                      }
-                    }}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      !autoRefresh
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    OFF
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setAutoRefresh(true);
-                      try {
-                        await updateSettings.mutateAsync({
-                          auto_refresh_enabled: 'true',
-                          auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                          youtube_api_key: youtubeApiKey,
-                          log_level: logLevel,
-                        });
-                        showNotification('Auto-scan enabled', 'success');
-                      } catch (error) {
-                        showNotification(error.message || 'Failed to save auto refresh', 'error');
-                      }
-                    }}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      autoRefresh
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    ON
-                  </button>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <select
+            <div className="flex items-center gap-4">
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 6v6l4 2"></path>
+                </svg>
+                Auto-Scan Daily
+              </h3>
+              <select
                 value={refreshHour}
                 onChange={(e) => setRefreshHour(parseInt(e.target.value))}
                 className="input text-sm font-mono py-1.5 px-2 w-16"
@@ -483,6 +446,53 @@ export default function Settings() {
               >
                 Save
               </button>
+              <div className="flex border border-dark-border rounded-md overflow-hidden">
+                <button
+                  onClick={async () => {
+                    setAutoRefresh(false);
+                    try {
+                      await updateSettings.mutateAsync({
+                        auto_refresh_enabled: 'false',
+                        auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                        youtube_api_key: youtubeApiKey,
+                        log_level: logLevel,
+                      });
+                      showNotification('Auto-scan disabled', 'success');
+                    } catch (error) {
+                      showNotification(error.message || 'Failed to save auto refresh', 'error');
+                    }
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                    !autoRefresh
+                      ? 'bg-accent text-white'
+                      : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                  }`}
+                >
+                  OFF
+                </button>
+                <button
+                  onClick={async () => {
+                    setAutoRefresh(true);
+                    try {
+                      await updateSettings.mutateAsync({
+                        auto_refresh_enabled: 'true',
+                        auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                        youtube_api_key: youtubeApiKey,
+                        log_level: logLevel,
+                      });
+                      showNotification('Auto-scan enabled', 'success');
+                    } catch (error) {
+                      showNotification(error.message || 'Failed to save auto refresh', 'error');
+                    }
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                    autoRefresh
+                      ? 'bg-accent text-white'
+                      : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                  }`}
+                >
+                  ON
+                </button>
               </div>
             </div>
           </div>
@@ -495,9 +505,9 @@ export default function Settings() {
               </svg>
               Theme
             </h3>
-        <div className="flex flex-col gap-3">
-          {/* Row 1: Dark themes - kernel, fatal, subnet, archive */}
-          <div className="grid grid-cols-4 gap-3">
+            <div className="flex flex-col gap-3">
+          {/* Row 1: 5 themes - kernel, fatal, subnet, archive, buffer */}
+          <div className="grid grid-cols-5 gap-3">
             <button
               onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -546,10 +556,6 @@ export default function Settings() {
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
               Archive
             </button>
-          </div>
-
-          {/* Row 2: Dark themes - buffer, init, gateway */}
-          <div className="grid grid-cols-4 gap-3">
             <button
               onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -562,6 +568,10 @@ export default function Settings() {
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
               Buffer
             </button>
+          </div>
+
+          {/* Row 2: 2 themes - init, gateway */}
+          <div className="grid grid-cols-5 gap-3">
             <button
               onClick={() => { setTheme('init'); showNotification('Theme changed to Init', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -586,14 +596,13 @@ export default function Settings() {
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
               Gateway
             </button>
-            <span></span>
           </div>
 
           {/* Separator between dark and light themes */}
           <div className="border-t border-dark-border"></div>
 
-          {/* Row 3: Light themes - online, pixel, standby, debug */}
-          <div className="grid grid-cols-4 gap-3">
+          {/* Row 3: 4 light themes - online, pixel, standby, debug */}
+          <div className="grid grid-cols-5 gap-3">
             <button
               onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -694,7 +703,60 @@ export default function Settings() {
           </div>
         </div>
 
-      {/* Log Viewer Card - Collapsible - outside columns so it spans full width */}
+      {/* Logging Card */}
+      <div className="card p-4 md:w-[960px]">
+        <h3 className="text-sm font-semibold text-text-primary mb-3">Logging</h3>
+        <div className="flex flex-col gap-2">
+          {/* Row 1: Slider + Level labels */}
+          <div
+            className="w-full max-w-sm"
+            title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+          >
+            <input
+              type="range"
+              min="0"
+              max="4"
+              value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
+              onChange={async (e) => {
+                const newLevel = ['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)];
+                setLogLevel(newLevel);
+                try {
+                  await updateSettings.mutateAsync({
+                    auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                    youtube_api_key: youtubeApiKey,
+                    log_level: newLevel,
+                  });
+                  showNotification(`Log level changed to ${newLevel}`, 'success');
+                } catch (error) {
+                  showNotification(error.message || 'Failed to save log level', 'error');
+                }
+              }}
+              className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+            />
+            <div className="flex justify-between text-xs font-mono mt-1">
+              <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
+              <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
+              <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
+              <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
+              <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
+            </div>
+          </div>
+
+          {/* Row 2: "Logging level" text + View Logs button */}
+          <div className="flex items-center justify-between w-full max-w-sm">
+            <span className="text-sm text-text-secondary">Logging level</span>
+            <button
+              onClick={toggleLogs}
+              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+            >
+              {showLogs ? 'Hide Logs' : 'View Logs'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Application Logs Card - Collapsible with card buffer */}
       <div
         className={`overflow-hidden transition-all duration-300 ease-in-out max-w-[960px] mt-4 ${
           showLogs ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
