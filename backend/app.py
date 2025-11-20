@@ -902,7 +902,7 @@ def scan_channel(channel_id):
         force_full = data.get('force_full', False)
 
         scan_type = "full" if force_full else "incremental"
-        logger.debug(f"Starting {scan_type} scan for channel: {channel.title} (ID: {channel.id})")
+        logger.info(f"Starting {scan_type} scan for channel: {channel.title} (ID: {channel.id})")
         set_operation('scanning', f'{scan_type.capitalize()} scan: {channel.title}...', channel_id=channel.id)
 
         # Get YouTube API key
@@ -998,6 +998,9 @@ def scan_channel(channel_id):
 
         session.commit()
         logger.debug(f"Scan complete for channel: {channel.title}")
+
+        # Log scan summary at INFO level
+        logger.info(f"Scan complete for '{channel.title}': {new_count} new, {ignored_count} ignored, {existing_count} already tracked, {auto_queued_count} auto-queued")
 
         # Auto-resume the download worker if videos were auto-queued
         if auto_queued_count > 0 and download_worker.paused:
