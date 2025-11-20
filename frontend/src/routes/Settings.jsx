@@ -183,7 +183,7 @@ export default function Settings() {
       </div>
 
       {/* Single column layout for desktop */}
-      <div className="flex flex-col gap-4 md:w-[960px]">
+      <div className="flex flex-col gap-4 w-full max-w-[960px]">
           {/* System Status Card */}
           <div className="card p-4">
             <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
