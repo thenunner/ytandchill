@@ -238,6 +238,35 @@ export default function Channels() {
            date.getFullYear() === today.getFullYear();
   };
 
+  // Helper function to format scan time only
+  const formatScanTime = (scanTimeString) => {
+    if (!scanTimeString) return null;
+    const scanDate = new Date(scanTimeString);
+
+    if (isToday(scanDate)) {
+      // Show time with minutes
+      const hours = scanDate.getHours();
+      const minutes = scanDate.getMinutes();
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      const displayHours = hours % 12 || 12;
+      const displayMinutes = minutes.toString().padStart(2, '0');
+      return `${displayHours}:${displayMinutes}${ampm}`;
+    } else {
+      // Show date
+      return scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+    }
+  };
+
+  // Helper function to format video date only
+  const formatVideoDate = (videoDateString) => {
+    if (!videoDateString) return null;
+    const year = videoDateString.substring(0, 4);
+    const month = videoDateString.substring(4, 6);
+    const day = videoDateString.substring(6, 8);
+    const videoDate = new Date(year, month - 1, day);
+    return videoDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+  };
+
   // Helper function to format last scan - always shows "Scan: x | Video: x"
   const formatLastScan = (scanTimeString, videoDateString) => {
     if (!scanTimeString) return 'Never';
@@ -650,11 +679,8 @@ export default function Channels() {
                   )}
                 </div>
 
-                {/* Right: Last Scanned + 3-dot menu */}
+                {/* Right: 3-dot menu */}
                 <div className="flex items-center gap-2">
-                  <span className="text-text-secondary text-xs font-medium">
-                    {formatLastScan(channel.last_scan_time, channel.last_video_date)}
-                  </span>
                   <div className="relative">
                     <button
                       onClick={(e) => {
@@ -767,7 +793,13 @@ export default function Channels() {
                     {channel.title}
                   </h3>
 
-                  {/* Row 2: Stats - Downloaded (left), Discovered (middle), Ignored (right) */}
+                  {/* Scan and Video Dates */}
+                  <div className="flex items-center justify-between text-xs text-text-secondary font-medium">
+                    <span>Scan: {formatScanTime(channel.last_scan_time) || 'None'}</span>
+                    <span>Video: {formatVideoDate(channel.last_video_date) || 'None'}</span>
+                  </div>
+
+                  {/* Stats - Downloaded (left), Discovered (middle), Ignored (right) */}
                   <div className="flex items-center justify-between">
                     {/* Downloaded - Far Left */}
                     <div className="flex items-center gap-1 text-sm font-semibold text-accent" title="Downloaded videos">
