@@ -222,7 +222,7 @@ export default function Settings() {
               </div>
               {/* Row 2, Column 2: yt-dlp */}
               <div className="flex items-center gap-3">
-                <span className="text-text-secondary w-24">yt-dlp</span>
+                <span className="text-text-secondary w-16">yt-dlp</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
             </div>
@@ -506,8 +506,8 @@ export default function Settings() {
               Theme
             </h3>
             <div className="flex flex-col gap-3">
-          {/* Row 1: 5 themes - kernel, fatal, subnet, archive, buffer */}
-          <div className="grid grid-cols-5 gap-3">
+          {/* Row 1: 7 dark themes - kernel, fatal, subnet, archive, buffer, init, gateway */}
+          <div className="grid grid-cols-7 gap-3">
             <button
               onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -568,10 +568,6 @@ export default function Settings() {
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
               Buffer
             </button>
-          </div>
-
-          {/* Row 2: 2 themes - init, gateway */}
-          <div className="grid grid-cols-5 gap-3">
             <button
               onClick={() => { setTheme('init'); showNotification('Theme changed to Init', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -601,8 +597,8 @@ export default function Settings() {
           {/* Separator between dark and light themes */}
           <div className="border-t border-dark-border"></div>
 
-          {/* Row 3: 4 light themes - online, pixel, standby, debug */}
-          <div className="grid grid-cols-5 gap-3">
+          {/* Row 2: 4 light themes - online, pixel, standby, debug */}
+          <div className="grid grid-cols-7 gap-3">
             <button
               onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -657,48 +653,50 @@ export default function Settings() {
 
           {/* SponsorBlock */}
           <div className="card p-4">
-            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-              SponsorBlock
-              <button
-                onClick={() => setShowSponsorBlockHelp(true)}
-                className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
-                title="What is SponsorBlock?"
-              >
-                ?
-              </button>
-            </h3>
-            <div className="flex flex-wrap gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={removeSponsor}
-                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-                />
-                <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={removeSelfpromo}
-                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-                />
-                <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={removeInteraction}
-                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-                />
-                <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
-              </label>
+            <div className="flex items-center justify-between w-full">
+              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                  <line x1="1" y1="1" x2="23" y2="23"></line>
+                </svg>
+                SponsorBlock
+                <button
+                  onClick={() => setShowSponsorBlockHelp(true)}
+                  className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                  title="What is SponsorBlock?"
+                >
+                  ?
+                </button>
+              </h3>
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={removeSponsor}
+                    onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                  />
+                  <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={removeSelfpromo}
+                    onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                  />
+                  <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={removeInteraction}
+                    onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                  />
+                  <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>

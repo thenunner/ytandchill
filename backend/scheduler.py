@@ -203,7 +203,7 @@ class AutoRefreshScheduler:
                 logger.info(f"Auto-scan: Auto-resumed download worker after auto-queueing {total_auto_queued} video(s) from daily scan")
 
             # Log and display final summary
-            logger.info(f"Auto-scan: Completed - {total_new_videos} new videos added, {total_ignored} ignored, {total_auto_queued} auto-queued")
+            logger.info(f"Auto-scan: Total channels checked: {len(channels)}, new: {total_new_videos}, ignored: {total_ignored}, auto-queued: {total_auto_queued}")
             if self.set_operation:
                 self.set_operation('auto_refresh', f'Auto-scan complete: {total_new_videos} new videos added')
             if self.clear_operation:
@@ -381,7 +381,10 @@ class AutoRefreshScheduler:
                 channel.last_scan_at = datetime.now(timezone.utc)
                 logger.debug(f"Auto-scan: Set initial last_scan_at for '{channel.title}' to now")
 
-            logger.info(f"Auto-scan: Channel '{channel.title}' - {new_videos_count} new videos, {ignored_count} ignored, {auto_queued_count} auto-queued")
+            if new_videos_count == 0 and ignored_count == 0 and auto_queued_count == 0:
+                logger.info(f"Auto-scan: Channel '{channel.title}' - No new videos found.")
+            else:
+                logger.info(f"Auto-scan: Channel '{channel.title}' - {new_videos_count} new, {ignored_count} ignored, {auto_queued_count} auto-queued")
             return new_videos_count, ignored_count, auto_queued_count
 
         except HttpError as api_error:

@@ -1006,7 +1006,10 @@ def scan_channel(channel_id):
         logger.debug(f"Scan complete for channel: {channel.title}")
 
         # Log scan summary at INFO level
-        logger.info(f"Scan complete for '{channel.title}': {new_count} new, {ignored_count} ignored, {existing_count} already tracked, {auto_queued_count} auto-queued")
+        if new_count == 0 and ignored_count == 0 and auto_queued_count == 0:
+            logger.info(f"Scan complete for '{channel.title}': No new videos found.")
+        else:
+            logger.info(f"Scan complete for '{channel.title}': {new_count} new, {ignored_count} ignored, {auto_queued_count} auto-queued")
 
         # Auto-resume the download worker if videos were auto-queued
         if auto_queued_count > 0 and download_worker.paused:
