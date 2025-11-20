@@ -242,16 +242,20 @@ export default function Channels() {
   const formatLastScan = (scanTimeString, videoDateString) => {
     if (!scanTimeString) return 'Never';
 
+    // Parse the UTC datetime string and convert to local time
+    // Backend sends ISO string in UTC, JavaScript Date automatically converts to local timezone
     const scanDate = new Date(scanTimeString);
 
     // Format scan: time if today, date if past
     let scanStr;
     if (isToday(scanDate)) {
+      // Get local hour (JavaScript automatically converts from UTC)
       const hours = scanDate.getHours();
       const ampm = hours >= 12 ? 'pm' : 'am';
       const displayHours = hours % 12 || 12;
       scanStr = `${displayHours}${ampm}`;
     } else {
+      // Display date in local timezone
       scanStr = scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
     }
 
