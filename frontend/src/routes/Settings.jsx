@@ -418,7 +418,6 @@ export default function Settings() {
           </div>
             </div>
           </div>
-          </div>
 
           {/* YouTube API Key + Auto-Scan Daily */}
           <div className="card p-4 w-full">
@@ -862,6 +861,7 @@ export default function Settings() {
           </div>
         </div>
       )}
+    </div>
     </>
   );
 }
