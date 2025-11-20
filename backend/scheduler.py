@@ -177,7 +177,7 @@ class AutoRefreshScheduler:
                     self.clear_operation()
                 return
 
-            youtube = build('youtube', 'v3', developerKey=api_key_setting.value)
+            youtube = build('youtube', 'v3', developerKey=api_key_setting.value, cache_discovery=False)
 
             channels = session.query(Channel).all()
             logger.info(f"Auto-scan: Scanning {len(channels)} channels")

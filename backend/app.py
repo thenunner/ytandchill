@@ -707,7 +707,7 @@ def create_channel():
             return jsonify({'error': 'YouTube API key not configured. Please add it in Settings.'}), 400
 
         # Build YouTube API client
-        youtube = build('youtube', 'v3', developerKey=api_key)
+        youtube = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
 
         # Resolve channel ID from URL
         channel_id = resolve_channel_id_from_url(youtube, data['url'])
@@ -914,7 +914,7 @@ def scan_channel(channel_id):
 
         # Build YouTube API client
         logger.debug(f"Building YouTube API client for channel: {channel.title}")
-        youtube = build('youtube', 'v3', developerKey=api_key)
+        youtube = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
 
         # Scan videos using YouTube Data API
         # For full scan, get ALL videos (999999 effectively means no limit)
@@ -930,8 +930,10 @@ def scan_channel(channel_id):
         auto_queued_count = 0
         latest_upload_date = None
 
-        logger.debug(f"Processing videos for channel: {channel.title}")
-        for video_data in videos:
+        total_videos = len(videos)
+        logger.info(f"Processing {total_videos} videos for channel '{channel.title}'")
+
+        for idx, video_data in enumerate(videos, 1):
             # Track the latest upload date found
             if video_data['upload_date']:
                 upload_dt = datetime.strptime(video_data['upload_date'], '%Y%m%d')
@@ -943,7 +945,11 @@ def scan_channel(channel_id):
             if existing:
                 # Video already in database, skip it
                 existing_count += 1
+                logger.debug(f"[{idx}/{total_videos}] Already tracked: '{video_data['title']}'")
                 continue
+
+            # Log new video found
+            logger.info(f"[{idx}/{total_videos}] New video found: '{video_data['title']}'")
 
             duration_min = video_data['duration_sec'] / 60
 
@@ -951,12 +957,12 @@ def scan_channel(channel_id):
             status = 'discovered'
             if channel.min_minutes > 0 and duration_min < channel.min_minutes:
                 status = 'ignored'
-                logger.debug(f"Video '{video_data['title']}' ignored: {duration_min:.1f}m < {channel.min_minutes}m minimum")
+                logger.info(f"[{idx}/{total_videos}] Ignored (too short): '{video_data['title']}' - {duration_min:.1f}m < {channel.min_minutes}m minimum")
             elif channel.max_minutes > 0 and duration_min > channel.max_minutes:
                 status = 'ignored'
-                logger.debug(f"Video '{video_data['title']}' ignored: {duration_min:.1f}m > {channel.max_minutes}m maximum")
+                logger.info(f"[{idx}/{total_videos}] Ignored (too long): '{video_data['title']}' - {duration_min:.1f}m > {channel.max_minutes}m maximum")
             else:
-                logger.debug(f"Video '{video_data['title']}' discovered: {duration_min:.1f}m duration")
+                logger.debug(f"[{idx}/{total_videos}] Discovered: '{video_data['title']}' - {duration_min:.1f}m duration")
 
             video = Video(
                 yt_id=video_data['id'],
@@ -977,7 +983,7 @@ def scan_channel(channel_id):
                 queue_item = QueueItem(video_id=video.id, queue_position=max_pos + 1)
                 session.add(queue_item)
                 auto_queued_count += 1
-                logger.info(f"Auto-queued '{video.title}' for channel '{channel.title}'")
+                logger.info(f"[{idx}/{total_videos}] Auto-queued: '{video.title}' (position {max_pos + 1})")
 
             if status == 'ignored':
                 ignored_count += 1
@@ -2064,7 +2070,7 @@ def check_first_run():
 def check_auth():
     """Check if user is authenticated"""
     is_auth = is_authenticated()
-    logger.info(f"Auth check - Session authenticated: {is_auth}, Session data: {dict(session)}")
+    logger.debug(f"Auth check - Session authenticated: {is_auth}, Session data: {dict(session)}")
     return jsonify({'authenticated': is_auth})
 
 @app.route('/api/auth/login', methods=['POST'])
