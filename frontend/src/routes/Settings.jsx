@@ -193,35 +193,35 @@ export default function Settings() {
               </svg>
               System Status
             </h3>
-            <div className="grid grid-cols-3 gap-x-8 gap-y-2 text-sm">
-              {/* Column 1: FFmpeg, Worker */}
-              <div className="flex items-center gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
+              {/* FFmpeg - Mobile: (1,1), Desktop: (1,1) */}
+              <div className="flex items-center gap-3 order-1 md:order-1">
                 <span className="text-text-secondary w-16">FFmpeg</span>
                 <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
                   {health?.ffmpeg_available ? 'Active' : 'Inactive'}
                 </span>
               </div>
-              {/* Column 2: Cookies */}
-              <div className="flex items-center gap-3">
+              {/* Cookies - Mobile: (3,1), Desktop: (1,2) */}
+              <div className="flex items-center gap-3 order-5 md:order-2">
                 <span className="text-text-secondary w-16">Cookies</span>
                 <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
                   {health?.cookies_available ? 'Active' : 'Inactive'}
                 </span>
               </div>
-              {/* Column 3: YT and Chill */}
-              <div className="flex items-center gap-3">
+              {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
+              <div className="flex items-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v3.2.1</span>
               </div>
-              {/* Row 2, Column 1: Worker */}
-              <div className="flex items-center gap-3">
+              {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
+              <div className="flex items-center gap-3 order-3 md:order-4">
                 <span className="text-text-secondary w-16">Worker</span>
                 <span className={`font-medium text-xs ${health?.download_worker_running ? 'text-text-primary' : 'text-red-400'}`}>
                   {health?.download_worker_running ? 'Active' : 'Inactive'}
                 </span>
               </div>
-              {/* Row 2, Column 2: yt-dlp */}
-              <div className="flex items-center gap-3">
+              {/* yt-dlp - Mobile: (1,2), Desktop: (2,2) */}
+              <div className="flex items-center gap-3 order-2 md:order-5">
                 <span className="text-text-secondary w-16">yt-dlp</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
@@ -267,34 +267,34 @@ export default function Settings() {
           {/* Stats Card */}
           <div className="card p-4">
             <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
-            <div className="grid grid-cols-3 gap-x-8 gap-y-2 text-sm">
-              {/* Column 1: Videos to Review */}
-              <div className="flex items-center gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
+              {/* Videos to Review - Mobile: (1,1), Desktop: (1,1) */}
+              <div className="flex items-center gap-3 order-1">
                 <span className="text-text-secondary">Videos to Review</span>
                 <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
               </div>
-              {/* Column 2: Videos Ignored */}
-              <div className="flex items-center gap-3">
+              {/* Videos Ignored - Mobile: (3,1), Desktop: (1,2) */}
+              <div className="flex items-center gap-3 order-5 md:order-2">
                 <span className="text-text-secondary">Videos Ignored</span>
                 <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
               </div>
-              {/* Column 3: Total Playlists */}
-              <div className="flex items-center gap-3">
+              {/* Total Playlists - Mobile: (2,2), Desktop: (1,3) */}
+              <div className="flex items-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary">Total Playlists</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
-              {/* Row 2, Column 1: Videos in Library */}
-              <div className="flex items-center gap-3">
+              {/* Videos in Library - Mobile: (2,1), Desktop: (2,1) */}
+              <div className="flex items-center gap-3 order-3 md:order-4">
                 <span className="text-text-secondary">Videos in Library</span>
                 <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
               </div>
-              {/* Row 2, Column 2: Total Channels */}
-              <div className="flex items-center gap-3">
+              {/* Total Channels - Mobile: (1,2), Desktop: (2,2) */}
+              <div className="flex items-center gap-3 order-2 md:order-5">
                 <span className="text-text-secondary">Total Channels</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
-              {/* Row 2, Column 3: Total Storage */}
-              <div className="flex items-center gap-3">
+              {/* Total Storage - Mobile: (3,2), Desktop: (2,3) */}
+              <div className="flex items-center gap-3 order-6">
                 <span className="text-text-secondary">Total Storage</span>
                 <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
               </div>
@@ -506,8 +506,8 @@ export default function Settings() {
               Theme
             </h3>
             <div className="flex flex-col gap-3">
-          {/* Row 1: 7 dark themes - kernel, fatal, subnet, archive, buffer, init, gateway */}
-          <div className="grid grid-cols-7 gap-3">
+          {/* Dark themes - Mobile: 4 cols (wraps to 2 rows), Desktop: 7 cols (1 row) */}
+          <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
             <button
               onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -597,8 +597,8 @@ export default function Settings() {
           {/* Separator between dark and light themes */}
           <div className="border-t border-dark-border"></div>
 
-          {/* Row 2: 4 light themes - online, pixel, standby, debug */}
-          <div className="grid grid-cols-7 gap-3">
+          {/* Light themes - Mobile: 4 cols (1 row), Desktop: 7 cols (1 row) */}
+          <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
             <button
               onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
               className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -653,7 +653,7 @@ export default function Settings() {
 
           {/* SponsorBlock */}
           <div className="card p-4">
-            <div className="flex items-center justify-between w-full">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-3">
               <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
@@ -699,60 +699,60 @@ export default function Settings() {
               </div>
             </div>
           </div>
-        </div>
 
-      {/* Logging Card */}
-      <div className="card p-4 md:w-[960px]">
-        <h3 className="text-sm font-semibold text-text-primary mb-3">Logging</h3>
-        <div className="flex flex-col gap-2">
-          {/* Row 1: Slider + Level labels */}
-          <div
-            className="w-full max-w-sm"
-            title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
-          >
-            <input
-              type="range"
-              min="0"
-              max="4"
-              value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
-              onChange={async (e) => {
-                const newLevel = ['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)];
-                setLogLevel(newLevel);
-                try {
-                  await updateSettings.mutateAsync({
-                    auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                    auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                    youtube_api_key: youtubeApiKey,
-                    log_level: newLevel,
-                  });
-                  showNotification(`Log level changed to ${newLevel}`, 'success');
-                } catch (error) {
-                  showNotification(error.message || 'Failed to save log level', 'error');
-                }
-              }}
-              className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-            />
-            <div className="flex justify-between text-xs font-mono mt-1">
-              <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
-              <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
-              <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
-              <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
-              <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
+          {/* Logging Card */}
+          <div className="card p-4">
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Logging</h3>
+            <div className="flex flex-col gap-2">
+              {/* Row 1: Slider + Level labels */}
+              <div
+                className="w-full max-w-sm"
+                title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+              >
+                <input
+                  type="range"
+                  min="0"
+                  max="4"
+                  value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
+                  onChange={async (e) => {
+                    const newLevel = ['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)];
+                    setLogLevel(newLevel);
+                    try {
+                      await updateSettings.mutateAsync({
+                        auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                        auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                        youtube_api_key: youtubeApiKey,
+                        log_level: newLevel,
+                      });
+                      showNotification(`Log level changed to ${newLevel}`, 'success');
+                    } catch (error) {
+                      showNotification(error.message || 'Failed to save log level', 'error');
+                    }
+                  }}
+                  className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+                />
+                <div className="flex justify-between text-xs font-mono mt-1">
+                  <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
+                  <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
+                  <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
+                  <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
+                  <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
+                </div>
+              </div>
+
+              {/* Row 2: "Logging level" text + View Logs button */}
+              <div className="flex items-center justify-between w-full max-w-sm">
+                <span className="text-sm text-text-secondary">Logging level</span>
+                <button
+                  onClick={toggleLogs}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+                >
+                  {showLogs ? 'Hide Logs' : 'View Logs'}
+                </button>
+              </div>
             </div>
           </div>
-
-          {/* Row 2: "Logging level" text + View Logs button */}
-          <div className="flex items-center justify-between w-full max-w-sm">
-            <span className="text-sm text-text-secondary">Logging level</span>
-            <button
-              onClick={toggleLogs}
-              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
-            >
-              {showLogs ? 'Hide Logs' : 'View Logs'}
-            </button>
-          </div>
         </div>
-      </div>
 
       {/* Application Logs Card - Collapsible with card buffer */}
       <div
