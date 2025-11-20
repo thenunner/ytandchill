@@ -22,7 +22,7 @@ export default function Channels() {
   const [menuOpen, setMenuOpen] = useState(null); // Track which channel's menu is open (grid view only)
   const [showDurationSettings, setShowDurationSettings] = useState(null); // Track which channel shows duration settings
   const [searchInput, setSearchInput] = useState(''); // Search filter
-  const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'most_downloaded'); // Sort option
+  const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'needs_review_then_scan'); // Sort option
   const [showSortMenu, setShowSortMenu] = useState(false); // Sort menu visibility
   const [isScanningAll, setIsScanningAll] = useState(false); // Scan all progress
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 }); // X/Y progress
@@ -230,23 +230,41 @@ export default function Channels() {
     localStorage.setItem('channels_sortBy', sortBy);
   }, [sortBy]);
 
-  // Helper function to format last scan date
-  const formatLastScan = (dateString) => {
-    if (!dateString) return 'Never';
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = now - date;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  // Helper function to check if a date is today
+  const isToday = (date) => {
+    const today = new Date();
+    return date.getDate() === today.getDate() &&
+           date.getMonth() === today.getMonth() &&
+           date.getFullYear() === today.getFullYear();
+  };
 
-    if (diffDays <= 0) {
-      return 'Today';
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
+  // Helper function to format last scan - always shows "Scan: x | Video: x"
+  const formatLastScan = (scanTimeString, videoDateString) => {
+    if (!scanTimeString) return 'Never';
+
+    const scanDate = new Date(scanTimeString);
+
+    // Format scan: time if today, date if past
+    let scanStr;
+    if (isToday(scanDate)) {
+      const hours = scanDate.getHours();
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      const displayHours = hours % 12 || 12;
+      scanStr = `${displayHours}${ampm}`;
     } else {
-      // Format as Mon DD (e.g., "Nov 14")
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      scanStr = scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+    }
+
+    // Format video: always date
+    if (videoDateString) {
+      const year = videoDateString.substring(0, 4);
+      const month = videoDateString.substring(4, 6);
+      const day = videoDateString.substring(6, 8);
+      const videoDate = new Date(year, month - 1, day);
+      const videoStr = videoDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+      return `Scan: ${scanStr} | Video: ${videoStr}`;
+    } else {
+      return `Scan: ${scanStr} | Video: None`;
     }
   };
 
@@ -260,6 +278,11 @@ export default function Channels() {
     // Then sort based on selected option
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
+        case 'needs_review_then_scan':
+          // Sort by most needs to review first, then by newest scanned
+          const reviewDiff = (b.video_count || 0) - (a.video_count || 0);
+          if (reviewDiff !== 0) return reviewDiff;
+          return new Date(b.last_scan_at || 0) - new Date(a.last_scan_at || 0);
         case 'a_z':
           return (a.title || '').localeCompare(b.title || '');
         case 'z_a':
@@ -269,9 +292,9 @@ export default function Channels() {
         case 'least_downloaded':
           return (a.downloaded_count || 0) - (b.downloaded_count || 0);
         case 'most_to_review':
-          return (b.discovered_count || 0) - (a.discovered_count || 0);
+          return (b.video_count || 0) - (a.video_count || 0);
         case 'least_to_review':
-          return (a.discovered_count || 0) - (b.discovered_count || 0);
+          return (a.video_count || 0) - (b.video_count || 0);
         case 'newest_scanned':
           return new Date(b.last_scan_at || 0) - new Date(a.last_scan_at || 0);
         case 'oldest_scanned':
@@ -624,7 +647,7 @@ export default function Channels() {
                 {/* Right: Last Scanned + 3-dot menu */}
                 <div className="flex items-center gap-2">
                   <span className="text-text-secondary text-xs font-medium">
-                    {formatLastScan(channel.last_scan_at)}
+                    {formatLastScan(channel.last_scan_time, channel.last_video_date)}
                   </span>
                   <div className="relative">
                     <button
@@ -751,7 +774,7 @@ export default function Channels() {
                     </div>
 
                     {/* Discovered - Middle */}
-                    <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="To Review">
+                    <div className={`flex items-center gap-1 text-sm font-semibold ${(channel.video_count || 0) > 0 ? 'text-red-500' : 'text-gray-400'}`} title="To Review">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <circle cx="12" cy="12" r="1"></circle>

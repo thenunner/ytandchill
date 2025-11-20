@@ -499,6 +499,7 @@ def serialize_channel(channel):
         'max_minutes': channel.max_minutes,
         'auto_download': channel.auto_download or False,
         'last_scan_at': channel.last_scan_at.isoformat() if channel.last_scan_at else None,
+        'last_scan_time': channel.last_scan_time.isoformat() if channel.last_scan_time else None,
         'last_video_date': last_video_date,
         'created_at': channel.created_at.isoformat(),
         'updated_at': channel.updated_at.isoformat(),
@@ -918,8 +919,16 @@ def scan_channel(channel_id):
 
         # Scan videos using YouTube Data API
         # For full scan, get ALL videos (999999 effectively means no limit)
-        # For incremental, just get recent 50
-        max_results = 999999 if force_full else 50
+        # For incremental scans:
+        #   - If auto-scan is OFF: use 250 (manual scans are infrequent, need larger buffer)
+        #   - If auto-scan is ON: use 50 (scans daily, smaller buffer is fine)
+        if force_full:
+            max_results = 999999
+        else:
+            # Check if auto-scan is enabled
+            auto_scan_setting = session.query(Setting).filter(Setting.key == 'auto_refresh_enabled').first()
+            auto_scan_enabled = auto_scan_setting and auto_scan_setting.value == 'true'
+            max_results = 50 if auto_scan_enabled else 250
         logger.debug(f"Fetching up to {max_results} videos for channel: {channel.title}")
         videos = scan_channel_videos(youtube, channel.yt_id, max_results=max_results)
         logger.debug(f"Found {len(videos)} total videos from YouTube API for channel: {channel.title}")
@@ -1001,6 +1010,10 @@ def scan_channel(channel_id):
             # If no videos were found and no previous scan, set to now
             channel.last_scan_at = datetime.now(timezone.utc)
             logger.debug(f"Set initial last_scan_at for '{channel.title}' to now")
+
+        # Update last_scan_time to when the scan actually executed
+        channel.last_scan_time = datetime.now(timezone.utc)
+        logger.debug(f"Updated last_scan_time for '{channel.title}' to now")
 
         session.commit()
         logger.debug(f"Scan complete for channel: {channel.title}")
