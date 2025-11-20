@@ -249,11 +249,13 @@ export default function Channels() {
     // Format scan: time if today, date if past
     let scanStr;
     if (isToday(scanDate)) {
-      // Get local hour (JavaScript automatically converts from UTC)
+      // Get local hour and minutes (JavaScript automatically converts from UTC)
       const hours = scanDate.getHours();
+      const minutes = scanDate.getMinutes();
       const ampm = hours >= 12 ? 'pm' : 'am';
       const displayHours = hours % 12 || 12;
-      scanStr = `${displayHours}${ampm}`;
+      const displayMinutes = minutes.toString().padStart(2, '0');
+      scanStr = `${displayHours}:${displayMinutes}${ampm}`;
     } else {
       // Display date in local timezone
       scanStr = scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });

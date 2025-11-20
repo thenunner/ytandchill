@@ -508,6 +508,18 @@ def serialize_channel(channel):
         'ignored_count': ignored_count
     }
 
+def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
+    """Format date for scan status message. Returns 'None' if no date."""
+    if datetime_obj:
+        return datetime_obj.strftime('%m/%d')
+    elif yyyymmdd_string:
+        # Parse YYYYMMDD format
+        year = yyyymmdd_string[0:4]
+        month = yyyymmdd_string[4:6]
+        day = yyyymmdd_string[6:8]
+        return f"{month}/{day}"
+    return "None"
+
 def serialize_video(video):
     # Get playlist information for this video
     playlist_names = []
@@ -762,7 +774,9 @@ def create_channel():
         session.commit()
 
         # Auto-scan the channel after creation using YouTube Data API
-        set_operation('scanning', f'Scanning {channel_info["title"]} for videos...', channel_id=channel.id)
+        # For new channels, both last scan and last video will be "None"
+        status_msg = f"Scanning {channel_info['title']}. Last scan: None * Last Video: None"
+        set_operation('scanning', status_msg, channel_id=channel.id)
         new_count = 0
         ignored_count = 0
 
@@ -770,8 +784,13 @@ def create_channel():
             # Scan ALL videos on initial channel creation (999999 = no practical limit)
             # This ensures we get the entire channel history, not just recent videos
             videos = scan_channel_videos(youtube, channel_id, max_results=999999)
+            total_videos = len(videos)
 
-            for video_data in videos:
+            for idx, video_data in enumerate(videos, 1):
+                # Update status with progress
+                if total_videos > 0:
+                    progress_msg = f"Scanning {channel_info['title']}. Last scan: None * Last Video: None ({idx}/{total_videos})"
+                    set_operation('scanning', progress_msg, channel_id=channel.id)
                 # Check if video already exists
                 existing_video = session.query(Video).filter(Video.yt_id == video_data['id']).first()
                 if existing_video:
@@ -904,7 +923,20 @@ def scan_channel(channel_id):
 
         scan_type = "full" if force_full else "incremental"
         logger.info(f"Starting {scan_type} scan for channel: {channel.title} (ID: {channel.id})")
-        set_operation('scanning', f'{scan_type.capitalize()} scan: {channel.title}...', channel_id=channel.id)
+
+        # Get last video date for status message
+        last_video_date = None
+        if channel.videos:
+            videos_with_dates = [v for v in channel.videos if v.upload_date]
+            if videos_with_dates:
+                most_recent = max(videos_with_dates, key=lambda v: v.upload_date)
+                last_video_date = most_recent.upload_date
+
+        # Format status message with last scan and last video info
+        last_scan_str = format_scan_status_date(datetime_obj=channel.last_scan_time)
+        last_video_str = format_scan_status_date(yyyymmdd_string=last_video_date)
+        status_msg = f"Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str}"
+        set_operation('scanning', status_msg, channel_id=channel.id)
 
         # Get YouTube API key
         api_key = get_youtube_api_key(session)
@@ -943,6 +975,11 @@ def scan_channel(channel_id):
         logger.info(f"Processing {total_videos} videos for channel '{channel.title}'")
 
         for idx, video_data in enumerate(videos, 1):
+            # Update status with progress
+            if total_videos > 0:
+                progress_msg = f"Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str} ({idx}/{total_videos})"
+                set_operation('scanning', progress_msg, channel_id=channel.id)
+
             # Track the latest upload date found
             if video_data['upload_date']:
                 upload_dt = datetime.strptime(video_data['upload_date'], '%Y%m%d')

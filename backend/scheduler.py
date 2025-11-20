@@ -12,6 +12,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
+    """Format date for scan status message. Returns 'None' if no date."""
+    if datetime_obj:
+        return datetime_obj.strftime('%m/%d')
+    elif yyyymmdd_string:
+        # Parse YYYYMMDD format
+        year = yyyymmdd_string[0:4]
+        month = yyyymmdd_string[4:6]
+        day = yyyymmdd_string[6:8]
+        return f"{month}/{day}"
+    return "None"
+
 class AutoRefreshScheduler:
     def __init__(self, session_factory, download_worker=None, set_operation_callback=None, clear_operation_callback=None):
         self.session_factory = session_factory
@@ -188,8 +200,22 @@ class AutoRefreshScheduler:
 
             for i, channel in enumerate(channels, 1):
                 logger.debug(f"Auto-scan: Processing channel {i}/{len(channels)}: {channel.title}")
+
+                # Get last video date for status message
+                last_video_date = None
+                if channel.videos:
+                    videos_with_dates = [v for v in channel.videos if v.upload_date]
+                    if videos_with_dates:
+                        most_recent = max(videos_with_dates, key=lambda v: v.upload_date)
+                        last_video_date = most_recent.upload_date
+
+                # Format status message
                 if self.set_operation:
-                    self.set_operation('auto_refresh', f'Auto-scan: {channel.title} ({i}/{len(channels)})', channel_id=channel.id)
+                    last_scan_str = format_scan_status_date(datetime_obj=channel.last_scan_time)
+                    last_video_str = format_scan_status_date(yyyymmdd_string=last_video_date)
+                    status_msg = f"Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str} ({i}/{len(channels)})"
+                    self.set_operation('auto_refresh', status_msg, channel_id=channel.id)
+
                 new_count, ignored_count, auto_queued_count = self._scan_channel_with_api(session, youtube, channel)
                 total_new_videos += new_count
                 total_ignored += ignored_count
