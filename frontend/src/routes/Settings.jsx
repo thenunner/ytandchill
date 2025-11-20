@@ -184,7 +184,7 @@ export default function Settings() {
 
       {/* Two-column layout for desktop */}
       <div className="flex flex-col md:flex-row gap-4">
-        {/* Column 1: System Status, YouTube API Key, SponsorBlock */}
+        {/* Column 1: System Status, YouTube API Key, Stats & Logging */}
         <div className="flex flex-col gap-4 md:w-[420px]">
           {/* System Status Card */}
           <div className="card p-4">
@@ -261,51 +261,85 @@ export default function Settings() {
             </p>
           </div>
 
-          {/* SponsorBlock */}
+          {/* Stats & Logging Card */}
           <div className="card p-4">
-            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
-                <line x1="1" y1="1" x2="23" y2="23"></line>
-              </svg>
-              SponsorBlock
-              <button
-                onClick={() => setShowSponsorBlockHelp(true)}
-                className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
-                title="What is SponsorBlock?"
-              >
-                ?
-              </button>
-            </h3>
-            <div className="flex flex-wrap gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={removeSponsor}
-                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-                />
-                <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={removeSelfpromo}
-                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-                />
-                <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={removeInteraction}
-                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
-                />
-                <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
-              </label>
+        <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
+          {/* Column 1: Videos to Review, Videos Ignored, Videos in Library */}
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos to Review</span>
+            <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Total Channels</span>
+            <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos Ignored</span>
+            <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Total Storage</span>
+            <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-text-secondary">Videos in Library</span>
+            <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
+          </div>
+        </div>
+
+        {/* Logging Level */}
+        <div className="pt-2 border-t border-dark-border">
+          <div className="flex flex-col gap-2">
+            {/* Row 1: Slider + Level labels */}
+            <div
+              className="w-full max-w-sm"
+              title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+            >
+              <input
+                type="range"
+                min="0"
+                max="4"
+                value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
+                onChange={async (e) => {
+                  const newLevel = ['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)];
+                  setLogLevel(newLevel);
+                  // Save immediately instead of using setTimeout
+                  try {
+                    await updateSettings.mutateAsync({
+                      auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
+                      youtube_api_key: youtubeApiKey,
+                      log_level: newLevel,
+                    });
+                    showNotification(`Log level changed to ${newLevel}`, 'success');
+                  } catch (error) {
+                    showNotification(error.message || 'Failed to save log level', 'error');
+                  }
+                }}
+                className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+              />
+              <div className="flex justify-between text-xs font-mono mt-1">
+                <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
+                <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
+                <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
+                <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
+                <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
+              </div>
             </div>
+
+            {/* Row 2: "Logging level" text + View Logs button */}
+            <div className="flex items-center justify-between w-full max-w-sm">
+              <span className="text-sm text-text-secondary">Logging level</span>
+              <button
+                onClick={toggleLogs}
+                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+              >
+                {showLogs ? 'Hide Logs' : 'View Logs'}
+              </button>
+            </div>
+          </div>
+        </div>
 
             {/* Separator */}
             <div className="border-t border-dark-border my-4"></div>
@@ -507,7 +541,7 @@ export default function Settings() {
           </div>
         </div>
 
-        {/* Column 2: Theme, Stats & Logging */}
+        {/* Column 2: Theme, SponsorBlock */}
         <div className="flex flex-col gap-4 md:w-[420px]">
           {/* Theme */}
           <div className="card p-4">
@@ -668,85 +702,51 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* Stats & Logging Card */}
+          {/* SponsorBlock */}
           <div className="card p-4">
-        <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm mb-4">
-          {/* Column 1: Videos to Review, Videos Ignored, Videos in Library */}
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos to Review</span>
-            <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Total Channels</span>
-            <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos Ignored</span>
-            <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Total Storage</span>
-            <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-text-secondary">Videos in Library</span>
-            <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
-          </div>
-        </div>
-
-        {/* Logging Level */}
-        <div className="pt-2 border-t border-dark-border">
-          <div className="flex flex-col gap-2">
-            {/* Row 1: Slider + Level labels */}
-            <div
-              className="w-full max-w-sm"
-              title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
-            >
-              <input
-                type="range"
-                min="0"
-                max="4"
-                value={['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].indexOf(logLevel)}
-                onChange={async (e) => {
-                  const newLevel = ['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'][parseInt(e.target.value)];
-                  setLogLevel(newLevel);
-                  // Save immediately instead of using setTimeout
-                  try {
-                    await updateSettings.mutateAsync({
-                      auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                      youtube_api_key: youtubeApiKey,
-                      log_level: newLevel,
-                    });
-                    showNotification(`Log level changed to ${newLevel}`, 'success');
-                  } catch (error) {
-                    showNotification(error.message || 'Failed to save log level', 'error');
-                  }
-                }}
-                className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
-              />
-              <div className="flex justify-between text-xs font-mono mt-1">
-                <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
-                <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
-                <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
-                <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
-                <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
-              </div>
-            </div>
-
-            {/* Row 2: "Logging level" text + View Logs button */}
-            <div className="flex items-center justify-between w-full max-w-sm">
-              <span className="text-sm text-text-secondary">Logging level</span>
+            <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+              SponsorBlock
               <button
-                onClick={toggleLogs}
-                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold"
+                onClick={() => setShowSponsorBlockHelp(true)}
+                className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                title="What is SponsorBlock?"
               >
-                {showLogs ? 'Hide Logs' : 'View Logs'}
+                ?
               </button>
+            </h3>
+            <div className="flex flex-wrap gap-6">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={removeSponsor}
+                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                />
+                <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={removeSelfpromo}
+                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                />
+                <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={removeInteraction}
+                  onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+                  className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                />
+                <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
+              </label>
             </div>
-          </div>
-        </div>
           </div>
         </div>
       </div>
