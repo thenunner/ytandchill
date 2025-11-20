@@ -6,6 +6,7 @@ import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
 import Pagination from '../components/Pagination';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function Playlist() {
   const { id } = useParams();
@@ -29,6 +30,7 @@ export default function Playlist() {
     const stored = localStorage.getItem('playlist_itemsPerPage');
     return stored ? Number(stored) : 50;
   });
+  const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete', count: number }
 
   useEffect(() => {
     localStorage.setItem('viewMode', viewMode);
@@ -92,22 +94,36 @@ export default function Playlist() {
           break;
 
         case 'remove':
-          if (!window.confirm(`Remove ${selectedVideos.length} videos from this playlist?`)) return;
-          for (const videoId of selectedVideos) {
-            await removeVideo.mutateAsync({ playlistId: parseInt(id), videoId });
-          }
-          showNotification(`${selectedVideos.length} videos removed from playlist`, 'success');
-          break;
+          setConfirmAction({ type: 'remove', count: selectedVideos.length });
+          return;
 
         case 'delete':
-          if (!window.confirm(`Delete ${selectedVideos.length} videos from library? This will also delete the video files.`)) return;
-          for (const videoId of selectedVideos) {
-            await deleteVideo.mutateAsync(videoId);
-          }
-          showNotification(`${selectedVideos.length} videos deleted from library`, 'success');
-          break;
+          setConfirmAction({ type: 'delete', count: selectedVideos.length });
+          return;
       }
       setSelectedVideos([]);
+    } catch (error) {
+      showNotification(error.message, 'error');
+    }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    try {
+      if (confirmAction.type === 'remove') {
+        for (const videoId of selectedVideos) {
+          await removeVideo.mutateAsync({ playlistId: parseInt(id), videoId });
+        }
+        showNotification(`${selectedVideos.length} videos removed from playlist`, 'success');
+      } else if (confirmAction.type === 'delete') {
+        for (const videoId of selectedVideos) {
+          await deleteVideo.mutateAsync(videoId);
+        }
+        showNotification(`${selectedVideos.length} videos deleted from library`, 'success');
+      }
+      setSelectedVideos([]);
+      setConfirmAction(null);
     } catch (error) {
       showNotification(error.message, 'error');
     }
@@ -429,6 +445,37 @@ export default function Playlist() {
         isPlaylistMode={false}
         isLibraryMode={true}
         isPlaylistView={true}
+      />
+
+      {/* Confirmation Modals */}
+      <ConfirmModal
+        isOpen={confirmAction?.type === 'remove'}
+        title="Remove from Playlist"
+        message={
+          <>
+            Remove <span className="font-semibold">{confirmAction?.count} videos</span> from this playlist?
+            The videos will remain in your library.
+          </>
+        }
+        confirmText="Remove"
+        confirmStyle="danger"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+      <ConfirmModal
+        isOpen={confirmAction?.type === 'delete'}
+        title="Delete Videos"
+        message={
+          <>
+            Permanently delete <span className="font-semibold">{confirmAction?.count} videos</span> from your library?
+            This will also delete the video files from disk.
+          </>
+        }
+        confirmText="Delete"
+        confirmStyle="danger"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmAction(null)}
       />
     </div>
   );

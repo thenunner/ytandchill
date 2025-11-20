@@ -3,6 +3,7 @@ import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpd
 import { useNotification } from '../contexts/NotificationContext';
 import { Link, useNavigate } from 'react-router-dom';
 import ChannelRow from '../components/ChannelRow';
+import { getUserFriendlyError } from '../utils/errorMessages';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -65,32 +66,33 @@ export default function Channels() {
       setMaxMinutes(0);
       setShowAddForm(false);
 
-      // Show scan results from auto-scan
-      if (result.scan_result) {
+      // Show scan results message
+      if (result.scan_result && result.scan_result.status === 'queued') {
         showNotification(
-          `Channel added! Found ${result.scan_result.new_videos} new videos, ${result.scan_result.ignored_videos} ignored`,
+          `Channel added! Initial scan queued`,
           'success'
         );
       } else {
         showNotification('Channel added successfully', 'success');
       }
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message), 'error');
     }
   };
 
   const handleScanChannel = async (channelId, forceFull = false) => {
     try {
       const scanType = forceFull ? 'Rescanning all videos' : 'Scanning for new videos';
-      showNotification(scanType, 'info', { persistent: true });
 
       const result = await scanChannel.mutateAsync({ id: channelId, forceFull });
-      showNotification(`Found ${result.new_videos} new videos, ${result.ignored_videos} ignored`, 'success');
 
-      // Navigate to channel page after scan
-      navigate(`/channel/${channelId}`);
+      if (result.status === 'queued') {
+        showNotification(`${scanType} queued`, 'info');
+      } else if (result.status === 'already_queued') {
+        showNotification('Scan already queued for this channel', 'info');
+      }
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message), 'error');
     }
   };
 
@@ -101,7 +103,7 @@ export default function Channels() {
       showNotification('Channel deleted', 'success');
       setDeleteConfirm(null);
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message), 'error');
     }
   };
 
@@ -117,7 +119,7 @@ export default function Channels() {
       setEditingChannel(null);
       showNotification('Filters updated', 'success');
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message), 'error');
     }
   };
 
@@ -138,53 +140,33 @@ export default function Channels() {
     }
 
     const scanType = forceFull ? 'full scan' : 'new videos scan';
-    setIsScanningAll(true);
-    setScanProgress({ current: 0, total: channelsToScan.length });
-    showNotification(`Starting ${scanType} of ${channelsToScan.length} channel${channelsToScan.length > 1 ? 's' : ''}...`, 'info', { persistent: true });
+    showNotification(`Queueing ${scanType} for ${channelsToScan.length} channel${channelsToScan.length > 1 ? 's' : ''}...`, 'info');
 
-    let totalNew = 0;
-    let totalIgnored = 0;
+    // Queue all channels at once (non-blocking)
+    let queued = 0;
+    let alreadyQueued = 0;
     let errorCount = 0;
 
-    for (let i = 0; i < channelsToScan.length; i++) {
-      const channel = channelsToScan[i];
-      setScanProgress({ current: i + 1, total: channelsToScan.length });
-
-      // Format last scan date
-      const lastScanStr = channel.last_scan_time
-        ? formatScanTime(channel.last_scan_time) || 'None'
-        : 'None';
-
-      // Format last video date
-      const lastVideoStr = channel.last_video_date
-        ? formatVideoDate(channel.last_video_date) || 'None'
-        : 'None';
-
-      showNotification(
-        `Scanning ${channel.title}. Last scan: ${lastScanStr} * Last Video: ${lastVideoStr} (${i + 1}/${channelsToScan.length})`,
-        'info',
-        { persistent: true }
-      );
-
+    for (const channel of channelsToScan) {
       try {
         const result = await scanChannel.mutateAsync({
           id: channel.id,
           forceFull: forceFull
         });
-        totalNew += result.new_videos || 0;
-        totalIgnored += result.ignored_videos || 0;
+        if (result.status === 'queued') {
+          queued++;
+        } else if (result.status === 'already_queued') {
+          alreadyQueued++;
+        }
       } catch (error) {
-        console.error(`Failed to scan channel ${channel.title}:`, error);
+        console.error(`Failed to queue scan for channel ${channel.title}:`, error);
         errorCount++;
       }
     }
 
-    setIsScanningAll(false);
-    setScanProgress({ current: 0, total: 0 });
-
     const message = errorCount > 0
-      ? `Scan complete: ${totalNew} new, ${totalIgnored} ignored (${errorCount} errors)`
-      : `Scan complete: ${totalNew} new videos, ${totalIgnored} ignored`;
+      ? `Queued ${queued} scans (${alreadyQueued} already queued, ${errorCount} errors)`
+      : `Queued ${queued} scans${alreadyQueued > 0 ? ` (${alreadyQueued} already queued)` : ''}`;
 
     showNotification(message, errorCount > 0 ? 'warning' : 'success');
   };
@@ -228,6 +210,45 @@ export default function Channels() {
   useEffect(() => {
     localStorage.setItem('channels_sortBy', sortBy);
   }, [sortBy]);
+
+  // Poll for scan status every 2 seconds
+  useEffect(() => {
+    const pollScanStatus = async () => {
+      try {
+        const response = await fetch('/api/channels/scan-status');
+        if (!response.ok) return;
+
+        const status = await response.json();
+        const { current_operation, queue_size, queued_channel_ids } = status;
+
+        // Show scan progress if actively scanning
+        if (current_operation && current_operation.type === 'scanning' && current_operation.message) {
+          showNotification(
+            current_operation.message,
+            'info',
+            { persistent: true }
+          );
+        }
+
+        // Update scanning state
+        setIsScanningAll(queue_size > 0 || (current_operation && current_operation.type === 'scanning'));
+        if (queue_size > 0 || (current_operation && current_operation.type === 'scanning')) {
+          setScanProgress({ current: 1, total: queue_size + 1 });
+        } else {
+          setScanProgress({ current: 0, total: 0 });
+        }
+      } catch (error) {
+        // Silently fail - don't spam user with errors
+        console.error('Failed to fetch scan status:', error);
+      }
+    };
+
+    // Poll immediately and then every 2 seconds
+    pollScanStatus();
+    const intervalId = setInterval(pollScanStatus, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [showNotification]);
 
   // Helper function to check if a date is today
   const isToday = (date) => {

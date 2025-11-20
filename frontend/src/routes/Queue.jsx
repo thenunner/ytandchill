@@ -5,6 +5,8 @@ import { useTheme } from '../contexts/ThemeContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import ConfirmModal from '../components/ui/ConfirmModal';
+import { formatQueueError, getUserFriendlyError } from '../utils/errorMessages';
 
 // Sortable Queue Item Component
 function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom }) {
@@ -142,6 +144,7 @@ export default function Queue() {
   const clearQueue = useClearQueue();
   const { showNotification } = useNotification();
   const { theme } = useTheme();
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Check if current theme is a light theme
@@ -233,12 +236,10 @@ export default function Queue() {
   };
 
   const handleClear = async () => {
-    if (!window.confirm('Are you sure you want to clear all pending queue items?')) {
-      return;
-    }
     try {
       const result = await clearQueue.mutateAsync();
       showNotification(result.message || 'Queue cleared', 'success');
+      setShowClearConfirm(false);
     } catch (error) {
       showNotification(error.message, 'error');
     }
@@ -344,14 +345,26 @@ export default function Queue() {
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-4">
         <div className="flex space-x-2">
-          <button onClick={handlePause} className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium">
-            Pause
+          <button
+            onClick={handlePause}
+            disabled={pauseQueue.isPending}
+            className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {pauseQueue.isPending ? 'Pausing...' : 'Pause'}
           </button>
-          <button onClick={handleResume} className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium">
-            Resume
+          <button
+            onClick={handleResume}
+            disabled={resumeQueue.isPending}
+            className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {resumeQueue.isPending ? 'Resuming...' : 'Resume'}
           </button>
-          <button onClick={handleClear} className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium">
-            Clear Queue
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            disabled={clearQueue.isPending}
+            className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {clearQueue.isPending ? 'Clearing...' : 'Clear Queue'}
           </button>
         </div>
       </div>
@@ -552,9 +565,21 @@ export default function Queue() {
                       Click to remove
                     </span>
                   </div>
-                  {item.log && (
-                    <p className="text-xs text-red-400 truncate">{item.log}</p>
-                  )}
+                  {item.log && (() => {
+                    const formattedError = formatQueueError(item.log);
+                    return (
+                      <div className="flex items-start gap-2 mt-1">
+                        {formattedError.icon && (
+                          <span className="text-sm flex-shrink-0">{formattedError.icon}</span>
+                        )}
+                        <p className={`text-xs flex-1 ${
+                          formattedError.type === 'warning' ? 'text-yellow-400' : 'text-red-400'
+                        }`}>
+                          {formattedError.message}
+                        </p>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -574,6 +599,22 @@ export default function Queue() {
           </svg>
         </button>
       )}
+
+      {/* Clear Queue Confirmation Modal */}
+      <ConfirmModal
+        isOpen={showClearConfirm}
+        title="Clear Queue"
+        message={
+          <>
+            Are you sure you want to clear all <span className="font-semibold">{pendingItems.length} pending items</span>?
+            The currently downloading video will not be affected.
+          </>
+        }
+        confirmText="Clear Queue"
+        confirmStyle="danger"
+        onConfirm={handleClear}
+        onCancel={() => setShowClearConfirm(false)}
+      />
     </div>
   );
 }

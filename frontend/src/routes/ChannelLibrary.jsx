@@ -7,6 +7,7 @@ import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import Pagination from '../components/Pagination';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function ChannelLibrary() {
   const { channelId } = useParams();
@@ -51,6 +52,7 @@ export default function ChannelLibrary() {
     const stored = localStorage.getItem('channelLibrary_itemsPerPage');
     return stored ? Number(stored) : 50;
   });
+  const [deleteVideosConfirm, setDeleteVideosConfirm] = useState(null); // { count: number }
   const menuRef = useRef(null);
 
   const channel = channels?.find(c => c.id === Number(channelId));
@@ -514,19 +516,30 @@ export default function ChannelLibrary() {
           break;
         case 'delete':
           // Delete multiple videos
-          if (!window.confirm(`Delete ${selectedVideos.length} videos?`)) return;
-
-          for (const videoId of selectedVideos) {
-            await deleteVideo.mutateAsync(videoId);
-          }
-          showNotification(`${selectedVideos.length} videos deleted`, 'success');
-          break;
+          setDeleteVideosConfirm({ count: selectedVideos.length });
+          return;
         case 'playlist':
           // Show playlist menu for bulk add
           setShowPlaylistMenu(true);
           return; // Don't clear selection yet
       }
       setSelectedVideos([]);
+    } catch (error) {
+      showNotification(error.message, 'error');
+    }
+  };
+
+  const handleConfirmDeleteVideos = async () => {
+    if (!deleteVideosConfirm) return;
+
+    try {
+      for (const videoId of selectedVideos) {
+        await deleteVideo.mutateAsync(videoId);
+      }
+      showNotification(`${selectedVideos.length} videos deleted`, 'success');
+      setSelectedVideos([]);
+      setEditMode(false);
+      setDeleteVideosConfirm(null);
     } catch (error) {
       showNotification(error.message, 'error');
     }
@@ -1199,6 +1212,22 @@ export default function ChannelLibrary() {
           }}
         />
       )}
+
+      {/* Delete Videos Confirmation Modal */}
+      <ConfirmModal
+        isOpen={!!deleteVideosConfirm}
+        title="Delete Videos"
+        message={
+          <>
+            Permanently delete <span className="font-semibold">{deleteVideosConfirm?.count} videos</span> from your library?
+            This will also delete the video files from disk.
+          </>
+        }
+        confirmText="Delete"
+        confirmStyle="danger"
+        onConfirm={handleConfirmDeleteVideos}
+        onCancel={() => setDeleteVideosConfirm(null)}
+      />
     </div>
   );
 }

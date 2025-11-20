@@ -3,6 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import Pagination from '../components/Pagination';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
@@ -33,6 +34,7 @@ export default function Library() {
   const deletePlaylist = useDeletePlaylist();
   const updatePlaylist = useUpdatePlaylist();
   const { showNotification } = useNotification();
+  const [confirmAction, setConfirmAction] = useState(null); // { type: 'deletePlaylist' | 'deletePlaylists' | 'deleteCategory', data: any }
   const menuRef = useRef(null);
   const playlistSortMenuRef = useRef(null);
   const channelSortMenuRef = useRef(null);
@@ -323,15 +325,7 @@ export default function Library() {
   }, []);
 
   const handleDeletePlaylist = async (playlistId) => {
-    if (!window.confirm('Delete this playlist? Videos will not be deleted.')) return;
-
-    try {
-      await deletePlaylist.mutateAsync(playlistId);
-      showNotification('Playlist deleted', 'success');
-      setActiveMenuId(null);
-    } catch (error) {
-      showNotification(error.message || 'Failed to delete playlist', 'error');
-    }
+    setConfirmAction({ type: 'deletePlaylist', data: playlistId });
   };
 
   const handleRenamePlaylist = async () => {
@@ -372,17 +366,7 @@ export default function Library() {
 
   const handleBulkDeletePlaylists = async () => {
     if (selectedPlaylists.length === 0) return;
-    if (!window.confirm(`Delete ${selectedPlaylists.length} playlists? Videos will not be deleted.`)) return;
-
-    try {
-      for (const playlistId of selectedPlaylists) {
-        await deletePlaylist.mutateAsync(playlistId);
-      }
-      showNotification(`${selectedPlaylists.length} playlists deleted`, 'success');
-      setSelectedPlaylists([]);
-    } catch (error) {
-      showNotification(error.message || 'Failed to delete playlists', 'error');
-    }
+    setConfirmAction({ type: 'deletePlaylists', data: selectedPlaylists.length });
   };
 
   // Category handlers
@@ -425,15 +409,7 @@ export default function Library() {
   };
 
   const handleDeleteCategory = async (categoryId) => {
-    if (!window.confirm('Delete this category? Playlists will become uncategorized.')) return;
-
-    try {
-      await deleteCategory.mutateAsync(categoryId);
-      showNotification('Category deleted', 'success');
-      setActiveCategoryMenuId(null);
-    } catch (error) {
-      showNotification(error.message || 'Failed to delete category', 'error');
-    }
+    setConfirmAction({ type: 'deleteCategory', data: categoryId });
   };
 
   const toggleCategoryExpanded = (categoryId) => {
@@ -441,6 +417,32 @@ export default function Library() {
       ...prev,
       [categoryId]: !prev[categoryId]
     }));
+  };
+
+  const handleConfirmAction = async () => {
+    if (!confirmAction) return;
+
+    try {
+      if (confirmAction.type === 'deletePlaylist') {
+        await deletePlaylist.mutateAsync(confirmAction.data);
+        showNotification('Playlist deleted', 'success');
+        setActiveMenuId(null);
+      } else if (confirmAction.type === 'deletePlaylists') {
+        for (const playlistId of selectedPlaylists) {
+          await deletePlaylist.mutateAsync(playlistId);
+        }
+        showNotification(`${selectedPlaylists.length} playlists deleted`, 'success');
+        setSelectedPlaylists([]);
+        setEditMode(false);
+      } else if (confirmAction.type === 'deleteCategory') {
+        await deleteCategory.mutateAsync(confirmAction.data);
+        showNotification('Category deleted', 'success');
+        setActiveCategoryMenuId(null);
+      }
+      setConfirmAction(null);
+    } catch (error) {
+      showNotification(error.message || 'Failed to complete action', 'error');
+    }
   };
 
   const handleToggleCategory = async (categoryId, isCurrentlyAssigned) => {
@@ -1947,6 +1949,41 @@ export default function Library() {
           </div>
         </div>
       )}
+
+      {/* Confirmation Modals */}
+      <ConfirmModal
+        isOpen={confirmAction?.type === 'deletePlaylist'}
+        title="Delete Playlist"
+        message="Delete this playlist? Videos will not be deleted."
+        confirmText="Delete"
+        confirmStyle="danger"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+      <ConfirmModal
+        isOpen={confirmAction?.type === 'deletePlaylists'}
+        title="Delete Playlists"
+        message={
+          <>
+            Delete <span className="font-semibold">{confirmAction?.data} playlists</span>? Videos will not be deleted.
+          </>
+        }
+        confirmText="Delete"
+        confirmStyle="danger"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+      <ConfirmModal
+        isOpen={confirmAction?.type === 'deleteCategory'}
+        title="Delete Category"
+        message="Delete this category? Playlists will become uncategorized."
+        confirmText="Delete"
+        confirmStyle="danger"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmAction(null)}
+      />
     </div>
   );
 }
