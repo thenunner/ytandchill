@@ -185,7 +185,7 @@ export default function Settings() {
       {/* Single column layout for desktop */}
       <div className="flex flex-col gap-4 w-full max-w-[960px]">
           {/* System Status Card */}
-          <div className="card p-4">
+          <div className="card p-4 w-full">
             <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -229,7 +229,7 @@ export default function Settings() {
           </div>
 
           {/* Stats Card */}
-          <div className="card p-4">
+          <div className="card p-4 w-full">
             <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
               {/* Videos to Review - Mobile: (1,1), Desktop: (1,1) */}
@@ -266,7 +266,7 @@ export default function Settings() {
           </div>
 
           {/* Theme Card */}
-          <div className="card p-4">
+          <div className="card p-4 w-full">
             <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01"></path>
@@ -421,7 +421,7 @@ export default function Settings() {
           </div>
 
           {/* YouTube API Key + Auto-Scan Daily */}
-          <div className="card p-4">
+          <div className="card p-4 w-full">
             <div className="flex flex-col md:flex-row gap-6">
               {/* YouTube API Key Section */}
               <div className="flex-1">
@@ -568,7 +568,7 @@ export default function Settings() {
           </div>
 
           {/* Password */}
-          <div className="card p-4">
+          <div className="card p-4 w-full">
             {/* Password Section */}
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
@@ -655,7 +655,7 @@ export default function Settings() {
           </div>
 
           {/* SponsorBlock */}
-          <div className="card p-4">
+          <div className="card p-4 w-full">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-3">
               <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -704,7 +704,7 @@ export default function Settings() {
           </div>
 
           {/* Logging Card */}
-          <div className="card p-4">
+          <div className="card p-4 w-full">
             <h3 className="text-sm font-semibold text-text-primary mb-3">Logging</h3>
             <div className="flex flex-col md:flex-row md:items-end gap-3">
               {/* Slider section */}
