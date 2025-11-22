@@ -247,6 +247,13 @@ class APIClient {
     });
   }
 
+  setOperation(type, message) {
+    return this.request('/operation/set', {
+      method: 'POST',
+      body: JSON.stringify({ type, message }),
+    });
+  }
+
   clearOperation() {
     return this.request('/operation/clear', {
       method: 'POST',

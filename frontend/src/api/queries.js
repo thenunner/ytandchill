@@ -267,7 +267,7 @@ export function useQueue() {
   return useQuery({
     queryKey: ['queue'],
     queryFn: () => api.getQueue(),
-    refetchInterval: 1000, // Refetch every 1 second for smoother scan progress updates
+    refetchInterval: 500, // Refetch every 500ms for faster status updates
     staleTime: 0, // Always consider stale for immediate polling
   });
 }

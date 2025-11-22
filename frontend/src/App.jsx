@@ -23,7 +23,7 @@ function App() {
   const { theme } = useTheme();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
   const [logsData, setLogsData] = useState(null);
-
+  const prevOperationTypeRef = useRef(null);
 
   // Check if current theme is a light theme
   const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
@@ -59,6 +59,24 @@ function App() {
     const interval = setInterval(fetchLogs, 1000);
     return () => clearInterval(interval);
   }, [showQuickLogs]);
+
+  // Auto-clear scan completion message after 5 seconds
+  useEffect(() => {
+    if (prevOperationTypeRef.current === 'scanning' && currentOperation?.type === 'scan_complete') {
+      // Scan just completed - clear message after 5 seconds
+      const timer = setTimeout(async () => {
+        try {
+          await api.clearOperation();
+        } catch (error) {
+          console.error('Failed to clear operation:', error);
+        }
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+
+    prevOperationTypeRef.current = currentOperation?.type;
+  }, [currentOperation?.type]);
 
   // Auth checks using React Query (following autobrr/qui pattern)
   const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();

@@ -42,15 +42,6 @@ export default function Channels() {
     if (prevOperationTypeRef.current === 'scanning' && currentOperation?.type === 'scan_complete') {
       // Scan just completed - refetch channels to show updated last_scan_time
       queryClient.invalidateQueries(['channels']);
-
-      // Clear completion message after 5 seconds
-      setTimeout(async () => {
-        try {
-          await api.clearOperation();
-        } catch (error) {
-          console.error('Failed to clear operation:', error);
-        }
-      }, 5000);
     }
 
     prevOperationTypeRef.current = currentOperation?.type;
@@ -189,6 +180,13 @@ export default function Channels() {
     } else {
       // Multiple channels selected
       batchLabel = `Scan ${channelsToScan.length} channels`;
+    }
+
+    // Set scanning status immediately (optimistic UI)
+    try {
+      await api.setOperation('scanning', 'Scanning channels for new videos');
+    } catch (error) {
+      // Ignore errors, backend will set it anyway
     }
 
     // Queue all channels at once (non-blocking)

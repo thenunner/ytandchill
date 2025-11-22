@@ -2038,6 +2038,19 @@ def clear_queue():
         }), 200
 
 # Operation status
+@app.route('/api/operation/set', methods=['POST'])
+def set_operation_status():
+    """Set the current operation status"""
+    data = request.get_json()
+    op_type = data.get('type')
+    message = data.get('message')
+
+    if not op_type or not message:
+        return jsonify({'error': 'type and message required'}), 400
+
+    set_operation(op_type, message)
+    return jsonify({'status': 'set'}), 200
+
 @app.route('/api/operation/clear', methods=['POST'])
 def clear_operation_status():
     """Clear the current operation status"""
