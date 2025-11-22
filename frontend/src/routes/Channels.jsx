@@ -42,6 +42,9 @@ export default function Channels() {
     if (prevOperationTypeRef.current === 'scanning' && currentOperation?.type === 'scan_complete') {
       // Scan just completed - refetch channels to show updated last_scan_time
       queryClient.invalidateQueries(['channels']);
+
+      // Clear selected channels
+      setSelectedChannels([]);
     }
 
     prevOperationTypeRef.current = currentOperation?.type;
