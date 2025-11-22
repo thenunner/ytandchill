@@ -295,9 +295,12 @@ function App() {
 
                 {/* Active Scan Status - Third Priority */}
                 {!notification && !showCompletionMessage && batchScanInProgress && scanStatus?.channel_details?.length > 0 && (() => {
+                  // Sort by completion time (most recent first) to handle fast scans
+                  const sortedChannels = [...scanStatus.channel_details].sort((a, b) =>
+                    (b.completed_at || 0) - (a.completed_at || 0)
+                  );
                   // Find currently scanning channel or most recently completed
-                  const currentChannel = scanStatus.channel_details.find(ch => ch.status === 'scanning')
-                    || scanStatus.channel_details[scanStatus.channel_details.length - 1];
+                  const currentChannel = sortedChannels.find(ch => ch.status === 'scanning') || sortedChannels[0];
                   return (
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <div className="flex gap-1">
