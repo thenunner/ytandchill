@@ -1,0 +1,77 @@
+# Database and user data
+data/
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+
+# Logs
+logs/
+*.log
+
+# Downloads (videos and thumbnails)
+downloads/
+
+# Sensitive credentials
+cookies.txt
+githubtoken.txt
+*.token
+*token.txt
+
+# Personal/maintainer scripts
+update.sh
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+.pytest_cache/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Frontend build artifacts
+frontend/dist/
+frontend/.vite/
+frontend/build/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Docker
+.dockerignore
+
+# Environment files (if any)
+.env
+.env.local
+
+# Build artifacts
+*.pyc
+*.pyo
+
+# Lock files (optional - uncomment if you want to exclude)
+app.lock
+
+# Unraid specific
+*.xml.bak
+
+# Backup files
+*.bak
+
+# OS
+Thumbs.db

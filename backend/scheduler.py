@@ -3,7 +3,7 @@ from datetime import datetime, timezone, timedelta
 import yt_dlp
 import subprocess
 import os
-from models import Channel, Video, Setting, QueueItem
+from models import Channel, Video, Setting, QueueItem, get_session
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from utils import parse_iso8601_duration
@@ -25,9 +25,10 @@ def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
     return "None"
 
 class AutoRefreshScheduler:
-    def __init__(self, session_factory, download_worker=None, set_operation_callback=None, clear_operation_callback=None, queue_scan_callback=None):
+    def __init__(self, session_factory, download_worker=None, settings_manager=None, set_operation_callback=None, clear_operation_callback=None, queue_scan_callback=None):
         self.session_factory = session_factory
         self.download_worker = download_worker
+        self.settings_manager = settings_manager
         self.scheduler = BackgroundScheduler()
         self.enabled = False
         self.set_operation = set_operation_callback
@@ -36,21 +37,13 @@ class AutoRefreshScheduler:
     
     def _get_refresh_time(self):
         """Get auto-refresh time from database settings"""
-        session = self.session_factory()
-        try:
-            time_setting = session.query(Setting).filter(Setting.key == 'auto_refresh_time').first()
-            if time_setting and time_setting.value:
-                hour, minute = time_setting.value.split(':')
-                return int(hour), int(minute)
-        finally:
-            session.close()
-        return 3, 0  # Default fallback to 3:00 AM
+        time_value = self.settings_manager.get('auto_refresh_time', '3:0')
+        hour, minute = time_value.split(':')
+        return int(hour), int(minute)
 
     def start(self):
         # Check if auto-refresh is enabled
-        session = self.session_factory()
-        setting = session.query(Setting).filter(Setting.key == 'auto_refresh_enabled').first()
-        if setting and setting.value == 'true':
+        if self.settings_manager.get_bool('auto_refresh_enabled'):
             self.enabled = True
             # Get user-configured time from database
             hour, minute = self._get_refresh_time()
@@ -62,7 +55,6 @@ class AutoRefreshScheduler:
                 id='auto_refresh'
             )
             logger.info(f"Auto-refresh scheduled for {hour:02d}:{minute:02d}")
-        session.close()
 
         self.scheduler.start()
     
@@ -183,29 +175,40 @@ class AutoRefreshScheduler:
         if self.set_operation:
             self.set_operation('auto_refresh', 'Queueing channel scans...')
 
-        session = self.session_factory()
-        try:
+        with get_session(self.session_factory) as session:
             channels = session.query(Channel).all()
-            logger.info(f"Auto-scan: Queueing {len(channels)} channels for scanning")
+
+            if not channels:
+                logger.debug("Auto-scan: No channels to scan")
+                return
+
+            logger.debug(f"Auto-scan: Queueing {len(channels)} channels for scanning")
 
             queued_count = 0
-            for channel in channels:
+            for i, channel in enumerate(channels):
                 if self.queue_scan:
                     # Queue incremental scan (force_full=False for auto-scans)
-                    added = self.queue_scan(channel.id, force_full=False)
-                    if added:
+                    # Mark first channel as batch start and all as auto-scan
+                    result = self.queue_scan(
+                        channel.id,
+                        force_full=False,
+                        is_batch_start=(i == 0),
+                        is_auto_scan=True,
+                        batch_label='Auto-Scan'
+                    )
+
+                    if result == True:
                         queued_count += 1
                         logger.debug(f"Auto-scan: Queued scan for channel '{channel.title}'")
+                    elif result == 'pending' and i == 0:
+                        # First channel returned 'pending' - auto-scan will run later
+                        logger.debug("Auto-scan: Queued to run after current batch completes")
+                        break  # Stop trying to queue more channels
 
-            logger.info(f"Auto-scan: Successfully queued {queued_count}/{len(channels)} channels")
+            if queued_count > 0:
+                logger.debug(f"Auto-scan: Successfully queued {queued_count}/{len(channels)} channels")
+                if self.set_operation:
+                    self.set_operation('auto_refresh', f'Auto-scan: Queued {queued_count} channels')
 
-            if self.set_operation:
-                self.set_operation('auto_refresh', f'Auto-scan: Queued {queued_count} channels')
             if self.clear_operation:
                 self.clear_operation()
-        except Exception as e:
-            logger.error(f"Auto-scan: Error queueing scans: {e}")
-            if self.clear_operation:
-                self.clear_operation()
-        finally:
-            session.close()

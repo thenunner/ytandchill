@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>ytandchill</Name>
+  <Repository>ghcr.io/thenunner/ytandchill:latest</Repository>
+  <Registry>https://ghcr.io</Registry>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>bash</Shell>
+  <Privileged>false</Privileged>
+  <Support/>
+  <Project/>
+  <Overview>YouTube channel downloader and video library manager. Monitor channels, queue downloads, and manage your local YouTube video library with a modern web interface. Built locally for private use.</Overview>
+  <Category>MediaApp:Video Status:Stable</Category>
+  <WebUI>http://[IP]:[PORT:4099]</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/thenunner/ytandchill/main/images/icon-transparent.png</Icon>
+  <ExtraParams></ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Requires/>
+  <Config Name="WebUI Port" Target="4099" Default="4099" Mode="tcp" Description="Web interface port" Type="Port" Display="always" Required="true" Mask="false">4099</Config>
+  <Config Name="Database &amp; Config" Target="/app/data" Default="/mnt/user/appdata/ytandchill/data" Mode="rw" Description="Database and configuration files" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/ytandchill/data</Config>
+  <Config Name="Downloads" Target="/app/downloads" Default="/mnt/user/data/media/youtube/ytandchill" Mode="rw" Description="Video downloads and thumbnails directory" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/data/media/youtube/ytandchill</Config>
+  <Config Name="Logs" Target="/app/logs" Default="/mnt/user/appdata/ytandchill/logs" Mode="rw" Description="Application logs directory" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/ytandchill/logs</Config>
+  <Config Name="Cookies File" Target="/app/cookies.txt" Default="/mnt/user/appdata/ytandchill/cookies.txt" Mode="rw" Description="YouTube cookies for age-restricted content (optional)" Type="Path" Display="always" Required="false" Mask="false">/mnt/user/appdata/ytandchill/cookies.txt</Config>
+  <Config Name="PORT" Target="PORT" Default="4099" Mode="" Description="Application port (should match WebUI port)" Type="Variable" Display="advanced" Required="false" Mask="false">4099</Config>
+  <Config Name="PUID" Target="99" Default="99" Mode="" Description="User ID (99 = nobody)" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  <Config Name="PGID" Target="100" Default="100" Mode="" Description="Group ID (100 = users)" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
+</Container>

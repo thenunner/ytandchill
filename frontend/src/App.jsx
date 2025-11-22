@@ -22,9 +22,52 @@ function App() {
   const { notification } = useNotification();
   const { theme } = useTheme();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
+  const [autoScanPending, setAutoScanPending] = useState(false);
+  const [hideScanComplete, setHideScanComplete] = useState(false);
 
   // Check if current theme is a light theme
   const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
+
+  // Handle new queue structure (must be defined before useEffect that uses it)
+  const queue = queueData?.queue_items || queueData || [];
+  const currentDownload = queueData?.current_download || null;
+  const currentOperation = queueData?.current_operation || null;
+  const delayInfo = queueData?.delay_info || null;
+  const isPaused = queueData?.is_paused || false;
+  const isAutoRefreshing = queueData?.is_auto_refreshing || false;
+  const lastAutoRefresh = queueData?.last_auto_refresh || null;
+
+  // Poll for auto-scan pending status
+  useEffect(() => {
+    const pollBatchStatus = async () => {
+      try {
+        const response = await fetch('/api/channels/batch-scan-status');
+        if (response.ok) {
+          const data = await response.json();
+          setAutoScanPending(data.auto_scan_pending || false);
+        }
+      } catch (error) {
+        // Silently fail
+      }
+    };
+
+    pollBatchStatus();
+    const interval = setInterval(pollBatchStatus, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Auto-clear scan completion message after 10 seconds
+  useEffect(() => {
+    if (currentOperation?.type === 'scan_complete') {
+      setHideScanComplete(false);
+      const timer = setTimeout(() => {
+        setHideScanComplete(true);
+      }, 10000);
+      return () => clearTimeout(timer);
+    } else {
+      setHideScanComplete(false);
+    }
+  }, [currentOperation?.type, currentOperation?.message]);
 
   // Auth checks using React Query (following autobrr/qui pattern)
   const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();
@@ -35,17 +78,11 @@ function App() {
   const isAuthenticated = authData?.authenticated || false;
   const isLoading = firstRunLoading || authLoading;
 
-  // Handle new queue structure
-  const queue = queueData?.queue_items || queueData || [];
-  const currentDownload = queueData?.current_download || null;
-  const currentOperation = queueData?.current_operation || null;
-  const delayInfo = queueData?.delay_info || null;
-  const isPaused = queueData?.is_paused || false;
-  const isAutoRefreshing = queueData?.is_auto_refreshing || false;
-  const lastAutoRefresh = queueData?.last_auto_refresh || null;
-
   const downloading = queue?.filter(item => item.video?.status === 'downloading').length || 0;
   const pending = queue?.filter(item => item.video?.status === 'queued').length || 0;
+
+  // Determine if operation should be shown (not hidden by 10-second timeout)
+  const showOperation = currentOperation?.type && !hideScanComplete;
 
   // Get the first queue item with a log message (e.g., rate limit warnings)
   const queueLog = queue?.find(item => item.log)?.log || null;
@@ -126,15 +163,21 @@ function App() {
       <header className="bg-dark-primary sticky top-0 z-50">
         {/* Main Nav Row */}
         <div className="flex items-center gap-2 md:gap-8 px-4 h-[60px]">
-          {/* Nav Tabs - Horizontally scrollable on mobile */}
-          <nav className="flex gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory flex-1 md:flex-initial -mx-2 px-2">
+          {/* Nav Tabs - Compact on mobile (text only), icons on desktop */}
+          <nav className="flex gap-1 md:gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory flex-1 md:flex-initial -mx-2 px-2">
             {navLinks.map(link => (
               <Link
                 key={link.path}
                 to={link.path}
-                className={`nav-tab snap-start flex-shrink-0 ${link.iconOnly ? 'px-3' : ''} ${location.pathname === link.path ? 'active' : ''}`}
+                className={`nav-tab snap-start flex-shrink-0 ${link.iconOnly ? 'px-3' : 'px-3 md:px-4'} ${location.pathname === link.path ? 'active' : ''}`}
               >
-                {link.icon}
+                {/* Icon: show always for iconOnly tabs, otherwise only on desktop */}
+                {link.iconOnly ? (
+                  link.icon
+                ) : (
+                  <span className="hidden md:inline-flex">{link.icon}</span>
+                )}
+                {/* Label: hidden for iconOnly tabs, always shown for others */}
                 {!link.iconOnly && <span>{link.label}</span>}
                 {link.badge > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -162,8 +205,8 @@ function App() {
                   </svg>
                 </button>
 
-                {/* Queue Count */}
-                {(pending > 0 || downloading > 0) && (
+                {/* Queue Count - Only show when not actively downloading */}
+                {(pending > 0 || downloading > 0) && !currentDownload && (
                   <span className="text-text-secondary flex-shrink-0">
                     [<span className="text-text-muted font-bold">{pending + downloading}</span> queued]
                   </span>
@@ -202,19 +245,22 @@ function App() {
                 )}
 
                 {/* Current Operation (scanning, adding channel) - Second Priority */}
-                {!notification && currentOperation?.type && (
+                {!notification && showOperation && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
                       <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
                       <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.4s]"></span>
                     </div>
-                    <span className="text-blue-400">{currentOperation.message}</span>
+                    <span className="text-blue-400">
+                      {autoScanPending && 'Auto-scan queued '}
+                      {currentOperation.message}
+                    </span>
                   </div>
                 )}
 
                 {/* Queue Paused Message */}
-                {!notification && !currentOperation?.type && isPaused && pending > 0 && (
+                {!notification && !showOperation && isPaused && pending > 0 && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="6" y="4" width="4" height="16"></rect>
@@ -227,37 +273,27 @@ function App() {
                 )}
 
                 {/* Download Progress with Details */}
-                {!notification && !currentOperation?.type && !isPaused && currentDownload && (
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
-                      <span className="w-2 h-2 bg-accent rounded-full animate-pulse [animation-delay:0.2s]"></span>
-                      <span className="w-2 h-2 bg-accent rounded-full animate-pulse [animation-delay:0.4s]"></span>
-                    </div>
-                    <span className="text-accent">
-                      Downloading:
+                {!notification && !showOperation && !isPaused && currentDownload && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* First bracket: queue count, speed, ETA */}
+                    <span className="text-text-secondary">
+                      [<span className="text-text-muted font-bold">{pending + downloading}</span> queued
+                      {currentDownload.speed_bps > 0 && (
+                        <span> / <span className="text-text-primary">{(currentDownload.speed_bps / 1024 / 1024).toFixed(1)} MB/s</span></span>
+                      )}
+                      {currentDownload.eta_seconds > 0 && (
+                        <span> ETA: <span className="text-text-primary">{Math.floor(currentDownload.eta_seconds / 60)}:{Math.floor(currentDownload.eta_seconds % 60).toString().padStart(2, '0')}</span></span>
+                      )}]
                     </span>
-                    <span className="text-text-primary">
-                      {currentDownload.video?.title || 'Unknown'}
+                    {/* Second bracket: per-video progress */}
+                    <span className="text-text-secondary">
+                      [<span className="text-accent font-bold">{Math.round(currentDownload.progress_pct)}%</span>/100%]
                     </span>
-                    <span className="text-text-primary">
-                      {Math.round(currentDownload.progress_pct)}%
-                    </span>
-                    {currentDownload.speed_bps > 0 && (
-                      <span className="text-text-primary">
-                        {(currentDownload.speed_bps / 1024 / 1024).toFixed(1)} MB/s
-                      </span>
-                    )}
-                    {currentDownload.eta_seconds > 0 && (
-                      <span className="text-text-primary">
-                        ETA: {Math.floor(currentDownload.eta_seconds / 60)}:{Math.floor(currentDownload.eta_seconds % 60).toString().padStart(2, '0')}
-                      </span>
-                    )}
                   </div>
                 )}
 
                 {/* Regular Download Count (if no detailed progress) */}
-                {!notification && !currentOperation?.type && !currentDownload && downloading > 0 && (
+                {!notification && !showOperation && !currentDownload && downloading > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
@@ -271,7 +307,7 @@ function App() {
                 )}
 
                 {/* Delay Info - Show between downloads */}
-                {!notification && !currentOperation?.type && !currentDownload && downloading === 0 && delayInfo && (
+                {!notification && !showOperation && !currentDownload && downloading === 0 && delayInfo && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></span>
@@ -283,7 +319,7 @@ function App() {
                 )}
 
                 {/* Auto-refresh Status */}
-                {!notification && !currentOperation?.type && !currentDownload && !delayInfo && isAutoRefreshing && (
+                {!notification && !showOperation && !currentDownload && !delayInfo && isAutoRefreshing && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
@@ -294,7 +330,7 @@ function App() {
                   </div>
                 )}
 
-                {!notification && !currentOperation?.type && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
+                {!notification && !showOperation && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
                   <span className="text-text-secondary">
                     Auto-refresh <span className="text-accent">enabled</span> for {health.auto_refresh_time || '03:00'}
                     {lastAutoRefresh && (
@@ -306,8 +342,8 @@ function App() {
                 )}
 
                 {/* Show idle state if no notification and no activity */}
-                {!notification && !currentOperation?.type && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
-                  <span className="text-text-secondary">Idle</span>
+                {!notification && !showOperation && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
+                  <span className="text-accent">Idle</span>
                 )}
               </div>
             </div>

@@ -69,10 +69,15 @@ class APIClient {
     });
   }
 
-  scanChannel(id, forceFull = false) {
+  scanChannel(id, forceFull = false, isBatchStart = false, isAutoScan = false, batchLabel = '') {
     return this.request(`/channels/${id}/scan`, {
       method: 'POST',
-      body: JSON.stringify({ force_full: forceFull }),
+      body: JSON.stringify({
+        force_full: forceFull,
+        is_batch_start: isBatchStart,
+        is_auto_scan: isAutoScan,
+        batch_label: batchLabel
+      }),
     });
   }
 

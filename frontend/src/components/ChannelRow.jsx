@@ -7,6 +7,37 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
   const [maxMinutes, setMaxMinutes] = useState(channel.max_minutes || 0);
   const cardRef = useRef(null);
 
+  // Helper function to format scan time
+  const formatScanTime = (scanTimeString) => {
+    if (!scanTimeString) return null;
+    const scanDate = new Date(scanTimeString);
+    const now = new Date();
+    const isToday = scanDate.toDateString() === now.toDateString();
+
+    if (isToday) {
+      // Show time
+      const hours = scanDate.getHours();
+      const minutes = scanDate.getMinutes();
+      const ampm = hours >= 12 ? 'pm' : 'am';
+      const displayHours = hours % 12 || 12;
+      const displayMinutes = minutes.toString().padStart(2, '0');
+      return `${displayHours}:${displayMinutes}${ampm}`;
+    } else {
+      // Show date
+      return scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+    }
+  };
+
+  // Helper function to format video date
+  const formatVideoDate = (videoDateString) => {
+    if (!videoDateString) return null;
+    const year = videoDateString.substring(0, 4);
+    const month = videoDateString.substring(4, 6);
+    const day = videoDateString.substring(6, 8);
+    const videoDate = new Date(year, month - 1, day);
+    return videoDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+  };
+
   // Click outside to progressively close menus
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -63,15 +94,22 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
   return (
     <div
       ref={cardRef}
-      className={`card flex items-stretch p-0 w-full cursor-pointer transition-all group ${
-        showMenu ? 'max-w-5xl' : 'max-w-3xl'
-      }`}
+      className="card p-0 cursor-pointer transition-all group w-full overflow-x-auto"
       onClick={(e) => {
         if (!e.target.closest('button') && !e.target.closest('input')) {
           navigate(`/channel/${channel.id}`);
         }
       }}
     >
+      {/* Inner flex container that expands when menu opens */}
+      <div className={`flex items-stretch ${
+        showMenu
+          ? showSettings
+            ? 'min-w-[753px]' // Base 393px + drawer 100px + settings 260px
+            : 'min-w-[493px]'  // Base 393px + drawer 100px
+          : 'min-w-full'
+      }`}
+      >
       {/* 3-Dot Menu Button - Full height */}
       <button
         onClick={(e) => {
@@ -168,9 +206,9 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
       </div>
 
       {/* Content - Thumbnail + Info */}
-      <div className="flex items-center gap-4 flex-1 py-3 px-3">
-        {/* Thumbnail */}
-        <div className="relative w-[140px] h-[60px] flex-shrink-0 bg-dark-tertiary rounded overflow-hidden hidden sm:block">
+      <div className="flex items-stretch gap-2 sm:gap-3 flex-1 pl-0 sm:pl-3 pr-3">
+        {/* Thumbnail - Always visible, fills card height on mobile */}
+        <div className="relative w-[60px] sm:w-[140px] h-[88px] sm:h-auto flex-shrink-0 bg-dark-tertiary rounded overflow-hidden my-0 sm:my-3 ml-0 sm:ml-0">
           {channel.thumbnail ? (
             <img
               src={channel.thumbnail}
@@ -179,37 +217,36 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
               </svg>
             </div>
           )}
         </div>
 
-        {/* Info Section - 2 lines */}
-        <div className="flex-1 min-w-0">
-          {/* Line 1: Title + Last Updated */}
+        {/* Info Section - 3 rows */}
+        <div className="flex-1 min-w-0 space-y-1 py-3 flex flex-col justify-center">
+          {/* Row 1: Title */}
           <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-1 leading-tight" title={channel.title}>
-            {channel.auto_download && (
-              <span className="text-green-500 mr-1">(AUTO)</span>
-            )}
             {channel.title}
-            <span className="text-text-secondary font-normal ml-2 text-sm">
-              Last: {channel.last_scan_at ? (() => {
-                const date = new Date(channel.last_scan_at);
-                const now = new Date();
-                const diffTime = now - date;
-                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                if (diffDays <= 0) return 'Today';
-                if (diffDays === 1) return 'Yesterday';
-                if (diffDays < 7) return `${diffDays}d ago`;
-                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-              })() : 'Never'}
-            </span>
           </h3>
 
-          {/* Line 2: Stats Row */}
-          <div className="flex items-center gap-4 mt-1.5">
+          {/* Row 2: Scan and Last Video dates */}
+          <div className="flex items-center gap-2 text-xs text-text-secondary">
+            <span>Scan: <span className="text-text-primary">{formatScanTime(channel.last_scan_time) || 'None'}</span></span>
+            <span className="w-1 h-1 bg-text-muted rounded-full flex-shrink-0"></span>
+            <span>Last Video: <span className="text-text-primary">{formatVideoDate(channel.last_video_date) || 'None'}</span></span>
+          </div>
+
+          {/* Row 3: AUTO badge + Stats (Downloaded, To Review, Ignored) */}
+          <div className="flex items-center gap-3">
+            {/* AUTO badge */}
+            {channel.auto_download && (
+              <>
+                <span className="text-green-500 text-xs font-bold">(AUTO)</span>
+                <span className="w-1 h-1 bg-text-muted rounded-full flex-shrink-0"></span>
+              </>
+            )}
             {/* Downloaded */}
             <div className="flex items-center gap-1 text-sm font-semibold text-accent" title="Downloaded">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -240,6 +277,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
           </div>
         </div>
       </div>
+      </div> {/* Close inner flex container */}
     </div>
   );
 }

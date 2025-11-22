@@ -6,11 +6,11 @@ from datetime import datetime, timezone, timedelta
 import os
 import yt_dlp
 import subprocess
-from models import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category
+from models import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, get_session
 from download_worker import DownloadWorker
 from scheduler import AutoRefreshScheduler
-from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+from youtube_client import YouTubeAPIClient
 import logging_config
 import logging
 import atexit
@@ -109,183 +109,37 @@ def check_single_instance():
 check_single_instance()
 
 # YouTube Data API Helper Functions
-def get_youtube_api_key(session):
+def get_youtube_api_key(session=None):
     """Get YouTube API key from settings"""
-    setting = session.query(Setting).filter(Setting.key == 'youtube_api_key').first()
-    return setting.value if setting and setting.value else None
+    return settings_manager.get('youtube_api_key')
 
-def resolve_channel_id_from_url(youtube, url):
-    """Resolve channel ID from various YouTube URL formats using Data API"""
-    # Extract handle or channel ID from URL
-    if 'youtube.com/@' in url:
-        handle = url.split('/@')[1].split('/')[0].split('?')[0]
-
-        # Try forUsername first (works for some handles)
-        try:
-            response = youtube.channels().list(
-                part='snippet',
-                forUsername=handle
-            ).execute()
-            if response.get('items'):
-                return response['items'][0]['id']
-        except:
-            pass
-
-        # Fallback: Use search with exact query match
-        # Add quotes for exact matching and filter by channel type
-        search_response = youtube.search().list(
-            part='snippet',
-            q=f'"{handle}"',
-            type='channel',
-            maxResults=5
-        ).execute()
-
-        # Look for exact handle match in results
-        if search_response.get('items'):
-            for item in search_response['items']:
-                # Check if the channel's custom URL or title matches
-                channel_id = item['snippet']['channelId']
-                channel_details = youtube.channels().list(
-                    part='snippet',
-                    id=channel_id
-                ).execute()
-
-                if channel_details.get('items'):
-                    custom_url = channel_details['items'][0]['snippet'].get('customUrl', '')
-                    # Check if customUrl matches the handle (with or without @)
-                    if custom_url.lower() == f'@{handle.lower()}' or custom_url.lower() == handle.lower():
-                        return channel_id
-
-            # If no exact match found, return first result (original behavior)
-            return search_response['items'][0]['snippet']['channelId']
-
-    elif 'youtube.com/channel/' in url:
-        return url.split('/channel/')[1].split('/')[0].split('?')[0]
-    elif 'youtube.com/c/' in url:
-        custom_url = url.split('/c/')[1].split('/')[0].split('?')[0]
-        search_response = youtube.search().list(
-            part='snippet',
-            q=custom_url,
-            type='channel',
-            maxResults=1
-        ).execute()
-        if search_response.get('items'):
-            return search_response['items'][0]['snippet']['channelId']
-    return None
-
-def get_channel_info(youtube, channel_id):
-    """Get channel metadata using Data API"""
-    response = youtube.channels().list(
-        part='snippet,contentDetails,statistics',
-        id=channel_id
-    ).execute()
-
-    if not response.get('items'):
-        return None
-
-    channel_data = response['items'][0]
-    return {
-        'id': channel_id,
-        'title': channel_data['snippet']['title'],
-        'thumbnail': channel_data['snippet']['thumbnails'].get('high', {}).get('url'),
-        'uploads_playlist': channel_data['contentDetails']['relatedPlaylists']['uploads']
-    }
-
-def scan_channel_videos(youtube, channel_id, max_results=50):
-    """Scan channel videos using Data API (fast and reliable)"""
-    try:
-        # First get channel info to find uploads playlist
-        channel_info = get_channel_info(youtube, channel_id)
-        if not channel_info:
-            print(f"ERROR: Could not get channel info for {channel_id}")
-            return []
-
-        uploads_playlist_id = channel_info['uploads_playlist']
-        print(f"Scanning uploads playlist: {uploads_playlist_id}")
-        videos = []
-        next_page_token = None
-
-        while len(videos) < max_results:
-            # Get videos from uploads playlist
-            playlist_response = youtube.playlistItems().list(
-                part='snippet,contentDetails',
-                playlistId=uploads_playlist_id,
-                maxResults=min(50, max_results - len(videos)),
-                pageToken=next_page_token
-            ).execute()
-
-            video_ids = [item['contentDetails']['videoId'] for item in playlist_response.get('items', [])]
-            print(f"Found {len(video_ids)} video IDs in this page")
-
-            if video_ids:
-                # Get detailed video info (including duration)
-                videos_response = youtube.videos().list(
-                    part='snippet,contentDetails,statistics',
-                    id=','.join(video_ids)
-                ).execute()
-
-                for video in videos_response.get('items', []):
-                    # Parse ISO 8601 duration (PT1H2M10S -> seconds)
-                    # Skip videos without duration (deleted, private, etc)
-                    if 'duration' not in video.get('contentDetails', {}):
-                        print(f"Skipping video {video['id']}: no duration (possibly deleted/private)")
-                        continue
-
-                    duration_str = video['contentDetails']['duration']
-                    duration_sec = parse_iso8601_duration(duration_str)
-
-                    # Skip videos under 2 minutes (120 seconds)
-                    # This filters out YouTube Shorts and very short videos
-                    if duration_sec < 120:
-                        print(f"Skipping video {video['id']}: duration {duration_sec}s (<2 min)")
-                        continue
-
-                    videos.append({
-                        'id': video['id'],
-                        'title': video['snippet']['title'],
-                        'duration_sec': duration_sec,
-                        'upload_date': video['snippet']['publishedAt'][:10].replace('-', ''),
-                        'thumbnail': video['snippet']['thumbnails'].get('high', {}).get('url')
-                    })
-
-            next_page_token = playlist_response.get('nextPageToken')
-            if not next_page_token:
-                break
-
-        print(f"Total videos scanned: {len(videos)}")
-        return videos
-    except Exception as e:
-        print(f"ERROR in scan_channel_videos: {e}")
-        import traceback
-        traceback.print_exc()
-        return []
+def get_youtube_client():
+    """Get YouTube API client instance"""
+    api_key = get_youtube_api_key()
+    if not api_key:
+        raise ValueError('YouTube API key not configured. Please add it in Settings.')
+    return YouTubeAPIClient(api_key)
 
 # Initialize database BEFORE Flask app so we can load secret key from DB
 engine, Session = init_db()
 session_factory = Session
 
+# Initialize settings manager with caching
+from utils import SettingsManager
+settings_manager = SettingsManager(session_factory, cache_ttl=5)
+
 def get_or_create_secret_key():
     """Get or create persistent secret key from database"""
-    session = session_factory()
-    try:
-        # Check if secret_key exists in database
-        secret_key_setting = session.query(Setting).filter(Setting.key == 'secret_key').first()
+    secret_key = settings_manager.get('secret_key')
 
-        if secret_key_setting and secret_key_setting.value:
-            # Use existing secret key
-            return secret_key_setting.value
-        else:
-            # Generate new secret key and save to database
-            new_secret_key = secrets.token_hex(32)
-            if secret_key_setting:
-                secret_key_setting.value = new_secret_key
-            else:
-                secret_key_setting = Setting(key='secret_key', value=new_secret_key)
-                session.add(secret_key_setting)
-            session.commit()
-            return new_secret_key
-    finally:
-        session.close()
+    if secret_key:
+        # Use existing secret key
+        return secret_key
+    else:
+        # Generate new secret key and save to database
+        new_secret_key = secrets.token_hex(32)
+        settings_manager.set('secret_key', new_secret_key)
+        return new_secret_key
 
 # Determine static folder path - different for Docker vs local dev
 # In Docker: /app/dist, In local dev: ../frontend/dist
@@ -336,17 +190,9 @@ limiter = Limiter(
 # Authentication helper functions
 def get_stored_credentials():
     """Get stored username and password hash from database"""
-    session = session_factory()
-    try:
-        username_setting = session.query(Setting).filter_by(key='auth_username').first()
-        password_setting = session.query(Setting).filter_by(key='auth_password_hash').first()
-
-        username = username_setting.value if username_setting else 'admin'
-        password_hash = password_setting.value if password_setting else generate_password_hash('admin')
-
-        return username, password_hash
-    finally:
-        session.close()
+    username = settings_manager.get('auth_username', 'admin')
+    password_hash = settings_manager.get('auth_password_hash', generate_password_hash('admin'))
+    return username, password_hash
 
 def check_auth_credentials(username, password):
     """Validate username and password against stored credentials"""
@@ -386,18 +232,92 @@ def require_authentication():
         return jsonify({'error': 'Authentication required'}), 401
 
 # Initialize download worker
-download_worker = DownloadWorker(session_factory, download_dir='downloads')
+download_worker = DownloadWorker(session_factory, download_dir='downloads', settings_manager=settings_manager)
 download_worker.start()
 
 # Initialize scan queue and worker
 scan_queue = Queue()
 scan_worker_running = True
 scan_worker_thread = None
+scan_total_channels = 0
+scan_current_channel = 0
+scan_last_queue_time = 0  # Timestamp of last queue operation
+scan_batch_in_progress = False  # Global batch lock
+scan_batch_lock = threading.Lock()  # Thread-safe lock
+scan_pending_auto_scan = False  # Auto-scan queued flag
+scan_batch_stats = {'new': 0, 'ignored': 0, 'auto_queued': 0, 'channels': 0}  # Track batch results
+scan_batch_label = ''  # Label for the batch (e.g., "Scan New", "Auto-Scan", "Channel: xyz")
+
+def acquire_scan_batch_lock(is_auto_scan=False, batch_label=''):
+    """
+    Try to acquire batch scan lock.
+
+    Args:
+        is_auto_scan: If True, this is an auto-scan request
+        batch_label: Label for the batch (e.g., "Scan New", "Channel: xyz")
+
+    Returns:
+        True if acquired, 'pending' if auto-scan queued, False if rejected
+    """
+    global scan_batch_in_progress, scan_pending_auto_scan, scan_batch_stats, scan_batch_label
+    with scan_batch_lock:
+        if scan_batch_in_progress:
+            # Batch already running
+            if is_auto_scan:
+                # Auto-scan should queue itself for later
+                scan_pending_auto_scan = True
+                logger.debug("Auto-scan queued - will run after current batch completes")
+                return 'pending'
+            else:
+                # Manual scan should be rejected
+                logger.debug("Manual scan rejected - batch already in progress")
+                return False
+
+        # Acquire the lock and reset batch stats
+        scan_batch_in_progress = True
+        scan_batch_stats = {'new': 0, 'ignored': 0, 'auto_queued': 0, 'channels': 0}
+        scan_batch_label = batch_label
+        logger.debug(f"Scan batch lock ACQUIRED: {batch_label}")
+        return True
+
+def release_scan_batch_lock():
+    """Release the batch scan lock and check for pending auto-scan."""
+    global scan_batch_in_progress, scan_pending_auto_scan, scan_batch_stats, scan_batch_label
+    with scan_batch_lock:
+        if scan_batch_in_progress:
+            scan_batch_in_progress = False
+
+            # Set completion message and log if any channels were scanned
+            if scan_batch_stats['channels'] > 0:
+                new = scan_batch_stats['new']
+                ignored = scan_batch_stats['ignored']
+                auto_queued = scan_batch_stats['auto_queued']
+
+                # Format the batch completion message
+                if new == 0 and ignored == 0 and auto_queued == 0:
+                    completion_msg = f"{scan_batch_label} completed. No new videos found"
+                else:
+                    completion_msg = f"{scan_batch_label} completed. {new} new, {ignored} ignored, {auto_queued} auto-queued"
+
+                # Log completion
+                logger.info(completion_msg)
+
+                # Set status bar message (same format)
+                set_operation('scan_complete', completion_msg)
+
+            logger.debug("Scan batch lock RELEASED")
+
+            # Check if auto-scan is pending
+            if scan_pending_auto_scan:
+                scan_pending_auto_scan = False
+                logger.debug("Triggering pending auto-scan")
+                return True  # Signal that auto-scan should run
+        return False
 
 def _scan_worker():
     """Background worker thread that processes scan queue"""
-    global scan_worker_running
-    logger.info("Scan worker thread started")
+    global scan_worker_running, scan_current_channel, scan_total_channels, scan_batch_label
+    logger.debug("Scan worker thread started")
 
     while scan_worker_running:
         try:
@@ -406,45 +326,67 @@ def _scan_worker():
                 scan_job = scan_queue.get(timeout=1.0)
             except:
                 # Timeout - no job available, continue loop
+                # Reset counters if queue is empty
+                if scan_queue.empty():
+                    scan_total_channels = 0
+                    scan_current_channel = 0
+                    should_trigger_auto_scan = release_scan_batch_lock()  # Release lock and check for pending auto-scan
+                    if should_trigger_auto_scan:
+                        # Auto-scan was pending, trigger it now
+                        logger.debug("Scan worker: Triggering pending auto-scan")
+                        scheduler.scan_all_channels()
                 continue
 
             channel_id = scan_job['channel_id']
             force_full = scan_job.get('force_full', False)
 
-            logger.info(f"Scan worker: Processing scan for channel ID {channel_id}")
+            # Increment current channel counter
+            scan_current_channel += 1
+
+            # Log batch start on first channel
+            if scan_current_channel == 1:
+                channel_word = 'channel' if scan_total_channels == 1 else 'channels'
+                logger.info(f"Starting {scan_batch_label} for {scan_total_channels} {channel_word}")
+
+            logger.debug(f"Scan worker: Processing scan for channel ID {channel_id} ({scan_current_channel}/{scan_total_channels})")
 
             # Process the scan in a new session
-            session = session_factory()
             try:
-                channel = session.query(Channel).filter(Channel.id == channel_id).first()
-                if not channel:
-                    logger.warning(f"Scan worker: Channel {channel_id} not found")
-                    scan_queue.task_done()
-                    continue
+                with get_session(session_factory) as session:
+                    channel = session.query(Channel).filter(Channel.id == channel_id).first()
+                    if not channel:
+                        logger.warning(f"Scan worker: Channel {channel_id} not found")
+                        scan_queue.task_done()
+                        continue
 
-                # Execute the scan logic
-                _execute_channel_scan(session, channel, force_full)
-                session.commit()
-                logger.info(f"Scan worker: Completed scan for channel '{channel.title}'")
+                    # Execute the scan logic with progress info
+                    result = _execute_channel_scan(session, channel, force_full, scan_current_channel, scan_total_channels)
+
+                    # Accumulate batch statistics
+                    global scan_batch_stats
+                    scan_batch_stats['new'] += result.get('new_videos', 0)
+                    scan_batch_stats['ignored'] += result.get('ignored_videos', 0)
+                    scan_batch_stats['auto_queued'] += result.get('auto_queued', 0)
+                    scan_batch_stats['channels'] += 1
+
+                    logger.debug(f"Scan worker: Completed scan for channel '{channel.title}'")
 
             except Exception as e:
-                session.rollback()
                 logger.error(f"Scan worker: Error scanning channel {channel_id}: {e}", exc_info=True)
             finally:
-                session.close()
                 scan_queue.task_done()
 
         except Exception as e:
             logger.error(f"Scan worker: Unexpected error in worker loop: {e}", exc_info=True)
 
-    logger.info("Scan worker thread stopped")
+    logger.debug("Scan worker thread stopped")
 
 def start_scan_worker():
     """Start the scan worker thread"""
     global scan_worker_thread
     scan_worker_thread = threading.Thread(target=_scan_worker, daemon=True)
     scan_worker_thread.start()
-    logger.info("Scan worker initialized")
+    logger.debug("Scan worker initialized")
 
 def stop_scan_worker():
     """Stop the scan worker thread"""
@@ -452,7 +394,7 @@ def stop_scan_worker():
     scan_worker_running = False
     if scan_worker_thread:
         scan_worker_thread.join(timeout=5)
-    logger.info("Scan worker stopped")
+    logger.debug("Scan worker stopped")
 
 # Register cleanup
 atexit.register(stop_scan_worker)
@@ -462,8 +404,7 @@ start_scan_worker()
 
 # Startup recovery: Reset any stuck 'downloading' videos to 'queued' and compact queue positions
 def startup_recovery():
-    session = session_factory()
-    try:
+    with get_session(session_factory) as session:
         # Reset stuck downloading videos
         stuck_videos = session.query(Video).filter(Video.status == 'downloading').all()
         for video in stuck_videos:
@@ -477,10 +418,6 @@ def startup_recovery():
             for idx, item in enumerate(queue_items, start=1):
                 item.queue_position = idx
             print(f"Startup recovery: Compacted {len(queue_items)} queue positions")
-
-        session.commit()
-    finally:
-        session.close()
 
 startup_recovery()
 
@@ -512,24 +449,16 @@ def clear_operation():
         'progress': 0
     }
 
-# Initialize scheduler with operation tracking callbacks and scan queue function
-scheduler = AutoRefreshScheduler(session_factory, download_worker, set_operation, clear_operation, queue_channel_scan)
-scheduler.start()
-
 # Initialize default settings
 def init_settings():
-    session = session_factory()
     defaults = {
         'auto_refresh_enabled': 'false',
         'download_quality': 'best',
         'concurrent_downloads': '1'
     }
     for key, value in defaults.items():
-        existing = session.query(Setting).filter(Setting.key == key).first()
-        if not existing:
-            session.add(Setting(key=key, value=value))
-    session.commit()
-    session.close()
+        if not settings_manager.get(key):
+            settings_manager.set(key, value)
 
 init_settings()
 
@@ -584,7 +513,21 @@ def serialize_channel(channel):
 def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
     """Format date for scan status message. Returns 'None' if no date."""
     if datetime_obj:
-        return datetime_obj.strftime('%m/%d')
+        # Convert UTC to local time
+        if datetime_obj.tzinfo is not None:
+            local_dt = datetime_obj.astimezone()
+        else:
+            # Assume UTC if no timezone info
+            local_dt = datetime_obj.replace(tzinfo=timezone.utc).astimezone()
+
+        # Check if today in local time
+        now_local = datetime.now()
+        if local_dt.date() == now_local.date():
+            # Today - show time only
+            return local_dt.strftime('%I:%M%p').lstrip('0').lower()
+        else:
+            # Not today - show date
+            return local_dt.strftime('%m/%d')
     elif yyyymmdd_string:
         # Parse YYYYMMDD format
         year = yyyymmdd_string[0:4]
@@ -593,7 +536,7 @@ def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
         return f"{month}/{day}"
     return "None"
 
-def _execute_channel_scan(session, channel, force_full=False):
+def _execute_channel_scan(session, channel, force_full=False, current_num=0, total_num=0):
     """
     Execute a channel scan. This function contains the core scan logic.
     Used by both the scan endpoint and the scan worker thread.
@@ -602,12 +545,14 @@ def _execute_channel_scan(session, channel, force_full=False):
         session: SQLAlchemy session
         channel: Channel object to scan
         force_full: Boolean, if True does full scan, otherwise incremental
+        current_num: Current channel number in batch (for progress display)
+        total_num: Total channels in batch (for progress display)
 
     Returns:
         dict with 'new_videos' and 'ignored_videos' counts
     """
     scan_type = "full" if force_full else "incremental"
-    logger.info(f"Starting {scan_type} scan for channel: {channel.title} (ID: {channel.id})")
+    logger.info(f"Starting scan for channel: {channel.title} (id: {channel.id})")
 
     # Get last video date for status message
     last_video_date = None
@@ -620,34 +565,34 @@ def _execute_channel_scan(session, channel, force_full=False):
     # Format status message with last scan and last video info
     last_scan_str = format_scan_status_date(datetime_obj=channel.last_scan_time)
     last_video_str = format_scan_status_date(yyyymmdd_string=last_video_date)
-    status_msg = f"Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str}"
+
+    # Add progress prefix if we have total info
+    progress_prefix = f"[{current_num}/{total_num}] " if total_num > 0 else ""
+    status_msg = f"{progress_prefix}Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str}"
     set_operation('scanning', status_msg, channel_id=channel.id)
 
-    # Get YouTube API key
-    api_key = get_youtube_api_key(session)
-    if not api_key:
+    # Get YouTube API client
+    try:
+        youtube_client = get_youtube_client()
+    except ValueError as e:
         logger.debug("YouTube API key not configured")
         clear_operation()
-        raise ValueError('YouTube API key not configured. Please add it in Settings.')
-
-    # Build YouTube API client
-    logger.debug(f"Building YouTube API client for channel: {channel.title}")
-    youtube = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
+        raise e
 
     # Scan videos using YouTube Data API
     # For full scan, get ALL videos (999999 effectively means no limit)
     # For incremental scans:
     #   - If auto-scan is OFF: use 250 (manual scans are infrequent, need larger buffer)
     #   - If auto-scan is ON: use 50 (scans daily, smaller buffer is fine)
+    logger.debug(f"Scanning channel: {channel.title}")
     if force_full:
         max_results = 999999
     else:
         # Check if auto-scan is enabled
-        auto_scan_setting = session.query(Setting).filter(Setting.key == 'auto_refresh_enabled').first()
-        auto_scan_enabled = auto_scan_setting and auto_scan_setting.value == 'true'
+        auto_scan_enabled = settings_manager.get_bool('auto_refresh_enabled')
         max_results = 50 if auto_scan_enabled else 250
     logger.debug(f"Fetching up to {max_results} videos for channel: {channel.title}")
-    videos = scan_channel_videos(youtube, channel.yt_id, max_results=max_results)
+    videos = youtube_client.scan_channel_videos(channel.yt_id, max_results=max_results)
     logger.debug(f"Found {len(videos)} total videos from YouTube API for channel: {channel.title}")
 
     new_count = 0
@@ -657,12 +602,12 @@ def _execute_channel_scan(session, channel, force_full=False):
     latest_upload_date = None
 
     total_videos = len(videos)
-    logger.info(f"Processing {total_videos} videos for channel '{channel.title}'")
+    logger.debug(f"Processing {total_videos} videos for channel '{channel.title}'")
 
     for idx, video_data in enumerate(videos, 1):
         # Update status with progress
         if total_videos > 0:
-            progress_msg = f"Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str} ({idx}/{total_videos})"
+            progress_msg = f"{progress_prefix}Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str} ({idx}/{total_videos})"
             set_operation('scanning', progress_msg, channel_id=channel.id)
 
         # Track the latest upload date found
@@ -739,9 +684,9 @@ def _execute_channel_scan(session, channel, force_full=False):
 
     # Log scan summary at INFO level
     if new_count == 0 and ignored_count == 0 and auto_queued_count == 0:
-        logger.info(f"Scan complete for '{channel.title}': No new videos found.")
+        logger.info("Scan complete. No new videos found")
     else:
-        logger.info(f"Scan complete for '{channel.title}': {new_count} new, {ignored_count} ignored, {auto_queued_count} auto-queued")
+        logger.info(f"Scan complete. {new_count} new, {ignored_count} ignored, {auto_queued_count} auto-queued")
 
     # Auto-resume the download worker if videos were auto-queued
     if auto_queued_count > 0 and download_worker.paused:
@@ -752,14 +697,28 @@ def _execute_channel_scan(session, channel, force_full=False):
 
     return {
         'new_videos': new_count,
-        'ignored_videos': ignored_count
+        'ignored_videos': ignored_count,
+        'auto_queued': auto_queued_count
     }
 
-def queue_channel_scan(channel_id, force_full=False):
+def queue_channel_scan(channel_id, force_full=False, reset_counters=False, is_batch_start=False, is_auto_scan=False, batch_label=''):
     """
     Add a channel to the scan queue.
-    Returns True if added, False if already in queue.
+
+    Args:
+        channel_id: ID of channel to scan
+        force_full: If True, rescan all videos (not just new ones)
+        reset_counters: If True, force reset of scan progress counters (used when starting a new batch)
+        is_batch_start: If True, this is the first channel in a batch scan
+        is_auto_scan: If True, this is an auto-scan (can be queued for later)
+        batch_label: Label for the batch (e.g., "Scan New", "Channel: xyz")
+
+    Returns:
+        True if added, 'pending' if auto-scan queued, False if rejected
     """
+    global scan_total_channels, scan_current_channel, scan_last_queue_time
+    import time
+
     # Check if already in queue by examining all pending items
     queue_items = list(scan_queue.queue)
     for item in queue_items:
@@ -767,12 +726,34 @@ def queue_channel_scan(channel_id, force_full=False):
             logger.debug(f"Channel {channel_id} already in scan queue, skipping")
             return False
 
-    # Add to queue
+    # Try to acquire batch lock if this is the start of a batch
+    if is_batch_start:
+        lock_result = acquire_scan_batch_lock(is_auto_scan, batch_label)
+        if lock_result != True:
+            return lock_result  # Returns 'pending' or False
+
+    current_time = time.time()
+    time_since_last_queue = current_time - scan_last_queue_time
+
+    # Reset counters if:
+    # 1. Explicitly requested, OR
+    # 2. Queue is empty AND it's been >3 seconds since last queue (new batch, not rapid queueing)
+    should_reset = reset_counters or (scan_queue.empty() and time_since_last_queue > 3)
+
+    if should_reset:
+        if scan_total_channels > 0 or scan_current_channel > 0:
+            logger.debug(f"Resetting scan counters (was {scan_current_channel}/{scan_total_channels})")
+        scan_total_channels = 0
+        scan_current_channel = 0
+
+    # Add to queue and increment total
     scan_queue.put({
         'channel_id': channel_id,
         'force_full': force_full
     })
-    logger.info(f"Added channel {channel_id} to scan queue (force_full={force_full})")
+    scan_total_channels += 1
+    scan_last_queue_time = current_time
+    logger.debug(f"Added channel {channel_id} to scan queue (force_full={force_full}) - Total queued: {scan_total_channels}")
     return True
 
 def get_scan_queue_status():
@@ -786,8 +767,14 @@ def get_scan_queue_status():
     return {
         'queue_size': queue_size,
         'queued_channel_ids': queued_channel_ids,
-        'current_operation': current_operation.copy()
+        'current_operation': current_operation.copy(),
+        'scan_current': scan_current_channel,
+        'scan_total': scan_total_channels
     }
+
+# Initialize scheduler with operation tracking callbacks and scan queue function
+scheduler = AutoRefreshScheduler(session_factory, download_worker, settings_manager, set_operation, clear_operation, queue_channel_scan)
+scheduler.start()
 
 def serialize_video(video):
     # Get playlist information for this video
@@ -906,12 +893,8 @@ def health_check():
     ytdlp_version = yt_dlp.version.__version__
     
     # Check auto-refresh status
-    session = get_db()
-    auto_refresh_setting = session.query(Setting).filter(Setting.key == 'auto_refresh_enabled').first()
-    auto_refresh_enabled = auto_refresh_setting.value == 'true' if auto_refresh_setting else False
-    auto_refresh_time_setting = session.query(Setting).filter(Setting.key == 'auto_refresh_time').first()
-    auto_refresh_time = auto_refresh_time_setting.value if auto_refresh_time_setting else '03:00'
-    session.close()
+    auto_refresh_enabled = settings_manager.get_bool('auto_refresh_enabled')
+    auto_refresh_time = settings_manager.get('auto_refresh_time', '03:00')
     
     # Check cookies.txt
     cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
@@ -968,187 +951,197 @@ def health_check():
 # Channels
 @app.route('/api/channels', methods=['GET'])
 def get_channels():
-    session = get_db()
-    channels = session.query(Channel).all()
-    result = [serialize_channel(c) for c in channels]
-    session.close()
-    return jsonify(result)
+    with get_session(session_factory) as session:
+        channels = session.query(Channel).all()
+        result = [serialize_channel(c) for c in channels]
+        return jsonify(result)
 
 @app.route('/api/channels', methods=['POST'])
 def create_channel():
     data = request.json
-    session = get_db()
 
     try:
         set_operation('adding_channel', 'Fetching channel information...')
 
-        # Get YouTube API key
-        api_key = get_youtube_api_key(session)
-        if not api_key:
+        # Get YouTube API client
+        try:
+            youtube_client = get_youtube_client()
+        except ValueError as e:
             clear_operation()
-            return jsonify({'error': 'YouTube API key not configured. Please add it in Settings.'}), 400
-
-        # Build YouTube API client
-        youtube = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
+            return jsonify({'error': str(e)}), 400
 
         # Resolve channel ID from URL
-        channel_id = resolve_channel_id_from_url(youtube, data['url'])
+        try:
+            channel_id = youtube_client.resolve_channel_id_from_url(data['url'])
+        except HttpError as e:
+            clear_operation()
+            return jsonify({'error': f'YouTube API error: {e}'}), 500
+
         if not channel_id:
             clear_operation()
             return jsonify({'error': 'Could not resolve channel ID from URL'}), 400
 
-        # Check if already exists
-        existing = session.query(Channel).filter(Channel.yt_id == channel_id).first()
-        if existing:
-            clear_operation()
-            return jsonify({'error': 'Channel already exists'}), 400
+        with get_session(session_factory) as session:
+            # Check if already exists
+            existing = session.query(Channel).filter(Channel.yt_id == channel_id).first()
+            if existing:
+                clear_operation()
+                return jsonify({'error': 'Channel already exists'}), 400
 
-        # Get channel info
-        channel_info = get_channel_info(youtube, channel_id)
-        if not channel_info:
-            clear_operation()
-            return jsonify({'error': 'Could not fetch channel information'}), 400
-
-        # Create folder name
-        folder_name = channel_info['title'].replace(' ', '_').replace('/', '_')[:50]
-
-        # Download channel thumbnail locally
-        import urllib.request
-        thumbnails_dir = os.path.join('downloads', 'thumbnails')
-        os.makedirs(thumbnails_dir, exist_ok=True)
-
-        thumbnail_path = None
-        if channel_info['thumbnail']:
+            # Get channel info
             try:
-                thumbnail_filename = f"{channel_id}.jpg"
-                local_file_path = os.path.join(thumbnails_dir, thumbnail_filename)
-                urllib.request.urlretrieve(channel_info['thumbnail'], local_file_path)
+                channel_info = youtube_client.get_channel_info(channel_id)
+            except HttpError as e:
+                clear_operation()
+                return jsonify({'error': f'YouTube API error: {e}'}), 500
 
-                # Store relative path (without 'downloads/' prefix) since media endpoint serves from downloads/
-                thumbnail_path = os.path.join('thumbnails', thumbnail_filename)
-                print(f'Downloaded channel thumbnail for {channel_id}')
-            except Exception as e:
-                print(f'Failed to download channel thumbnail: {e}')
-                thumbnail_path = None
+            if not channel_info:
+                clear_operation()
+                return jsonify({'error': 'Could not fetch channel information'}), 400
 
-        channel = Channel(
-            yt_id=channel_id,
-            title=channel_info['title'],
-            thumbnail=thumbnail_path,  # Store local path instead of YouTube URL
-            folder_name=folder_name,
-            min_minutes=data.get('min_minutes', 0),
-            max_minutes=data.get('max_minutes', 0)
-        )
-        session.add(channel)
-        session.commit()
+            # Create folder name
+            folder_name = channel_info['title'].replace(' ', '_').replace('/', '_')[:50]
 
-        # Queue initial full scan of the channel (runs in background)
-        # force_full=True ensures we get the entire channel history
-        queue_channel_scan(channel.id, force_full=True)
-        logger.info(f"Queued initial full scan for new channel: {channel.title} (ID: {channel.id})")
+            # Download channel thumbnail locally
+            import urllib.request
+            thumbnails_dir = os.path.join('downloads', 'thumbnails')
+            os.makedirs(thumbnails_dir, exist_ok=True)
 
-        clear_operation()
-        result = serialize_channel(channel)
-        result['scan_result'] = {
-            'message': 'Initial scan queued',
-            'status': 'queued'
-        }
-        return jsonify(result), 201
+            thumbnail_path = None
+            if channel_info['thumbnail']:
+                try:
+                    thumbnail_filename = f"{channel_id}.jpg"
+                    local_file_path = os.path.join(thumbnails_dir, thumbnail_filename)
+                    urllib.request.urlretrieve(channel_info['thumbnail'], local_file_path)
+
+                    # Store relative path (without 'downloads/' prefix) since media endpoint serves from downloads/
+                    thumbnail_path = os.path.join('thumbnails', thumbnail_filename)
+                    print(f'Downloaded channel thumbnail for {channel_id}')
+                except Exception as e:
+                    print(f'Failed to download channel thumbnail: {e}')
+                    thumbnail_path = None
+
+            channel = Channel(
+                yt_id=channel_id,
+                title=channel_info['title'],
+                thumbnail=thumbnail_path,  # Store local path instead of YouTube URL
+                folder_name=folder_name,
+                min_minutes=data.get('min_minutes', 0),
+                max_minutes=data.get('max_minutes', 0)
+            )
+            session.add(channel)
+            session.commit()
+
+            # Queue initial full scan of the channel (runs in background)
+            # force_full=True ensures we get the entire channel history
+            queue_channel_scan(channel.id, force_full=True)
+            logger.info(f"Queued initial full scan for new channel: {channel.title} (ID: {channel.id})")
+
+            clear_operation()
+            result = serialize_channel(channel)
+            result['scan_result'] = {
+                'message': 'Initial scan queued',
+                'status': 'queued'
+            }
+            return jsonify(result), 201
 
     except HttpError as api_error:
-        session.rollback()
         clear_operation()
         logger.error(f'YouTube API error while adding channel: {api_error}', exc_info=True)
         return jsonify({'error': 'Failed to add channel due to YouTube API error'}), 500
     except Exception as e:
-        session.rollback()
         clear_operation()
         logger.error(f'Error adding channel: {str(e)}', exc_info=True)
         return jsonify({'error': 'An error occurred while adding the channel'}), 500
-    finally:
-        session.close()
 
 @app.route('/api/channels/<int:channel_id>', methods=['PATCH'])
 def update_channel(channel_id):
     data = request.json
-    session = get_db()
-    
-    channel = session.query(Channel).filter(Channel.id == channel_id).first()
-    if not channel:
-        session.close()
-        return jsonify({'error': 'Channel not found'}), 404
-    
-    if 'min_minutes' in data:
-        old_min = channel.min_minutes
-        channel.min_minutes = int(data['min_minutes'] or 0)
-        if channel.min_minutes != old_min:
-            logger.info(f"Duration filter updated for '{channel.title}': min_minutes {old_min} -> {channel.min_minutes}")
-    if 'max_minutes' in data:
-        old_max = channel.max_minutes
-        channel.max_minutes = int(data['max_minutes'] or 0)
-        if channel.max_minutes != old_max:
-            logger.info(f"Duration filter updated for '{channel.title}': max_minutes {old_max} -> {channel.max_minutes}")
-    if 'auto_download' in data:
-        old_value = channel.auto_download
-        channel.auto_download = bool(data['auto_download'])
-        if channel.auto_download != old_value:
-            if channel.auto_download:
-                logger.info(f"Auto-download enabled for channel '{channel.title}'")
-            else:
-                logger.info(f"Auto-download disabled for channel '{channel.title}'")
-    if 'folder_name' in data:
-        channel.folder_name = data['folder_name']
 
-    channel.updated_at = datetime.now(timezone.utc)
-    session.commit()
-    
-    result = serialize_channel(channel)
-    session.close()
-    return jsonify(result)
+    with get_session(session_factory) as session:
+        channel = session.query(Channel).filter(Channel.id == channel_id).first()
+        if not channel:
+            return jsonify({'error': 'Channel not found'}), 404
+
+        if 'min_minutes' in data:
+            old_min = channel.min_minutes
+            channel.min_minutes = int(data['min_minutes'] or 0)
+            if channel.min_minutes != old_min:
+                logger.info(f"Duration filter updated for '{channel.title}': min_minutes {old_min} -> {channel.min_minutes}")
+        if 'max_minutes' in data:
+            old_max = channel.max_minutes
+            channel.max_minutes = int(data['max_minutes'] or 0)
+            if channel.max_minutes != old_max:
+                logger.info(f"Duration filter updated for '{channel.title}': max_minutes {old_max} -> {channel.max_minutes}")
+        if 'auto_download' in data:
+            old_value = channel.auto_download
+            channel.auto_download = bool(data['auto_download'])
+            if channel.auto_download != old_value:
+                if channel.auto_download:
+                    logger.info(f"Auto-download enabled for channel '{channel.title}'")
+                else:
+                    logger.info(f"Auto-download disabled for channel '{channel.title}'")
+        if 'folder_name' in data:
+            channel.folder_name = data['folder_name']
+
+        channel.updated_at = datetime.now(timezone.utc)
+        session.commit()
+
+        result = serialize_channel(channel)
+        return jsonify(result)
 
 @app.route('/api/channels/<int:channel_id>', methods=['DELETE'])
 @limiter.limit("20 per minute")
 def delete_channel(channel_id):
-    session = get_db()
-    channel = session.query(Channel).filter(Channel.id == channel_id).first()
-    
-    if not channel:
-        session.close()
-        return jsonify({'error': 'Channel not found'}), 404
-    
-    session.delete(channel)
-    session.commit()
-    session.close()
-    
-    return '', 204
+    with get_session(session_factory) as session:
+        channel = session.query(Channel).filter(Channel.id == channel_id).first()
+
+        if not channel:
+            return jsonify({'error': 'Channel not found'}), 404
+
+        session.delete(channel)
+        session.commit()
+
+        return '', 204
 
 @app.route('/api/channels/<int:channel_id>/scan', methods=['POST'])
 def scan_channel(channel_id):
     """Queue a channel scan (runs in background)"""
-    session = get_db()
-    channel = session.query(Channel).filter(Channel.id == channel_id).first()
+    with get_session(session_factory) as session:
+        channel = session.query(Channel).filter(Channel.id == channel_id).first()
 
-    if not channel:
-        session.close()
-        logger.debug(f"Scan requested for non-existent channel ID: {channel_id}")
-        return jsonify({'error': 'Channel not found'}), 404
+        if not channel:
+            logger.debug(f"Scan requested for non-existent channel ID: {channel_id}")
+            return jsonify({'error': 'Channel not found'}), 404
 
-    # Check if this is a full rescan (get all videos, not just new ones)
-    data = request.get_json() or {}
-    force_full = data.get('force_full', False)
+        # Get scan parameters
+        data = request.get_json() or {}
+        force_full = data.get('force_full', False)
+        is_batch_start = data.get('is_batch_start', False)
+        is_auto_scan = data.get('is_auto_scan', False)
+        batch_label = data.get('batch_label', channel.title)
 
-    # Add to scan queue
-    added = queue_channel_scan(channel_id, force_full)
+        # Try to queue the channel
+        result = queue_channel_scan(
+            channel_id,
+            force_full,
+            is_batch_start=is_batch_start,
+            is_auto_scan=is_auto_scan,
+            batch_label=batch_label
+        )
 
-    session.close()
+        scan_type = "full" if force_full else "incremental"
 
-    scan_type = "full" if force_full else "incremental"
-    if added:
-        logger.info(f"Queued {scan_type} scan for channel: {channel.title} (ID: {channel_id})")
-        return jsonify({'status': 'queued', 'message': f'Scan queued for {channel.title}'}), 202
-    else:
-        logger.info(f"Channel {channel.title} (ID: {channel_id}) already in scan queue")
-        return jsonify({'status': 'already_queued', 'message': f'{channel.title} is already in the scan queue'}), 200
+        if result == True:
+            logger.debug(f"Queued {scan_type} scan for channel: {channel.title} (ID: {channel_id})")
+            return jsonify({'status': 'queued', 'message': f'Scan queued for {channel.title}'}), 202
+        elif result == 'pending':
+            logger.debug(f"Auto-scan queued for later: {channel.title} (ID: {channel_id})")
+            return jsonify({'status': 'auto_scan_pending', 'message': 'Auto-scan queued for after current batch'}), 202
+        else:
+            # result is False - batch in progress or already queued
+            logger.debug(f"Scan rejected for channel {channel.title} (ID: {channel_id}) - batch in progress or already queued")
+            return jsonify({'status': 'batch_in_progress', 'message': 'A scan is already running. Please wait.'}), 409
 
 @app.route('/api/channels/scan-status', methods=['GET'])
 def get_scan_status():
@@ -1156,190 +1149,192 @@ def get_scan_status():
     status = get_scan_queue_status()
     return jsonify(status)
 
+@app.route('/api/channels/batch-scan-status', methods=['GET'])
+def get_batch_scan_status():
+    """Check batch scan status and pending auto-scan"""
+    return jsonify({
+        'batch_in_progress': scan_batch_in_progress,
+        'auto_scan_pending': scan_pending_auto_scan,
+        'queue_size': scan_queue.qsize(),
+        'current': scan_current_channel,
+        'total': scan_total_channels
+    })
+
 # Videos
 @app.route('/api/videos', methods=['GET'])
 def get_videos():
-    session = get_db()
+    with get_session(session_factory) as session:
+        # Parse query parameters
+        channel_id = request.args.get('channel_id', type=int)
+        status = request.args.get('status')
+        watched = request.args.get('watched')
+        ignored = request.args.get('ignored')
+        search = request.args.get('search')
+        min_duration = request.args.get('min_duration', type=int)
+        max_duration = request.args.get('max_duration', type=int)
+        upload_from = request.args.get('upload_from')  # YYYY-MM-DD format
+        upload_to = request.args.get('upload_to')  # YYYY-MM-DD format
 
-    # Parse query parameters
-    channel_id = request.args.get('channel_id', type=int)
-    status = request.args.get('status')
-    watched = request.args.get('watched')
-    ignored = request.args.get('ignored')
-    search = request.args.get('search')
-    min_duration = request.args.get('min_duration', type=int)
-    max_duration = request.args.get('max_duration', type=int)
-    upload_from = request.args.get('upload_from')  # YYYY-MM-DD format
-    upload_to = request.args.get('upload_to')  # YYYY-MM-DD format
+        query = session.query(Video).options(
+            joinedload(Video.channel),
+            joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
+        )
 
-    query = session.query(Video).options(
-        joinedload(Video.channel),
-        joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
-    )
+        # Get video IDs that are currently in the queue (exclude them from results)
+        # Note: We only check presence in QueueItem table, not status (Video.status is source of truth)
+        queued_video_ids = session.query(QueueItem.video_id).all()
+        queued_video_ids = [vid[0] for vid in queued_video_ids]
 
-    # Get video IDs that are currently in the queue (exclude them from results)
-    # Note: We only check presence in QueueItem table, not status (Video.status is source of truth)
-    queued_video_ids = session.query(QueueItem.video_id).all()
-    queued_video_ids = [vid[0] for vid in queued_video_ids]
+        # Exclude queued videos from results (unless specifically filtering by 'downloading' status)
+        if status != 'downloading' and queued_video_ids:
+            query = query.filter(~Video.id.in_(queued_video_ids))
 
-    # Exclude queued videos from results (unless specifically filtering by 'downloading' status)
-    if status != 'downloading' and queued_video_ids:
-        query = query.filter(~Video.id.in_(queued_video_ids))
+        if channel_id:
+            query = query.filter(Video.channel_id == channel_id)
+        # Handle ignored filter (includes both 'ignored' and 'geoblocked' statuses)
+        if ignored is not None:
+            has_ignored = ignored.lower() == 'true'
+            if has_ignored:
+                # Include both 'ignored' and 'geoblocked' videos in ignored filter
+                query = query.filter(Video.status.in_(['ignored', 'geoblocked']))
+            else:
+                # Exclude ignored/geoblocked videos, but still apply status filter if provided
+                query = query.filter(~Video.status.in_(['ignored', 'geoblocked']))
+                if status:
+                    query = query.filter(Video.status == status)
+        elif status:
+            # Apply status filter when ignored parameter is not present
+            query = query.filter(Video.status == status)
+        if watched is not None:
+            query = query.filter(Video.watched == (watched.lower() == 'true'))
+        if search:
+            # Split search into individual words and match each word independently (case-insensitive)
+            search_terms = search.lower().split()
+            for term in search_terms:
+                query = query.filter(Video.title.ilike(f'%{term}%'))
+        if min_duration is not None:
+            query = query.filter(Video.duration_sec >= min_duration * 60)
+        if max_duration is not None:
+            query = query.filter(Video.duration_sec <= max_duration * 60)
+        if upload_from:
+            # Convert YYYY-MM-DD to YYYYMMDD
+            upload_from_formatted = upload_from.replace('-', '')
+            query = query.filter(Video.upload_date.isnot(None), Video.upload_date >= upload_from_formatted)
+        if upload_to:
+            # Convert YYYY-MM-DD to YYYYMMDD
+            upload_to_formatted = upload_to.replace('-', '')
+            query = query.filter(Video.upload_date.isnot(None), Video.upload_date <= upload_to_formatted)
 
-    if channel_id:
-        query = query.filter(Video.channel_id == channel_id)
-    # Handle ignored filter (includes both 'ignored' and 'geoblocked' statuses)
-    if ignored is not None:
-        has_ignored = ignored.lower() == 'true'
-        if has_ignored:
-            # Include both 'ignored' and 'geoblocked' videos in ignored filter
-            query = query.filter(Video.status.in_(['ignored', 'geoblocked']))
-        else:
-            # Exclude ignored/geoblocked videos, but still apply status filter if provided
-            query = query.filter(~Video.status.in_(['ignored', 'geoblocked']))
-            if status:
-                query = query.filter(Video.status == status)
-    elif status:
-        # Apply status filter when ignored parameter is not present
-        query = query.filter(Video.status == status)
-    if watched is not None:
-        query = query.filter(Video.watched == (watched.lower() == 'true'))
-    if search:
-        # Split search into individual words and match each word independently (case-insensitive)
-        search_terms = search.lower().split()
-        for term in search_terms:
-            query = query.filter(Video.title.ilike(f'%{term}%'))
-    if min_duration is not None:
-        query = query.filter(Video.duration_sec >= min_duration * 60)
-    if max_duration is not None:
-        query = query.filter(Video.duration_sec <= max_duration * 60)
-    if upload_from:
-        # Convert YYYY-MM-DD to YYYYMMDD
-        upload_from_formatted = upload_from.replace('-', '')
-        query = query.filter(Video.upload_date.isnot(None), Video.upload_date >= upload_from_formatted)
-    if upload_to:
-        # Convert YYYY-MM-DD to YYYYMMDD
-        upload_to_formatted = upload_to.replace('-', '')
-        query = query.filter(Video.upload_date.isnot(None), Video.upload_date <= upload_to_formatted)
+        videos = query.order_by(Video.discovered_at.desc()).all()
+        result = [serialize_video(v) for v in videos]
 
-    videos = query.order_by(Video.discovered_at.desc()).all()
-    result = [serialize_video(v) for v in videos]
-    session.close()
-
-    return jsonify(result)
+        return jsonify(result)
 
 @app.route('/api/videos/<int:video_id>', methods=['GET'])
 def get_video(video_id):
-    session = get_db()
-    video = session.query(Video).filter(Video.id == video_id).first()
-    
-    if not video:
-        session.close()
-        return jsonify({'error': 'Video not found'}), 404
-    
-    result = serialize_video(video)
-    session.close()
-    return jsonify(result)
+    with get_session(session_factory) as session:
+        video = session.query(Video).filter(Video.id == video_id).first()
+
+        if not video:
+            return jsonify({'error': 'Video not found'}), 404
+
+        result = serialize_video(video)
+        return jsonify(result)
 
 @app.route('/api/videos/<int:video_id>', methods=['PATCH'])
 def update_video(video_id):
     data = request.json
-    session = get_db()
 
-    video = session.query(Video).filter(Video.id == video_id).first()
-    if not video:
-        session.close()
-        logger.debug(f"Video update requested for non-existent video ID: {video_id}")
-        return jsonify({'error': 'Video not found'}), 404
+    with get_session(session_factory) as session:
+        video = session.query(Video).filter(Video.id == video_id).first()
+        if not video:
+            logger.debug(f"Video update requested for non-existent video ID: {video_id}")
+            return jsonify({'error': 'Video not found'}), 404
 
-    changes = []
-    if 'watched' in data:
-        video.watched = data['watched']
-        changes.append(f"watched={data['watched']}")
-    if 'playback_seconds' in data:
-        video.playback_seconds = data['playback_seconds']
-        changes.append(f"playback={data['playback_seconds']}s")
-    if 'status' in data:
-        old_status = video.status
-        video.status = data['status']
-        changes.append(f"status: {old_status} -> {data['status']}")
+        changes = []
+        if 'watched' in data:
+            video.watched = data['watched']
+            changes.append(f"watched={data['watched']}")
+        if 'playback_seconds' in data:
+            video.playback_seconds = data['playback_seconds']
+            changes.append(f"playback={data['playback_seconds']}s")
+        if 'status' in data:
+            old_status = video.status
+            video.status = data['status']
+            changes.append(f"status: {old_status} -> {data['status']}")
 
-    if changes:
-        logger.debug(f"Updated video '{video.title}' (ID: {video_id}): {', '.join(changes)}")
+        if changes:
+            logger.debug(f"Updated video '{video.title}' (ID: {video_id}): {', '.join(changes)}")
 
-    session.commit()
-    result = serialize_video(video)
-    session.close()
+        session.commit()
+        result = serialize_video(video)
 
-    return jsonify(result)
+        return jsonify(result)
 
 @app.route('/api/videos/<int:video_id>', methods=['DELETE'])
 @limiter.limit("20 per minute")
 def delete_video(video_id):
     import os
-    session = get_db()
 
-    video = session.query(Video).filter(Video.id == video_id).first()
-    if not video:
-        session.close()
-        return jsonify({'error': 'Video not found'}), 404
+    with get_session(session_factory) as session:
+        video = session.query(Video).filter(Video.id == video_id).first()
+        if not video:
+            return jsonify({'error': 'Video not found'}), 404
 
-    # Delete video file if it exists
-    if video.file_path and os.path.exists(video.file_path):
-        try:
-            os.remove(video.file_path)
-            print(f"Deleted video file: {video.file_path}")
-        except Exception as e:
-            print(f"Error deleting video file: {e}")
-
-    # Delete thumbnail if it exists (typically same name as video with .jpg extension)
-    if video.file_path:
-        thumb_path = os.path.splitext(video.file_path)[0] + '.jpg'
-        if os.path.exists(thumb_path):
+        # Delete video file if it exists
+        if video.file_path and os.path.exists(video.file_path):
             try:
-                os.remove(thumb_path)
-                print(f"Deleted thumbnail: {thumb_path}")
+                os.remove(video.file_path)
+                print(f"Deleted video file: {video.file_path}")
             except Exception as e:
-                print(f"Error deleting thumbnail: {e}")
+                print(f"Error deleting video file: {e}")
 
-    # Remove from queue if present
-    queue_item = session.query(QueueItem).filter(QueueItem.video_id == video.id).first()
-    if queue_item:
-        session.delete(queue_item)
-        print(f"Removed video from queue")
+        # Delete thumbnail if it exists (typically same name as video with .jpg extension)
+        if video.file_path:
+            thumb_path = os.path.splitext(video.file_path)[0] + '.jpg'
+            if os.path.exists(thumb_path):
+                try:
+                    os.remove(thumb_path)
+                    print(f"Deleted thumbnail: {thumb_path}")
+                except Exception as e:
+                    print(f"Error deleting thumbnail: {e}")
 
-    # Soft-delete: Set status to 'ignored' instead of removing record
-    # This prevents the video from being re-queued on future scans
-    # The video stays in DB so scans see it already exists and skip it
-    video.status = 'ignored'
-    video.file_path = None  # Clear file path since file is deleted
-    video.file_size_bytes = None
-    video.downloaded_at = None
+        # Remove from queue if present
+        queue_item = session.query(QueueItem).filter(QueueItem.video_id == video.id).first()
+        if queue_item:
+            session.delete(queue_item)
+            print(f"Removed video from queue")
 
-    session.commit()
-    session.close()
+        # Soft-delete: Set status to 'ignored' instead of removing record
+        # This prevents the video from being re-queued on future scans
+        # The video stays in DB so scans see it already exists and skip it
+        video.status = 'ignored'
+        video.file_path = None  # Clear file path since file is deleted
+        video.file_size_bytes = None
+        video.downloaded_at = None
 
-    return '', 204
+        session.commit()
+
+        return '', 204
 
 @app.route('/api/videos/bulk', methods=['PATCH'])
 def bulk_update_videos():
     data = request.json
     video_ids = data.get('video_ids', [])
     updates = data.get('updates', {})
-    
-    session = get_db()
-    videos = session.query(Video).filter(Video.id.in_(video_ids)).all()
-    
-    for video in videos:
-        if 'watched' in updates:
-            video.watched = updates['watched']
-        if 'status' in updates:
-            video.status = updates['status']
 
-    session.commit()
-    session.close()
-    
-    return jsonify({'updated': len(videos)})
+    with get_session(session_factory) as session:
+        videos = session.query(Video).filter(Video.id.in_(video_ids)).all()
+
+        for video in videos:
+            if 'watched' in updates:
+                video.watched = updates['watched']
+            if 'status' in updates:
+                video.status = updates['status']
+
+        session.commit()
+
+        return jsonify({'updated': len(videos)})
 
 # Playlists
 # ==================== CATEGORY ENDPOINTS ====================
@@ -1348,296 +1343,259 @@ def bulk_update_videos():
 def get_categories():
     """List all categories with playlist counts"""
     from sqlalchemy.orm import joinedload
-    session = get_db()
-    categories = session.query(Category).options(
-        joinedload(Category.playlists).joinedload(Playlist.playlist_videos)
-    ).order_by(Category.name).all()
-    result = [serialize_category(c) for c in categories]
-    session.close()
-    return jsonify(result)
+    with get_session(session_factory) as session:
+        categories = session.query(Category).options(
+            joinedload(Category.playlists).joinedload(Playlist.playlist_videos)
+        ).order_by(Category.name).all()
+        result = [serialize_category(c) for c in categories]
+        return jsonify(result)
 
 @app.route('/api/categories', methods=['POST'])
 def create_category():
     """Create a new category"""
     data = request.json
-    session = get_db()
+    with get_session(session_factory) as session:
+        name = data.get('name', '').strip()
+        if not name:
+            return jsonify({'error': 'Category name is required'}), 400
 
-    name = data.get('name', '').strip()
-    if not name:
-        session.close()
-        return jsonify({'error': 'Category name is required'}), 400
+        # Check if category already exists
+        existing = session.query(Category).filter(Category.name == name).first()
+        if existing:
+            return jsonify({'error': 'Category already exists'}), 409
 
-    # Check if category already exists
-    existing = session.query(Category).filter(Category.name == name).first()
-    if existing:
-        session.close()
-        return jsonify({'error': 'Category already exists'}), 409
+        category = Category(name=name)
+        session.add(category)
+        session.commit()
 
-    category = Category(name=name)
-    session.add(category)
-    session.commit()
-
-    result = serialize_category(category)
-    session.close()
-    return jsonify(result), 201
+        result = serialize_category(category)
+        return jsonify(result), 201
 
 @app.route('/api/categories/<int:category_id>', methods=['GET'])
 def get_category(category_id):
     """Get single category with its playlists"""
     from sqlalchemy.orm import joinedload
-    session = get_db()
-    category = session.query(Category).options(
-        joinedload(Category.playlists).joinedload(Playlist.playlist_videos)
-    ).filter(Category.id == category_id).first()
+    with get_session(session_factory) as session:
+        category = session.query(Category).options(
+            joinedload(Category.playlists).joinedload(Playlist.playlist_videos)
+        ).filter(Category.id == category_id).first()
 
-    if not category:
-        session.close()
-        return jsonify({'error': 'Category not found'}), 404
+        if not category:
+            return jsonify({'error': 'Category not found'}), 404
 
-    playlists = [serialize_playlist(p) for p in category.playlists]
-    result = serialize_category(category)
-    result['playlists'] = playlists
+        playlists = [serialize_playlist(p) for p in category.playlists]
+        result = serialize_category(category)
+        result['playlists'] = playlists
 
-    session.close()
-    return jsonify(result)
+        return jsonify(result)
 
 @app.route('/api/categories/<int:category_id>', methods=['PATCH'])
 def update_category(category_id):
     """Rename a category"""
     data = request.json
-    session = get_db()
+    with get_session(session_factory) as session:
+        category = session.query(Category).filter(Category.id == category_id).first()
+        if not category:
+            return jsonify({'error': 'Category not found'}), 404
 
-    category = session.query(Category).filter(Category.id == category_id).first()
-    if not category:
-        session.close()
-        return jsonify({'error': 'Category not found'}), 404
+        if 'name' in data:
+            new_name = data['name'].strip()
+            if not new_name:
+                return jsonify({'error': 'Category name is required'}), 400
 
-    if 'name' in data:
-        new_name = data['name'].strip()
-        if not new_name:
-            session.close()
-            return jsonify({'error': 'Category name is required'}), 400
+            # Check if new name already exists
+            existing = session.query(Category).filter(
+                Category.name == new_name,
+                Category.id != category_id
+            ).first()
+            if existing:
+                return jsonify({'error': 'Category name already exists'}), 409
 
-        # Check if new name already exists
-        existing = session.query(Category).filter(
-            Category.name == new_name,
-            Category.id != category_id
-        ).first()
-        if existing:
-            session.close()
-            return jsonify({'error': 'Category name already exists'}), 409
+            category.name = new_name
 
-        category.name = new_name
-
-    session.commit()
-    result = serialize_category(category)
-    session.close()
-    return jsonify(result)
+        session.commit()
+        result = serialize_category(category)
+        return jsonify(result)
 
 @app.route('/api/categories/<int:category_id>', methods=['DELETE'])
 @limiter.limit("20 per minute")
 def delete_category(category_id):
     """Delete a category (playlists become uncategorized)"""
-    session = get_db()
-    category = session.query(Category).filter(Category.id == category_id).first()
+    with get_session(session_factory) as session:
+        category = session.query(Category).filter(Category.id == category_id).first()
 
-    if not category:
-        session.close()
-        return jsonify({'error': 'Category not found'}), 404
+        if not category:
+            return jsonify({'error': 'Category not found'}), 404
 
-    # Set all playlists in this category to NULL (uncategorized)
-    for playlist in category.playlists:
-        playlist.category_id = None
+        # Set all playlists in this category to NULL (uncategorized)
+        for playlist in category.playlists:
+            playlist.category_id = None
 
-    session.delete(category)
-    session.commit()
-    session.close()
-    return '', 204
+        session.delete(category)
+        session.commit()
+        return '', 204
 
 @app.route('/api/playlists/bulk-category', methods=['PATCH'])
 def bulk_assign_category():
     """Assign multiple playlists to a category"""
     data = request.json
-    session = get_db()
+    with get_session(session_factory) as session:
+        playlist_ids = data.get('playlist_ids', [])
+        category_id = data.get('category_id')  # Can be None to uncategorize
 
-    playlist_ids = data.get('playlist_ids', [])
-    category_id = data.get('category_id')  # Can be None to uncategorize
+        if not playlist_ids or not isinstance(playlist_ids, list):
+            return jsonify({'error': 'playlist_ids array is required'}), 400
 
-    if not playlist_ids or not isinstance(playlist_ids, list):
-        session.close()
-        return jsonify({'error': 'playlist_ids array is required'}), 400
+        # If category_id is provided, verify it exists
+        if category_id is not None:
+            category = session.query(Category).filter(Category.id == category_id).first()
+            if not category:
+                return jsonify({'error': 'Category not found'}), 404
 
-    # If category_id is provided, verify it exists
-    if category_id is not None:
-        category = session.query(Category).filter(Category.id == category_id).first()
-        if not category:
-            session.close()
-            return jsonify({'error': 'Category not found'}), 404
+        # Update all playlists
+        updated_count = 0
+        for playlist_id in playlist_ids:
+            playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
+            if playlist:
+                playlist.category_id = category_id
+                updated_count += 1
 
-    # Update all playlists
-    updated_count = 0
-    for playlist_id in playlist_ids:
-        playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
-        if playlist:
-            playlist.category_id = category_id
-            updated_count += 1
+        session.commit()
 
-    session.commit()
-    session.close()
-
-    return jsonify({
-        'updated_count': updated_count,
-        'total_requested': len(playlist_ids)
-    })
+        return jsonify({
+            'updated_count': updated_count,
+            'total_requested': len(playlist_ids)
+        })
 
 # ==================== PLAYLIST ENDPOINTS ====================
 
 @app.route('/api/playlists', methods=['GET'])
 def get_playlists():
     from sqlalchemy.orm import joinedload
-    session = get_db()
-    channel_id = request.args.get('channel_id', type=int)
+    with get_session(session_factory) as session:
+        channel_id = request.args.get('channel_id', type=int)
 
-    query = session.query(Playlist).options(
-        joinedload(Playlist.category),
-        joinedload(Playlist.playlist_videos)
-    )
-    if channel_id:
-        query = query.filter(Playlist.channel_id == channel_id)
+        query = session.query(Playlist).options(
+            joinedload(Playlist.category),
+            joinedload(Playlist.playlist_videos)
+        )
+        if channel_id:
+            query = query.filter(Playlist.channel_id == channel_id)
 
-    playlists = query.all()
-    result = [serialize_playlist(p) for p in playlists]
-    session.close()
+        playlists = query.all()
+        result = [serialize_playlist(p) for p in playlists]
 
-    return jsonify(result)
+        return jsonify(result)
 
 @app.route('/api/playlists', methods=['POST'])
 def create_playlist():
     data = request.json
-    session = get_db()
-    
-    playlist = Playlist(
-        name=data['name'],
-        channel_id=data.get('channel_id')
-    )
-    session.add(playlist)
-    session.commit()
-    
-    result = serialize_playlist(playlist)
-    session.close()
-    
-    return jsonify(result), 201
+    with get_session(session_factory) as session:
+        playlist = Playlist(
+            name=data['name'],
+            channel_id=data.get('channel_id')
+        )
+        session.add(playlist)
+        session.commit()
+
+        result = serialize_playlist(playlist)
+
+        return jsonify(result), 201
 
 @app.route('/api/playlists/<int:playlist_id>', methods=['GET'])
 def get_playlist(playlist_id):
     from sqlalchemy.orm import joinedload
-    session = get_db()
-    playlist = session.query(Playlist).options(joinedload(Playlist.category)).filter(Playlist.id == playlist_id).first()
+    with get_session(session_factory) as session:
+        playlist = session.query(Playlist).options(joinedload(Playlist.category)).filter(Playlist.id == playlist_id).first()
 
-    if not playlist:
-        session.close()
-        return jsonify({'error': 'Playlist not found'}), 404
+        if not playlist:
+            return jsonify({'error': 'Playlist not found'}), 404
 
-    videos = [serialize_video(pv.video) for pv in playlist.playlist_videos]
-    result = serialize_playlist(playlist)
-    result['videos'] = videos
+        videos = [serialize_video(pv.video) for pv in playlist.playlist_videos]
+        result = serialize_playlist(playlist)
+        result['videos'] = videos
 
-    session.close()
-    return jsonify(result)
+        return jsonify(result)
 
 @app.route('/api/playlists/<int:playlist_id>', methods=['PATCH'])
 def update_playlist(playlist_id):
     data = request.json
-    session = get_db()
+    with get_session(session_factory) as session:
+        playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
+        if not playlist:
+            return jsonify({'error': 'Playlist not found'}), 404
 
-    playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
-    if not playlist:
-        session.close()
-        return jsonify({'error': 'Playlist not found'}), 404
+        if 'name' in data:
+            playlist.name = data['name']
 
-    if 'name' in data:
-        playlist.name = data['name']
+        if 'category_id' in data:
+            # Allow setting to None to uncategorize
+            playlist.category_id = data['category_id']
 
-    if 'category_id' in data:
-        # Allow setting to None to uncategorize
-        playlist.category_id = data['category_id']
+        session.commit()
+        result = serialize_playlist(playlist)
 
-    session.commit()
-    result = serialize_playlist(playlist)
-    session.close()
-
-    return jsonify(result)
+        return jsonify(result)
 
 @app.route('/api/playlists/<int:playlist_id>', methods=['DELETE'])
 @limiter.limit("20 per minute")
 def delete_playlist(playlist_id):
-    session = get_db()
-    playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
+    with get_session(session_factory) as session:
+        playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
 
-    if not playlist:
-        session.close()
-        return jsonify({'error': 'Playlist not found'}), 404
+        if not playlist:
+            return jsonify({'error': 'Playlist not found'}), 404
 
-    session.delete(playlist)
-    session.commit()
-    session.close()
+        session.delete(playlist)
+        session.commit()
 
-    return '', 204
+        return '', 204
 
 @app.route('/api/playlists/<int:playlist_id>/videos', methods=['POST'])
 def add_video_to_playlist(playlist_id):
     data = request.json
-    session = get_db()
-    
-    playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
-    if not playlist:
-        session.close()
-        return jsonify({'error': 'Playlist not found'}), 404
-    
-    video_id = data['video_id']
-    
-    # Check if already added
-    existing = session.query(PlaylistVideo).filter(
-        PlaylistVideo.playlist_id == playlist_id,
-        PlaylistVideo.video_id == video_id
-    ).first()
-    
-    if existing:
-        session.close()
-        return jsonify({'error': 'Video already in playlist'}), 400
-    
-    pv = PlaylistVideo(playlist_id=playlist_id, video_id=video_id)
-    session.add(pv)
-    session.commit()
-    session.close()
-    
-    return jsonify({'success': True}), 201
+    with get_session(session_factory) as session:
+        playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
+        if not playlist:
+            return jsonify({'error': 'Playlist not found'}), 404
+
+        video_id = data['video_id']
+
+        # Check if already added
+        existing = session.query(PlaylistVideo).filter(
+            PlaylistVideo.playlist_id == playlist_id,
+            PlaylistVideo.video_id == video_id
+        ).first()
+
+        if existing:
+            return jsonify({'error': 'Video already in playlist'}), 400
+
+        pv = PlaylistVideo(playlist_id=playlist_id, video_id=video_id)
+        session.add(pv)
+        session.commit()
+
+        return jsonify({'success': True}), 201
 
 @app.route('/api/playlists/<int:playlist_id>/videos/bulk', methods=['POST'])
 def add_videos_to_playlist_bulk(playlist_id):
     """Add multiple videos to a playlist in a single transaction"""
     data = request.json
-    session = get_db()
+    with get_session(session_factory) as session:
+        video_ids = data.get('video_ids', [])
 
-    video_ids = data.get('video_ids', [])
+        if not video_ids:
+            return jsonify({'error': 'video_ids array is required'}), 400
 
-    if not video_ids:
-        session.close()
-        return jsonify({'error': 'video_ids array is required'}), 400
+        if not isinstance(video_ids, list):
+            return jsonify({'error': 'video_ids must be an array'}), 400
 
-    if not isinstance(video_ids, list):
-        session.close()
-        return jsonify({'error': 'video_ids must be an array'}), 400
+        # Check playlist exists
+        playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
+        if not playlist:
+            return jsonify({'error': 'Playlist not found'}), 404
 
-    # Check playlist exists
-    playlist = session.query(Playlist).filter(Playlist.id == playlist_id).first()
-    if not playlist:
-        session.close()
-        return jsonify({'error': 'Playlist not found'}), 404
+        logger.debug(f"Bulk add to playlist '{playlist.name}' (ID: {playlist_id}): {len(video_ids)} videos")
 
-    logger.debug(f"Bulk add to playlist '{playlist.name}' (ID: {playlist_id}): {len(video_ids)} videos")
-
-    try:
         added_count = 0
         skipped_count = 0
         skipped_videos = []
@@ -1670,8 +1628,6 @@ def add_videos_to_playlist_bulk(playlist_id):
         session.commit()
         logger.info(f"Bulk add to playlist completed: {added_count} added, {skipped_count} skipped")
 
-        session.close()
-
         response = {
             'added_count': added_count,
             'skipped_count': skipped_count,
@@ -1680,143 +1636,124 @@ def add_videos_to_playlist_bulk(playlist_id):
 
         return jsonify(response), 201
 
-    except Exception as e:
-        session.rollback()
-        session.close()
-        logger.error(f"Error during bulk add to playlist: {e}")
-        return jsonify({'error': str(e)}), 500
-
 @app.route('/api/playlists/<int:playlist_id>/videos/<int:video_id>', methods=['DELETE'])
 @limiter.limit("20 per minute")
 def remove_video_from_playlist(playlist_id, video_id):
-    session = get_db()
-    
-    pv = session.query(PlaylistVideo).filter(
-        PlaylistVideo.playlist_id == playlist_id,
-        PlaylistVideo.video_id == video_id
-    ).first()
-    
-    if not pv:
-        session.close()
-        return jsonify({'error': 'Video not in playlist'}), 404
-    
-    session.delete(pv)
-    session.commit()
-    session.close()
-    
-    return '', 204
+    with get_session(session_factory) as session:
+        pv = session.query(PlaylistVideo).filter(
+            PlaylistVideo.playlist_id == playlist_id,
+            PlaylistVideo.video_id == video_id
+        ).first()
+
+        if not pv:
+            return jsonify({'error': 'Video not in playlist'}), 404
+
+        session.delete(pv)
+        session.commit()
+
+        return '', 204
 
 # Queue
 @app.route('/api/queue', methods=['GET'])
 def get_queue():
-    session = get_db()
-    # Query for queue items with videos that are queued or downloading
-    items = session.query(QueueItem).join(Video).filter(
-        Video.status.in_(['queued', 'downloading'])
-    ).order_by(QueueItem.queue_position).all()
-    queue_items = [serialize_queue_item(item) for item in items]
+    with get_session(session_factory) as session:
+        # Query for queue items with videos that are queued or downloading
+        items = session.query(QueueItem).join(Video).filter(
+            Video.status.in_(['queued', 'downloading'])
+        ).order_by(QueueItem.queue_position).all()
+        queue_items = [serialize_queue_item(item) for item in items]
 
-    # Find currently downloading item for detailed progress
-    current_download = None
-    for item in queue_items:
-        if item['video'] and item['video'].get('status') == 'downloading':
-            current_download = {
-                'video': item['video'],  # Include full video object
-                'progress_pct': item['progress_pct'],
-                'speed_bps': item['speed_bps'],
-                'eta_seconds': item['eta_seconds'],
-                'total_bytes': item.get('total_bytes', 0)
-            }
-            break
+        # Find currently downloading item for detailed progress
+        current_download = None
+        for item in queue_items:
+            if item['video'] and item['video'].get('status') == 'downloading':
+                current_download = {
+                    'video': item['video'],  # Include full video object
+                    'progress_pct': item['progress_pct'],
+                    'speed_bps': item['speed_bps'],
+                    'eta_seconds': item['eta_seconds'],
+                    'total_bytes': item.get('total_bytes', 0)
+                }
+                break
 
-    # Get auto-refresh status
-    auto_refresh_enabled = session.query(Setting).filter(Setting.key == 'auto_refresh_enabled').first()
-    is_auto_refreshing = scheduler.is_running() if hasattr(scheduler, 'is_running') else False
-    last_auto_refresh = scheduler.last_run if hasattr(scheduler, 'last_run') else None
+        # Get auto-refresh status
+        auto_refresh_enabled = settings_manager.get_bool('auto_refresh_enabled')
+        is_auto_refreshing = scheduler.is_running() if hasattr(scheduler, 'is_running') else False
+        last_auto_refresh = scheduler.last_run if hasattr(scheduler, 'last_run') else None
 
-    # Get delay info from download worker
-    delay_info = download_worker.delay_info if hasattr(download_worker, 'delay_info') else None
+        # Get delay info from download worker
+        delay_info = download_worker.delay_info if hasattr(download_worker, 'delay_info') else None
 
-    # Get paused state from download worker
-    is_paused = download_worker.paused if hasattr(download_worker, 'paused') else False
+        # Get paused state from download worker
+        is_paused = download_worker.paused if hasattr(download_worker, 'paused') else False
 
-    session.close()
+        # Get rate limit message from download worker
+        rate_limit_message = download_worker.rate_limit_message if hasattr(download_worker, 'rate_limit_message') else None
 
-    # Get rate limit message from download worker
-    rate_limit_message = download_worker.rate_limit_message if hasattr(download_worker, 'rate_limit_message') else None
-
-    return jsonify({
-        'queue_items': queue_items,
-        'current_download': current_download,
-        'current_operation': current_operation,
-        'delay_info': delay_info,
-        'is_paused': is_paused,
-        'is_auto_refreshing': is_auto_refreshing,
-        'last_auto_refresh': last_auto_refresh.isoformat() if last_auto_refresh else None,
-        'auto_refresh_enabled': auto_refresh_enabled.value == 'true' if auto_refresh_enabled else False,
-        'rate_limit_message': rate_limit_message
-    })
+        return jsonify({
+            'queue_items': queue_items,
+            'current_download': current_download,
+            'current_operation': current_operation,
+            'delay_info': delay_info,
+            'is_paused': is_paused,
+            'is_auto_refreshing': is_auto_refreshing,
+            'last_auto_refresh': last_auto_refresh.isoformat() if last_auto_refresh else None,
+            'auto_refresh_enabled': auto_refresh_enabled,
+            'rate_limit_message': rate_limit_message
+        })
 
 @app.route('/api/queue', methods=['POST'])
 def add_to_queue():
     data = request.json
-    session = get_db()
+    with get_session(session_factory) as session:
+        video_id = data['video_id']
 
-    video_id = data['video_id']
+        # Get video
+        video = session.query(Video).filter(Video.id == video_id).first()
+        if not video:
+            logger.debug(f"Add to queue requested for non-existent video ID: {video_id}")
+            return jsonify({'error': 'Video not found'}), 404
 
-    # Get video
-    video = session.query(Video).filter(Video.id == video_id).first()
-    if not video:
-        session.close()
-        logger.debug(f"Add to queue requested for non-existent video ID: {video_id}")
-        return jsonify({'error': 'Video not found'}), 404
+        # Check if already in queue (video status is queued or downloading)
+        if video.status in ['queued', 'downloading']:
+            logger.debug(f"Video '{video.title}' (ID: {video_id}) already in queue with status: {video.status}")
+            return jsonify({'error': 'Video already in queue'}), 400
 
-    # Check if already in queue (video status is queued or downloading)
-    if video.status in ['queued', 'downloading']:
-        session.close()
-        logger.debug(f"Video '{video.title}' (ID: {video_id}) already in queue with status: {video.status}")
-        return jsonify({'error': 'Video already in queue'}), 400
+        # Set video status to queued and create queue item
+        video.status = 'queued'
+        # Get max queue position and add to bottom
+        max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
+        item = QueueItem(video_id=video_id, queue_position=max_pos + 1)
+        session.add(item)
+        session.commit()
 
-    # Set video status to queued and create queue item
-    video.status = 'queued'
-    # Get max queue position and add to bottom
-    max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
-    item = QueueItem(video_id=video_id, queue_position=max_pos + 1)
-    session.add(item)
-    session.commit()
+        logger.debug(f"Added video '{video.title}' (ID: {video_id}) to queue at position {max_pos + 1}")
 
-    logger.debug(f"Added video '{video.title}' (ID: {video_id}) to queue at position {max_pos + 1}")
+        result = serialize_queue_item(item)
 
-    result = serialize_queue_item(item)
-    session.close()
+        # Auto-resume the download worker when adding to queue
+        # This ensures downloads start immediately when user adds videos
+        if download_worker.paused:
+            download_worker.resume()
+            logger.info("Auto-resumed download worker after adding video to queue")
 
-    # Auto-resume the download worker when adding to queue
-    # This ensures downloads start immediately when user adds videos
-    if download_worker.paused:
-        download_worker.resume()
-        logger.info("Auto-resumed download worker after adding video to queue")
-
-    return jsonify(result), 201
+        return jsonify(result), 201
 
 @app.route('/api/queue/bulk', methods=['POST'])
 def add_to_queue_bulk():
     """Add multiple videos to queue in a single transaction"""
     data = request.json
-    session = get_db()
+    with get_session(session_factory) as session:
+        video_ids = data.get('video_ids', [])
 
-    video_ids = data.get('video_ids', [])
+        if not video_ids:
+            return jsonify({'error': 'video_ids array is required'}), 400
 
-    if not video_ids:
-        session.close()
-        return jsonify({'error': 'video_ids array is required'}), 400
+        if not isinstance(video_ids, list):
+            return jsonify({'error': 'video_ids must be an array'}), 400
 
-    if not isinstance(video_ids, list):
-        session.close()
-        return jsonify({'error': 'video_ids must be an array'}), 400
+        logger.debug(f"Bulk add to queue requested for {len(video_ids)} videos")
 
-    logger.debug(f"Bulk add to queue requested for {len(video_ids)} videos")
-
-    try:
         # Get max queue position once
         max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
 
@@ -1850,8 +1787,6 @@ def add_to_queue_bulk():
         session.commit()
         logger.info(f"Bulk add to queue completed: {added_count} added, {skipped_count} skipped")
 
-        session.close()
-
         # Auto-resume the download worker when adding to queue
         if added_count > 0 and download_worker.paused:
             download_worker.resume()
@@ -1867,12 +1802,6 @@ def add_to_queue_bulk():
             response['skipped_videos'] = skipped_videos[:10]  # Limit to first 10 for readability
 
         return jsonify(response), 201
-
-    except Exception as e:
-        session.rollback()
-        session.close()
-        logger.error(f"Error during bulk add to queue: {e}")
-        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/queue/pause', methods=['POST'])
 def pause_queue():
@@ -1892,205 +1821,186 @@ def cancel_current_download():
 @app.route('/api/queue/<int:item_id>', methods=['DELETE'])
 @limiter.limit("20 per minute")
 def remove_from_queue(item_id):
-    session = get_db()
-    item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
+    with get_session(session_factory) as session:
+        item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
 
-    if not item:
-        session.close()
-        return jsonify({'error': 'Queue item not found'}), 404
+        if not item:
+            return jsonify({'error': 'Queue item not found'}), 404
 
-    # Get the video
-    video = session.query(Video).filter(Video.id == item.video_id).first()
+        # Get the video
+        video = session.query(Video).filter(Video.id == item.video_id).first()
 
-    # Cannot remove if currently downloading
-    if video and video.status == 'downloading':
-        session.close()
-        return jsonify({'error': 'Cannot remove item currently downloading'}), 400
+        # Cannot remove if currently downloading
+        if video and video.status == 'downloading':
+            return jsonify({'error': 'Cannot remove item currently downloading'}), 400
 
-    # Reset video status back to discovered
-    if video and video.status in ['queued', 'downloading']:
-        video.status = 'discovered'
+        # Reset video status back to discovered
+        if video and video.status in ['queued', 'downloading']:
+            video.status = 'discovered'
 
-    session.delete(item)
-    session.commit()
-    session.close()
+        session.delete(item)
+        session.commit()
 
-    return '', 204
+        return '', 204
 
 @app.route('/api/queue/reorder', methods=['POST'])
 def reorder_queue():
-    session = get_db()
     data = request.json
-    item_id = data.get('item_id')
-    new_position = data.get('new_position')
+    with get_session(session_factory) as session:
+        item_id = data.get('item_id')
+        new_position = data.get('new_position')
 
-    if not item_id or not new_position:
-        session.close()
-        return jsonify({'error': 'item_id and new_position are required'}), 400
+        if not item_id or not new_position:
+            return jsonify({'error': 'item_id and new_position are required'}), 400
 
-    # Get the item to move
-    item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
-    if not item:
-        session.close()
-        return jsonify({'error': 'Queue item not found'}), 404
+        # Get the item to move
+        item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
+        if not item:
+            return jsonify({'error': 'Queue item not found'}), 404
 
-    # Check if item is currently downloading (cannot reorder)
-    video = session.query(Video).filter(Video.id == item.video_id).first()
-    if video and video.status == 'downloading':
-        session.close()
-        return jsonify({'error': 'Cannot reorder currently downloading item'}), 400
+        # Check if item is currently downloading (cannot reorder)
+        video = session.query(Video).filter(Video.id == item.video_id).first()
+        if video and video.status == 'downloading':
+            return jsonify({'error': 'Cannot reorder currently downloading item'}), 400
 
-    old_position = item.queue_position
+        old_position = item.queue_position
 
-    # Only reorder if position is actually changing
-    if old_position == new_position:
-        session.close()
-        return jsonify({'message': 'Position unchanged'}), 200
+        # Only reorder if position is actually changing
+        if old_position == new_position:
+            return jsonify({'message': 'Position unchanged'}), 200
 
-    # Shift affected items based on move direction
-    if new_position < old_position:
-        # Moving UP: shift items [new_pos...old_pos-1] down by 1
+        # Shift affected items based on move direction
+        if new_position < old_position:
+            # Moving UP: shift items [new_pos...old_pos-1] down by 1
+            items_to_shift = session.query(QueueItem).filter(
+                QueueItem.queue_position >= new_position,
+                QueueItem.queue_position < old_position,
+                QueueItem.id != item_id
+            ).all()
+            for shift_item in items_to_shift:
+                shift_item.queue_position += 1
+        else:
+            # Moving DOWN: shift items [old_pos+1...new_pos] up by 1
+            items_to_shift = session.query(QueueItem).filter(
+                QueueItem.queue_position > old_position,
+                QueueItem.queue_position <= new_position,
+                QueueItem.id != item_id
+            ).all()
+            for shift_item in items_to_shift:
+                shift_item.queue_position -= 1
+
+        # Set new position for the moved item
+        item.queue_position = new_position
+        session.commit()
+
+        # Return updated queue
+        items = session.query(QueueItem).join(Video).filter(
+            Video.status.in_(['queued', 'downloading'])
+        ).order_by(QueueItem.queue_position).all()
+        queue_items = [serialize_queue_item(queue_item) for queue_item in items]
+
+        return jsonify({'queue_items': queue_items})
+
+@app.route('/api/queue/move-to-top', methods=['POST'])
+def move_to_top():
+    data = request.json
+    with get_session(session_factory) as session:
+        item_id = data.get('item_id')
+
+        if not item_id:
+            return jsonify({'error': 'item_id is required'}), 400
+
+        # Get the item to move
+        item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
+        if not item:
+            return jsonify({'error': 'Queue item not found'}), 404
+
+        # Check if item is currently downloading (cannot reorder)
+        video = session.query(Video).filter(Video.id == item.video_id).first()
+        if video and video.status == 'downloading':
+            return jsonify({'error': 'Cannot reorder currently downloading item'}), 400
+
+        old_position = item.queue_position
+
+        # If already at position 1, no change needed
+        if old_position == 1:
+            return jsonify({'message': 'Already at top'}), 200
+
+        # Shift all items from position 1 to old_position-1 down by 1
         items_to_shift = session.query(QueueItem).filter(
-            QueueItem.queue_position >= new_position,
+            QueueItem.queue_position >= 1,
             QueueItem.queue_position < old_position,
             QueueItem.id != item_id
         ).all()
         for shift_item in items_to_shift:
             shift_item.queue_position += 1
-    else:
-        # Moving DOWN: shift items [old_pos+1...new_pos] up by 1
+
+        # Move item to position 1
+        item.queue_position = 1
+        session.commit()
+
+        # Return updated queue
+        items = session.query(QueueItem).join(Video).filter(
+            Video.status.in_(['queued', 'downloading'])
+        ).order_by(QueueItem.queue_position).all()
+        queue_items = [serialize_queue_item(queue_item) for queue_item in items]
+
+        return jsonify({'queue_items': queue_items})
+
+@app.route('/api/queue/move-to-bottom', methods=['POST'])
+def move_to_bottom():
+    data = request.json
+    with get_session(session_factory) as session:
+        item_id = data.get('item_id')
+
+        if not item_id:
+            return jsonify({'error': 'item_id is required'}), 400
+
+        # Get the item to move
+        item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
+        if not item:
+            return jsonify({'error': 'Queue item not found'}), 404
+
+        # Check if item is currently downloading (cannot reorder)
+        video = session.query(Video).filter(Video.id == item.video_id).first()
+        if video and video.status == 'downloading':
+            return jsonify({'error': 'Cannot reorder currently downloading item'}), 400
+
+        old_position = item.queue_position
+
+        # Find max position
+        max_position = session.query(func.max(QueueItem.queue_position)).scalar() or 1
+
+        # If already at bottom, no change needed
+        if old_position == max_position:
+            return jsonify({'message': 'Already at bottom'}), 200
+
+        # Shift all items from old_position+1 to max_position up by 1
         items_to_shift = session.query(QueueItem).filter(
             QueueItem.queue_position > old_position,
-            QueueItem.queue_position <= new_position,
+            QueueItem.queue_position <= max_position,
             QueueItem.id != item_id
         ).all()
         for shift_item in items_to_shift:
             shift_item.queue_position -= 1
 
-    # Set new position for the moved item
-    item.queue_position = new_position
-    session.commit()
+        # Move item to bottom (max position)
+        item.queue_position = max_position
+        session.commit()
 
-    # Return updated queue
-    items = session.query(QueueItem).join(Video).filter(
-        Video.status.in_(['queued', 'downloading'])
-    ).order_by(QueueItem.queue_position).all()
-    queue_items = [serialize_queue_item(queue_item) for queue_item in items]
-    session.close()
+        # Return updated queue
+        items = session.query(QueueItem).join(Video).filter(
+            Video.status.in_(['queued', 'downloading'])
+        ).order_by(QueueItem.queue_position).all()
+        queue_items = [serialize_queue_item(queue_item) for queue_item in items]
 
-    return jsonify({'queue_items': queue_items})
-
-@app.route('/api/queue/move-to-top', methods=['POST'])
-def move_to_top():
-    session = get_db()
-    data = request.json
-    item_id = data.get('item_id')
-
-    if not item_id:
-        session.close()
-        return jsonify({'error': 'item_id is required'}), 400
-
-    # Get the item to move
-    item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
-    if not item:
-        session.close()
-        return jsonify({'error': 'Queue item not found'}), 404
-
-    # Check if item is currently downloading (cannot reorder)
-    video = session.query(Video).filter(Video.id == item.video_id).first()
-    if video and video.status == 'downloading':
-        session.close()
-        return jsonify({'error': 'Cannot reorder currently downloading item'}), 400
-
-    old_position = item.queue_position
-
-    # If already at position 1, no change needed
-    if old_position == 1:
-        session.close()
-        return jsonify({'message': 'Already at top'}), 200
-
-    # Shift all items from position 1 to old_position-1 down by 1
-    items_to_shift = session.query(QueueItem).filter(
-        QueueItem.queue_position >= 1,
-        QueueItem.queue_position < old_position,
-        QueueItem.id != item_id
-    ).all()
-    for shift_item in items_to_shift:
-        shift_item.queue_position += 1
-
-    # Move item to position 1
-    item.queue_position = 1
-    session.commit()
-
-    # Return updated queue
-    items = session.query(QueueItem).join(Video).filter(
-        Video.status.in_(['queued', 'downloading'])
-    ).order_by(QueueItem.queue_position).all()
-    queue_items = [serialize_queue_item(queue_item) for queue_item in items]
-    session.close()
-
-    return jsonify({'queue_items': queue_items})
-
-@app.route('/api/queue/move-to-bottom', methods=['POST'])
-def move_to_bottom():
-    session = get_db()
-    data = request.json
-    item_id = data.get('item_id')
-
-    if not item_id:
-        session.close()
-        return jsonify({'error': 'item_id is required'}), 400
-
-    # Get the item to move
-    item = session.query(QueueItem).filter(QueueItem.id == item_id).first()
-    if not item:
-        session.close()
-        return jsonify({'error': 'Queue item not found'}), 404
-
-    # Check if item is currently downloading (cannot reorder)
-    video = session.query(Video).filter(Video.id == item.video_id).first()
-    if video and video.status == 'downloading':
-        session.close()
-        return jsonify({'error': 'Cannot reorder currently downloading item'}), 400
-
-    old_position = item.queue_position
-
-    # Find max position
-    max_position = session.query(func.max(QueueItem.queue_position)).scalar() or 1
-
-    # If already at bottom, no change needed
-    if old_position == max_position:
-        session.close()
-        return jsonify({'message': 'Already at bottom'}), 200
-
-    # Shift all items from old_position+1 to max_position up by 1
-    items_to_shift = session.query(QueueItem).filter(
-        QueueItem.queue_position > old_position,
-        QueueItem.queue_position <= max_position,
-        QueueItem.id != item_id
-    ).all()
-    for shift_item in items_to_shift:
-        shift_item.queue_position -= 1
-
-    # Move item to bottom (max position)
-    item.queue_position = max_position
-    session.commit()
-
-    # Return updated queue
-    items = session.query(QueueItem).join(Video).filter(
-        Video.status.in_(['queued', 'downloading'])
-    ).order_by(QueueItem.queue_position).all()
-    queue_items = [serialize_queue_item(queue_item) for queue_item in items]
-    session.close()
-
-    return jsonify({'queue_items': queue_items}), 200
+        return jsonify({'queue_items': queue_items}), 200
 
 @app.route('/api/queue/clear', methods=['POST'])
 @limiter.limit("10 per minute")
 def clear_queue():
     """Remove all pending queue items (keep downloading item)"""
-    session = get_db()
-    try:
+    with get_session(session_factory) as session:
         # Delete all queue items with status 'queued' (not 'downloading')
         deleted_count = session.query(QueueItem).join(Video).filter(
             Video.status == 'queued'
@@ -2113,59 +2023,44 @@ def clear_queue():
             'message': f'Cleared {deleted_count} items from queue',
             'queue_items': queue_items
         }), 200
-    except Exception as e:
-        session.rollback()
-        logger.error(f'Error clearing queue: {str(e)}', exc_info=True)
-        return jsonify({'error': 'An error occurred while clearing the queue'}), 500
-    finally:
-        session.close()
 
 # Settings
 @app.route('/api/settings', methods=['GET'])
 def get_settings():
-    session = get_db()
-    settings = session.query(Setting).all()
-    result = {s.key: s.value for s in settings}
-    session.close()
-    
-    return jsonify(result)
+    with get_session(session_factory) as session:
+        settings = session.query(Setting).all()
+        result = {s.key: s.value for s in settings}
+
+        return jsonify(result)
 
 @app.route('/api/settings', methods=['PATCH'])
 def update_settings():
     data = request.json
-    session = get_db()
 
     # Track which scheduler actions need to be taken AFTER commit
     needs_enable = False
     needs_disable = False
     needs_reschedule = False
 
-    for key, value in data.items():
-        # Handle log level changes separately (update_log_level manages its own DB session)
-        if key == 'log_level':
-            logging_config.update_log_level(value)
-            continue
+    with get_session(session_factory) as session:
+        for key, value in data.items():
+            # Handle log level changes separately (update_log_level manages its own DB session)
+            if key == 'log_level':
+                logging_config.update_log_level(value)
+                continue
 
-        setting = session.query(Setting).filter(Setting.key == key).first()
-        if setting:
-            setting.value = value
-        else:
-            session.add(Setting(key=key, value=value))
+            settings_manager.set(key, value)
 
-        # Track auto-refresh toggle (execute AFTER commit)
-        if key == 'auto_refresh_enabled':
-            if value == 'true':
-                needs_enable = True
-            else:
-                needs_disable = True
+            # Track auto-refresh toggle (execute AFTER commit)
+            if key == 'auto_refresh_enabled':
+                if value == 'true':
+                    needs_enable = True
+                else:
+                    needs_disable = True
 
-        # Track auto-refresh time change (execute AFTER commit)
-        if key == 'auto_refresh_time':
-            needs_reschedule = True
-
-    # Commit changes to database FIRST
-    session.commit()
-    session.close()
+            # Track auto-refresh time change (execute AFTER commit)
+            if key == 'auto_refresh_time':
+                needs_reschedule = True
 
     # Now execute scheduler actions with committed values
     if needs_enable:
@@ -2182,13 +2077,8 @@ def update_settings():
 @app.route('/api/auth/check-first-run', methods=['GET'])
 def check_first_run():
     """Check if this is the first run (setup needed)"""
-    db_session = get_db()
-    try:
-        first_run_setting = db_session.query(Setting).filter_by(key='first_run').first()
-        is_first_run = first_run_setting and first_run_setting.value == 'true'
-        return jsonify({'first_run': is_first_run})
-    finally:
-        db_session.close()
+    is_first_run = settings_manager.get_bool('first_run')
+    return jsonify({'first_run': is_first_run})
 
 @app.route('/api/auth/check', methods=['GET'])
 def check_auth():
@@ -2256,41 +2146,20 @@ def setup_auth():
     if len(password) < 3:
         return jsonify({'error': 'Password must be at least 3 characters'}), 400
 
-    db_session = get_db()
-    try:
+    with get_session(session_factory) as session:
         # Update username
-        username_setting = db_session.query(Setting).filter_by(key='auth_username').first()
-        if username_setting:
-            username_setting.value = username
-        else:
-            db_session.add(Setting(key='auth_username', value=username))
+        settings_manager.set('auth_username', username)
 
         # Update password hash
         password_hash = generate_password_hash(password)
-        password_setting = db_session.query(Setting).filter_by(key='auth_password_hash').first()
-        if password_setting:
-            password_setting.value = password_hash
-        else:
-            db_session.add(Setting(key='auth_password_hash', value=password_hash))
+        settings_manager.set('auth_password_hash', password_hash)
 
         # Mark first run as complete
-        first_run_setting = db_session.query(Setting).filter_by(key='first_run').first()
-        if first_run_setting:
-            first_run_setting.value = 'false'
-        else:
-            db_session.add(Setting(key='first_run', value='false'))
-
-        db_session.commit()
+        settings_manager.set('first_run', 'false')
 
         # Don't auto-login - redirect to login page
         logger.info(f"Authentication setup completed for user: {username}")
         return jsonify({'success': True, 'message': 'Credentials saved successfully. Please log in.'})
-    except Exception as e:
-        db_session.rollback()
-        logger.error(f"Error during auth setup: {str(e)}")
-        return jsonify({'error': 'Failed to save credentials'}), 500
-    finally:
-        db_session.close()
 
 @app.route('/api/auth/change', methods=['POST'])
 def change_auth():
@@ -2317,24 +2186,13 @@ def change_auth():
     if not check_password_hash(stored_password_hash, current_password):
         return jsonify({'error': 'Current password is incorrect'}), 401
 
-    db_session = get_db()
     try:
         # Update username
-        username_setting = db_session.query(Setting).filter_by(key='auth_username').first()
-        if username_setting:
-            username_setting.value = new_username
-        else:
-            db_session.add(Setting(key='auth_username', value=new_username))
+        settings_manager.set('auth_username', new_username)
 
         # Update password hash
         new_password_hash = generate_password_hash(new_password)
-        password_setting = db_session.query(Setting).filter_by(key='auth_password_hash').first()
-        if password_setting:
-            password_setting.value = new_password_hash
-        else:
-            db_session.add(Setting(key='auth_password_hash', value=new_password_hash))
-
-        db_session.commit()
+        settings_manager.set('auth_password_hash', new_password_hash)
 
         # Keep user logged in with new credentials
         session['authenticated'] = True
@@ -2342,11 +2200,8 @@ def change_auth():
         logger.info(f"Credentials changed for user: {new_username}")
         return jsonify({'success': True, 'message': 'Credentials updated successfully'})
     except Exception as e:
-        db_session.rollback()
         logger.error(f"Error changing credentials: {str(e)}")
         return jsonify({'error': 'Failed to update credentials'}), 500
-    finally:
-        db_session.close()
 
 @app.route('/api/logs', methods=['GET'])
 def get_logs():

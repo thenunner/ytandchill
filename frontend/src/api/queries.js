@@ -64,7 +64,8 @@ export function useDeleteChannel() {
 export function useScanChannel() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, forceFull = false }) => api.scanChannel(id, forceFull),
+    mutationFn: ({ id, forceFull = false, is_batch_start = false, is_auto_scan = false, batch_label = '' }) =>
+      api.scanChannel(id, forceFull, is_batch_start, is_auto_scan, batch_label),
     onSuccess: () => {
       queryClient.invalidateQueries(['videos']);
       queryClient.invalidateQueries(['channels']);

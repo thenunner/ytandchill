@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import logging
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
-from models import Video, QueueItem, Setting
+from models import Video, QueueItem, Setting, get_session
 from sqlalchemy.orm import Session
 import signal
 import glob
@@ -18,9 +18,10 @@ class DownloadWorker:
     PROGRESS_TIMEOUT = 1800  # 30 minutes of no progress triggers timeout
     HARD_TIMEOUT = 14400     # 4 hours maximum download time
 
-    def __init__(self, session_factory, download_dir='downloads'):
+    def __init__(self, session_factory, download_dir='downloads', settings_manager=None):
         self.session_factory = session_factory
         self.download_dir = download_dir
+        self.settings_manager = settings_manager
         self.running = False
         self.thread = None
         self.current_download = None
@@ -53,8 +54,7 @@ class DownloadWorker:
         self.paused = False
 
         # Reset any stuck 'downloading' videos back to 'queued' when resuming
-        session = self.session_factory()
-        try:
+        with get_session(self.session_factory) as session:
             stuck_videos = session.query(Video).filter(
                 Video.status == 'downloading'
             ).all()
@@ -78,14 +78,95 @@ class DownloadWorker:
                 logger.info(f"Reset {len(stuck_videos)} stuck 'downloading' videos to 'queued'")
             else:
                 logger.debug("No stuck videos found when resuming")
-            session.commit()
-        finally:
-            session.close()
     
     def cancel_current(self):
         if self.current_download:
             logger.info(f"Cancelling current download: {self.current_download}")
             self.current_download['cancelled'] = True
+
+    def _cleanup_failed_video(self, session, video, queue_item, channel_dir, reason):
+        """
+        Cleanup files and set video to ignored status.
+
+        Args:
+            session: Database session
+            video: Video object
+            queue_item: QueueItem object
+            channel_dir: Channel directory path
+            reason: Human-readable reason for ignoring
+        """
+        logger.warning(f'{reason}: {video.title} ({video.yt_id})')
+        logger.warning(f'Moving video to ignored status')
+
+        # Delete partial files
+        video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
+        for file_path in glob.glob(video_pattern):
+            try:
+                os.remove(file_path)
+                logger.debug(f'Deleted file: {file_path}')
+            except Exception as del_error:
+                logger.warning(f'Failed to delete file {file_path}: {del_error}')
+
+        # Delete thumbnail
+        thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
+        if os.path.exists(thumb_path):
+            try:
+                os.remove(thumb_path)
+                logger.debug(f'Deleted thumbnail: {thumb_path}')
+            except Exception as thumb_error:
+                logger.warning(f'Failed to delete thumbnail: {thumb_error}')
+
+        # Update database
+        video.status = 'ignored'
+        if queue_item:
+            session.delete(queue_item)
+        session.commit()
+        self.current_download = None
+        logger.info(f'Successfully moved video to ignored: {video.yt_id}')
+
+    def _handle_rate_limit(self, session, video, queue_item, cookies_path=None, error_code=None):
+        """
+        Handle rate limiting errors with appropriate messages.
+
+        Args:
+            session: Database session
+            video: Video object
+            queue_item: QueueItem object
+            cookies_path: Path to cookies.txt (optional, for 403 errors)
+            error_code: Error code string (e.g., '403') for specific messages
+        """
+        logger.warning(f'WARNING: RATE LIMIT DETECTED ({error_code or "general"}) - Auto-pausing queue')
+        self.paused = True
+        video.status = 'queued'
+
+        # Set appropriate message based on error type
+        if error_code == '403':
+            if cookies_path and os.path.exists(cookies_path):
+                msg = 'YouTube rate limit detected (403 Forbidden). Try updating your cookies.txt file and wait 30-60 minutes.'
+            else:
+                msg = 'YouTube rate limit detected (403 Forbidden). Add a cookies.txt file and wait 30-60 minutes.'
+        else:
+            msg = 'YouTube rate limit detected. Queue paused. Please wait 30-60 minutes before resuming downloads.'
+
+        self.rate_limit_message = msg
+        queue_item.log = msg
+
+        # Reset any other stuck 'downloading' videos back to 'queued'
+        with get_session(self.session_factory) as temp_session:
+            stuck_videos = temp_session.query(Video).filter(
+                Video.status == 'downloading',
+                Video.id != video.id
+            ).all()
+            for stuck_video in stuck_videos:
+                stuck_video.status = 'queued'
+                # Reset progress for their queue items
+                stuck_queue_item = temp_session.query(QueueItem).filter(
+                    QueueItem.video_id == stuck_video.id
+                ).first()
+                if stuck_queue_item:
+                    stuck_queue_item.progress_pct = 0
+                    stuck_queue_item.speed_bps = 0
+                    stuck_queue_item.eta_seconds = 0
 
     def _worker_loop(self):
         logger.debug("Worker loop started")
@@ -95,30 +176,25 @@ class DownloadWorker:
                 time.sleep(1)
                 continue
 
-            session = self.session_factory()
             try:
-                # Get next queued video (join with QueueItem for ordering)
-                queue_item = session.query(QueueItem).join(Video).filter(
-                    Video.status == 'queued'
-                ).order_by(QueueItem.queue_position).first()
+                with get_session(self.session_factory) as session:
+                    # Get next queued video (join with QueueItem for ordering)
+                    queue_item = session.query(QueueItem).join(Video).filter(
+                        Video.status == 'queued'
+                    ).order_by(QueueItem.queue_position).first()
 
-                if queue_item:
-                    logger.info(f"Found queued video: {queue_item.video.yt_id} - {queue_item.video.title}")
-                    self._download_video(session, queue_item)
-                else:
-                    # Queue is empty - clear rate limit message
-                    if self.rate_limit_message:
-                        logger.info("Queue empty - clearing rate limit message")
-                        self.rate_limit_message = None
-                    logger.debug("No queued videos found, sleeping...")
-                    time.sleep(2)  # Wait before checking again
-
-                session.commit()
+                    if queue_item:
+                        logger.info(f"Found queued video: {queue_item.video.yt_id} - {queue_item.video.title}")
+                        self._download_video(session, queue_item)
+                    else:
+                        # Queue is empty - clear rate limit message
+                        if self.rate_limit_message:
+                            logger.info("Queue empty - clearing rate limit message")
+                            self.rate_limit_message = None
+                        logger.debug("No queued videos found, sleeping...")
+                        time.sleep(2)  # Wait before checking again
             except Exception as e:
-                session.rollback()
                 logger.error(f"Worker error: {e}", exc_info=True)
-            finally:
-                session.close()
 
             time.sleep(0.5)
 
@@ -156,25 +232,29 @@ class DownloadWorker:
 
         logger.debug(f'Watchdog timer exiting for {video_id}')
 
-    def _download_video(self, session, queue_item):
+    def _validate_and_prepare_video(self, session, queue_item):
+        """
+        Validate video and channel exist, prepare for download.
+
+        Returns:
+            tuple: (video, channel, channel_dir) or (None, None, None) if validation fails
+        """
         video = session.query(Video).filter(Video.id == queue_item.video_id).first()
         if not video:
-            # Video not found - delete queue item
             logger.warning(f"Video not found for queue item {queue_item.id}, deleting queue item")
             session.delete(queue_item)
             session.commit()
-            return
+            return None, None, None
 
         logger.info(f"Starting download for video: {video.yt_id} - {video.title}")
 
         channel = video.channel
         if not channel:
-            # Channel not found - delete queue item and reset video
             logger.error(f"Channel not found for video {video.yt_id}, resetting to 'discovered'")
             video.status = 'discovered'
             session.delete(queue_item)
             session.commit()
-            return
+            return None, None, None
 
         logger.debug(f"Channel: {channel.title}, Folder: {channel.folder_name}")
 
@@ -187,6 +267,15 @@ class DownloadWorker:
         channel_dir = os.path.join(self.download_dir, channel.folder_name)
         os.makedirs(channel_dir, exist_ok=True)
 
+        return video, channel, channel_dir
+
+    def _setup_progress_tracking(self, queue_item, video):
+        """
+        Setup progress tracking and watchdog timer.
+
+        Returns:
+            tuple: (watchdog_thread, progress_hook_function)
+        """
         # Setup progress tracking with timeout watchdog
         self.current_download = {
             'cancelled': False,
@@ -225,38 +314,39 @@ class DownloadWorker:
                     self.current_download['last_progress_time'] = time.time()
                 try:
                     # Update progress in database
-                    temp_session = self.session_factory()
-                    temp_queue_item = temp_session.query(QueueItem).filter(
-                        QueueItem.id == queue_item.id
-                    ).first()
+                    with get_session(self.session_factory) as temp_session:
+                        temp_queue_item = temp_session.query(QueueItem).filter(
+                            QueueItem.id == queue_item.id
+                        ).first()
 
-                    if temp_queue_item:
-                        downloaded = d.get('downloaded_bytes', 0)
-                        total = d.get('total_bytes') or d.get('total_bytes_estimate', 0)
-                        if total > 0:
-                            progress_pct = (downloaded / total) * 100
-                            temp_queue_item.progress_pct = progress_pct
+                        if temp_queue_item:
+                            downloaded = d.get('downloaded_bytes', 0)
+                            total = d.get('total_bytes') or d.get('total_bytes_estimate', 0)
+                            if total > 0:
+                                progress_pct = (downloaded / total) * 100
+                                temp_queue_item.progress_pct = progress_pct
 
-                            # Log progress every 5% at INFO level
-                            progress_milestone = int(progress_pct // 5) * 5
-                            if progress_milestone > last_logged_progress[0] and progress_milestone % 5 == 0:
-                                speed_mbps = (d.get('speed', 0) or 0) / (1024 * 1024)
-                                eta_min = (d.get('eta', 0) or 0) / 60
-                                # Only log if we have actual download progress (not just initial metadata)
-                                # Require: actual bytes downloaded AND meaningful speed (at least 10 KB/s)
-                                if downloaded > 0 and d.get('speed') and d.get('speed') > 10240:
-                                    logger.info(f'Download progress: {video.title[:50]} - {progress_milestone}% ({speed_mbps:.2f} MB/s, ETA: {eta_min:.1f}min)')
-                                    last_logged_progress[0] = progress_milestone
+                                # Log progress every 5% at INFO level
+                                progress_milestone = int(progress_pct // 5) * 5
+                                if progress_milestone > last_logged_progress[0] and progress_milestone % 5 == 0:
+                                    speed_mbps = (d.get('speed', 0) or 0) / (1024 * 1024)
+                                    eta_min = (d.get('eta', 0) or 0) / 60
+                                    # Only log if we have actual download progress (not just initial metadata)
+                                    # Require: actual bytes downloaded AND meaningful speed (at least 10 KB/s)
+                                    if downloaded > 0 and d.get('speed') and d.get('speed') > 10240:
+                                        logger.info(f'Download progress: {video.title[:50]} - {progress_milestone}% ({speed_mbps:.2f} MB/s, ETA: {eta_min:.1f}min)')
+                                        last_logged_progress[0] = progress_milestone
 
-                        temp_queue_item.speed_bps = d.get('speed', 0) or 0
-                        temp_queue_item.eta_seconds = d.get('eta', 0) or 0
-                        temp_queue_item.total_bytes = total  # Store file size
-                        temp_session.commit()
-                    temp_session.close()
+                            temp_queue_item.speed_bps = d.get('speed', 0) or 0
+                            temp_queue_item.eta_seconds = d.get('eta', 0) or 0
+                            temp_queue_item.total_bytes = total  # Store file size
                 except Exception as progress_error:
                     logger.error(f'Failed to update download progress for {video.yt_id}: {progress_error}')
 
-        # Download thumbnail from YouTube first (same approach as test-app.py line 1038)
+        return watchdog_thread, progress_hook
+
+    def _download_thumbnail(self, video, channel_dir):
+        """Download video thumbnail from YouTube."""
         import urllib.request
         thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
         try:
@@ -266,10 +356,17 @@ class DownloadWorker:
         except Exception as thumb_error:
             logger.warning(f'Failed to download thumbnail: {thumb_error}')
 
+    def _configure_download_options(self, channel_dir, video_yt_id, progress_hook):
+        """
+        Build yt-dlp options dictionary with all settings.
+
+        Returns:
+            tuple: (ydl_opts dict, cookies_path)
+        """
         # yt-dlp options - Works with HLS/m3u8 streams
         ydl_opts = {
             'format': 'best',  # Let yt-dlp choose best available format
-            'outtmpl': os.path.join(channel_dir, f'{video.yt_id}.%(ext)s'),
+            'outtmpl': os.path.join(channel_dir, f'{video_yt_id}.%(ext)s'),
             'quiet': True,
             'no_warnings': True,
             'progress_hooks': [progress_hook],
@@ -287,27 +384,12 @@ class DownloadWorker:
         if os.path.exists(cookies_path):
             ydl_opts['cookiefile'] = cookies_path
             logger.info('Using cookies.txt file for authentication')
-            # Removed print - using logger instead
         else:
             logger.warning('No cookies.txt file found - downloads may be rate-limited')
-            # Removed print - using logger instead
 
         # Add SponsorBlock if enabled
-        sponsorblock_categories = []
         try:
-            temp_session = self.session_factory()
-            remove_sponsor = temp_session.query(Setting).filter(Setting.key == 'sponsorblock_remove_sponsor').first()
-            remove_selfpromo = temp_session.query(Setting).filter(Setting.key == 'sponsorblock_remove_selfpromo').first()
-            remove_interaction = temp_session.query(Setting).filter(Setting.key == 'sponsorblock_remove_interaction').first()
-
-            if remove_sponsor and remove_sponsor.value == 'true':
-                sponsorblock_categories.append('sponsor')
-            if remove_selfpromo and remove_selfpromo.value == 'true':
-                sponsorblock_categories.append('selfpromo')
-            if remove_interaction and remove_interaction.value == 'true':
-                sponsorblock_categories.append('interaction')
-
-            temp_session.close()
+            sponsorblock_categories = self.settings_manager.get_sponsorblock_categories()
 
             if sponsorblock_categories:
                 ydl_opts['sponsorblock_remove'] = sponsorblock_categories
@@ -315,17 +397,31 @@ class DownloadWorker:
         except Exception as sb_error:
             logger.warning(f'Failed to load SponsorBlock settings: {sb_error}')
 
+        return ydl_opts, cookies_path
+
+    def _execute_download(self, session, video, queue_item, channel_dir, ydl_opts, cookies_path):
+        """
+        Execute download with retries and error handling.
+
+        Returns:
+            tuple: (success, cancelled, rate_limited, timed_out, ext)
+                - success: bool - download succeeded
+                - cancelled: bool - user cancelled
+                - rate_limited: bool - hit rate limit
+                - timed_out: bool - download timed out
+                - ext: str - file extension (or None)
+        """
         download_success = False
         cancelled = False
-        rate_limited = False  # Track if download failed due to rate limiting
+        rate_limited = False
+        ext = None
         attempt = 1
         max_attempts = 2
 
-        # Retry loop from test-app.py lines 1095-1134
+        # Retry loop
         while attempt <= max_attempts and not download_success:
             try:
                 logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id}')
-                # Removed print - using logger instead
 
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     info = ydl.extract_info(f'https://www.youtube.com/watch?v={video.yt_id}', download=True)
@@ -341,14 +437,13 @@ class DownloadWorker:
                 session.delete(queue_item)
                 session.commit()
                 self.current_download = None
-                return  # Exit and move to next video
+                return False, False, False, False, None
 
             except Exception as download_error:
                 error_str = str(download_error)
 
                 if 'cancelled' in error_str.lower():
                     logger.info(f'Download cancelled for {video.yt_id}')
-                    # Removed print - using logger instead
                     cancelled = True
                     break
 
@@ -363,210 +458,44 @@ class DownloadWorker:
                     queue_item.eta_seconds = 0
                     session.commit()
                     self.current_download = None
-                    return  # Exit download, .part file preserved for resume
+                    return False, False, False, False, None
 
                 # Check for age verification errors - move to ignored status
                 if 'verify your age' in error_str.lower() or \
                    ('age' in error_str.lower() and 'verif' in error_str.lower()):
-                    logger.warning(f'Age verification required for video: {video.title} ({video.yt_id})')
-                    logger.warning('Moving video to ignored status to prevent re-download attempts')
-
-                    # Delete partial files if they exist
-                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
-                    for file_path in glob.glob(video_pattern):
-                        try:
-                            os.remove(file_path)
-                            logger.debug(f'Deleted file: {file_path}')
-                        except Exception as del_error:
-                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
-
-                    # Delete thumbnail
-                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
-                    if os.path.exists(thumb_path):
-                        try:
-                            os.remove(thumb_path)
-                            logger.debug(f'Deleted thumbnail: {thumb_path}')
-                        except Exception as thumb_error:
-                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
-
-                    # Set to ignored status and remove from queue
-                    video.status = 'ignored'
-                    if queue_item:
-                        session.delete(queue_item)
-                    session.commit()
-                    self.current_download = None
-                    logger.info(f'Successfully moved age-restricted video to ignored: {video.yt_id}')
-                    return  # Exit and move to next video
+                    self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Age verification required')
+                    return False, False, False, False, None
 
                 # Check for private videos - auto-ignore
                 if 'private' in error_str.lower() and 'video' in error_str.lower():
-                    logger.warning(f'Private video detected: {video.title} ({video.yt_id})')
-                    logger.warning('Moving private video to ignored status')
-
-                    # Delete partial files if they exist
-                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
-                    for file_path in glob.glob(video_pattern):
-                        try:
-                            os.remove(file_path)
-                            logger.debug(f'Deleted file: {file_path}')
-                        except Exception as del_error:
-                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
-
-                    # Delete thumbnail
-                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
-                    if os.path.exists(thumb_path):
-                        try:
-                            os.remove(thumb_path)
-                            logger.debug(f'Deleted thumbnail: {thumb_path}')
-                        except Exception as thumb_error:
-                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
-
-                    # Set to ignored status and remove from queue
-                    video.status = 'ignored'
-                    if queue_item:
-                        session.delete(queue_item)
-                    session.commit()
-                    self.current_download = None
-                    logger.info(f'Successfully moved private video to ignored: {video.yt_id}')
-                    return  # Exit and move to next video
+                    self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Private video detected')
+                    return False, False, False, False, None
 
                 # Check for deleted/unavailable videos - auto-ignore
                 if 'removed' in error_str.lower() or 'unavailable' in error_str.lower() or 'does not exist' in error_str.lower():
-                    logger.warning(f'Deleted/unavailable video detected: {video.title} ({video.yt_id})')
-                    logger.warning('Moving deleted video to ignored status')
-
-                    # Delete partial files if they exist
-                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
-                    for file_path in glob.glob(video_pattern):
-                        try:
-                            os.remove(file_path)
-                            logger.debug(f'Deleted file: {file_path}')
-                        except Exception as del_error:
-                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
-
-                    # Delete thumbnail
-                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
-                    if os.path.exists(thumb_path):
-                        try:
-                            os.remove(thumb_path)
-                            logger.debug(f'Deleted thumbnail: {thumb_path}')
-                        except Exception as thumb_error:
-                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
-
-                    # Set to ignored status and remove from queue
-                    video.status = 'ignored'
-                    if queue_item:
-                        session.delete(queue_item)
-                    session.commit()
-                    self.current_download = None
-                    logger.info(f'Successfully moved deleted/unavailable video to ignored: {video.yt_id}')
-                    return  # Exit and move to next video
+                    self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Deleted/unavailable video detected')
+                    return False, False, False, False, None
 
                 # Check for members-only content - auto-ignore
                 if ('members' in error_str.lower() and 'only' in error_str.lower()) or 'join this channel' in error_str.lower():
-                    logger.warning(f'Members-only content detected: {video.title} ({video.yt_id})')
-                    logger.warning('Moving members-only video to ignored status')
-
-                    # Delete partial files if they exist
-                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
-                    for file_path in glob.glob(video_pattern):
-                        try:
-                            os.remove(file_path)
-                            logger.debug(f'Deleted file: {file_path}')
-                        except Exception as del_error:
-                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
-
-                    # Delete thumbnail
-                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
-                    if os.path.exists(thumb_path):
-                        try:
-                            os.remove(thumb_path)
-                            logger.debug(f'Deleted thumbnail: {thumb_path}')
-                        except Exception as thumb_error:
-                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
-
-                    # Set to ignored status and remove from queue
-                    video.status = 'ignored'
-                    if queue_item:
-                        session.delete(queue_item)
-                    session.commit()
-                    self.current_download = None
-                    logger.info(f'Successfully moved members-only video to ignored: {video.yt_id}')
-                    return  # Exit and move to next video
+                    self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Members-only content detected')
+                    return False, False, False, False, None
 
                 # Check for copyright takedowns - auto-ignore
                 if 'copyright' in error_str.lower():
-                    logger.warning(f'Copyright takedown detected: {video.title} ({video.yt_id})')
-                    logger.warning('Moving copyright-blocked video to ignored status')
-
-                    # Delete partial files if they exist
-                    video_pattern = os.path.join(channel_dir, f'{video.yt_id}.*')
-                    for file_path in glob.glob(video_pattern):
-                        try:
-                            os.remove(file_path)
-                            logger.debug(f'Deleted file: {file_path}')
-                        except Exception as del_error:
-                            logger.warning(f'Failed to delete file {file_path}: {del_error}')
-
-                    # Delete thumbnail
-                    thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
-                    if os.path.exists(thumb_path):
-                        try:
-                            os.remove(thumb_path)
-                            logger.debug(f'Deleted thumbnail: {thumb_path}')
-                        except Exception as thumb_error:
-                            logger.warning(f'Failed to delete thumbnail: {thumb_error}')
-
-                    # Set to ignored status and remove from queue
-                    video.status = 'ignored'
-                    if queue_item:
-                        session.delete(queue_item)
-                    session.commit()
-                    self.current_download = None
-                    logger.info(f'Successfully moved copyright-blocked video to ignored: {video.yt_id}')
-                    return  # Exit and move to next video
+                    self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Copyright takedown detected')
+                    return False, False, False, False, None
 
                 logger.error(f'Download attempt {attempt} failed for {video.yt_id}: {error_str}')
-                # Removed print - using logger instead
 
                 # Check for rate limiting errors
                 if ('rate' in error_str.lower() and 'limit' in error_str.lower()) or \
                    ("This content isn't available" in error_str and 'try again later' in error_str.lower()):
-                    logger.warning('WARNING: RATE LIMIT DETECTED - Auto-pausing queue')
-                    # Removed print - using logger instead
-                    self.paused = True
-                    rate_limited = True  # Mark as rate limited
-
-                    # Set persistent rate limit message
-                    self.rate_limit_message = 'YouTube rate limit detected. Queue paused. Please wait 30-60 minutes before resuming downloads.'
-                    queue_item.log = self.rate_limit_message
-                    video.status = 'queued'  # Keep as queued for retry
-
-                    # Reset any other stuck 'downloading' videos back to 'queued'
-                    temp_session = self.session_factory()
-                    try:
-                        stuck_videos = temp_session.query(Video).filter(
-                            Video.status == 'downloading',
-                            Video.id != video.id
-                        ).all()
-                        for stuck_video in stuck_videos:
-                            stuck_video.status = 'queued'
-                            # Reset progress for their queue items
-                            stuck_queue_item = temp_session.query(QueueItem).filter(
-                                QueueItem.video_id == stuck_video.id
-                            ).first()
-                            if stuck_queue_item:
-                                stuck_queue_item.progress_pct = 0
-                                stuck_queue_item.speed_bps = 0
-                                stuck_queue_item.eta_seconds = 0
-                        temp_session.commit()
-                    finally:
-                        temp_session.close()
-
+                    self._handle_rate_limit(session, video, queue_item)
+                    rate_limited = True
                     break
 
                 if 'CERTIFICATE_VERIFY_FAILED' in error_str or 'SSL' in error_str:
-                    # Removed print - using logger instead
                     if attempt < max_attempts:
                         attempt += 1
                         time.sleep(2)
@@ -576,56 +505,28 @@ class DownloadWorker:
                 elif '403' in error_str or 'Forbidden' in error_str:
                     if attempt < max_attempts:
                         logger.warning(f'403 error detected, retrying... (attempt {attempt}/{max_attempts})')
-                        # Removed print - using logger instead
                         time.sleep(2)
                         attempt += 1
                     else:
                         # Also pause on 403 errors as they often indicate rate limiting
-                        logger.warning('WARNING: 403 ERROR - Auto-pausing queue (likely rate-limited)')
-                        self.paused = True
-                        rate_limited = True  # Mark as rate limited
-                        video.status = 'queued'  # Keep as queued for retry
-
-                        # Reset any other stuck 'downloading' videos back to 'queued'
-                        temp_session = self.session_factory()
-                        try:
-                            stuck_videos = temp_session.query(Video).filter(
-                                Video.status == 'downloading',
-                                Video.id != video.id
-                            ).all()
-                            for stuck_video in stuck_videos:
-                                stuck_video.status = 'queued'
-                                # Reset progress for their queue items
-                                stuck_queue_item = temp_session.query(QueueItem).filter(
-                                    QueueItem.video_id == stuck_video.id
-                                ).first()
-                                if stuck_queue_item:
-                                    stuck_queue_item.progress_pct = 0
-                                    stuck_queue_item.speed_bps = 0
-                                    stuck_queue_item.eta_seconds = 0
-                            temp_session.commit()
-                        finally:
-                            temp_session.close()
-
-                        if os.path.exists(cookies_path):
-                            self.rate_limit_message = 'YouTube rate limit detected (403 Forbidden). Try updating your cookies.txt file and wait 30-60 minutes.'
-                            queue_item.log = self.rate_limit_message
-                        else:
-                            self.rate_limit_message = 'YouTube rate limit detected (403 Forbidden). Add a cookies.txt file and wait 30-60 minutes.'
-                            queue_item.log = self.rate_limit_message
-                        break  # Exit retry loop
+                        self._handle_rate_limit(session, video, queue_item, cookies_path, '403')
+                        rate_limited = True
+                        break
                 else:
                     raise download_error
 
         # Check if timed out
         timed_out = self.current_download and self.current_download.get('timed_out', False)
 
+        return download_success, cancelled, rate_limited, timed_out, ext
+
+    def _finalize_download(self, session, video, queue_item, channel, channel_dir, download_success, cancelled, rate_limited, timed_out, ext):
+        """Update video status and database based on download result."""
         if cancelled:
             # Cancelled - reset to discovered and delete queue item
             logger.info(f'Download cancelled for {video.yt_id}, resetting to discovered')
             video.status = 'discovered'
             session.delete(queue_item)
-            # Removed print - using logger instead
         elif timed_out:
             # Timeout - reset to discovered and delete queue item (same as cancelled)
             logger.warning(f'Download timed out for {video.yt_id}, resetting to discovered')
@@ -638,18 +539,14 @@ class DownloadWorker:
             queue_item.progress_pct = 0  # Reset progress
             queue_item.speed_bps = 0
             queue_item.eta_seconds = 0
-            # queue_item.log already set above
-            # Removed print - using logger instead
         elif not download_success:
             # Failed (non-rate-limit) - reset to discovered and delete queue item
             logger.error(f'Download failed for {video.yt_id}, resetting to discovered')
             video.status = 'discovered'
             session.delete(queue_item)
-            # Removed print - using logger instead
         else:
             # Success - mark as library and delete queue item
             logger.info(f'Successfully downloaded video {video.yt_id}')
-            # Removed print - using logger instead
 
             # Clear rate limit message on successful download
             self.rate_limit_message = None
@@ -673,42 +570,71 @@ class DownloadWorker:
         session.commit()
         logger.debug(f'Download complete, current_download cleared')
 
-        # Add random delay between 30 seconds and 3 minutes to avoid rate limiting
-        # Only delay if there are more items in the queue
-        session = self.session_factory()
-        try:
+    def _apply_inter_download_delay(self, download_success):
+        """Apply random delay if more videos are queued to avoid rate limiting."""
+        with get_session(self.session_factory) as session:
             has_more = session.query(Video).filter(
                 Video.status == 'queued'
             ).count() > 0
 
-            if has_more and download_success:
-                # Random delay: 60 seconds to 3 minutes (60-180 seconds)
-                delay_seconds = random.randint(60, 180)
-                logger.info(f"Delaying {delay_seconds} seconds ({delay_seconds/60:.1f} min) before next download to avoid rate limiting...")
-                # Removed print - using logger instead
+        if has_more and download_success:
+            # Random delay: 60 seconds to 3 minutes (60-180 seconds)
+            delay_seconds = random.randint(60, 180)
+            logger.info(f"Delaying {delay_seconds} seconds ({delay_seconds/60:.1f} min) before next download to avoid rate limiting...")
 
-                # Count down the delay and update status
-                start_time = time.time()
-                while time.time() - start_time < delay_seconds:
-                    remaining = int(delay_seconds - (time.time() - start_time))
+            # Count down the delay and update status
+            start_time = time.time()
+            while time.time() - start_time < delay_seconds:
+                remaining = int(delay_seconds - (time.time() - start_time))
 
-                    # Update delay info for status bar
-                    if remaining >= 60:
-                        self.delay_info = f"Delayed {remaining//60} min {remaining%60} sec to avoid rate limiting"
-                    else:
-                        self.delay_info = f"Delayed {remaining} sec to avoid rate limiting"
+                # Update delay info for status bar
+                if remaining >= 60:
+                    self.delay_info = f"Delayed {remaining//60} min {remaining%60} sec to avoid rate limiting"
+                else:
+                    self.delay_info = f"Delayed {remaining} sec to avoid rate limiting"
 
-                    # Log every 10 seconds for debug visibility
-                    if remaining % 10 == 0:
-                        logger.debug(f"Delay countdown: {remaining} seconds remaining")
+                # Log every 10 seconds for debug visibility
+                if remaining % 10 == 0:
+                    logger.debug(f"Delay countdown: {remaining} seconds remaining")
 
-                    time.sleep(1)  # Update every second
+                time.sleep(1)  # Update every second
 
-                # Clear delay info
-                self.delay_info = None
-                logger.info("Delay complete, ready for next download")
-                # Removed print - using logger instead
-            else:
-                logger.debug(f"No delay needed (has_more={has_more}, download_success={download_success})")
-        finally:
-            session.close()
+            # Clear delay info
+            self.delay_info = None
+            logger.info("Delay complete, ready for next download")
+        else:
+            logger.debug(f"No delay needed (has_more={has_more}, download_success={download_success})")
+
+    def _download_video(self, session, queue_item):
+        """
+        Download a video from the queue with full error handling and retry logic.
+
+        This method orchestrates the entire download process using focused helper methods.
+        """
+        # 1. Validate and prepare
+        video, channel, channel_dir = self._validate_and_prepare_video(session, queue_item)
+        if not video:
+            return
+
+        # 2. Setup progress tracking and watchdog
+        watchdog_thread, progress_hook = self._setup_progress_tracking(queue_item, video)
+
+        # 3. Download thumbnail
+        self._download_thumbnail(video, channel_dir)
+
+        # 4. Configure yt-dlp options
+        ydl_opts, cookies_path = self._configure_download_options(channel_dir, video.yt_id, progress_hook)
+
+        # 5. Execute download with retries
+        success, cancelled, rate_limited, timed_out, ext = self._execute_download(
+            session, video, queue_item, channel_dir, ydl_opts, cookies_path
+        )
+
+        # 6. Finalize download (update status, file info, etc.)
+        self._finalize_download(
+            session, video, queue_item, channel, channel_dir,
+            success, cancelled, rate_limited, timed_out, ext
+        )
+
+        # 7. Apply delay before next download
+        self._apply_inter_download_delay(success)

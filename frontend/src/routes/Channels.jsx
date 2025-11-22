@@ -29,7 +29,10 @@ export default function Channels() {
   const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 }); // X/Y progress
   const [viewMode, setViewMode] = useState(localStorage.getItem('channelsViewMode') || 'grid'); // Grid or list view
   const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
+  const [autoScanPending, setAutoScanPending] = useState(false); // Auto-scan queued for later
   const sortMenuRef = useRef(null);
+  const previouslyScanningRef = useRef(false);
+  const previousVideoCountsRef = useRef({});
 
   const handleAddChannel = async (e) => {
     e.preventDefault();
@@ -84,10 +87,22 @@ export default function Channels() {
     try {
       const scanType = forceFull ? 'Rescanning all videos' : 'Scanning for new videos';
 
-      const result = await scanChannel.mutateAsync({ id: channelId, forceFull });
+      // Get channel title for batch label
+      const channel = channels?.find(c => c.id === channelId);
+      const batchLabel = channel ? channel.title : 'Channel scan';
+
+      const result = await scanChannel.mutateAsync({
+        id: channelId,
+        forceFull,
+        is_batch_start: true,  // Single scans are their own "batch"
+        is_auto_scan: false,
+        batch_label: batchLabel
+      });
 
       if (result.status === 'queued') {
         showNotification(`${scanType} queued`, 'info');
+      } else if (result.status === 'batch_in_progress') {
+        showNotification('A scan is already running. Please wait for it to complete.', 'warning');
       } else if (result.status === 'already_queued') {
         showNotification('Scan already queued for this channel', 'info');
       }
@@ -140,7 +155,19 @@ export default function Channels() {
     }
 
     const scanType = forceFull ? 'full scan' : 'new videos scan';
-    showNotification(`Queueing ${scanType} for ${channelsToScan.length} channel${channelsToScan.length > 1 ? 's' : ''}...`, 'info');
+
+    // Determine batch label
+    let batchLabel;
+    if (selectedChannels.length === 0) {
+      // Scanning all channels
+      batchLabel = forceFull ? 'Scan All' : 'Scan New';
+    } else if (channelsToScan.length === 1) {
+      // Single channel selected
+      batchLabel = channelsToScan[0].title;
+    } else {
+      // Multiple channels selected
+      batchLabel = `Scan ${channelsToScan.length} channels`;
+    }
 
     // Queue all channels at once (non-blocking)
     let queued = 0;
@@ -151,10 +178,17 @@ export default function Channels() {
       try {
         const result = await scanChannel.mutateAsync({
           id: channel.id,
-          forceFull: forceFull
+          forceFull: forceFull,
+          is_batch_start: queued === 0,  // First channel in batch
+          is_auto_scan: false,
+          batch_label: batchLabel
         });
+
         if (result.status === 'queued') {
           queued++;
+        } else if (result.status === 'batch_in_progress') {
+          showNotification('A scan is already running. Please wait for it to complete.', 'warning');
+          return;  // Stop immediately
         } else if (result.status === 'already_queued') {
           alreadyQueued++;
         }
@@ -215,11 +249,21 @@ export default function Channels() {
   useEffect(() => {
     const pollScanStatus = async () => {
       try {
-        const response = await fetch('/api/channels/scan-status');
-        if (!response.ok) return;
+        // Fetch both scan status and batch lock status
+        const [statusRes, batchRes] = await Promise.all([
+          fetch('/api/channels/scan-status'),
+          fetch('/api/channels/batch-scan-status')
+        ]);
 
-        const status = await response.json();
-        const { current_operation, queue_size, queued_channel_ids } = status;
+        if (!statusRes.ok || !batchRes.ok) return;
+
+        const status = await statusRes.json();
+        const batchStatus = await batchRes.json();
+
+        const { current_operation, scan_current, scan_total } = status;
+
+        // Update auto-scan pending state
+        setAutoScanPending(batchStatus.auto_scan_pending || false);
 
         // Show scan progress if actively scanning
         if (current_operation && current_operation.type === 'scanning' && current_operation.message) {
@@ -230,10 +274,34 @@ export default function Channels() {
           );
         }
 
-        // Update scanning state
-        setIsScanningAll(queue_size > 0 || (current_operation && current_operation.type === 'scanning'));
-        if (queue_size > 0 || (current_operation && current_operation.type === 'scanning')) {
-          setScanProgress({ current: 1, total: queue_size + 1 });
+        // Update scanning state based on batch lock (more reliable than counters)
+        const isScanning = batchStatus.batch_in_progress;
+
+        // When scanning starts, store current video counts
+        if (!previouslyScanningRef.current && isScanning) {
+          const counts = {};
+          channels?.forEach(ch => { counts[ch.id] = ch.video_count || 0; });
+          previousVideoCountsRef.current = counts;
+        }
+
+        // When scanning finishes, check if any channel has new videos
+        if (previouslyScanningRef.current && !isScanning) {
+          // Check if any channel has more videos to review now
+          const hasNewVideos = channels?.some(ch =>
+            (ch.video_count || 0) > (previousVideoCountsRef.current[ch.id] || 0)
+          );
+
+          if (hasNewVideos) {
+            // Scan found new videos - automatically sort by review needed + scan date
+            setSortBy('needs_review_then_scan');
+            localStorage.setItem('channels_sortBy', 'needs_review_then_scan');
+          }
+        }
+
+        previouslyScanningRef.current = isScanning;
+        setIsScanningAll(isScanning);
+        if (isScanning) {
+          setScanProgress({ current: scan_current, total: scan_total });
         } else {
           setScanProgress({ current: 0, total: 0 });
         }
@@ -248,7 +316,7 @@ export default function Channels() {
     const intervalId = setInterval(pollScanStatus, 2000);
 
     return () => clearInterval(intervalId);
-  }, [showNotification]);
+  }, [showNotification, channels]);
 
   // Helper function to check if a date is today
   const isToday = (date) => {
@@ -334,10 +402,16 @@ export default function Channels() {
     const sorted = [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'needs_review_then_scan':
-          // Sort by most needs to review first, then by newest scanned
-          const reviewDiff = (b.video_count || 0) - (a.video_count || 0);
+          // Sort by channels with videos to review first (any > 0), then by newest video upload date
+          const aHasReview = (a.video_count || 0) > 0 ? 1 : 0;
+          const bHasReview = (b.video_count || 0) > 0 ? 1 : 0;
+          const reviewDiff = bHasReview - aHasReview;
           if (reviewDiff !== 0) return reviewDiff;
-          return new Date(b.last_scan_at || 0) - new Date(a.last_scan_at || 0);
+
+          // Within same review status, sort by newest video upload date (YYYYMMDD format)
+          const aVideoDate = a.last_video_date || '';
+          const bVideoDate = b.last_video_date || '';
+          return bVideoDate.localeCompare(aVideoDate); // Newest video first
         case 'a_z':
           return (a.title || '').localeCompare(b.title || '');
         case 'z_a':
@@ -906,7 +980,7 @@ export default function Channels() {
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-1 gap-2 overflow-x-hidden">
           {filteredAndSortedChannels.map(channel => (
             <ChannelRow
               key={channel.id}

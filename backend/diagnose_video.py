@@ -5,21 +5,20 @@ from YouTube API but show as public/processed.
 """
 
 from googleapiclient.discovery import build
-from models import Setting, init_db
+from models import init_db
+from utils import SettingsManager
 
 # Initialize database
-Session = init_db()
-session = Session()
+engine, Session = init_db()
+settings_manager = SettingsManager(Session, cache_ttl=5)
 
 # Get YouTube API key from database
-api_key_setting = session.query(Setting).filter(Setting.key == 'youtube_api_key').first()
-if not api_key_setting or not api_key_setting.value:
+api_key = settings_manager.get('youtube_api_key')
+if not api_key:
     print("ERROR: YouTube API key not configured")
-    session.close()
     exit(1)
 
-youtube = build('youtube', 'v3', developerKey=api_key_setting.value)
-session.close()
+youtube = build('youtube', 'v3', developerKey=api_key)
 
 # Video IDs that are causing issues
 problem_video_ids = [

@@ -1,0 +1,555 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== THEME SYSTEM ===== */
+/* Default theme (Dark Mode) */
+:root,
+.theme-kernel {
+  /* Backgrounds */
+  --bg-primary: 0 0% 0%;           /* #000000 - Pure black */
+  --bg-secondary: 220 10% 8%;      /* #14161a - Card backgrounds */
+  --bg-tertiary: 220 8% 11%;       /* #1a1d23 - Elevated surfaces */
+  --bg-hover: 220 6% 25%;          /* #3a3d44 - Hover states */
+
+  /* Borders */
+  --border: 220 7% 17%;            /* #2a2d32 */
+  --border-light: 220 6% 25%;      /* #3a3d44 */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* #e6e8f0 */
+  --text-secondary: 228 14% 66%;   /* #9ca3ba */
+  --text-muted: 220 9% 46%;        /* #6b7280 */
+
+  /* Accent */
+  --accent: 220 10% 70%;           /* #a8b0bc - Lighter gray for better visibility */
+  --accent-hover: 220 10% 80%;     /* #c8ccd4 - Even lighter on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 220 10% 8%;   /* Same as bg-secondary */
+  --scrollbar-thumb: 220 6% 25%;   /* Same as bg-hover */
+  --scrollbar-thumb-hover: 220 5% 30%;
+
+  /* Plyr player */
+  --plyr-main: 220 10% 70%;        /* Same as accent */
+}
+
+/* Fatal Red Theme */
+.theme-fatal {
+  /* Backgrounds */
+  --bg-primary: 0 8% 7%;           /* Slightly red-tinted black */
+  --bg-secondary: 0 12% 10%;       /* Red-tinted dark gray */
+  --bg-tertiary: 0 15% 13%;        /* Red-tinted elevated */
+  --bg-hover: 0 18% 25%;           /* Red-tinted hover */
+
+  /* Borders */
+  --border: 0 15% 17%;             /* Red-tinted borders */
+  --border-light: 0 18% 25%;       /* Red-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - YouTube Red */
+  --accent: 0 100% 50%;            /* #FF0000 - YouTube red */
+  --accent-hover: 0 100% 60%;      /* Lighter red on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 0 8% 10%;
+  --scrollbar-thumb: 0 20% 40%;    /* Red-tinted thumb */
+  --scrollbar-thumb-hover: 0 25% 50%;
+
+  /* Plyr player */
+  --plyr-main: 0 100% 50%;         /* YouTube red for player */
+}
+
+/* Subnet Deep Blue Theme */
+.theme-subnet {
+  /* Backgrounds */
+  --bg-primary: 220 50% 5%;        /* Very deep blue-gray */
+  --bg-secondary: 220 45% 8%;      /* Slightly lighter overcast */
+  --bg-tertiary: 220 40% 11%;      /* Elevated overcast */
+  --bg-hover: 220 30% 20%;         /* Overcast-tinted hover */
+
+  /* Borders */
+  --border: 220 35% 12%;           /* Overcast-tinted borders */
+  --border-light: 220 30% 20%;     /* Overcast-tinted light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Same as dark theme */
+  --text-secondary: 228 14% 66%;   /* Same as dark theme */
+  --text-muted: 220 9% 46%;        /* Same as dark theme */
+
+  /* Accent - Muted Blue */
+  --accent: 220 50% 40%;           /* Muted overcast blue */
+  --accent-hover: 220 50% 50%;     /* Lighter on hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 220 45% 8%;
+  --scrollbar-thumb: 220 45% 32%;  /* Overcast thumb */
+  --scrollbar-thumb-hover: 220 50% 42%;
+
+  /* Plyr player */
+  --plyr-main: 220 50% 40%;        /* Overcast blue for player - distinct from tide */
+}
+
+/* Archive Brown Theme */
+.theme-archive {
+  /* Backgrounds */
+  --bg-primary: 25 30% 6%;         /* Very deep bark brown */
+  --bg-secondary: 25 28% 9%;       /* Natural dark brown for cards */
+  --bg-tertiary: 25 26% 12%;       /* Slightly lifted brown */
+  --bg-hover: 25 22% 20%;          /* Muted brown hover */
+
+  /* Borders */
+  --border: 25 24% 14%;            /* Brown borders */
+  --border-light: 25 20% 20%;      /* Brown light borders */
+
+  /* Text */
+  --text-primary: 230 10% 91%;     /* Light gray */
+  --text-secondary: 228 14% 66%;   /* Medium gray */
+  --text-muted: 220 9% 46%;        /* Dark muted gray */
+
+  /* Accent - Sage Green */
+  --accent: 95 20% 45%;            /* Natural sage */
+  --accent-hover: 95 22% 55%;      /* Brighter sage hover */
+
+  /* Scrollbar */
+  --scrollbar-track: 25 28% 9%;
+  --scrollbar-thumb: 95 18% 38%;   /* Sage thumb */
+  --scrollbar-thumb-hover: 95 20% 48%;
+
+  /* Plyr player */
+  --plyr-main: 95 20% 45%;         /* Sage for player */
+}
+
+/* Buffer Gray/Beige Theme */
+.theme-buffer {
+  /* Backgrounds */
+  --bg-primary: 215 15% 14%;       /* #222831 */
+  --bg-secondary: 215 12% 22%;     /* #393E46 */
+  --bg-tertiary: 215 10% 28%;      /* darker gray */
+  --bg-hover: 30 15% 45%;          /* slightly warmer hover */
+
+  /* Borders */
+  --border: 215 10% 26%;
+  --border-light: 215 10% 34%;
+
+  /* Text */
+  --text-primary: 35 25% 88%;      /* soft warm beige */
+  --text-secondary: 35 18% 70%;
+  --text-muted: 35 12% 55%;
+
+  /* Accent */
+  --accent: 35 45% 58%;            /* Darker beige for better visibility */
+  --accent-hover: 35 50% 68%;
+
+  /* Scrollbar */
+  --scrollbar-track: 215 12% 22%;
+  --scrollbar-thumb: 30 12% 38%;
+  --scrollbar-thumb-hover: 30 15% 48%;
+
+  /* Plyr player */
+  --plyr-main: 35 40% 75%;
+}
+
+/* Init Green/Wheat Theme */
+.theme-init {
+  /* Backgrounds */
+  --bg-primary: 100 10% 10%;       /* #181C14 */
+  --bg-secondary: 100 7% 20%;      /* #3C3D37 */
+  --bg-tertiary: 100 8% 26%;       /* darker muted green */
+  --bg-hover: 100 10% 45%;
+
+  /* Borders */
+  --border: 100 8% 25%;
+  --border-light: 100 10% 35%;
+
+  /* Text */
+  --text-primary: 40 30% 88%;      /* #ECDFCC tone */
+  --text-secondary: 40 20% 70%;
+  --text-muted: 40 15% 55%;
+
+  /* Accent */
+  --accent: 40 40% 68%;            /* darker wheat for better button visibility */
+  --accent-hover: 40 45% 78%;
+
+  /* Scrollbar */
+  --scrollbar-track: 100 7% 20%;
+  --scrollbar-thumb: 100 8% 38%;
+  --scrollbar-thumb-hover: 100 10% 45%;
+
+  /* Plyr player */
+  --plyr-main: 40 40% 68%;         /* wheat tone */
+}
+
+/* Gateway Gray/Teal Theme */
+.theme-gateway {
+  /* Backgrounds */
+  --bg-primary: 215 15% 14%;       /* #222831 */
+  --bg-secondary: 215 12% 22%;     /* #393E46 */
+  --bg-tertiary: 182 40% 30%;      /* muted teal behind accent */
+  --bg-hover: 182 40% 40%;
+
+  /* Borders */
+  --border: 215 10% 26%;
+  --border-light: 215 10% 32%;
+
+  /* Text */
+  --text-primary: 0 0% 95%;        /* from #EEEEEE */
+  --text-secondary: 0 0% 75%;
+  --text-muted: 0 0% 60%;
+
+  /* Accent */
+  --accent: 182 100% 35%;          /* #00ADB5 */
+  --accent-hover: 182 100% 45%;
+
+  /* Scrollbar */
+  --scrollbar-track: 215 12% 22%;
+  --scrollbar-thumb: 182 40% 40%;
+  --scrollbar-thumb-hover: 182 40% 48%;
+
+  /* Plyr player */
+  --plyr-main: 182 100% 35%;
+}
+
+/* Online Light Green Theme */
+.theme-online {
+  /* Backgrounds */
+  --bg-primary: 105 35% 90%;       /* Light sage green background */
+  --bg-secondary: 105 30% 85%;     /* Soft green (cards) */
+  --bg-tertiary: 105 25% 78%;      /* Deeper sage (inputs/elevated) */
+  --bg-hover: 105 30% 72%;         /* Sage hover */
+
+  /* Borders */
+  --border: 105 20% 70%;           /* Sage-gray border */
+  --border-light: 105 25% 78%;
+
+  /* Text - Dark for light theme */
+  --text-primary: 130 15% 20%;     /* Dark desaturated green */
+  --text-secondary: 130 10% 35%;   /* Softer forest gray-green */
+  --text-muted: 130 8% 50%;        /* Muted gray-green */
+
+  /* Accent */
+  --accent: 115 25% 50%;           /* Medium leaf green */
+  --accent-hover: 115 30% 60%;     /* Brighter leaf green */
+
+  /* Scrollbar */
+  --scrollbar-track: 105 30% 85%;
+  --scrollbar-thumb: 105 25% 68%;
+  --scrollbar-thumb-hover: 105 25% 60%;
+
+  /* Plyr player */
+  --plyr-main: 115 25% 50%;        /* Same as accent */
+}
+
+/* Pixel Light Pink/Cream Theme */
+.theme-pixel {
+  /* Backgrounds */
+  --bg-primary: 330 50% 92%;       /* Light pink background */
+  --bg-secondary: 330 45% 88%;     /* Soft pink (cards) */
+  --bg-tertiary: 330 40% 82%;      /* Deeper pink (elevated) */
+  --bg-hover: 330 45% 78%;         /* Pink-tinted hover */
+
+  /* Borders */
+  --border: 330 30% 75%;           /* Pale pink-gray border */
+  --border-light: 330 35% 80%;
+
+  /* Text - Dark for light theme */
+  --text-primary: 330 25% 22%;     /* Deep desaturated pink-gray */
+  --text-secondary: 330 20% 35%;   /* Softer purple-gray */
+  --text-muted: 330 15% 50%;       /* Muted gray-lilac */
+
+  /* Accent */
+  --accent: 315 80% 75%;           /* Pastel pink (#FFCDEA) */
+  --accent-hover: 315 85% 82%;     /* Lighter pastel pink */
+
+  /* Scrollbar */
+  --scrollbar-track: 330 45% 88%;
+  --scrollbar-thumb: 330 40% 70%;
+  --scrollbar-thumb-hover: 330 45% 65%;
+
+  /* Plyr player */
+  --plyr-main: 315 80% 75%;        /* Same as accent */
+}
+
+/* Standby Light Wheat/Orange Theme */
+.theme-standby {
+  /* Backgrounds */
+  --bg-primary: 38 65% 88%;        /* Golden wheat background */
+  --bg-secondary: 36 60% 82%;      /* Soft amber (cards) */
+  --bg-tertiary: 35 55% 75%;       /* Warm amber (elevated) */
+  --bg-hover: 35 60% 70%;          /* Orange-tinted hover */
+
+  /* Borders */
+  --border: 35 35% 68%;
+  --border-light: 35 40% 75%;
+
+  /* Text - Dark for light theme */
+  --text-primary: 25 35% 25%;      /* deep brown text */
+  --text-secondary: 25 25% 40%;
+  --text-muted: 25 15% 55%;
+
+  /* Accent */
+  --accent: 35 100% 55%;           /* #FF9D00 bright orange */
+  --accent-hover: 35 100% 65%;
+
+  /* Scrollbar */
+  --scrollbar-track: 36 60% 82%;
+  --scrollbar-thumb: 35 45% 65%;
+  --scrollbar-thumb-hover: 35 50% 58%;
+
+  /* Plyr player */
+  --plyr-main: 35 100% 55%;        /* Same as accent */
+}
+
+/* Debug Light Cream/Blue Theme */
+.theme-debug {
+  /* Backgrounds */
+  --bg-primary: 200 35% 88%;       /* Light desaturated blue background */
+  --bg-secondary: 200 30% 82%;     /* Soft blue-gray (cards) */
+  --bg-tertiary: 200 28% 75%;      /* Deeper blue-gray (elevated) */
+  --bg-hover: 200 32% 70%;         /* Blue-gray hover */
+
+  /* Borders */
+  --border: 200 22% 68%;
+  --border-light: 200 25% 75%;
+
+  /* Text - Dark for light theme */
+  --text-primary: 210 25% 25%;     /* deep slate-blue */
+  --text-secondary: 210 18% 40%;
+  --text-muted: 210 15% 55%;
+
+  /* Accent */
+  --accent: 210 30% 55%;           /* #7895B2 */
+  --accent-hover: 210 30% 65%;
+
+  /* Scrollbar */
+  --scrollbar-track: 200 30% 82%;
+  --scrollbar-thumb: 200 28% 65%;
+  --scrollbar-thumb-hover: 200 30% 58%;
+
+  /* Plyr player */
+  --plyr-main: 210 30% 55%;        /* Same as accent */
+}
+/* ===== END THEME SYSTEM ===== */
+
+@layer base {
+  body {
+    @apply bg-dark-primary text-text-primary;
+  }
+
+  * {
+    @apply touch-manipulation;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  /* Modern Card Component */
+  .card {
+    @apply bg-dark-secondary rounded-xl border border-dark-border shadow-card overflow-hidden;
+    @apply hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 ease-out;
+  }
+
+  /* Card active/focus states - make selection visible like tabs */
+  .card:active,
+  .card:focus {
+    @apply bg-dark-tertiary border-dark-border-light shadow-card-hover;
+    @apply ring-2 ring-accent/40;
+  }
+
+  /* Card focus-visible for keyboard navigation */
+  .card:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent ring-2 ring-accent/60;
+  }
+
+  /* Modern Button Styles */
+  .btn {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium;
+    @apply transition-all duration-200 ease-out;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-dark-primary;
+  }
+
+  .btn-primary {
+    @apply bg-dark-primary/95 text-text-primary border border-dark-border;
+    @apply hover:bg-dark-tertiary/50 hover:border-dark-border-light;
+    @apply focus:ring-accent;
+  }
+
+  .btn-secondary {
+    @apply bg-dark-primary/95 text-text-primary border border-dark-border;
+    @apply hover:bg-dark-tertiary/50 hover:border-dark-border-light;
+    @apply focus:ring-text-secondary;
+  }
+
+  .btn-danger {
+    @apply bg-red-600 text-white border border-red-700;
+    @apply hover:bg-red-700 hover:border-red-800;
+    @apply focus:ring-red-500;
+  }
+
+  .btn-sm {
+    @apply px-2 sm:px-3 py-1.5 text-xs sm:text-sm;
+  }
+
+  /* Modern Input Styles */
+  .input {
+    @apply w-full px-4 py-2 bg-dark-primary border border-dark-border-light rounded-lg;
+    @apply text-text-primary placeholder-text-secondary;
+    @apply focus:outline-none focus:ring-2 focus:ring-accent/50 focus:border-accent;
+    @apply transition-all duration-200;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-text-primary mb-2;
+  }
+
+  /* Icon Button */
+  .icon-btn {
+    @apply w-11 h-11 flex items-center justify-center;
+    @apply bg-dark-secondary border border-dark-border rounded-lg;
+    @apply text-text-primary hover:bg-dark-tertiary hover:border-dark-border-light hover:text-text-primary;
+    @apply transition-all duration-200 cursor-pointer;
+  }
+
+  /* Nav Tab */
+  .nav-tab {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-t-lg;
+    @apply bg-dark-secondary border border-dark-border-light border-b-2 border-b-transparent;
+    @apply text-text-primary font-medium text-sm relative;
+    @apply transition-all duration-300 ease-out cursor-pointer;
+  }
+
+  .nav-tab::before {
+    @apply content-[''] absolute bottom-0 left-0 right-0 h-0.5;
+    @apply bg-gradient-to-r from-text-muted to-accent;
+    @apply transform scale-x-0 transition-transform duration-300 ease-out;
+  }
+
+  .nav-tab:hover {
+    @apply bg-dark-tertiary border-dark-border-light -translate-y-0.5;
+  }
+
+  .nav-tab:hover::before {
+    @apply scale-x-50;
+  }
+
+  .nav-tab.active {
+    @apply bg-dark-hover border-dark-border-light shadow-glow;
+  }
+
+  .nav-tab.active::before {
+    @apply scale-x-100;
+  }
+
+  /* Stats Pill */
+  .stat-pill {
+    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full;
+    @apply text-sm font-medium border;
+    @apply shadow-sm hover:-translate-y-0.5 hover:shadow-md;
+    @apply transition-all duration-200;
+  }
+
+  /* Badge */
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold;
+    @apply backdrop-blur-sm;
+  }
+
+  /* Search Input Compact */
+  .search-input {
+    @apply px-3 py-2 bg-dark-primary border border-dark-border-light rounded-full;
+    @apply text-text-primary placeholder-text-secondary text-sm;
+    @apply focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent/50;
+    @apply transition-all duration-200;
+  }
+
+  /* Filter Button */
+  .filter-btn {
+    @apply flex items-center gap-1 sm:gap-2 px-2 sm:px-3.5 py-2 rounded-lg;
+    @apply bg-dark-primary/95 border border-dark-border text-text-primary;
+    @apply text-xs sm:text-sm cursor-pointer transition-all duration-200;
+    @apply hover:bg-dark-tertiary/50;
+  }
+
+  .filter-btn.active {
+    @apply bg-dark-tertiary border-dark-border-light text-text-primary font-medium;
+  }
+}
+
+/* Custom scrollbar - Modern & Subtle */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--scrollbar-track));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--scrollbar-thumb));
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--scrollbar-thumb-hover));
+}
+
+/* Plyr customizations */
+.plyr {
+  @apply rounded-xl overflow-hidden;
+  --plyr-color-main: hsl(var(--plyr-main));
+  --plyr-range-fill-background: hsl(var(--plyr-main));
+  --plyr-video-control-background-hover: hsl(var(--plyr-main));
+  --plyr-badge-background: hsl(var(--plyr-main));
+  --plyr-menu-background: hsl(var(--bg-secondary));
+  --plyr-menu-color: hsl(var(--text-primary));
+  --plyr-control-color: hsl(var(--text-primary));
+  --plyr-tooltip-background: hsl(var(--bg-secondary));
+  --plyr-tooltip-color: hsl(var(--text-primary));
+}
+
+.plyr--video {
+  @apply bg-black;
+}
+
+.plyr__control--overlaid {
+  background: hsla(var(--plyr-main), 0.9);
+}
+
+.plyr__control--overlaid:hover {
+  background: hsla(var(--plyr-main), 0.95);
+}
+
+/* Focus Visible for Accessibility */
+:focus-visible {
+  @apply outline-2 outline-offset-2 outline-accent;
+}
+
+/* Smooth Transitions for All Interactive Elements */
+button,
+a,
+input,
+textarea,
+select {
+  @apply transition-colors duration-200;
+}
+
+/* Hide scrollbar utility */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}

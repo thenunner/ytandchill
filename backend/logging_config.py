@@ -2,6 +2,7 @@ import logging
 import logging.handlers
 import os
 from models import init_db, Setting
+from utils import SettingsManager
 
 # Define custom API log level (between DEBUG=10 and INFO=20)
 # This allows filtering API calls separately from regular INFO messages
@@ -29,36 +30,23 @@ BACKUP_COUNT = 2  # 3 files total (current + 2 backups)
 # Default logging level
 DEFAULT_LOG_LEVEL = 'INFO'
 
+# Initialize settings manager for logging configuration
+_engine, _Session = init_db()
+_settings_manager = SettingsManager(_Session, cache_ttl=5)
+
 def get_log_level_from_db():
     """Get the logging level from the database."""
     try:
-        engine, Session = init_db()
-        session = Session()
-        setting = session.query(Setting).filter(Setting.key == 'log_level').first()
-        session.close()
-
-        if setting and setting.value:
-            return setting.value.upper()
+        level = _settings_manager.get('log_level', DEFAULT_LOG_LEVEL)
+        return level.upper() if level else DEFAULT_LOG_LEVEL
     except Exception as e:
         print(f'Failed to get log level from database: {e}')
-
-    return DEFAULT_LOG_LEVEL
+        return DEFAULT_LOG_LEVEL
 
 def set_log_level_in_db(level):
     """Set the logging level in the database."""
     try:
-        engine, Session = init_db()
-        session = Session()
-
-        setting = session.query(Setting).filter(Setting.key == 'log_level').first()
-        if setting:
-            setting.value = level.upper()
-        else:
-            setting = Setting(key='log_level', value=level.upper())
-            session.add(setting)
-
-        session.commit()
-        session.close()
+        _settings_manager.set('log_level', level.upper())
         return True
     except Exception as e:
         print(f'Failed to set log level in database: {e}')

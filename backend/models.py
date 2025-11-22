@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash
+from contextlib import contextmanager
 
 Base = declarative_base()
 
@@ -126,5 +127,29 @@ def init_db(database_url='sqlite:///data/youtube_downloader.db'):
 
     return engine, Session
 
-def get_session(Session):
-    return Session()
+@contextmanager
+def get_session(session_factory):
+    """
+    Context manager for database sessions with automatic commit/rollback/cleanup.
+
+    Usage:
+        with get_session(session_factory) as session:
+            # Do database operations
+            channel = session.query(Channel).first()
+            # Automatic commit on success, rollback on exception
+
+    Args:
+        session_factory: SQLAlchemy session factory (sessionmaker instance)
+
+    Yields:
+        session: Database session object
+    """
+    session = session_factory()
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
