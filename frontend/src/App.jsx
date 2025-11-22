@@ -1,8 +1,9 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useQueue, useHealth, useLogs, useAuthCheck, useFirstRunCheck } from './api/queries';
+import { useQueue, useHealth, useAuthCheck, useFirstRunCheck } from './api/queries';
 import { useNotification } from './contexts/NotificationContext';
 import { useTheme } from './contexts/ThemeContext';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import api from './api/client';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
 import ChannelLibrary from './routes/ChannelLibrary';
@@ -18,11 +19,13 @@ function App() {
   const navigate = useNavigate();
   const { data: queueData } = useQueue();
   const { data: health } = useHealth();
-  const { data: logsData } = useLogs(500);
   const { notification } = useNotification();
   const { theme } = useTheme();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
   const [autoScanPending, setAutoScanPending] = useState(false);
+  const [batchScanInProgress, setBatchScanInProgress] = useState(false);
+  const [logsData, setLogsData] = useState(null);
+  const [completionMessageTime, setCompletionMessageTime] = useState(null);
 
   // Track dismissed completion messages by timestamp to prevent re-showing after navigation
   const [dismissedMessages, setDismissedMessages] = useState(() => {
@@ -58,6 +61,10 @@ function App() {
       if (line.includes('Scan New completed')) {
         const match = line.match(/ - \[INFO\] - (Scan New completed.*)/);
         if (match) {
+          // Set completion time for 10-second countdown
+          if (!completionMessageTime) {
+            setCompletionMessageTime(Date.now());
+          }
           return {
             message: match[1],
             isBatchComplete: true,
@@ -91,9 +98,9 @@ function App() {
     }
 
     return null;
-  }, [logsData?.logs]);
+  }, [logsData?.logs, completionMessageTime]);
 
-  // Poll for auto-scan pending status
+  // Poll for auto-scan pending status and batch scan state
   useEffect(() => {
     const pollBatchStatus = async () => {
       try {
@@ -101,6 +108,14 @@ function App() {
         if (response.ok) {
           const data = await response.json();
           setAutoScanPending(data.auto_scan_pending || false);
+          const wasInProgress = batchScanInProgress;
+          const isInProgress = data.batch_in_progress || false;
+          setBatchScanInProgress(isInProgress);
+
+          // Reset completion timer when new scan starts
+          if (!wasInProgress && isInProgress) {
+            setCompletionMessageTime(null);
+          }
         }
       } catch (error) {
         // Silently fail
@@ -110,7 +125,33 @@ function App() {
     pollBatchStatus();
     const interval = setInterval(pollBatchStatus, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [batchScanInProgress]);
+
+  // Conditional log polling - only during scans and 10 seconds after completion
+  useEffect(() => {
+    const shouldPollLogs = batchScanInProgress ||
+      (completionMessageTime && (Date.now() - completionMessageTime < 10000));
+
+    if (!shouldPollLogs) {
+      return; // Don't poll when idle
+    }
+
+    const fetchLogs = async () => {
+      try {
+        const data = await api.getLogs(500);
+        setLogsData(data);
+      } catch (error) {
+        // Silently fail
+      }
+    };
+
+    // Immediate fetch
+    fetchLogs();
+
+    // Poll every 1 second during scans
+    const interval = setInterval(fetchLogs, 1000);
+    return () => clearInterval(interval);
+  }, [batchScanInProgress, completionMessageTime]);
 
   // Persist dismissed messages to sessionStorage
   useEffect(() => {
