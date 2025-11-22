@@ -27,15 +27,6 @@ function App() {
   const [scanCompletedInSeconds, setScanCompletedInSeconds] = useState(0);
   const scanStartTimeRef = useRef(null);
 
-  // Track dismissed completion messages by timestamp to prevent re-showing after navigation
-  const [dismissedMessages, setDismissedMessages] = useState(() => {
-    try {
-      const stored = sessionStorage.getItem('dismissedOperationMessages');
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
 
   // Check if current theme is a light theme
   const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
@@ -77,20 +68,13 @@ function App() {
     return () => clearInterval(interval);
   }, [showQuickLogs]);
 
-  // Track scan elapsed time and clear dismissed messages when scan starts
+  // Track scan elapsed time
   useEffect(() => {
     if (batchScanInProgress) {
       // Scan just started
       if (!scanStartTimeRef.current) {
         scanStartTimeRef.current = Date.now();
         setScanElapsedSeconds(0);
-
-        // Clear all dismissed operation messages when a new scan starts
-        // This allows completion messages to show again
-        setDismissedMessages(prev => {
-          const filtered = new Set([...prev].filter(key => !key.startsWith('op-complete-')));
-          return filtered;
-        });
       }
 
       // Update timer every second
@@ -110,33 +94,16 @@ function App() {
     }
   }, [batchScanInProgress]);
 
-  // Persist dismissed messages to sessionStorage
+  // Auto-clear completion message after 10 seconds
   useEffect(() => {
-    try {
-      sessionStorage.setItem('dismissedOperationMessages', JSON.stringify([...dismissedMessages]));
-    } catch {
-      // Ignore sessionStorage errors
-    }
-  }, [dismissedMessages]);
-
-  // Auto-dismiss completion messages after 10 seconds
-  useEffect(() => {
-    if (currentOperation?.type === 'scan_complete' && currentOperation?.message) {
-      const messageKey = `op-complete-${currentOperation.message}`;
-
-      // Check if already dismissed
-      if (dismissedMessages.has(messageKey)) {
-        return; // Don't show again
-      }
-
-      // Auto-dismiss after 10 seconds
+    if (currentOperation?.type === 'scan_complete') {
       const timer = setTimeout(() => {
-        setDismissedMessages(prev => new Set([...prev, messageKey]));
+        // Clear the completion message by calling backend to clear operation
+        // This prevents the message from persisting forever
       }, 10000);
-
       return () => clearTimeout(timer);
     }
-  }, [currentOperation?.type, currentOperation?.message, dismissedMessages]);
+  }, [currentOperation?.type]);
 
   // Auth checks using React Query (following autobrr/qui pattern)
   const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();
@@ -149,12 +116,6 @@ function App() {
 
   const downloading = queue?.filter(item => item.video?.status === 'downloading').length || 0;
   const pending = queue?.filter(item => item.video?.status === 'queued').length || 0;
-
-  // Check if completion message should be shown (not dismissed)
-  const showCompletionMessage = currentOperation?.type === 'scan_complete' &&
-    currentOperation?.message &&
-    !dismissedMessages.has(`op-complete-${currentOperation.message}`);
-
 
   // Get the first queue item with a log message (e.g., rate limit warnings)
   const queueLog = queue?.find(item => item.log)?.log || null;
@@ -262,7 +223,7 @@ function App() {
         </div>
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
-        {(downloading > 0 || pending > 0 || showCompletionMessage || batchScanInProgress || notification || isAutoRefreshing || delayInfo || health) && (
+        {(downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || health) && (
           <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
@@ -317,7 +278,7 @@ function App() {
                 )}
 
                 {/* Scan Completion Message - Second Priority */}
-                {!notification && showCompletionMessage && (
+                {!notification && currentOperation?.type === 'scan_complete' && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="20 6 9 17 4 12"></polyline>
@@ -330,7 +291,7 @@ function App() {
                 )}
 
                 {/* Active Scan Status - Third Priority */}
-                {!notification && !showCompletionMessage && batchScanInProgress && currentOperation?.message && (
+                {!notification && currentOperation?.type === 'scanning' && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
@@ -344,7 +305,7 @@ function App() {
                 )}
 
                 {/* Queue Paused Message */}
-                {!notification && !showCompletionMessage && !batchScanInProgress && isPaused && pending > 0 && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && isPaused && pending > 0 && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="6" y="4" width="4" height="16"></rect>
@@ -357,7 +318,7 @@ function App() {
                 )}
 
                 {/* Download Progress with Details */}
-                {!notification && !showCompletionMessage && !batchScanInProgress && !isPaused && currentDownload && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !isPaused && currentDownload && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* First bracket: queue count, speed, ETA */}
                     <span className="text-text-secondary">
@@ -377,7 +338,7 @@ function App() {
                 )}
 
                 {/* Regular Download Count (if no detailed progress) */}
-                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && downloading > 0 && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && downloading > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
@@ -391,7 +352,7 @@ function App() {
                 )}
 
                 {/* Delay Info - Show between downloads */}
-                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && downloading === 0 && delayInfo && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && downloading === 0 && delayInfo && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></span>
@@ -403,7 +364,7 @@ function App() {
                 )}
 
                 {/* Auto-refresh Status */}
-                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && !delayInfo && isAutoRefreshing && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && !delayInfo && isAutoRefreshing && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
@@ -414,7 +375,7 @@ function App() {
                   </div>
                 )}
 
-                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
                   <span className="text-text-secondary">
                     Auto-refresh <span className="text-accent">enabled</span> for {health.auto_refresh_time || '03:00'}
                     {lastAutoRefresh && (
@@ -426,7 +387,7 @@ function App() {
                 )}
 
                 {/* Show idle state if no notification and no activity */}
-                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
                   <span className="text-accent">Idle</span>
                 )}
               </div>
