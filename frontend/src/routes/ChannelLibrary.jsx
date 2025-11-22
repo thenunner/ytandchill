@@ -8,6 +8,7 @@ import FiltersModal from '../components/FiltersModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import api from '../api/client';
 
 export default function ChannelLibrary() {
   const { channelId } = useParams();
@@ -563,11 +564,26 @@ export default function ChannelLibrary() {
 
   const handleScanChannel = async (forceFull = false) => {
     try {
-      const scanType = forceFull ? 'Rescanning all videos' : 'Scanning for new videos';
-      showNotification(scanType, 'info', { persistent: true });
+      // Get channel info for batch label
+      const channel = channels?.find(c => c.id === Number(channelId));
+      const batchLabel = channel?.title || `Channel ${channelId}`;
 
-      const result = await scanChannel.mutateAsync({ id: Number(channelId), forceFull });
-      showNotification(`Found ${result.new_videos} new videos, ${result.ignored_videos} ignored`, 'success');
+      // Set scanning status immediately (optimistic UI)
+      try {
+        await api.setOperation('scanning', 'Scanning channels for new videos');
+      } catch (error) {
+        // Ignore errors, backend will set it anyway
+      }
+
+      const result = await scanChannel.mutateAsync({
+        id: Number(channelId),
+        forceFull,
+        is_batch_start: true,  // Single scans are their own "batch"
+        is_auto_scan: false,
+        batch_label: batchLabel
+      });
+
+      // Backend handles completion message via status bar
     } catch (error) {
       showNotification(error.message, 'error');
     }
