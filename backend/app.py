@@ -705,10 +705,12 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         download_worker.resume()
         logger.info(f"Auto-resumed download worker after auto-queueing {auto_queued_count} video(s) from scan")
 
-    # Don't clear operation if this is part of a batch scan
-    # Let the batch completion message be set by release_scan_batch_lock instead
-    if not scan_batch_in_progress:
-        # Not in a batch scan (single channel), clear operation
+    # Don't clear operation - either:
+    # 1. If this is part of a batch scan, completion message will be set later
+    # 2. If scan just completed, completion message was already set
+    # Only clear for truly individual channel scans (when total_num was 0 at start)
+    if total_num == 0:
+        # This was a single standalone channel scan, clear operation
         clear_operation()
 
     return {
