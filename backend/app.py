@@ -693,7 +693,10 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         download_worker.resume()
         logger.info(f"Auto-resumed download worker after auto-queueing {auto_queued_count} video(s) from scan")
 
-    clear_operation()
+    # Don't clear operation if this is a batch scan - let the batch completion message show
+    # Individual scans can clear immediately
+    if not scan_batch_in_progress:
+        clear_operation()
 
     return {
         'new_videos': new_count,
