@@ -2,7 +2,7 @@ import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-r
 import { useQueue, useHealth, useLogs, useAuthCheck, useFirstRunCheck } from './api/queries';
 import { useNotification } from './contexts/NotificationContext';
 import { useTheme } from './contexts/ThemeContext';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
 import ChannelLibrary from './routes/ChannelLibrary';
@@ -45,6 +45,53 @@ function App() {
   const isPaused = queueData?.is_paused || false;
   const isAutoRefreshing = queueData?.is_auto_refreshing || false;
   const lastAutoRefresh = queueData?.last_auto_refresh || null;
+
+  // Parse logs to extract most recent scan-related message
+  const scanMessageFromLogs = useMemo(() => {
+    if (!logsData?.logs || logsData.logs.length === 0) return null;
+
+    // Search backwards through logs for scan completion messages
+    for (let i = logsData.logs.length - 1; i >= 0; i--) {
+      const line = logsData.logs[i];
+
+      // Look for "Scan New completed" (batch completion)
+      if (line.includes('Scan New completed')) {
+        const match = line.match(/ - \[INFO\] - (Scan New completed.*)/);
+        if (match) {
+          return {
+            message: match[1],
+            isBatchComplete: true,
+            timestamp: Date.now()
+          };
+        }
+      }
+
+      // Look for "Scan complete." (per-channel completion)
+      if (line.includes('Scan complete.')) {
+        const match = line.match(/ - \[INFO\] - (Scan complete.*)/);
+        if (match) {
+          // Find the channel name from the previous "Starting scan" log
+          let channelName = null;
+          for (let j = i - 1; j >= Math.max(0, i - 5); j--) {
+            const prevLine = logsData.logs[j];
+            const channelMatch = prevLine.match(/Starting scan for channel: (.+) \(id:/);
+            if (channelMatch) {
+              channelName = channelMatch[1];
+              break;
+            }
+          }
+
+          return {
+            message: channelName ? `${channelName}: ${match[1]}` : match[1],
+            isBatchComplete: false,
+            timestamp: Date.now()
+          };
+        }
+      }
+    }
+
+    return null;
+  }, [logsData?.logs]);
 
   // Poll for auto-scan pending status
   useEffect(() => {
@@ -93,6 +140,25 @@ function App() {
     }
   }, [currentOperation?.type, currentOperation?.timestamp, dismissedMessages]);
 
+  // Auto-dismiss batch completion messages from logs after 10 seconds
+  useEffect(() => {
+    if (scanMessageFromLogs?.isBatchComplete && scanMessageFromLogs?.timestamp) {
+      const messageKey = `scan-log-${scanMessageFromLogs.timestamp}`;
+
+      // Check if already dismissed
+      if (dismissedMessages.has(messageKey)) {
+        return; // Don't show again
+      }
+
+      // Auto-dismiss after 10 seconds
+      const timer = setTimeout(() => {
+        setDismissedMessages(prev => new Set([...prev, messageKey]));
+      }, 10000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [scanMessageFromLogs?.isBatchComplete, scanMessageFromLogs?.timestamp, dismissedMessages]);
+
   // Auth checks using React Query (following autobrr/qui pattern)
   const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();
   const { data: authData, isLoading: authLoading, error: authError } = useAuthCheck();
@@ -111,6 +177,12 @@ function App() {
     currentOperation.type === 'scan_complete' &&
     currentOperation.timestamp &&
     dismissedMessages.has(`${currentOperation.type}-${currentOperation.timestamp}`)
+  );
+
+  // Check if scan message from logs should be shown (not dismissed if batch complete)
+  const showScanFromLogs = scanMessageFromLogs && !(
+    scanMessageFromLogs.isBatchComplete &&
+    dismissedMessages.has(`scan-log-${scanMessageFromLogs.timestamp}`)
   );
 
   // Get the first queue item with a log message (e.g., rate limit warnings)
@@ -219,7 +291,7 @@ function App() {
         </div>
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
-        {(downloading > 0 || pending > 0 || currentOperation?.type || notification || isAutoRefreshing || delayInfo || health) && (
+        {(downloading > 0 || pending > 0 || showScanFromLogs || currentOperation?.type || notification || isAutoRefreshing || delayInfo || health) && (
           <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
@@ -273,8 +345,23 @@ function App() {
                   </div>
                 )}
 
-                {/* Current Operation (scanning, adding channel) - Second Priority */}
-                {!notification && showOperation && (
+                {/* Scan Messages from Logs - Second Priority (shows per-channel and batch completion) */}
+                {!notification && showScanFromLogs && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
+                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.4s]"></span>
+                    </div>
+                    <span className={scanMessageFromLogs.isBatchComplete ? "text-accent font-medium" : "text-blue-400"}>
+                      {autoScanPending && 'Auto-scan queued '}
+                      {scanMessageFromLogs.message}
+                    </span>
+                  </div>
+                )}
+
+                {/* Current Operation (non-scan operations like adding channel) - Third Priority */}
+                {!notification && !showScanFromLogs && showOperation && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
@@ -289,7 +376,7 @@ function App() {
                 )}
 
                 {/* Queue Paused Message */}
-                {!notification && !showOperation && isPaused && pending > 0 && (
+                {!notification && !showScanFromLogs && !showOperation && isPaused && pending > 0 && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="6" y="4" width="4" height="16"></rect>
@@ -302,7 +389,7 @@ function App() {
                 )}
 
                 {/* Download Progress with Details */}
-                {!notification && !showOperation && !isPaused && currentDownload && (
+                {!notification && !showScanFromLogs && !showOperation && !isPaused && currentDownload && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* First bracket: queue count, speed, ETA */}
                     <span className="text-text-secondary">
@@ -322,7 +409,7 @@ function App() {
                 )}
 
                 {/* Regular Download Count (if no detailed progress) */}
-                {!notification && !showOperation && !currentDownload && downloading > 0 && (
+                {!notification && !showScanFromLogs && !showOperation && !currentDownload && downloading > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
@@ -336,7 +423,7 @@ function App() {
                 )}
 
                 {/* Delay Info - Show between downloads */}
-                {!notification && !showOperation && !currentDownload && downloading === 0 && delayInfo && (
+                {!notification && !showScanFromLogs && !showOperation && !currentDownload && downloading === 0 && delayInfo && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></span>
@@ -348,7 +435,7 @@ function App() {
                 )}
 
                 {/* Auto-refresh Status */}
-                {!notification && !showOperation && !currentDownload && !delayInfo && isAutoRefreshing && (
+                {!notification && !showScanFromLogs && !showOperation && !currentDownload && !delayInfo && isAutoRefreshing && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
@@ -359,7 +446,7 @@ function App() {
                   </div>
                 )}
 
-                {!notification && !showOperation && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
+                {!notification && !showScanFromLogs && !showOperation && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
                   <span className="text-text-secondary">
                     Auto-refresh <span className="text-accent">enabled</span> for {health.auto_refresh_time || '03:00'}
                     {lastAutoRefresh && (
@@ -371,7 +458,7 @@ function App() {
                 )}
 
                 {/* Show idle state if no notification and no activity */}
-                {!notification && !showOperation && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
+                {!notification && !showScanFromLogs && !showOperation && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
                   <span className="text-accent">Idle</span>
                 )}
               </div>
