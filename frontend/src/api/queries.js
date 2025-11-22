@@ -401,39 +401,3 @@ export function useLogs(lines = 500) {
     refetchInterval: 5000, // Refresh logs every 5 seconds
   });
 }
-
-// Scan Status with adaptive polling
-let lastBatchActiveTime = 0;
-
-export function useScanStatus() {
-  return useQuery({
-    queryKey: ['scan-status'],
-    queryFn: () => api.getScanStatus(),
-    refetchInterval: (data) => {
-      // Track when batch was last active
-      if (data?.batch_in_progress) {
-        lastBatchActiveTime = Date.now();
-      }
-
-      // Verification mode: poll faster when completion message appears
-      if (!data?.batch_in_progress && data?.completion_message) {
-        return 200; // 200ms for verification
-      }
-
-      // Keep polling for 3 seconds after batch finishes to catch completion message
-      if (!data?.batch_in_progress && !data?.completion_message) {
-        const timeSinceBatchFinished = Date.now() - lastBatchActiveTime;
-        if (timeSinceBatchFinished < 3000) {
-          return 200; // Fast polling to catch completion message
-        }
-        return false; // Stop polling after 3 seconds of idle
-      }
-
-      // Active scan: normal polling
-      return 500; // 500ms during scan
-    },
-    refetchIntervalInBackground: true, // Keep polling even in background tabs
-    staleTime: 0, // Always consider data stale
-    gcTime: 0, // Don't cache old data
-  });
-}

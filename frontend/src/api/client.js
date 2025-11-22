@@ -304,11 +304,6 @@ class APIClient {
   getLogs(lines = 500) {
     return this.request(`/logs?lines=${lines}`);
   }
-
-  // Scan Status
-  getScanStatus() {
-    return this.request('/scan-status');
-  }
 }
 
 export default new APIClient();
