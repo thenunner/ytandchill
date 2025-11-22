@@ -23,7 +23,16 @@ function App() {
   const { theme } = useTheme();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
   const [autoScanPending, setAutoScanPending] = useState(false);
-  const [hideScanComplete, setHideScanComplete] = useState(false);
+
+  // Track dismissed completion messages by timestamp to prevent re-showing after navigation
+  const [dismissedMessages, setDismissedMessages] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem('dismissedOperationMessages');
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
 
   // Check if current theme is a light theme
   const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
@@ -56,18 +65,33 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-clear scan completion message after 10 seconds
+  // Persist dismissed messages to sessionStorage
   useEffect(() => {
-    if (currentOperation?.type === 'scan_complete') {
-      setHideScanComplete(false);
-      const timer = setTimeout(() => {
-        setHideScanComplete(true);
-      }, 10000);
-      return () => clearTimeout(timer);
-    } else {
-      setHideScanComplete(false);
+    try {
+      sessionStorage.setItem('dismissedOperationMessages', JSON.stringify([...dismissedMessages]));
+    } catch {
+      // Ignore sessionStorage errors
     }
-  }, [currentOperation?.type, currentOperation?.message]);
+  }, [dismissedMessages]);
+
+  // Auto-dismiss completion messages after 10 seconds using timestamp-based keys
+  useEffect(() => {
+    if (currentOperation?.type === 'scan_complete' && currentOperation?.timestamp) {
+      const messageKey = `${currentOperation.type}-${currentOperation.timestamp}`;
+
+      // Check if already dismissed
+      if (dismissedMessages.has(messageKey)) {
+        return; // Don't show again
+      }
+
+      // Auto-dismiss after 10 seconds
+      const timer = setTimeout(() => {
+        setDismissedMessages(prev => new Set([...prev, messageKey]));
+      }, 10000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [currentOperation?.type, currentOperation?.timestamp, dismissedMessages]);
 
   // Auth checks using React Query (following autobrr/qui pattern)
   const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();
@@ -82,7 +106,12 @@ function App() {
   const pending = queue?.filter(item => item.video?.status === 'queued').length || 0;
 
   // Determine if operation should be shown (not hidden by 10-second timeout)
-  const showOperation = currentOperation?.type && !hideScanComplete;
+  // Check if current operation should be shown (not dismissed)
+  const showOperation = currentOperation?.type && !(
+    currentOperation.type === 'scan_complete' &&
+    currentOperation.timestamp &&
+    dismissedMessages.has(`${currentOperation.type}-${currentOperation.timestamp}`)
+  );
 
   // Get the first queue item with a log message (e.g., rate limit warnings)
   const queueLog = queue?.find(item => item.log)?.log || null;

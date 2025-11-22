@@ -305,10 +305,7 @@ def release_scan_batch_lock():
                 # Set status bar message (same format)
                 logger.info(f"[STATUS BAR] Setting completion message: {completion_msg}")
                 set_operation('scan_complete', completion_msg)
-
-                # Auto-clear scan completion message after 10 seconds
-                threading.Timer(10.0, clear_operation).start()
-                logger.debug(f"[STATUS BAR] Completion message set, will auto-clear in 10s")
+                # Note: Frontend will auto-dismiss this message after 10 seconds
 
             logger.debug("Scan batch lock RELEASED")
 
@@ -447,7 +444,8 @@ def set_operation(op_type, message, channel_id=None, progress=0):
         'type': op_type,
         'message': message,
         'channel_id': channel_id,
-        'progress': progress
+        'progress': progress,
+        'timestamp': datetime.utcnow().isoformat()
     }
 
 def clear_operation():
@@ -458,7 +456,8 @@ def clear_operation():
         'type': None,
         'message': None,
         'channel_id': None,
-        'progress': 0
+        'progress': 0,
+        'timestamp': None
     }
 
 # Initialize default settings
