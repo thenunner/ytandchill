@@ -329,15 +329,10 @@ def _scan_worker():
                 scan_job = scan_queue.get(timeout=1.0)
             except:
                 # Timeout - no job available, continue loop
-                # Reset counters if queue is empty
+                # Just reset counters if queue is empty (completion message already set)
                 if scan_queue.empty():
                     scan_total_channels = 0
                     scan_current_channel = 0
-                    should_trigger_auto_scan = release_scan_batch_lock()  # Release lock and check for pending auto-scan
-                    if should_trigger_auto_scan:
-                        # Auto-scan was pending, trigger it now
-                        logger.debug("Scan worker: Triggering pending auto-scan")
-                        scheduler.scan_all_channels()
                 continue
 
             channel_id = scan_job['channel_id']
@@ -373,6 +368,14 @@ def _scan_worker():
                     scan_batch_stats['channels'] += 1
 
                     logger.debug(f"Scan worker: Completed scan for channel '{channel.title}'")
+
+                    # Check if this was the last channel - set completion message immediately
+                    if scan_queue.empty() and scan_batch_in_progress:
+                        logger.debug(f"Last channel completed, setting completion message immediately")
+                        should_trigger_auto_scan = release_scan_batch_lock()
+                        if should_trigger_auto_scan:
+                            logger.debug("Scan worker: Triggering pending auto-scan")
+                            scheduler.scan_all_channels()
 
             except Exception as e:
                 logger.error(f"Scan worker: Error scanning channel {channel_id}: {e}", exc_info=True)
