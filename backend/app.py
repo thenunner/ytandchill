@@ -577,10 +577,8 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     last_scan_str = format_scan_status_date(datetime_obj=channel.last_scan_time)
     last_video_str = format_scan_status_date(yyyymmdd_string=last_video_date)
 
-    # Add progress prefix if we have total info
-    progress_prefix = f"[{current_num}/{total_num}] " if total_num > 0 else ""
-    status_msg = f"{progress_prefix}Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str}"
-    set_operation('scanning', status_msg, channel_id=channel.id)
+    # Note: Status messages are now shown from logs only, not set_operation
+    # This avoids timing/polling issues between backend and frontend
 
     # Get YouTube API client
     try:
@@ -616,10 +614,7 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     logger.debug(f"Processing {total_videos} videos for channel '{channel.title}'")
 
     for idx, video_data in enumerate(videos, 1):
-        # Update status with progress
-        if total_videos > 0:
-            progress_msg = f"{progress_prefix}Scanning {channel.title}. Last scan: {last_scan_str} * Last Video: {last_video_str} ({idx}/{total_videos})"
-            set_operation('scanning', progress_msg, channel_id=channel.id)
+        # Note: Progress is shown from logs only, not set_operation
 
         # Track the latest upload date found
         if video_data['upload_date']:
