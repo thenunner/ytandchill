@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import ChannelRow from '../components/ChannelRow';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
+import api from '../api/client';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -41,6 +42,15 @@ export default function Channels() {
     if (prevOperationTypeRef.current === 'scanning' && currentOperation?.type === 'scan_complete') {
       // Scan just completed - refetch channels to show updated last_scan_time
       queryClient.invalidateQueries(['channels']);
+
+      // Clear completion message after 5 seconds
+      setTimeout(async () => {
+        try {
+          await api.clearOperation();
+        } catch (error) {
+          console.error('Failed to clear operation:', error);
+        }
+      }, 5000);
     }
 
     prevOperationTypeRef.current = currentOperation?.type;

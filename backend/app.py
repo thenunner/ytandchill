@@ -278,6 +278,10 @@ def acquire_scan_batch_lock(is_auto_scan=False, batch_label=''):
         scan_batch_stats = {'new': 0, 'ignored': 0, 'auto_queued': 0, 'channels': 0}
         scan_batch_label = batch_label
         logger.debug(f"Scan batch lock ACQUIRED: {batch_label}")
+
+        # Set status bar message immediately
+        set_operation('scanning', "Scanning channels for new videos")
+
         return True
 
 def release_scan_batch_lock():
@@ -349,8 +353,6 @@ def _scan_worker():
             # Log batch start on first channel
             if scan_current_channel == 1:
                 logger.info(f"Starting {scan_batch_label}")
-                # Set status bar message
-                set_operation('scanning', "Scanning channels for new videos")
 
             logger.debug(f"Scan worker: Processing scan for channel ID {channel_id} ({scan_current_channel}/{scan_total_channels})")
 
@@ -2034,6 +2036,13 @@ def clear_queue():
             'message': f'Cleared {deleted_count} items from queue',
             'queue_items': queue_items
         }), 200
+
+# Operation status
+@app.route('/api/operation/clear', methods=['POST'])
+def clear_operation_status():
+    """Clear the current operation status"""
+    clear_operation()
+    return jsonify({'status': 'cleared'}), 200
 
 # Settings
 @app.route('/api/settings', methods=['GET'])

@@ -248,11 +248,11 @@ function App() {
                 {!notification && currentOperation?.type === 'scanning' && currentOperation?.message && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.4s]"></span>
+                      <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
+                      <span className="w-2 h-2 bg-accent rounded-full animate-pulse [animation-delay:0.2s]"></span>
+                      <span className="w-2 h-2 bg-accent rounded-full animate-pulse [animation-delay:0.4s]"></span>
                     </div>
-                    <span className="text-blue-400">
+                    <span className="text-accent">
                       {currentOperation.message}
                     </span>
                   </div>

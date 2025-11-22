@@ -247,6 +247,12 @@ class APIClient {
     });
   }
 
+  clearOperation() {
+    return this.request('/operation/clear', {
+      method: 'POST',
+    });
+  }
+
   reorderQueue(itemId, newPosition) {
     return this.request('/queue/reorder', {
       method: 'POST',
