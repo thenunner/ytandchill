@@ -305,6 +305,9 @@ def release_scan_batch_lock():
                 # Set status bar message (same format)
                 set_operation('scan_complete', completion_msg)
 
+                # Auto-clear scan completion message after 10 seconds
+                threading.Timer(10.0, clear_operation).start()
+
             logger.debug("Scan batch lock RELEASED")
 
             # Check if auto-scan is pending
@@ -693,9 +696,9 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         download_worker.resume()
         logger.info(f"Auto-resumed download worker after auto-queueing {auto_queued_count} video(s) from scan")
 
-    # Don't clear operation if this is a batch scan - let the batch completion message show
-    # Individual scans can clear immediately
-    if not scan_batch_in_progress:
+    # Don't clear operation if the completion message was just set
+    # This prevents the last channel scan from clearing the batch completion message
+    if current_operation.get('type') != 'scan_complete':
         clear_operation()
 
     return {

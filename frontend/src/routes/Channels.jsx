@@ -311,9 +311,9 @@ export default function Channels() {
       }
     };
 
-    // Poll immediately and then every 2 seconds
+    // Poll immediately and then every 1 second for smoother scan progress
     pollScanStatus();
-    const intervalId = setInterval(pollScanStatus, 2000);
+    const intervalId = setInterval(pollScanStatus, 1000);
 
     return () => clearInterval(intervalId);
   }, [showNotification, channels]);

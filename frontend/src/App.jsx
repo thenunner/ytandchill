@@ -52,7 +52,7 @@ function App() {
     };
 
     pollBatchStatus();
-    const interval = setInterval(pollBatchStatus, 2000);
+    const interval = setInterval(pollBatchStatus, 1000);
     return () => clearInterval(interval);
   }, []);
 
