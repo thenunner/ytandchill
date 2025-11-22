@@ -53,6 +53,13 @@ function App() {
   const batchScanInProgress = currentOperation?.type === 'scanning' || false;
   const autoScanPending = false; // Not tracked in original implementation
 
+  // Debug logging for currentOperation changes
+  useEffect(() => {
+    if (currentOperation) {
+      console.log('[STATUS DEBUG] currentOperation:', currentOperation);
+    }
+  }, [currentOperation]);
+
   // Poll logs for quick logs panel
   useEffect(() => {
     if (!showQuickLogs) {

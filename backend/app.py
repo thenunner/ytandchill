@@ -299,6 +299,7 @@ def release_scan_batch_lock():
                 else:
                     completion_msg = f"{scan_batch_label} completed. {new} new, {ignored} ignored, {auto_queued} auto-queued"
 
+                logger.info(f"[SCAN COMPLETE] Setting completion message: {completion_msg}")
                 # Set operation with completion message (stays until next operation)
                 set_operation('scan_complete', completion_msg)
                 logger.info(completion_msg)
@@ -446,6 +447,7 @@ def set_operation(op_type, message, channel_id=None, progress=0):
         'progress': progress,
         'timestamp': datetime.utcnow().isoformat()
     }
+    logger.info(f"[STATUS BAR] Set operation: type={op_type}, message={message}")
 
 def clear_operation():
     """Clear current operation status"""
