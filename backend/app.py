@@ -303,10 +303,12 @@ def release_scan_batch_lock():
                 logger.info(completion_msg)
 
                 # Set status bar message (same format)
+                logger.info(f"[STATUS BAR] Setting completion message: {completion_msg}")
                 set_operation('scan_complete', completion_msg)
 
                 # Auto-clear scan completion message after 10 seconds
                 threading.Timer(10.0, clear_operation).start()
+                logger.debug(f"[STATUS BAR] Completion message set, will auto-clear in 10s")
 
             logger.debug("Scan batch lock RELEASED")
 
@@ -373,6 +375,9 @@ def _scan_worker():
                     if scan_queue.empty() and scan_batch_in_progress:
                         logger.debug(f"Last channel completed, setting completion message immediately")
                         should_trigger_auto_scan = release_scan_batch_lock()
+                        # Reset counters now that batch is complete
+                        scan_total_channels = 0
+                        scan_current_channel = 0
                         if should_trigger_auto_scan:
                             logger.debug("Scan worker: Triggering pending auto-scan")
                             scheduler.scan_all_channels()
@@ -448,6 +453,7 @@ def set_operation(op_type, message, channel_id=None, progress=0):
 def clear_operation():
     """Clear current operation status"""
     global current_operation
+    logger.debug(f"[STATUS BAR] Clearing operation (was: {current_operation.get('type')} - {current_operation.get('message')})")
     current_operation = {
         'type': None,
         'message': None,
@@ -701,8 +707,8 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
 
     # Don't clear operation if this is part of a batch scan
     # Let the batch completion message be set by release_scan_batch_lock instead
-    if scan_total_channels == 0:
-        # This was a single channel scan, clear operation
+    if not scan_batch_in_progress:
+        # Not in a batch scan (single channel), clear operation
         clear_operation()
 
     return {
