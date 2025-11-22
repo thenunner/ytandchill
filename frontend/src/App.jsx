@@ -178,7 +178,7 @@ function App() {
         </div>
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
-        {(downloading > 0 || pending > 0 || notification || isAutoRefreshing || delayInfo || health) && (
+        {(downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || health) && (
           <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
@@ -232,8 +232,34 @@ function App() {
                   </div>
                 )}
 
+                {/* Scan Completion Message - Second Priority */}
+                {!notification && currentOperation?.type === 'scan_complete' && currentOperation?.message && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span className="text-accent font-medium">
+                      {currentOperation.message}
+                    </span>
+                  </div>
+                )}
+
+                {/* Active Scan Status - Third Priority */}
+                {!notification && currentOperation?.type === 'scanning' && currentOperation?.message && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <div className="flex gap-1">
+                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
+                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.4s]"></span>
+                    </div>
+                    <span className="text-blue-400">
+                      {currentOperation.message}
+                    </span>
+                  </div>
+                )}
+
                 {/* Queue Paused Message */}
-                {!notification && isPaused && pending > 0 && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && isPaused && pending > 0 && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="6" y="4" width="4" height="16"></rect>
@@ -246,7 +272,7 @@ function App() {
                 )}
 
                 {/* Download Progress with Details */}
-                {!notification && !isPaused && currentDownload && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !isPaused && currentDownload && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* First bracket: queue count, speed, ETA */}
                     <span className="text-text-secondary">
@@ -266,7 +292,7 @@ function App() {
                 )}
 
                 {/* Regular Download Count (if no detailed progress) */}
-                {!notification && !currentDownload && downloading > 0 && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && downloading > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
@@ -280,7 +306,7 @@ function App() {
                 )}
 
                 {/* Delay Info - Show between downloads */}
-                {!notification && !currentDownload && downloading === 0 && delayInfo && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && downloading === 0 && delayInfo && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></span>
@@ -292,7 +318,7 @@ function App() {
                 )}
 
                 {/* Auto-refresh Status */}
-                {!notification && !currentDownload && !delayInfo && isAutoRefreshing && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && !delayInfo && isAutoRefreshing && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
@@ -303,7 +329,7 @@ function App() {
                   </div>
                 )}
 
-                {!notification && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
                   <span className="text-text-secondary">
                     Auto-refresh <span className="text-accent">enabled</span> for {health.auto_refresh_time || '03:00'}
                     {lastAutoRefresh && (
@@ -315,7 +341,7 @@ function App() {
                 )}
 
                 {/* Show idle state if no notification and no activity */}
-                {!notification && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
+                {!notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
                   <span className="text-accent">Idle</span>
                 )}
               </div>

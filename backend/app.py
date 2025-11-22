@@ -293,13 +293,23 @@ def release_scan_batch_lock():
                 ignored = scan_batch_stats['ignored']
                 auto_queued = scan_batch_stats['auto_queued']
 
+                # Get total channels scanned
+                channels_scanned = scan_batch_stats['channels']
+
                 # Format the batch completion message
                 if new == 0 and ignored == 0 and auto_queued == 0:
-                    completion_msg = f"{scan_batch_label} completed. No new videos found"
+                    completion_msg = f"Scanned {channels_scanned} {'channel' if channels_scanned == 1 else 'channels'}. No new videos found"
                 else:
-                    completion_msg = f"{scan_batch_label} completed. {new} new, {ignored} ignored, {auto_queued} auto-queued"
+                    parts = []
+                    if new > 0:
+                        parts.append(f"{new} new {'video' if new == 1 else 'videos'}")
+                    if ignored > 0:
+                        parts.append(f"{ignored} ignored")
+                    if auto_queued > 0:
+                        parts.append(f"{auto_queued} auto-queued")
+                    completion_msg = f"Scanned {channels_scanned} {'channel' if channels_scanned == 1 else 'channels'}. {', '.join(parts)}"
 
-                # Signal scan completion (used by frontend to trigger data refetch, not for display)
+                # Set completion message in status bar
                 set_operation('scan_complete', completion_msg)
                 logger.info(completion_msg)
 
@@ -339,8 +349,8 @@ def _scan_worker():
             # Log batch start on first channel
             if scan_current_channel == 1:
                 logger.info(f"Starting {scan_batch_label}")
-                # Signal scan start (used by frontend to detect scan completion, not for display)
-                set_operation('scanning', f"{scan_batch_label}...")
+                # Set status bar message
+                set_operation('scanning', "Scanning channels for new videos")
 
             logger.debug(f"Scan worker: Processing scan for channel ID {channel_id} ({scan_current_channel}/{scan_total_channels})")
 
