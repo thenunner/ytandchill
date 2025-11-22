@@ -299,7 +299,7 @@ def release_scan_batch_lock():
                 else:
                     completion_msg = f"{scan_batch_label} completed. {new} new, {ignored} ignored, {auto_queued} auto-queued"
 
-                # Set operation with completion message (stays until next operation)
+                # Signal scan completion (used by frontend to trigger data refetch, not for display)
                 set_operation('scan_complete', completion_msg)
                 logger.info(completion_msg)
 
@@ -339,10 +339,8 @@ def _scan_worker():
             # Log batch start on first channel
             if scan_current_channel == 1:
                 logger.info(f"Starting {scan_batch_label}")
-                # Set status bar message - use batch label directly to avoid race condition
-                # (scan_total_channels may not be accurate yet as channels are still being queued)
-                start_msg = f"{scan_batch_label}..."
-                set_operation('scanning', start_msg)
+                # Signal scan start (used by frontend to detect scan completion, not for display)
+                set_operation('scanning', f"{scan_batch_label}...")
 
             logger.debug(f"Scan worker: Processing scan for channel ID {channel_id} ({scan_current_channel}/{scan_total_channels})")
 

@@ -1,18 +1,21 @@
 import { useState, useEffect, useRef } from 'react';
-import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
+import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { Link, useNavigate } from 'react-router-dom';
 import ChannelRow from '../components/ChannelRow';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
+  const { data: queueData } = useQueue();
   const createChannel = useCreateChannel();
   const deleteChannel = useDeleteChannel();
   const scanChannel = useScanChannel();
   const updateChannel = useUpdateChannel();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
@@ -33,6 +36,20 @@ export default function Channels() {
   const sortMenuRef = useRef(null);
   const previouslyScanningRef = useRef(false);
   const previousVideoCountsRef = useRef({});
+
+  // Watch for scan completion and refetch channels
+  const currentOperation = queueData?.current_operation;
+  const prevOperationTypeRef = useRef(null);
+
+  useEffect(() => {
+    // Detect when scan completes (type changes from 'scanning' to 'scan_complete')
+    if (prevOperationTypeRef.current === 'scanning' && currentOperation?.type === 'scan_complete') {
+      // Scan just completed - refetch channels to show updated last_scan_time
+      queryClient.invalidateQueries(['channels']);
+    }
+
+    prevOperationTypeRef.current = currentOperation?.type;
+  }, [currentOperation?.type, queryClient]);
 
   const handleAddChannel = async (e) => {
     e.preventDefault();
