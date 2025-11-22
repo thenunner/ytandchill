@@ -83,13 +83,20 @@ function App() {
     return () => clearInterval(interval);
   }, [showQuickLogs]);
 
-  // Track scan elapsed time
+  // Track scan elapsed time and clear dismissed messages when scan starts
   useEffect(() => {
     if (batchScanInProgress) {
       // Scan just started
       if (!scanStartTimeRef.current) {
         scanStartTimeRef.current = Date.now();
         setScanElapsedSeconds(0);
+
+        // Clear all dismissed operation messages when a new scan starts
+        // This allows completion messages to show again
+        setDismissedMessages(prev => {
+          const filtered = new Set([...prev].filter(key => !key.startsWith('op-complete-')));
+          return filtered;
+        });
       }
 
       // Update timer every second
