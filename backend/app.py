@@ -299,7 +299,6 @@ def release_scan_batch_lock():
                 else:
                     completion_msg = f"{scan_batch_label} completed. {new} new, {ignored} ignored, {auto_queued} auto-queued"
 
-                logger.info(f"[SCAN COMPLETE] Setting completion message: {completion_msg}")
                 # Set operation with completion message (stays until next operation)
                 set_operation('scan_complete', completion_msg)
                 logger.info(completion_msg)
@@ -339,10 +338,10 @@ def _scan_worker():
 
             # Log batch start on first channel
             if scan_current_channel == 1:
-                channel_word = 'channel' if scan_total_channels == 1 else 'channels'
-                logger.info(f"Starting {scan_batch_label} for {scan_total_channels} {channel_word}")
-                # Set status bar message
-                start_msg = f"Scanning {scan_total_channels} {channel_word}..."
+                logger.info(f"Starting {scan_batch_label}")
+                # Set status bar message - use batch label directly to avoid race condition
+                # (scan_total_channels may not be accurate yet as channels are still being queued)
+                start_msg = f"{scan_batch_label}..."
                 set_operation('scanning', start_msg)
 
             logger.debug(f"Scan worker: Processing scan for channel ID {channel_id} ({scan_current_channel}/{scan_total_channels})")
@@ -447,7 +446,6 @@ def set_operation(op_type, message, channel_id=None, progress=0):
         'progress': progress,
         'timestamp': datetime.utcnow().isoformat()
     }
-    logger.info(f"[STATUS BAR] Set operation: type={op_type}, message={message}")
 
 def clear_operation():
     """Clear current operation status"""
