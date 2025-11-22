@@ -401,3 +401,28 @@ export function useLogs(lines = 500) {
     refetchInterval: 5000, // Refresh logs every 5 seconds
   });
 }
+
+// Scan Status with adaptive polling
+export function useScanStatus() {
+  return useQuery({
+    queryKey: ['scan-status'],
+    queryFn: () => api.getScanStatus(),
+    refetchInterval: (data) => {
+      // Stop polling only when truly idle (no batch, no completion message)
+      if (!data?.batch_in_progress && !data?.completion_message) {
+        return false; // Stop polling
+      }
+
+      // Verification mode: poll faster when completion message appears
+      if (!data?.batch_in_progress && data?.completion_message) {
+        return 200; // 200ms for verification
+      }
+
+      // Active scan: normal polling
+      return 500; // 500ms during scan
+    },
+    refetchIntervalInBackground: true, // Keep polling even in background tabs
+    staleTime: 0, // Always consider data stale
+    gcTime: 0, // Don't cache old data
+  });
+}

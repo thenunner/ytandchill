@@ -247,6 +247,8 @@ scan_batch_lock = threading.Lock()  # Thread-safe lock
 scan_pending_auto_scan = False  # Auto-scan queued flag
 scan_batch_stats = {'new': 0, 'ignored': 0, 'auto_queued': 0, 'channels': 0}  # Track batch results
 scan_batch_label = ''  # Label for the batch (e.g., "Scan New", "Auto-Scan", "Channel: xyz")
+scan_channel_details = {}  # {channel_id: {channel_title, status, new_count, ignored_count, auto_queued, completed_at}}
+scan_completion_message = {'message': None, 'timestamp': None}  # Persists for 30 seconds
 
 def acquire_scan_batch_lock(is_auto_scan=False, batch_label=''):
     """
@@ -259,7 +261,7 @@ def acquire_scan_batch_lock(is_auto_scan=False, batch_label=''):
     Returns:
         True if acquired, 'pending' if auto-scan queued, False if rejected
     """
-    global scan_batch_in_progress, scan_pending_auto_scan, scan_batch_stats, scan_batch_label
+    global scan_batch_in_progress, scan_pending_auto_scan, scan_batch_stats, scan_batch_label, scan_channel_details
     with scan_batch_lock:
         if scan_batch_in_progress:
             # Batch already running
@@ -273,16 +275,18 @@ def acquire_scan_batch_lock(is_auto_scan=False, batch_label=''):
                 logger.debug("Manual scan rejected - batch already in progress")
                 return False
 
-        # Acquire the lock and reset batch stats
+        # Acquire the lock and reset batch stats and channel details
         scan_batch_in_progress = True
         scan_batch_stats = {'new': 0, 'ignored': 0, 'auto_queued': 0, 'channels': 0}
+        scan_channel_details = {}  # Clear channel details for new batch
         scan_batch_label = batch_label
         logger.debug(f"Scan batch lock ACQUIRED: {batch_label}")
         return True
 
 def release_scan_batch_lock():
     """Release the batch scan lock and check for pending auto-scan."""
-    global scan_batch_in_progress, scan_pending_auto_scan, scan_batch_stats, scan_batch_label
+    import time
+    global scan_batch_in_progress, scan_pending_auto_scan, scan_batch_stats, scan_batch_label, scan_completion_message
     with scan_batch_lock:
         if scan_batch_in_progress:
             scan_batch_in_progress = False
@@ -302,10 +306,8 @@ def release_scan_batch_lock():
                 # Log completion
                 logger.info(completion_msg)
 
-                # Set status bar message (same format)
-                logger.info(f"[STATUS BAR] Setting completion message: {completion_msg}")
-                set_operation('scan_complete', completion_msg)
-                # Note: Frontend will auto-dismiss this message after 10 seconds
+                # Store completion message with timestamp (persists for 30 seconds)
+                scan_completion_message = {'message': completion_msg, 'timestamp': time.time()}
 
             logger.debug("Scan batch lock RELEASED")
 
@@ -562,6 +564,19 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     Returns:
         dict with 'new_videos' and 'ignored_videos' counts
     """
+    import time
+    global scan_channel_details
+
+    # Set initial scanning status
+    scan_channel_details[channel.id] = {
+        'channel_title': channel.title,
+        'status': 'scanning',
+        'new_count': 0,
+        'ignored_count': 0,
+        'auto_queued': 0,
+        'completed_at': None
+    }
+
     scan_type = "full" if force_full else "incremental"
     logger.info(f"Starting scan for channel: {channel.title} (id: {channel.id})")
 
@@ -698,6 +713,16 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     if auto_queued_count > 0 and download_worker.paused:
         download_worker.resume()
         logger.info(f"Auto-resumed download worker after auto-queueing {auto_queued_count} video(s) from scan")
+
+    # Update channel details with completion status
+    scan_channel_details[channel.id] = {
+        'channel_title': channel.title,
+        'status': 'complete',
+        'new_count': new_count,
+        'ignored_count': ignored_count,
+        'auto_queued': auto_queued_count,
+        'completed_at': time.time()
+    }
 
     # Don't clear operation - either:
     # 1. If this is part of a batch scan, completion message will be set later
@@ -1171,6 +1196,30 @@ def get_batch_scan_status():
         'current': scan_current_channel,
         'total': scan_total_channels
     })
+
+@app.route('/api/scan-status', methods=['GET'])
+def get_scan_status_detailed():
+    """Get detailed scan status with channel details and completion message"""
+    import time
+    with scan_batch_lock:
+        # Get completion message if less than 30 seconds old
+        completion_msg = None
+        completion_ts = None
+        if scan_completion_message['message'] and scan_completion_message['timestamp']:
+            if time.time() - scan_completion_message['timestamp'] < 30:
+                completion_msg = scan_completion_message['message']
+                completion_ts = scan_completion_message['timestamp']
+
+        return jsonify({
+            'batch_in_progress': scan_batch_in_progress,
+            'auto_scan_pending': scan_pending_auto_scan,
+            'current_channel': scan_current_channel,
+            'total_channels': scan_total_channels,
+            'channel_details': list(scan_channel_details.values()),
+            'completion_message': completion_msg,
+            'completion_timestamp': completion_ts,
+            'timestamp': datetime.utcnow().isoformat()
+        })
 
 # Videos
 @app.route('/api/videos', methods=['GET'])

@@ -1,8 +1,8 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useQueue, useHealth, useAuthCheck, useFirstRunCheck } from './api/queries';
+import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useScanStatus } from './api/queries';
 import { useNotification } from './contexts/NotificationContext';
 import { useTheme } from './contexts/ThemeContext';
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import api from './api/client';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
@@ -19,13 +19,11 @@ function App() {
   const navigate = useNavigate();
   const { data: queueData } = useQueue();
   const { data: health } = useHealth();
+  const { data: scanStatus } = useScanStatus();
   const { notification } = useNotification();
   const { theme } = useTheme();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
-  const [autoScanPending, setAutoScanPending] = useState(false);
-  const [batchScanInProgress, setBatchScanInProgress] = useState(false);
   const [logsData, setLogsData] = useState(null);
-  const [completionMessageTime, setCompletionMessageTime] = useState(null);
 
   // Track dismissed completion messages by timestamp to prevent re-showing after navigation
   const [dismissedMessages, setDismissedMessages] = useState(() => {
@@ -49,91 +47,14 @@ function App() {
   const isAutoRefreshing = queueData?.is_auto_refreshing || false;
   const lastAutoRefresh = queueData?.last_auto_refresh || null;
 
-  // Parse logs to extract most recent scan-related message
-  const scanMessageFromLogs = useMemo(() => {
-    if (!logsData?.logs || logsData.logs.length === 0) return null;
+  // Derive scan state from React Query hook (polls automatically with adaptive intervals)
+  const batchScanInProgress = scanStatus?.batch_in_progress || false;
+  const autoScanPending = scanStatus?.auto_scan_pending || false;
 
-    // Search backwards through logs for scan completion messages
-    for (let i = logsData.logs.length - 1; i >= 0; i--) {
-      const line = logsData.logs[i];
-
-      // Look for "Scan New completed" (batch completion)
-      if (line.includes('Scan New completed')) {
-        const match = line.match(/ - \[INFO\] - (Scan New completed.*)/);
-        if (match) {
-          // Set completion time for 10-second countdown
-          if (!completionMessageTime) {
-            setCompletionMessageTime(Date.now());
-          }
-          return {
-            message: match[1],
-            isBatchComplete: true,
-            timestamp: Date.now()
-          };
-        }
-      }
-
-      // Look for "Scan complete." (per-channel completion)
-      if (line.includes('Scan complete.')) {
-        const match = line.match(/ - \[INFO\] - (Scan complete.*)/);
-        if (match) {
-          // Find the channel name from the previous "Starting scan" log
-          let channelName = null;
-          for (let j = i - 1; j >= Math.max(0, i - 5); j--) {
-            const prevLine = logsData.logs[j];
-            const channelMatch = prevLine.match(/Starting scan for channel: (.+) \(id:/);
-            if (channelMatch) {
-              channelName = channelMatch[1];
-              break;
-            }
-          }
-
-          return {
-            message: channelName ? `${channelName}: ${match[1]}` : match[1],
-            isBatchComplete: false,
-            timestamp: Date.now()
-          };
-        }
-      }
-    }
-
-    return null;
-  }, [logsData?.logs, completionMessageTime]);
-
-  // Poll for auto-scan pending status and batch scan state
+  // Poll logs for quick logs panel
   useEffect(() => {
-    const pollBatchStatus = async () => {
-      try {
-        const response = await fetch('/api/channels/batch-scan-status');
-        if (response.ok) {
-          const data = await response.json();
-          setAutoScanPending(data.auto_scan_pending || false);
-          const wasInProgress = batchScanInProgress;
-          const isInProgress = data.batch_in_progress || false;
-          setBatchScanInProgress(isInProgress);
-
-          // Reset completion timer when new scan starts
-          if (!wasInProgress && isInProgress) {
-            setCompletionMessageTime(null);
-          }
-        }
-      } catch (error) {
-        // Silently fail
-      }
-    };
-
-    pollBatchStatus();
-    const interval = setInterval(pollBatchStatus, 1000);
-    return () => clearInterval(interval);
-  }, [batchScanInProgress]);
-
-  // Conditional log polling - only during scans and 10 seconds after completion
-  useEffect(() => {
-    const shouldPollLogs = batchScanInProgress ||
-      (completionMessageTime && (Date.now() - completionMessageTime < 10000));
-
-    if (!shouldPollLogs) {
-      return; // Don't poll when idle
+    if (!showQuickLogs) {
+      return; // Don't poll logs when panel is closed
     }
 
     const fetchLogs = async () => {
@@ -148,10 +69,10 @@ function App() {
     // Immediate fetch
     fetchLogs();
 
-    // Poll every 1 second during scans
+    // Poll every 1 second when logs panel is open
     const interval = setInterval(fetchLogs, 1000);
     return () => clearInterval(interval);
-  }, [batchScanInProgress, completionMessageTime]);
+  }, [showQuickLogs]);
 
   // Persist dismissed messages to sessionStorage
   useEffect(() => {
@@ -162,10 +83,10 @@ function App() {
     }
   }, [dismissedMessages]);
 
-  // Auto-dismiss completion messages after 10 seconds using timestamp-based keys
+  // Auto-dismiss completion messages after 10 seconds
   useEffect(() => {
-    if (currentOperation?.type === 'scan_complete' && currentOperation?.timestamp) {
-      const messageKey = `${currentOperation.type}-${currentOperation.timestamp}`;
+    if (scanStatus?.completion_message && scanStatus?.completion_timestamp) {
+      const messageKey = `scan-complete-${scanStatus.completion_timestamp}`;
 
       // Check if already dismissed
       if (dismissedMessages.has(messageKey)) {
@@ -179,26 +100,7 @@ function App() {
 
       return () => clearTimeout(timer);
     }
-  }, [currentOperation?.type, currentOperation?.timestamp, dismissedMessages]);
-
-  // Auto-dismiss batch completion messages from logs after 10 seconds
-  useEffect(() => {
-    if (scanMessageFromLogs?.isBatchComplete && scanMessageFromLogs?.timestamp) {
-      const messageKey = `scan-log-${scanMessageFromLogs.timestamp}`;
-
-      // Check if already dismissed
-      if (dismissedMessages.has(messageKey)) {
-        return; // Don't show again
-      }
-
-      // Auto-dismiss after 10 seconds
-      const timer = setTimeout(() => {
-        setDismissedMessages(prev => new Set([...prev, messageKey]));
-      }, 10000);
-
-      return () => clearTimeout(timer);
-    }
-  }, [scanMessageFromLogs?.isBatchComplete, scanMessageFromLogs?.timestamp, dismissedMessages]);
+  }, [scanStatus?.completion_message, scanStatus?.completion_timestamp, dismissedMessages]);
 
   // Auth checks using React Query (following autobrr/qui pattern)
   const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();
@@ -212,18 +114,10 @@ function App() {
   const downloading = queue?.filter(item => item.video?.status === 'downloading').length || 0;
   const pending = queue?.filter(item => item.video?.status === 'queued').length || 0;
 
-  // Determine if operation should be shown (not hidden by 10-second timeout)
-  // Check if current operation should be shown (not dismissed)
-  const showOperation = currentOperation?.type && !(
-    currentOperation.type === 'scan_complete' &&
-    currentOperation.timestamp &&
-    dismissedMessages.has(`${currentOperation.type}-${currentOperation.timestamp}`)
-  );
-
-  // Check if scan message from logs should be shown (not dismissed if batch complete)
-  const showScanFromLogs = scanMessageFromLogs && !(
-    scanMessageFromLogs.isBatchComplete &&
-    dismissedMessages.has(`scan-log-${scanMessageFromLogs.timestamp}`)
+  // Check if completion message should be shown (not dismissed)
+  const showCompletionMessage = scanStatus?.completion_message && !(
+    scanStatus.completion_timestamp &&
+    dismissedMessages.has(`scan-complete-${scanStatus.completion_timestamp}`)
   );
 
   // Get the first queue item with a log message (e.g., rate limit warnings)
@@ -332,7 +226,7 @@ function App() {
         </div>
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
-        {(downloading > 0 || pending > 0 || showScanFromLogs || currentOperation?.type || notification || isAutoRefreshing || delayInfo || health) && (
+        {(downloading > 0 || pending > 0 || showCompletionMessage || batchScanInProgress || notification || isAutoRefreshing || delayInfo || health) && (
           <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
@@ -386,38 +280,44 @@ function App() {
                   </div>
                 )}
 
-                {/* Scan Messages from Logs - Second Priority (shows per-channel and batch completion) */}
-                {!notification && showScanFromLogs && (
+                {/* Scan Completion Message - Second Priority */}
+                {!notification && showCompletionMessage && (
                   <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.4s]"></span>
-                    </div>
-                    <span className={scanMessageFromLogs.isBatchComplete ? "text-accent font-medium" : "text-blue-400"}>
+                    <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span className="text-accent font-medium">
                       {autoScanPending && 'Auto-scan queued '}
-                      {scanMessageFromLogs.message}
+                      {scanStatus.completion_message}
                     </span>
                   </div>
                 )}
 
-                {/* Current Operation (non-scan operations like adding channel) - Third Priority */}
-                {!notification && !showScanFromLogs && showOperation && (
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <div className="flex gap-1">
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
-                      <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.4s]"></span>
+                {/* Active Scan Status - Third Priority */}
+                {!notification && !showCompletionMessage && batchScanInProgress && scanStatus?.channel_details?.length > 0 && (() => {
+                  // Find currently scanning channel or most recently completed
+                  const currentChannel = scanStatus.channel_details.find(ch => ch.status === 'scanning')
+                    || scanStatus.channel_details[scanStatus.channel_details.length - 1];
+                  return (
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <div className="flex gap-1">
+                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.2s]"></span>
+                        <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse [animation-delay:0.4s]"></span>
+                      </div>
+                      <span className="text-blue-400">
+                        {autoScanPending && 'Auto-scan queued '}
+                        {currentChannel.status === 'scanning'
+                          ? `Scanning ${currentChannel.channel_title}...`
+                          : `${currentChannel.channel_title}: Scan complete. ${currentChannel.new_count} new, ${currentChannel.ignored_count} ignored`
+                        }
+                      </span>
                     </div>
-                    <span className="text-blue-400">
-                      {autoScanPending && 'Auto-scan queued '}
-                      {currentOperation.message}
-                    </span>
-                  </div>
-                )}
+                  );
+                })()}
 
                 {/* Queue Paused Message */}
-                {!notification && !showScanFromLogs && !showOperation && isPaused && pending > 0 && (
+                {!notification && !showCompletionMessage && !batchScanInProgress && isPaused && pending > 0 && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="6" y="4" width="4" height="16"></rect>
@@ -430,7 +330,7 @@ function App() {
                 )}
 
                 {/* Download Progress with Details */}
-                {!notification && !showScanFromLogs && !showOperation && !isPaused && currentDownload && (
+                {!notification && !showCompletionMessage && !batchScanInProgress && !isPaused && currentDownload && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     {/* First bracket: queue count, speed, ETA */}
                     <span className="text-text-secondary">
@@ -450,7 +350,7 @@ function App() {
                 )}
 
                 {/* Regular Download Count (if no detailed progress) */}
-                {!notification && !showScanFromLogs && !showOperation && !currentDownload && downloading > 0 && (
+                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && downloading > 0 && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-accent rounded-full animate-pulse"></span>
@@ -464,7 +364,7 @@ function App() {
                 )}
 
                 {/* Delay Info - Show between downloads */}
-                {!notification && !showScanFromLogs && !showOperation && !currentDownload && downloading === 0 && delayInfo && (
+                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && downloading === 0 && delayInfo && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-orange-400 rounded-full animate-pulse"></span>
@@ -476,7 +376,7 @@ function App() {
                 )}
 
                 {/* Auto-refresh Status */}
-                {!notification && !showScanFromLogs && !showOperation && !currentDownload && !delayInfo && isAutoRefreshing && (
+                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && !delayInfo && isAutoRefreshing && (
                   <div className="flex items-center gap-2">
                     <div className="flex gap-1">
                       <span className="w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></span>
@@ -487,7 +387,7 @@ function App() {
                   </div>
                 )}
 
-                {!notification && !showScanFromLogs && !showOperation && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
+                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && !delayInfo && !isAutoRefreshing && !isPaused && downloading === 0 && health?.auto_refresh_enabled && (
                   <span className="text-text-secondary">
                     Auto-refresh <span className="text-accent">enabled</span> for {health.auto_refresh_time || '03:00'}
                     {lastAutoRefresh && (
@@ -499,7 +399,7 @@ function App() {
                 )}
 
                 {/* Show idle state if no notification and no activity */}
-                {!notification && !showScanFromLogs && !showOperation && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
+                {!notification && !showCompletionMessage && !batchScanInProgress && !currentDownload && downloading === 0 && !delayInfo && !isAutoRefreshing && !health?.auto_refresh_enabled && (
                   <span className="text-accent">Idle</span>
                 )}
               </div>
