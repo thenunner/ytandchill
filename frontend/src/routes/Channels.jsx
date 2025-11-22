@@ -28,14 +28,9 @@ export default function Channels() {
   const [searchInput, setSearchInput] = useState(''); // Search filter
   const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'needs_review_then_scan'); // Sort option
   const [showSortMenu, setShowSortMenu] = useState(false); // Sort menu visibility
-  const [isScanningAll, setIsScanningAll] = useState(false); // Scan all progress
-  const [scanProgress, setScanProgress] = useState({ current: 0, total: 0 }); // X/Y progress
   const [viewMode, setViewMode] = useState(localStorage.getItem('channelsViewMode') || 'grid'); // Grid or list view
   const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
-  const [autoScanPending, setAutoScanPending] = useState(false); // Auto-scan queued for later
   const sortMenuRef = useRef(null);
-  const previouslyScanningRef = useRef(false);
-  const previousVideoCountsRef = useRef({});
 
   // Watch for scan completion and refetch channels
   const currentOperation = queueData?.current_operation;
@@ -262,79 +257,6 @@ export default function Channels() {
   useEffect(() => {
     localStorage.setItem('channels_sortBy', sortBy);
   }, [sortBy]);
-
-  // Poll for scan status every 2 seconds
-  useEffect(() => {
-    const pollScanStatus = async () => {
-      try {
-        // Fetch both scan status and batch lock status
-        const [statusRes, batchRes] = await Promise.all([
-          fetch('/api/channels/scan-status'),
-          fetch('/api/channels/batch-scan-status')
-        ]);
-
-        if (!statusRes.ok || !batchRes.ok) return;
-
-        const status = await statusRes.json();
-        const batchStatus = await batchRes.json();
-
-        const { current_operation, scan_current, scan_total } = status;
-
-        // Update auto-scan pending state
-        setAutoScanPending(batchStatus.auto_scan_pending || false);
-
-        // Show scan progress if actively scanning
-        if (current_operation && current_operation.type === 'scanning' && current_operation.message) {
-          showNotification(
-            current_operation.message,
-            'info',
-            { persistent: true }
-          );
-        }
-
-        // Update scanning state based on batch lock (more reliable than counters)
-        const isScanning = batchStatus.batch_in_progress;
-
-        // When scanning starts, store current video counts
-        if (!previouslyScanningRef.current && isScanning) {
-          const counts = {};
-          channels?.forEach(ch => { counts[ch.id] = ch.video_count || 0; });
-          previousVideoCountsRef.current = counts;
-        }
-
-        // When scanning finishes, check if any channel has new videos
-        if (previouslyScanningRef.current && !isScanning) {
-          // Check if any channel has more videos to review now
-          const hasNewVideos = channels?.some(ch =>
-            (ch.video_count || 0) > (previousVideoCountsRef.current[ch.id] || 0)
-          );
-
-          if (hasNewVideos) {
-            // Scan found new videos - automatically sort by review needed + scan date
-            setSortBy('needs_review_then_scan');
-            localStorage.setItem('channels_sortBy', 'needs_review_then_scan');
-          }
-        }
-
-        previouslyScanningRef.current = isScanning;
-        setIsScanningAll(isScanning);
-        if (isScanning) {
-          setScanProgress({ current: scan_current, total: scan_total });
-        } else {
-          setScanProgress({ current: 0, total: 0 });
-        }
-      } catch (error) {
-        // Silently fail - don't spam user with errors
-        console.error('Failed to fetch scan status:', error);
-      }
-    };
-
-    // Poll immediately and then every 1 second for smoother scan progress
-    pollScanStatus();
-    const intervalId = setInterval(pollScanStatus, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [showNotification, channels]);
 
   // Helper function to check if a date is today
   const isToday = (date) => {
@@ -624,33 +546,21 @@ export default function Channels() {
           {/* Scan New Button */}
           <button
             onClick={() => handleScanAllChannels(false)}
-            disabled={isScanningAll || !channels || channels.length === 0}
+            disabled={!channels || channels.length === 0}
             className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
-            title={isScanningAll ? `Scanning ${scanProgress.current}/${scanProgress.total}...` : 'Scan for new videos since last scan'}
+            title="Scan for new videos since last scan"
           >
-            {isScanningAll ? (
-              <>
-                <svg className="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" opacity="0.25"></path>
-                  <path d="M21 12a9 9 0 01-9 9" strokeLinecap="round"></path>
-                </svg>
-                <span>Scanning {scanProgress.current}/{scanProgress.total}</span>
-              </>
-            ) : (
-              <>
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="23 4 23 10 17 10"></polyline>
-                  <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
-                </svg>
-                <span>Scan New</span>
-              </>
-            )}
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
+            </svg>
+            <span>Scan New</span>
           </button>
 
           {/* Scan All Button */}
           <button
             onClick={() => handleScanAllChannels(true)}
-            disabled={isScanningAll || !channels || channels.length === 0}
+            disabled={!channels || channels.length === 0}
             className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
             title="Full scan - rescan all videos"
           >
