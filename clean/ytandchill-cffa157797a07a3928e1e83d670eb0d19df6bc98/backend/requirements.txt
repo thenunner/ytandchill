@@ -1,8 +1,0 @@
-Flask==3.0.0
-Flask-CORS==4.0.0
-Flask-Limiter==3.5.0
-SQLAlchemy==2.0.23
-yt-dlp[default]
-APScheduler==3.10.4
-google-api-python-client==2.108.0
-python-dotenv==1.0.0

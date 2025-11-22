@@ -198,11 +198,12 @@ export default function Channels() {
       }
     }
 
-    const message = errorCount > 0
-      ? `Queued ${queued} scans (${alreadyQueued} already queued, ${errorCount} errors)`
-      : `Queued ${queued} scans${alreadyQueued > 0 ? ` (${alreadyQueued} already queued)` : ''}`;
-
-    showNotification(message, errorCount > 0 ? 'warning' : 'success');
+    // Don't show "Queued X scans" message - scans happen too fast and cause double messaging
+    // The actual scan progress will show in the status bar
+    if (errorCount > 0) {
+      const message = `Queued ${queued} scans (${alreadyQueued} already queued, ${errorCount} errors)`;
+      showNotification(message, 'warning');
+    }
   };
 
   // Click outside to close menu and duration settings
