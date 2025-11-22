@@ -154,6 +154,13 @@ function App() {
     currentOperation?.message &&
     !dismissedMessages.has(`op-complete-${currentOperation.message}`);
 
+  // Debug completion message visibility
+  useEffect(() => {
+    console.log('[STATUS DEBUG] showCompletionMessage:', showCompletionMessage);
+    console.log('[STATUS DEBUG] batchScanInProgress:', batchScanInProgress);
+    console.log('[STATUS DEBUG] dismissedMessages:', [...dismissedMessages]);
+  }, [showCompletionMessage, batchScanInProgress, dismissedMessages]);
+
   // Get the first queue item with a log message (e.g., rate limit warnings)
   const queueLog = queue?.find(item => item.log)?.log || null;
 
