@@ -37,6 +37,10 @@ export default function ChannelLibrary() {
       .filter(Boolean)
   );
 
+  // Check if scan is currently running
+  const currentOperation = queueData?.current_operation;
+  const isScanRunning = currentOperation?.type === 'scanning';
+
   const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
@@ -949,7 +953,9 @@ export default function ChannelLibrary() {
                       handleScanChannel(false);
                       setMenuOpen(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex flex-col"
+                    disabled={isScanRunning}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex flex-col disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={isScanRunning ? "Scan in progress..." : "Scan for new videos since last scan"}
                   >
                     <span className="font-medium">Scan</span>
                     {channel.last_scan_at && (
@@ -967,7 +973,9 @@ export default function ChannelLibrary() {
                       handleScanChannel(true);
                       setMenuOpen(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
+                    disabled={isScanRunning}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={isScanRunning ? "Scan in progress..." : "Full scan - rescan all videos"}
                   >
                     <span className="font-medium">Scan All</span>
                   </button>

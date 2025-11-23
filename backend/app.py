@@ -2260,7 +2260,7 @@ def get_logs():
 # Serve video files
 @app.route('/api/media/<path:filename>')
 def serve_media(filename):
-    """Serve media files with path traversal protection"""
+    """Serve media files with path traversal protection and HTTP range request support"""
     # Validate and sanitize the path to prevent directory traversal
     safe_path = safe_join('downloads', filename)
     if safe_path is None or not os.path.exists(safe_path):
@@ -2274,7 +2274,8 @@ def serve_media(filename):
         logger.warning(f"Path traversal attempt blocked: {filename}")
         return jsonify({'error': 'Access denied'}), 403
 
-    return send_from_directory('downloads', filename)
+    # Enable HTTP 206 Partial Content support for fast video seeking
+    return send_from_directory('downloads', filename, conditional=True)
 
 # Serve React app
 @app.route('/', defaults={'path': ''})

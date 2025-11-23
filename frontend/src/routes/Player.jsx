@@ -21,6 +21,10 @@ export default function Player() {
   const addToPlaylistButtonRef = useRef(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
+  const [isTheaterMode, setIsTheaterMode] = useState(() => {
+    const saved = localStorage.getItem('theaterMode');
+    return saved === 'true';
+  });
 
   useEffect(() => {
     console.log('useEffect: video exists?', !!video, 'videoRef exists?', !!videoRef.current, 'plyrInstance exists?', !!plyrInstanceRef.current);
@@ -87,6 +91,46 @@ export default function Player() {
         };
 
         console.log('Source set to:', videoSrc);
+
+        // Create custom theater mode button
+        const toggleTheaterMode = () => {
+          setIsTheaterMode(prev => {
+            const newValue = !prev;
+            localStorage.setItem('theaterMode', newValue.toString());
+            return newValue;
+          });
+        };
+
+        // Create theater mode button element
+        const theaterButton = document.createElement('button');
+        theaterButton.type = 'button';
+        theaterButton.className = 'plyr__controls__item plyr__control';
+        theaterButton.setAttribute('data-plyr', 'theater');
+        theaterButton.innerHTML = `
+          <svg class="icon--pressed" role="presentation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="5" y="4" width="14" height="16" rx="2"/>
+          </svg>
+          <svg class="icon--not-pressed" role="presentation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="6" width="18" height="12" rx="2"/>
+          </svg>
+          <span class="plyr__tooltip" role="tooltip">Theater mode</span>
+        `;
+        theaterButton.addEventListener('click', toggleTheaterMode);
+
+        // Update pressed state attribute
+        theaterButton.setAttribute('aria-pressed', isTheaterMode);
+
+        // Insert button after settings button
+        const settingsButton = player.elements.controls.querySelector('[data-plyr="settings"]');
+        if (settingsButton && settingsButton.parentNode) {
+          settingsButton.parentNode.insertBefore(theaterButton, settingsButton.nextSibling);
+        }
+
+        // Update button state when theater mode changes
+        const updateButtonState = () => {
+          theaterButton.setAttribute('aria-pressed', isTheaterMode);
+        };
+        updateButtonState();
       } catch (error) {
         console.error('Error initializing Plyr:', error);
         return;
@@ -153,6 +197,16 @@ export default function Player() {
       };
     }
   }, [video?.id]); // Only re-run if video ID changes
+
+  // Update theater mode button state when isTheaterMode changes
+  useEffect(() => {
+    if (plyrInstanceRef.current) {
+      const theaterButton = plyrInstanceRef.current.elements.controls?.querySelector('[data-plyr="theater"]');
+      if (theaterButton) {
+        theaterButton.setAttribute('aria-pressed', isTheaterMode);
+      }
+    }
+  }, [isTheaterMode]);
 
   const formatDuration = (seconds) => {
     const hrs = Math.floor(seconds / 3600);
@@ -331,13 +385,13 @@ export default function Player() {
         </div>
 
         {/* Player Container */}
-        <div className="flex-1 w-full md:max-w-[960px]">
+        <div className={`flex-1 w-full ${isTheaterMode ? 'md:max-w-[1400px]' : 'md:max-w-[960px]'} transition-all duration-300`}>
           <div className="bg-black rounded-xl overflow-hidden shadow-card-hover min-h-[300px] md:min-h-[540px]">
             <video
               ref={videoRef}
               className="w-full h-auto"
               playsInline
-              preload="metadata"
+              preload="auto"
             />
           </div>
 

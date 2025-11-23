@@ -377,6 +377,9 @@ class DownloadWorker:
             'continue': True,
             'noprogress': False,
             'concurrent_fragment_downloads': 3,  # Download 3 fragments in parallel for better performance
+            'postprocessor_args': {
+                'ffmpeg': ['-movflags', '+faststart']  # Move MOOV atom to beginning for fast video seeking
+            },
         }
 
         # Add cookies if available

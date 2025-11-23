@@ -528,6 +528,23 @@
   background: hsla(var(--plyr-main), 0.95);
 }
 
+/* Theater mode button */
+.plyr__control[data-plyr="theater"] .icon--pressed {
+  display: none;
+}
+
+.plyr__control[data-plyr="theater"] .icon--not-pressed {
+  display: block;
+}
+
+.plyr__control[data-plyr="theater"][aria-pressed="true"] .icon--pressed {
+  display: block;
+}
+
+.plyr__control[data-plyr="theater"][aria-pressed="true"] .icon--not-pressed {
+  display: none;
+}
+
 /* Focus Visible for Accessibility */
 :focus-visible {
   @apply outline-2 outline-offset-2 outline-accent;

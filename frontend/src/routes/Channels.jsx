@@ -36,6 +36,7 @@ export default function Channels() {
   // Watch for scan completion and refetch channels
   const currentOperation = queueData?.current_operation;
   const prevOperationTypeRef = useRef(null);
+  const isScanRunning = currentOperation?.type === 'scanning';
 
   useEffect(() => {
     // Detect when scan completes (type changes from 'scanning' to 'scan_complete')
@@ -557,9 +558,9 @@ export default function Channels() {
           {/* Scan New Button */}
           <button
             onClick={() => handleScanAllChannels(false)}
-            disabled={!channels || channels.length === 0}
+            disabled={!channels || channels.length === 0 || isScanRunning}
             className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Scan for new videos since last scan"
+            title={isScanRunning ? "Scan in progress..." : "Scan for new videos since last scan"}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 4 23 10 17 10"></polyline>
@@ -571,9 +572,9 @@ export default function Channels() {
           {/* Scan All Button */}
           <button
             onClick={() => handleScanAllChannels(true)}
-            disabled={!channels || channels.length === 0}
+            disabled={!channels || channels.length === 0 || isScanRunning}
             className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Full scan - rescan all videos"
+            title={isScanRunning ? "Scan in progress..." : "Full scan - rescan all videos"}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
