@@ -109,13 +109,13 @@ export default function Player() {
         theaterButton.innerHTML = `
           <svg class="icon--pressed" role="presentation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="6" width="18" height="12" rx="1"/>
-            <polyline points="14 9 11 12 14 15"/>
-            <polyline points="10 9 13 12 10 15"/>
+            <polyline points="13 10 10 12 13 14"></polyline>
+            <polyline points="11 10 14 12 11 14"></polyline>
           </svg>
           <svg class="icon--not-pressed" role="presentation" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="6" width="18" height="12" rx="1"/>
-            <polyline points="10 9 13 12 10 15"/>
-            <polyline points="14 9 11 12 14 15"/>
+            <polyline points="11 10 8 12 11 14"></polyline>
+            <polyline points="13 10 16 12 13 14"></polyline>
           </svg>
           <span class="plyr__tooltip" role="tooltip">Theater mode</span>
         `;
