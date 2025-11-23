@@ -108,14 +108,14 @@ export default function Player() {
         theaterButton.setAttribute('data-plyr', 'theater');
         theaterButton.innerHTML = `
           <svg class="icon--pressed" role="presentation" viewBox="0 0 24 24">
-            <rect x="2" y="4" width="20" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/>
-            <polygon points="14 8 10 12 14 16" fill="currentColor"/>
-            <polygon points="10 8 14 12 10 16" fill="currentColor"/>
+            <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
+            <polygon points="15 7 9 12 15 17" fill="currentColor"/>
+            <polygon points="9 7 15 12 9 17" fill="currentColor"/>
           </svg>
           <svg class="icon--not-pressed" role="presentation" viewBox="0 0 24 24">
-            <rect x="2" y="4" width="20" height="16" rx="1.5" fill="none" stroke="currentColor" stroke-width="2"/>
-            <polygon points="10 8 6 12 10 16" fill="currentColor"/>
-            <polygon points="14 8 18 12 14 16" fill="currentColor"/>
+            <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
+            <polygon points="9 7 5 12 9 17" fill="currentColor"/>
+            <polygon points="15 7 19 12 15 17" fill="currentColor"/>
           </svg>
           <span class="plyr__tooltip" role="tooltip">Theater mode</span>
         `;
