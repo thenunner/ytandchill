@@ -122,6 +122,17 @@ export function useBulkUpdateVideos() {
   });
 }
 
+export function useBulkDeleteVideos() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (videoIds) => api.bulkDeleteVideos(videoIds),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries(['playlists']);
+    },
+  });
+}
+
 // Categories
 export function useCategories() {
   return useQuery({

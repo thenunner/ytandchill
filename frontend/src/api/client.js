@@ -118,6 +118,13 @@ class APIClient {
     });
   }
 
+  bulkDeleteVideos(videoIds) {
+    return this.request('/videos/bulk-delete', {
+      method: 'DELETE',
+      body: JSON.stringify({ video_ids: videoIds }),
+    });
+  }
+
   // Categories
   getCategories() {
     return this.request('/categories');

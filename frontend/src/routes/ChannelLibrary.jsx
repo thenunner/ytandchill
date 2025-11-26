@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
+import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
@@ -20,6 +20,7 @@ export default function ChannelLibrary() {
   const addToQueue = useAddToQueue();
   const addToQueueBulk = useAddToQueueBulk();
   const bulkUpdate = useBulkUpdateVideos();
+  const bulkDeleteVideos = useBulkDeleteVideos();
   const deleteVideo = useDeleteVideo();
   const deleteChannel = useDeleteChannel();
   const scanChannel = useScanChannel();
@@ -538,9 +539,7 @@ export default function ChannelLibrary() {
     if (!deleteVideosConfirm) return;
 
     try {
-      for (const videoId of selectedVideos) {
-        await deleteVideo.mutateAsync(videoId);
-      }
+      await bulkDeleteVideos.mutateAsync(selectedVideos);
       showNotification(`${selectedVideos.length} videos deleted`, 'success');
       setSelectedVideos([]);
       setEditMode(false);

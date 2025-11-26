@@ -1285,7 +1285,7 @@ def update_video(video_id):
         return jsonify(result)
 
 @app.route('/api/videos/<int:video_id>', methods=['DELETE'])
-@limiter.limit("20 per minute")
+@limiter.limit("100 per minute")
 def delete_video(video_id):
     import os
 
@@ -1348,6 +1348,61 @@ def bulk_update_videos():
         session.commit()
 
         return jsonify({'updated': len(videos)})
+
+@app.route('/api/videos/bulk-delete', methods=['DELETE'])
+def bulk_delete_videos():
+    """Delete multiple videos in a single transaction"""
+    import os
+
+    data = request.json
+    video_ids = data.get('video_ids', [])
+
+    if not video_ids:
+        return jsonify({'error': 'video_ids array is required'}), 400
+
+    if not isinstance(video_ids, list):
+        return jsonify({'error': 'video_ids must be an array'}), 400
+
+    with get_session(session_factory) as session:
+        videos = session.query(Video).filter(Video.id.in_(video_ids)).all()
+
+        deleted_count = 0
+        for video in videos:
+            # Delete video file if it exists
+            if video.file_path and os.path.exists(video.file_path):
+                try:
+                    os.remove(video.file_path)
+                    logger.debug(f"Deleted video file: {video.file_path}")
+                except Exception as e:
+                    logger.error(f"Error deleting video file: {e}")
+
+            # Delete thumbnail if it exists
+            if video.file_path:
+                thumb_path = os.path.splitext(video.file_path)[0] + '.jpg'
+                if os.path.exists(thumb_path):
+                    try:
+                        os.remove(thumb_path)
+                        logger.debug(f"Deleted thumbnail: {thumb_path}")
+                    except Exception as e:
+                        logger.error(f"Error deleting thumbnail: {e}")
+
+            # Remove from queue if present
+            queue_item = session.query(QueueItem).filter(QueueItem.video_id == video.id).first()
+            if queue_item:
+                session.delete(queue_item)
+
+            # Soft-delete: Set status to 'ignored' instead of removing record
+            video.status = 'ignored'
+            video.file_path = None
+            video.file_size_bytes = None
+            video.downloaded_at = None
+
+            deleted_count += 1
+
+        session.commit()
+        logger.info(f"Bulk deleted {deleted_count} videos")
+
+        return jsonify({'deleted': deleted_count}), 200
 
 # Playlists
 # ==================== CATEGORY ENDPOINTS ====================
