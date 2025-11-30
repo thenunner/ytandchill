@@ -302,13 +302,20 @@ export default function PlaylistPlayer() {
     // Update URL
     setSearchParams({ v: currentVideo.id }, { replace: true });
 
-    // If Plyr exists, just update source
+    // If Plyr exists, just update source and autoplay
     if (plyrInstanceRef.current) {
       console.log('Updating Plyr source to:', videoSrc);
       plyrInstanceRef.current.source = {
         type: 'video',
         sources: [{ src: videoSrc, type: 'video/mp4' }],
       };
+      // Autoplay after source loads
+      plyrInstanceRef.current.once('loadedmetadata', () => {
+        if (currentVideo.playback_seconds > 0 && plyrInstanceRef.current) {
+          plyrInstanceRef.current.currentTime = currentVideo.playback_seconds;
+        }
+        plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
+      });
       return;
     }
 
