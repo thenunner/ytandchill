@@ -505,6 +505,13 @@ class DownloadWorker:
                     self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Copyright takedown detected')
                     return False, False, False, False, None
 
+                # Check for empty file errors - often rate limiting or network issues
+                if 'downloaded file is empty' in error_str.lower() or 'empty file' in error_str.lower():
+                    logger.warning(f'Empty file error for {video.yt_id} - likely rate limiting, will retry later')
+                    self._handle_rate_limit(session, video, queue_item)
+                    rate_limited = True
+                    break
+
                 logger.error(f'Download attempt {attempt} failed for {video.yt_id}: {error_str}')
 
                 # Check for rate limiting errors
@@ -532,7 +539,15 @@ class DownloadWorker:
                         rate_limited = True
                         break
                 else:
-                    raise download_error
+                    # Unknown error - retry if we have attempts left, otherwise fail gracefully
+                    if attempt < max_attempts:
+                        logger.warning(f'Unknown error, retrying... (attempt {attempt}/{max_attempts})')
+                        time.sleep(2)
+                        attempt += 1
+                    else:
+                        # Max attempts reached - fail gracefully instead of crashing
+                        logger.error(f'Max attempts reached for {video.yt_id}, giving up')
+                        break
 
         # Check if timed out
         timed_out = self.current_download and self.current_download.get('timed_out', False)

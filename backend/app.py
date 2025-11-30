@@ -2495,8 +2495,15 @@ def move_to_bottom():
 @app.route('/api/queue/clear', methods=['POST'])
 @limiter.limit("10 per minute")
 def clear_queue():
-    """Remove all pending queue items (keep downloading item)"""
+    """Remove all pending queue items and clean up stuck items"""
     with get_session(session_factory) as session:
+        # First, reset any stuck 'downloading' videos back to 'queued'
+        stuck_count = session.query(Video).filter(
+            Video.status == 'downloading'
+        ).update({'status': 'queued'}, synchronize_session=False)
+        if stuck_count > 0:
+            logger.info(f"Reset {stuck_count} stuck 'downloading' videos to 'queued'")
+
         # Get queue item IDs to delete (can't use .delete() with .join())
         queue_items_to_delete = session.query(QueueItem.id).join(Video).filter(
             Video.status == 'queued'
@@ -2514,6 +2521,18 @@ def clear_queue():
         session.query(Video).filter(
             Video.status == 'queued'
         ).update({'status': 'discovered'}, synchronize_session=False)
+
+        # Clean up orphaned queue items (no matching video or video not in queue status)
+        orphaned = session.query(QueueItem).filter(
+            ~QueueItem.video_id.in_(
+                session.query(Video.id).filter(Video.status.in_(['queued', 'downloading']))
+            )
+        ).all()
+        orphaned_count = len(orphaned)
+        for item in orphaned:
+            session.delete(item)
+        if orphaned_count > 0:
+            logger.info(f"Cleaned up {orphaned_count} orphaned queue items")
 
         session.commit()
 
