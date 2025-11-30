@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue } from '../api/queries';
+import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { Link, useNavigate } from 'react-router-dom';
 import ChannelRow from '../components/ChannelRow';
@@ -10,10 +10,14 @@ import api from '../api/client';
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
   const { data: queueData } = useQueue();
+  const { data: categories } = useChannelCategories();
   const createChannel = useCreateChannel();
   const deleteChannel = useDeleteChannel();
   const scanChannel = useScanChannel();
   const updateChannel = useUpdateChannel();
+  const createCategory = useCreateChannelCategory();
+  const updateCategoryMutation = useUpdateChannelCategory();
+  const deleteCategoryMutation = useDeleteChannelCategory();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -32,6 +36,23 @@ export default function Channels() {
   const [viewMode, setViewMode] = useState(localStorage.getItem('channelsViewMode') || 'grid'); // Grid or list view
   const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
   const sortMenuRef = useRef(null);
+
+  // Category filter state
+  const [selectedCategories, setSelectedCategories] = useState(() => {
+    const saved = localStorage.getItem('channels_categoryFilter');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const categoryFilterRef = useRef(null);
+
+  // Category management modal state
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [deleteCategoryConfirm, setDeleteCategoryConfirm] = useState(null);
+
+  // Category submenu for channel assignment
+  const [showCategorySubmenu, setShowCategorySubmenu] = useState(null);
 
   // Watch for scan completion and refetch channels
   const currentOperation = queueData?.current_operation;
@@ -246,11 +267,17 @@ export default function Channels() {
       if (clickedOutside) {
         setMenuOpen(null);
         setShowDurationSettings(null);
+        setShowCategorySubmenu(null);
       }
 
       // Close sort menu if clicking outside
       if (sortMenuRef.current && !sortMenuRef.current.contains(event.target)) {
         setShowSortMenu(false);
+      }
+
+      // Close category filter if clicking outside
+      if (categoryFilterRef.current && !categoryFilterRef.current.contains(event.target)) {
+        setShowCategoryFilter(false);
       }
     };
 
@@ -269,6 +296,11 @@ export default function Channels() {
   useEffect(() => {
     localStorage.setItem('channels_sortBy', sortBy);
   }, [sortBy]);
+
+  // Persist category filter to localStorage
+  useEffect(() => {
+    localStorage.setItem('channels_categoryFilter', JSON.stringify(selectedCategories));
+  }, [selectedCategories]);
 
   // Helper function to check if a date is today
   const isToday = (date) => {
@@ -346,9 +378,21 @@ export default function Channels() {
   // Filter and sort channels
   const filteredAndSortedChannels = (() => {
     // First filter by search
-    const filtered = channels?.filter(channel =>
+    let filtered = channels?.filter(channel =>
       (channel.title || '').toLowerCase().includes(searchInput.toLowerCase())
     ) || [];
+
+    // Then filter by category if any categories are selected
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter(channel => {
+        // 'uncategorized' is a special value for channels without category
+        if (selectedCategories.includes('uncategorized') && !channel.category_id) {
+          return true;
+        }
+        // Check if channel's category is in selected categories
+        return selectedCategories.includes(channel.category_id);
+      });
+    }
 
     // Then sort based on selected option
     const sorted = [...filtered].sort((a, b) => {
@@ -548,6 +592,92 @@ export default function Channels() {
             )}
           </div>
 
+          {/* Category Filter */}
+          <div className="relative" ref={categoryFilterRef}>
+            <button
+              onClick={() => setShowCategoryFilter(!showCategoryFilter)}
+              className={`filter-btn ${selectedCategories.length > 0 ? 'ring-2 ring-accent/40' : ''}`}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>
+                {selectedCategories.length === 0
+                  ? 'Category'
+                  : selectedCategories.length === 1
+                    ? (selectedCategories[0] === 'uncategorized' ? 'Uncategorized' : categories?.find(c => c.id === selectedCategories[0])?.name || 'Category')
+                    : `${selectedCategories.length} categories`}
+              </span>
+            </button>
+
+            {/* Category Filter Dropdown */}
+            {showCategoryFilter && (
+              <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-64 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
+                <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase flex justify-between items-center">
+                  <span>Filter by Category</span>
+                  {selectedCategories.length > 0 && (
+                    <button
+                      onClick={() => setSelectedCategories([])}
+                      className="text-accent hover:text-accent/80 text-xs normal-case"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {/* Uncategorized option */}
+                <label className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={selectedCategories.includes('uncategorized')}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedCategories([...selectedCategories, 'uncategorized']);
+                      } else {
+                        setSelectedCategories(selectedCategories.filter(c => c !== 'uncategorized'));
+                      }
+                    }}
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                  />
+                  <span className="text-sm text-text-secondary italic">Uncategorized</span>
+                </label>
+
+                {/* Category list */}
+                {categories?.map(category => (
+                  <label key={category.id} className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(category.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedCategories([...selectedCategories, category.id]);
+                        } else {
+                          setSelectedCategories(selectedCategories.filter(c => c !== category.id));
+                        }
+                      }}
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                    />
+                    <span className="text-sm text-text-primary">{category.name}</span>
+                    <span className="text-xs text-text-muted ml-auto">{category.channel_count}</span>
+                  </label>
+                ))}
+
+                {/* Manage Categories */}
+                <div className="border-t border-dark-border mt-2 pt-2">
+                  <button
+                    onClick={() => {
+                      setShowCategoryFilter(false);
+                      setShowCategoryModal(true);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-accent hover:bg-dark-hover"
+                  >
+                    Manage Categories...
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Selection indicator */}
           {selectedChannels.length > 0 && (
             <span className="text-xs text-accent font-medium">
@@ -720,6 +850,7 @@ export default function Channels() {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        setShowCategorySubmenu(null);
                         setMenuOpen(menuOpen === channel.id ? null : channel.id);
                       }}
                       className="p-1 rounded hover:bg-dark-hover transition-colors"
@@ -779,6 +910,92 @@ export default function Channels() {
                             />
                             <span className="font-medium">Auto-Download</span>
                           </button>
+
+                          {/* Set Category */}
+                          <div className="relative">
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setShowCategorySubmenu(showCategorySubmenu === channel.id ? null : channel.id);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center justify-between"
+                            >
+                              <span className="font-medium">Set Category</span>
+                              <svg className="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                              </svg>
+                            </button>
+
+                            {/* Category Submenu */}
+                            {showCategorySubmenu === channel.id && (
+                              <div className="absolute left-full top-0 ml-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 w-48 animate-scale-in">
+                                <div className="py-1 max-h-60 overflow-y-auto">
+                                  {/* Uncategorized option */}
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      updateChannel.mutate({
+                                        id: channel.id,
+                                        data: { category_id: null }
+                                      }, {
+                                        onSuccess: () => {
+                                          showNotification(`${channel.title} set to Uncategorized`, 'success');
+                                          setShowCategorySubmenu(null);
+                                          setMenuOpen(null);
+                                        }
+                                      });
+                                    }}
+                                    className={`w-full px-4 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${!channel.category_id ? 'text-accent' : 'text-text-secondary italic'}`}
+                                  >
+                                    {!channel.category_id && (
+                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                        <polyline points="20 6 9 17 4 12" stroke="currentColor" strokeWidth="3" fill="none"></polyline>
+                                      </svg>
+                                    )}
+                                    <span className={!channel.category_id ? '' : 'ml-5'}>Uncategorized</span>
+                                  </button>
+
+                                  {/* Category options */}
+                                  {categories?.map(cat => (
+                                    <button
+                                      key={cat.id}
+                                      onClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        updateChannel.mutate({
+                                          id: channel.id,
+                                          data: { category_id: cat.id }
+                                        }, {
+                                          onSuccess: () => {
+                                            showNotification(`${channel.title} moved to ${cat.name}`, 'success');
+                                            setShowCategorySubmenu(null);
+                                            setMenuOpen(null);
+                                          }
+                                        });
+                                      }}
+                                      className={`w-full px-4 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${channel.category_id === cat.id ? 'text-accent' : 'text-text-primary'}`}
+                                    >
+                                      {channel.category_id === cat.id && (
+                                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                                          <polyline points="20 6 9 17 4 12" stroke="currentColor" strokeWidth="3" fill="none"></polyline>
+                                        </svg>
+                                      )}
+                                      <span className={channel.category_id === cat.id ? '' : 'ml-5'}>{cat.name}</span>
+                                    </button>
+                                  ))}
+
+                                  {/* No categories message */}
+                                  {(!categories || categories.length === 0) && (
+                                    <div className="px-4 py-2 text-sm text-text-muted italic">
+                                      No categories yet
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
 
                           {/* Delete Channel */}
                           <button
@@ -969,6 +1186,183 @@ export default function Channels() {
                 className="btn btn-danger flex-1"
               >
                 {deleteChannel.isPending ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category Management Modal */}
+      {showCategoryModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-text-primary">Manage Categories</h3>
+              <button
+                onClick={() => {
+                  setShowCategoryModal(false);
+                  setNewCategoryName('');
+                  setEditingCategory(null);
+                }}
+                className="text-text-muted hover:text-text-primary"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Add new category */}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!newCategoryName.trim()) return;
+                try {
+                  await createCategory.mutateAsync({ name: newCategoryName.trim() });
+                  setNewCategoryName('');
+                  showNotification('Category created', 'success');
+                } catch (error) {
+                  showNotification(getUserFriendlyError(error.message), 'error');
+                }
+              }}
+              className="flex gap-2 mb-4"
+            >
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="New category name..."
+                className="input flex-1 text-sm py-1.5 px-3"
+              />
+              <button
+                type="submit"
+                disabled={!newCategoryName.trim() || createCategory.isPending}
+                className="btn btn-primary btn-sm"
+              >
+                Add
+              </button>
+            </form>
+
+            {/* Category list */}
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {categories?.length === 0 && (
+                <p className="text-text-muted text-sm text-center py-4">No categories yet</p>
+              )}
+              {categories?.map(category => (
+                <div key={category.id} className="flex items-center justify-between p-2 bg-dark-tertiary rounded">
+                  {editingCategory?.id === category.id ? (
+                    <form
+                      onSubmit={async (e) => {
+                        e.preventDefault();
+                        if (!editingCategory.name.trim()) return;
+                        try {
+                          await updateCategoryMutation.mutateAsync({
+                            id: category.id,
+                            data: { name: editingCategory.name.trim() }
+                          });
+                          setEditingCategory(null);
+                          showNotification('Category renamed', 'success');
+                        } catch (error) {
+                          showNotification(getUserFriendlyError(error.message), 'error');
+                        }
+                      }}
+                      className="flex gap-2 flex-1"
+                    >
+                      <input
+                        type="text"
+                        value={editingCategory.name}
+                        onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                        className="input flex-1 text-sm py-1 px-2"
+                        autoFocus
+                      />
+                      <button type="submit" className="text-green-500 hover:text-green-400">
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditingCategory(null)}
+                        className="text-text-muted hover:text-text-primary"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18"></line>
+                          <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2">
+                        <span className="text-text-primary text-sm">{category.name}</span>
+                        <span className="text-xs text-text-muted">({category.channel_count})</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setEditingCategory({ id: category.id, name: category.name })}
+                          className="p-1 text-text-muted hover:text-text-primary"
+                          title="Rename"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => setDeleteCategoryConfirm(category)}
+                          className="p-1 text-text-muted hover:text-red-400"
+                          title="Delete"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Category Confirmation Modal */}
+      {deleteCategoryConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-[60] p-4">
+          <div className="bg-dark-secondary rounded-lg max-w-sm w-full p-6 shadow-2xl border border-dark-border">
+            <h3 className="text-lg font-bold text-text-primary mb-3">Delete Category?</h3>
+            <p className="text-text-secondary mb-4 text-sm">
+              Delete "<span className="text-text-primary font-semibold">{deleteCategoryConfirm.name}</span>"?
+              {deleteCategoryConfirm.channel_count > 0 && (
+                <span className="block mt-2 text-yellow-400">
+                  {deleteCategoryConfirm.channel_count} channel{deleteCategoryConfirm.channel_count !== 1 ? 's' : ''} will become uncategorized.
+                </span>
+              )}
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteCategoryConfirm(null)}
+                className="btn btn-secondary flex-1 btn-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await deleteCategoryMutation.mutateAsync(deleteCategoryConfirm.id);
+                    setDeleteCategoryConfirm(null);
+                    showNotification('Category deleted', 'success');
+                  } catch (error) {
+                    showNotification(getUserFriendlyError(error.message), 'error');
+                  }
+                }}
+                disabled={deleteCategoryMutation.isPending}
+                className="btn btn-danger flex-1 btn-sm"
+              >
+                {deleteCategoryMutation.isPending ? 'Deleting...' : 'Delete'}
               </button>
             </div>
           </div>

@@ -192,6 +192,45 @@ export function useBulkAssignCategory() {
   });
 }
 
+// Channel Categories (separate from playlist categories)
+export function useChannelCategories() {
+  return useQuery({
+    queryKey: ['channel-categories'],
+    queryFn: () => api.getChannelCategories(),
+  });
+}
+
+export function useCreateChannelCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => api.createChannelCategory(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['channel-categories']);
+    },
+  });
+}
+
+export function useUpdateChannelCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }) => api.updateChannelCategory(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['channel-categories']);
+    },
+  });
+}
+
+export function useDeleteChannelCategory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.deleteChannelCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['channel-categories']);
+      queryClient.invalidateQueries(['channels']); // Channels become uncategorized
+    },
+  });
+}
+
 // Playlists
 export function usePlaylists(channelId) {
   return useQuery({

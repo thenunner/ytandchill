@@ -6,7 +6,7 @@ from datetime import datetime, timezone, timedelta
 import os
 import yt_dlp
 import subprocess
-from models import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, get_session
+from models import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, ChannelCategory, get_session
 from download_worker import DownloadWorker
 from scheduler import AutoRefreshScheduler
 from googleapiclient.errors import HttpError
@@ -527,7 +527,9 @@ def serialize_channel(channel):
         'updated_at': channel.updated_at.isoformat(),
         'video_count': discovered_count,
         'downloaded_count': downloaded_count,
-        'ignored_count': ignored_count
+        'ignored_count': ignored_count,
+        'category_id': channel.category_id,
+        'category_name': channel.category.name if channel.category else None
     }
 
 def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
@@ -1097,6 +1099,15 @@ def update_channel(channel_id):
                     logger.info(f"Auto-download disabled for channel '{channel.title}'")
         if 'folder_name' in data:
             channel.folder_name = data['folder_name']
+        if 'category_id' in data:
+            # Allow None to uncategorize
+            new_category_id = data['category_id']
+            if new_category_id is not None:
+                # Verify category exists
+                category = session.query(ChannelCategory).filter(ChannelCategory.id == new_category_id).first()
+                if not category:
+                    return jsonify({'error': 'Category not found'}), 404
+            channel.category_id = new_category_id
 
         channel.updated_at = datetime.now(timezone.utc)
         session.commit()
@@ -1548,6 +1559,101 @@ def bulk_assign_category():
             'updated_count': updated_count,
             'total_requested': len(playlist_ids)
         })
+
+# ==================== CHANNEL CATEGORY ENDPOINTS ====================
+
+@app.route('/api/channel-categories', methods=['GET'])
+def get_channel_categories():
+    """Get all channel categories"""
+    with get_session(session_factory) as session:
+        categories = session.query(ChannelCategory).order_by(ChannelCategory.name).all()
+        result = [{
+            'id': c.id,
+            'name': c.name,
+            'channel_count': len(c.channels),
+            'created_at': c.created_at.isoformat() if c.created_at else None
+        } for c in categories]
+        return jsonify(result)
+
+@app.route('/api/channel-categories', methods=['POST'])
+@limiter.limit("20 per minute")
+def create_channel_category():
+    """Create a new channel category"""
+    data = request.json
+    name = data.get('name', '').strip()
+
+    if not name:
+        return jsonify({'error': 'Category name is required'}), 400
+
+    with get_session(session_factory) as session:
+        # Check if category already exists
+        existing = session.query(ChannelCategory).filter(ChannelCategory.name == name).first()
+        if existing:
+            return jsonify({'error': 'A category with this name already exists'}), 400
+
+        category = ChannelCategory(name=name)
+        session.add(category)
+        session.commit()
+
+        return jsonify({
+            'id': category.id,
+            'name': category.name,
+            'channel_count': 0,
+            'created_at': category.created_at.isoformat() if category.created_at else None
+        }), 201
+
+@app.route('/api/channel-categories/<int:category_id>', methods=['PATCH'])
+@limiter.limit("20 per minute")
+def update_channel_category(category_id):
+    """Rename a channel category"""
+    data = request.json
+    with get_session(session_factory) as session:
+        category = session.query(ChannelCategory).filter(ChannelCategory.id == category_id).first()
+
+        if not category:
+            return jsonify({'error': 'Category not found'}), 404
+
+        if 'name' in data:
+            new_name = data['name'].strip()
+            if not new_name:
+                return jsonify({'error': 'Category name cannot be empty'}), 400
+
+            # Check for duplicate name
+            existing = session.query(ChannelCategory).filter(
+                ChannelCategory.name == new_name,
+                ChannelCategory.id != category_id
+            ).first()
+            if existing:
+                return jsonify({'error': 'A category with this name already exists'}), 400
+
+            category.name = new_name
+
+        session.commit()
+
+        return jsonify({
+            'id': category.id,
+            'name': category.name,
+            'channel_count': len(category.channels),
+            'created_at': category.created_at.isoformat() if category.created_at else None
+        })
+
+@app.route('/api/channel-categories/<int:category_id>', methods=['DELETE'])
+@limiter.limit("20 per minute")
+def delete_channel_category(category_id):
+    """Delete a channel category (channels become uncategorized)"""
+    with get_session(session_factory) as session:
+        category = session.query(ChannelCategory).filter(ChannelCategory.id == category_id).first()
+
+        if not category:
+            return jsonify({'error': 'Category not found'}), 404
+
+        # Set all channels in this category to NULL (uncategorized)
+        for channel in category.channels:
+            channel.category_id = None
+
+        session.delete(category)
+        session.commit()
+        return '', 204
 
 # ==================== PLAYLIST ENDPOINTS ====================
 

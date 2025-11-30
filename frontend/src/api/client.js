@@ -161,6 +161,31 @@ class APIClient {
     });
   }
 
+  // Channel Categories (separate from playlist categories)
+  getChannelCategories() {
+    return this.request('/channel-categories');
+  }
+
+  createChannelCategory(data) {
+    return this.request('/channel-categories', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  updateChannelCategory(id, data) {
+    return this.request(`/channel-categories/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  deleteChannelCategory(id) {
+    return this.request(`/channel-categories/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Playlists
   getPlaylists(channelId) {
     const query = channelId ? `?channel_id=${channelId}` : '';

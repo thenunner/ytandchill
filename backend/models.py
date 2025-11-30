@@ -23,9 +23,11 @@ class Channel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     deleted_at = Column(DateTime, nullable=True, index=True)  # Soft delete: NULL = active, set = deleted
+    category_id = Column(Integer, ForeignKey('channel_categories.id'), nullable=True, index=True)
 
     videos = relationship('Video', back_populates='channel')
     playlists = relationship('Playlist', back_populates='channel', cascade='all, delete-orphan')
+    category = relationship('ChannelCategory', back_populates='channels')
 
 class Video(Base):
     __tablename__ = 'videos'
@@ -50,6 +52,7 @@ class Video(Base):
     playlist_videos = relationship('PlaylistVideo', back_populates='video', cascade='all, delete-orphan')
 
 class Category(Base):
+    """Category for organizing playlists in the Library tab."""
     __tablename__ = 'categories'
 
     id = Column(Integer, primary_key=True)
@@ -58,6 +61,17 @@ class Category(Base):
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     playlists = relationship('Playlist', back_populates='category')
+
+
+class ChannelCategory(Base):
+    """Category for organizing channels in the Channels tab (separate from playlist categories)."""
+    __tablename__ = 'channel_categories'
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String(100), nullable=False, unique=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    channels = relationship('Channel', back_populates='category')
 
 class Playlist(Base):
     __tablename__ = 'playlists'
