@@ -2497,10 +2497,18 @@ def move_to_bottom():
 def clear_queue():
     """Remove all pending queue items (keep downloading item)"""
     with get_session(session_factory) as session:
-        # Delete all queue items with status 'queued' (not 'downloading')
-        deleted_count = session.query(QueueItem).join(Video).filter(
+        # Get queue item IDs to delete (can't use .delete() with .join())
+        queue_items_to_delete = session.query(QueueItem.id).join(Video).filter(
             Video.status == 'queued'
-        ).delete(synchronize_session=False)
+        ).all()
+        queue_item_ids = [q.id for q in queue_items_to_delete]
+
+        # Delete queue items by ID
+        deleted_count = 0
+        if queue_item_ids:
+            deleted_count = session.query(QueueItem).filter(
+                QueueItem.id.in_(queue_item_ids)
+            ).delete(synchronize_session=False)
 
         # Also set the corresponding videos back to 'discovered' status
         session.query(Video).filter(
