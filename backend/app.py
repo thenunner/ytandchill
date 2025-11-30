@@ -1323,6 +1323,11 @@ def delete_video(video_id):
         if not video:
             return jsonify({'error': 'Video not found'}), 404
 
+        # Check if this is a Singles video (belongs to __singles__ channel)
+        is_singles = False
+        if video.channel:
+            is_singles = video.channel.yt_id == '__singles__'
+
         # Delete video file if it exists
         if video.file_path and os.path.exists(video.file_path):
             try:
@@ -1347,13 +1352,21 @@ def delete_video(video_id):
             session.delete(queue_item)
             print(f"Removed video from queue")
 
-        # Soft-delete: Set status to 'ignored' instead of removing record
-        # This prevents the video from being re-queued on future scans
-        # The video stays in DB so scans see it already exists and skip it
-        video.status = 'ignored'
-        video.file_path = None  # Clear file path since file is deleted
-        video.file_size_bytes = None
-        video.downloaded_at = None
+        if is_singles:
+            # Hard delete Singles videos - allows re-downloading
+            # Remove from any playlists first
+            session.execute(
+                playlist_videos.delete().where(playlist_videos.c.video_id == video.id)
+            )
+            session.delete(video)
+            print(f"Hard deleted Singles video: {video.yt_id}")
+        else:
+            # Soft-delete for channel videos: Set status to 'ignored'
+            # This prevents the video from being re-queued on future scans
+            video.status = 'ignored'
+            video.file_path = None
+            video.file_size_bytes = None
+            video.downloaded_at = None
 
         session.commit()
 
@@ -1568,9 +1581,15 @@ def bulk_assign_category():
 
 @app.route('/api/youtube-playlists/scan', methods=['POST'])
 def scan_youtube_playlist():
-    """Scan a YouTube playlist URL and return videos not already in DB."""
+    """Scan a YouTube playlist URL and return videos.
+
+    Query params:
+        filter: 'new' (default) - only videos not in DB
+                'all' - all videos with their status
+    """
     data = request.json
     url = data.get('url', '')
+    filter_mode = data.get('filter', 'new')  # 'new' or 'all'
 
     if not url:
         return jsonify({'error': 'URL is required'}), 400
@@ -1580,29 +1599,44 @@ def scan_youtube_playlist():
     if not playlist_id:
         return jsonify({'error': 'Invalid YouTube playlist URL. URL must contain ?list= parameter'}), 400
 
-    logger.info(f"Scanning YouTube playlist: {playlist_id}")
+    logger.info(f"Scanning YouTube playlist: {playlist_id} (filter={filter_mode})")
     set_operation('scanning', f"Scanning YouTube playlist...")
 
     try:
         youtube = get_youtube_client()
         videos = youtube.get_playlist_videos(playlist_id)
 
-        # Filter out videos already in DB
         with get_session(session_factory) as session:
-            existing_yt_ids = set(
-                v.yt_id for v in session.query(Video.yt_id).all()
-            )
-            new_videos = [v for v in videos if v['yt_id'] not in existing_yt_ids]
+            # Get existing videos with their status
+            existing_videos = {
+                v.yt_id: v.status
+                for v in session.query(Video.yt_id, Video.status).all()
+            }
 
-        already_in_db = len(videos) - len(new_videos)
-        logger.info(f"Playlist scan complete: {len(videos)} total, {len(new_videos)} new, {already_in_db} already in DB")
+            if filter_mode == 'all':
+                # Return all videos with their status
+                result_videos = []
+                for v in videos:
+                    v['status'] = existing_videos.get(v['yt_id'], None)
+                    result_videos.append(v)
+                new_videos = result_videos
+                already_in_db = sum(1 for v in videos if v['yt_id'] in existing_videos)
+            else:
+                # Filter to only new videos (not in DB at all)
+                new_videos = [v for v in videos if v['yt_id'] not in existing_videos]
+                # Add null status for new videos
+                for v in new_videos:
+                    v['status'] = None
+                already_in_db = len(videos) - len(new_videos)
+
+        logger.info(f"Playlist scan complete: {len(videos)} total, {len(new_videos)} returned, {already_in_db} in DB")
 
         # Clear operation status
         clear_operation()
 
         return jsonify({
             'total_in_playlist': len(videos),
-            'new_videos_count': len(new_videos),
+            'new_videos_count': len(videos) - already_in_db,
             'already_in_db': already_in_db,
             'videos': new_videos
         })
@@ -1657,8 +1691,20 @@ def queue_youtube_playlist_videos():
             # Check if video already exists by yt_id
             existing = session.query(Video).filter(Video.yt_id == v['yt_id']).first()
             if existing:
-                logger.debug(f"Skipping existing video: {v['yt_id']}")
-                skipped += 1
+                # If video was removed, re-queue it
+                if existing.status == 'removed':
+                    existing.status = 'queued'
+                    # Check if already in queue
+                    in_queue = session.query(QueueItem).filter(QueueItem.video_id == existing.id).first()
+                    if not in_queue:
+                        max_pos += 1
+                        queue_item = QueueItem(video_id=existing.id, queue_position=max_pos)
+                        session.add(queue_item)
+                    added += 1
+                    logger.debug(f"Re-queued removed video: {v['yt_id']}")
+                else:
+                    logger.debug(f"Skipping existing video: {v['yt_id']}")
+                    skipped += 1
                 continue
 
             # Create video record
@@ -1695,6 +1741,62 @@ def queue_youtube_playlist_videos():
         'queued': added,
         'skipped': skipped
     })
+
+@app.route('/api/youtube-playlists/remove', methods=['POST'])
+def remove_youtube_playlist_videos():
+    """Mark videos as 'removed' so they don't appear in New scans."""
+    data = request.json
+    videos_data = data.get('videos', [])
+
+    if not videos_data:
+        return jsonify({'error': 'No videos provided'}), 400
+
+    logger.info(f"Marking {len(videos_data)} videos as removed")
+
+    with get_session(session_factory) as session:
+        removed = 0
+
+        # Get or create Singles channel (needed for channel_id)
+        singles_channel = session.query(Channel).filter(Channel.yt_id == '__singles__').first()
+        if not singles_channel:
+            singles_channel = Channel(
+                yt_id='__singles__',
+                title='Singles',
+                folder_name='Singles',
+                thumbnail=None,
+                auto_download=False
+            )
+            session.add(singles_channel)
+            session.flush()
+
+        for v in videos_data:
+            yt_id = v.get('yt_id') if isinstance(v, dict) else v
+
+            # Check if video exists
+            existing = session.query(Video).filter(Video.yt_id == yt_id).first()
+            if existing:
+                # Update existing to removed status
+                existing.status = 'removed'
+                removed += 1
+            else:
+                # Create new record with removed status
+                video = Video(
+                    yt_id=yt_id,
+                    title=v.get('title', 'Unknown') if isinstance(v, dict) else 'Unknown',
+                    duration_sec=v.get('duration_sec', 0) if isinstance(v, dict) else 0,
+                    upload_date=v.get('upload_date') if isinstance(v, dict) else None,
+                    thumb_url=v.get('thumbnail') if isinstance(v, dict) else None,
+                    channel_id=singles_channel.id,
+                    folder_name='Singles',
+                    status='removed'
+                )
+                session.add(video)
+                removed += 1
+
+        session.commit()
+
+    logger.info(f"Marked {removed} videos as removed")
+    return jsonify({'removed': removed})
 
 # ==================== CHANNEL CATEGORY ENDPOINTS ====================
 

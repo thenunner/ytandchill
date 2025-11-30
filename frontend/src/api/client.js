@@ -351,15 +351,22 @@ class APIClient {
   }
 
   // YouTube Playlist Import
-  scanYouTubePlaylist(url) {
+  scanYouTubePlaylist(url, filter = 'new') {
     return this.request('/youtube-playlists/scan', {
       method: 'POST',
-      body: JSON.stringify({ url }),
+      body: JSON.stringify({ url, filter }),
     });
   }
 
   queuePlaylistVideos(videos) {
     return this.request('/youtube-playlists/queue', {
+      method: 'POST',
+      body: JSON.stringify({ videos }),
+    });
+  }
+
+  removePlaylistVideos(videos) {
+    return this.request('/youtube-playlists/remove', {
       method: 'POST',
       body: JSON.stringify({ videos }),
     });

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { useScanYouTubePlaylist, useQueuePlaylistVideos } from '../api/queries';
+import { useScanYouTubePlaylist, useQueuePlaylistVideos, useRemovePlaylistVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 
 export default function YouTubePlaylists() {
   const { showNotification } = useNotification();
   const scanPlaylist = useScanYouTubePlaylist();
   const queueVideos = useQueuePlaylistVideos();
+  const removeVideos = useRemovePlaylistVideos();
 
   // State
   const [playlistUrl, setPlaylistUrl] = useState('');
@@ -13,9 +14,11 @@ export default function YouTubePlaylists() {
   const [selectedVideos, setSelectedVideos] = useState(new Set());
   const [isScanning, setIsScanning] = useState(false);
   const [isQueueing, setIsQueueing] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
+  const [filterMode, setFilterMode] = useState('new'); // 'new' or 'all'
 
-  const handleScan = async (e) => {
-    e.preventDefault();
+  const handleScan = async (e, filter = filterMode) => {
+    if (e) e.preventDefault();
     if (!playlistUrl.trim()) {
       showNotification('Please enter a playlist URL', 'error');
       return;
@@ -24,9 +27,10 @@ export default function YouTubePlaylists() {
     setIsScanning(true);
     setScanResults(null);
     setSelectedVideos(new Set());
+    setFilterMode(filter);
 
     try {
-      const result = await scanPlaylist.mutateAsync(playlistUrl);
+      const result = await scanPlaylist.mutateAsync({ url: playlistUrl, filter });
       setScanResults(result);
 
       if (result.videos.length === 0) {
@@ -37,10 +41,10 @@ export default function YouTubePlaylists() {
           'info'
         );
       } else {
-        showNotification(
-          `Found ${result.new_videos_count} new videos (${result.already_in_db} already downloaded)`,
-          'success'
-        );
+        const msg = filter === 'all'
+          ? `Found ${result.total_in_playlist} videos (${result.new_videos_count} new)`
+          : `Found ${result.new_videos_count} new videos (${result.already_in_db} already in DB)`;
+        showNotification(msg, 'success');
       }
     } catch (error) {
       showNotification(error.message || 'Failed to scan playlist', 'error');
@@ -69,11 +73,34 @@ export default function YouTubePlaylists() {
     setSelectedVideos(newSelected);
   };
 
-  const handleRemoveSelected = () => {
-    if (scanResults?.videos) {
-      const remainingVideos = scanResults.videos.filter(v => !selectedVideos.has(v.yt_id));
-      setScanResults({ ...scanResults, videos: remainingVideos });
+  const handleRemoveSelected = async () => {
+    if (!scanResults?.videos || selectedVideos.size === 0) return;
+
+    setIsRemoving(true);
+
+    try {
+      const videosToRemove = scanResults.videos.filter(v => selectedVideos.has(v.yt_id));
+      await removeVideos.mutateAsync({ videos: videosToRemove });
+
+      showNotification(`Marked ${videosToRemove.length} videos as removed`, 'success');
+
+      // Update local state - mark as removed or remove from list
+      if (filterMode === 'all') {
+        // In "all" mode, update status to 'removed'
+        const updatedVideos = scanResults.videos.map(v =>
+          selectedVideos.has(v.yt_id) ? { ...v, status: 'removed' } : v
+        );
+        setScanResults({ ...scanResults, videos: updatedVideos });
+      } else {
+        // In "new" mode, remove from list
+        const remainingVideos = scanResults.videos.filter(v => !selectedVideos.has(v.yt_id));
+        setScanResults({ ...scanResults, videos: remainingVideos });
+      }
       setSelectedVideos(new Set());
+    } catch (error) {
+      showNotification(error.message || 'Failed to remove videos', 'error');
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -91,9 +118,18 @@ export default function YouTubePlaylists() {
 
       showNotification(`Queued ${result.queued} videos`, 'success');
 
-      // Remove queued videos from results
-      const remainingVideos = scanResults.videos.filter(v => !selectedVideos.has(v.yt_id));
-      setScanResults({ ...scanResults, videos: remainingVideos });
+      // Update local state
+      if (filterMode === 'all') {
+        // In "all" mode, update status to 'queued'
+        const updatedVideos = scanResults.videos.map(v =>
+          selectedVideos.has(v.yt_id) ? { ...v, status: 'queued' } : v
+        );
+        setScanResults({ ...scanResults, videos: updatedVideos });
+      } else {
+        // In "new" mode, remove from list
+        const remainingVideos = scanResults.videos.filter(v => !selectedVideos.has(v.yt_id));
+        setScanResults({ ...scanResults, videos: remainingVideos });
+      }
       setSelectedVideos(new Set());
 
     } catch (error) {
@@ -138,23 +174,52 @@ export default function YouTubePlaylists() {
             className="flex-1 bg-dark-tertiary border border-dark-border rounded-lg px-4 py-2 text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
             disabled={isScanning}
           />
-          <button
-            type="submit"
-            disabled={isScanning || !playlistUrl.trim()}
-            className="px-6 py-2 bg-accent hover:bg-accent/80 disabled:bg-dark-tertiary disabled:text-text-secondary text-white font-semibold rounded-lg transition-colors"
-          >
-            {isScanning ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Scanning...
-              </span>
-            ) : (
-              'Scan Playlist'
-            )}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={(e) => handleScan(e, 'new')}
+              disabled={isScanning || !playlistUrl.trim()}
+              className={`px-4 py-2 font-semibold rounded-lg transition-colors ${
+                filterMode === 'new' && scanResults
+                  ? 'bg-accent text-white'
+                  : 'bg-dark-tertiary hover:bg-dark-border text-text-secondary'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isScanning && filterMode === 'new' ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Scanning...
+                </span>
+              ) : (
+                'Scan New'
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={(e) => handleScan(e, 'all')}
+              disabled={isScanning || !playlistUrl.trim()}
+              className={`px-4 py-2 font-semibold rounded-lg transition-colors ${
+                filterMode === 'all' && scanResults
+                  ? 'bg-accent text-white'
+                  : 'bg-dark-tertiary hover:bg-dark-border text-text-secondary'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {isScanning && filterMode === 'all' ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Scanning...
+                </span>
+              ) : (
+                'Scan All'
+              )}
+            </button>
+          </div>
         </div>
       </form>
 
@@ -201,9 +266,10 @@ export default function YouTubePlaylists() {
             <div className="mt-4 pt-4 border-t border-dark-border flex justify-end gap-2">
               <button
                 onClick={handleRemoveSelected}
-                className="px-4 py-2 bg-dark-tertiary hover:bg-red-500/20 text-text-secondary hover:text-red-400 rounded-lg transition-colors"
+                disabled={isRemoving}
+                className="px-4 py-2 bg-dark-tertiary hover:bg-red-500/20 text-text-secondary hover:text-red-400 disabled:opacity-50 rounded-lg transition-colors"
               >
-                Remove
+                {isRemoving ? 'Removing...' : 'Remove'}
               </button>
               <button
                 onClick={handleQueueSelected}
@@ -252,6 +318,21 @@ export default function YouTubePlaylists() {
                 <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
                   {formatDuration(video.duration_sec)}
                 </div>
+
+                {/* Status Badge (in All mode) */}
+                {video.status && (
+                  <div className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded font-medium ${
+                    video.status === 'library' ? 'bg-green-500/90 text-white' :
+                    video.status === 'queued' ? 'bg-blue-500/90 text-white' :
+                    video.status === 'removed' ? 'bg-red-500/90 text-white' :
+                    'bg-gray-500/90 text-white'
+                  }`}>
+                    {video.status === 'library' ? 'Downloaded' :
+                     video.status === 'queued' ? 'Queued' :
+                     video.status === 'removed' ? 'Removed' :
+                     video.status}
+                  </div>
+                )}
 
                 {/* Selection Indicator */}
                 <div className={`absolute top-2 left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${

@@ -455,7 +455,7 @@ export function useLogs(lines = 500) {
 // YouTube Playlist Import
 export function useScanYouTubePlaylist() {
   return useMutation({
-    mutationFn: (url) => api.scanYouTubePlaylist(url),
+    mutationFn: ({ url, filter = 'new' }) => api.scanYouTubePlaylist(url, filter),
   });
 }
 
@@ -467,6 +467,12 @@ export function useQueuePlaylistVideos() {
       queryClient.invalidateQueries(['queue']);
       queryClient.invalidateQueries(['videos']);
     },
+  });
+}
+
+export function useRemovePlaylistVideos() {
+  return useMutation({
+    mutationFn: ({ videos }) => api.removePlaylistVideos(videos),
   });
 }
 
