@@ -440,7 +440,7 @@
   }
 
   .nav-tab.active {
-    @apply bg-dark-hover border-dark-border-light shadow-glow;
+    @apply bg-dark-tertiary border-dark-border-light;
   }
 
   .nav-tab.active::before {

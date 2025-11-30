@@ -1643,6 +1643,23 @@ def queue_youtube_playlist_videos():
         added = 0
         skipped = 0
 
+        # Get or create a special "Singles" channel to hold imported videos
+        # This is needed because the database schema requires a channel_id
+        singles_channel = session.query(Channel).filter(Channel.yt_id == '__singles__').first()
+        if not singles_channel:
+            singles_channel = Channel(
+                yt_id='__singles__',
+                title='Singles',
+                description='Container for imported single videos',
+                thumbnail=None,
+                subscriber_count=0,
+                video_count=0,
+                auto_download=False
+            )
+            session.add(singles_channel)
+            session.flush()
+            logger.info(f"Created Singles pseudo-channel with ID: {singles_channel.id}")
+
         # Get max queue position once
         max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
 
@@ -1661,7 +1678,7 @@ def queue_youtube_playlist_videos():
                 duration_sec=v.get('duration_sec', 0),
                 upload_date=v.get('upload_date'),
                 thumb_url=v.get('thumbnail'),
-                channel_id=None,  # Not tied to a channel
+                channel_id=singles_channel.id,  # Use the Singles pseudo-channel
                 folder_name=folder_name,
                 status='queued'
             )
