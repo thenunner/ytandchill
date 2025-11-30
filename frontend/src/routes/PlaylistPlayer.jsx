@@ -275,9 +275,45 @@ export default function PlaylistPlayer() {
     return `/api/media/${relativePath}`;
   }, []);
 
-  // Initialize Plyr once (only on mount/unmount)
+  // Cleanup on unmount only (empty deps = runs once)
   useEffect(() => {
-    if (!videoRef.current || plyrInstanceRef.current) return;
+    return () => {
+      if (saveProgressTimeout.current) {
+        clearTimeout(saveProgressTimeout.current);
+      }
+      if (plyrInstanceRef.current) {
+        plyrInstanceRef.current.destroy();
+        plyrInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Initialize Plyr and update source when currentVideo changes
+  useEffect(() => {
+    if (!currentVideo || !videoRef.current) return;
+
+    const videoSrc = getVideoSrc(currentVideo);
+    if (!videoSrc) return;
+
+    // Update refs for event handlers
+    currentVideoIdRef.current = currentVideo.id;
+    hasMarkedWatchedRef.current = currentVideo.watched || false;
+
+    // Update URL
+    setSearchParams({ v: currentVideo.id }, { replace: true });
+
+    // If Plyr exists, just update source
+    if (plyrInstanceRef.current) {
+      console.log('Updating Plyr source to:', videoSrc);
+      plyrInstanceRef.current.source = {
+        type: 'video',
+        sources: [{ src: videoSrc, type: 'video/mp4' }],
+      };
+      return;
+    }
+
+    // First time: Initialize Plyr
+    console.log('Initializing Plyr with source:', videoSrc);
 
     const player = new Plyr(videoRef.current, {
       controls: [
@@ -305,6 +341,20 @@ export default function PlaylistPlayer() {
 
     plyrInstanceRef.current = player;
 
+    // Set source IMMEDIATELY
+    player.source = {
+      type: 'video',
+      sources: [{ src: videoSrc, type: 'video/mp4' }],
+    };
+
+    // Restore playback position when metadata loads
+    player.on('loadedmetadata', () => {
+      const vid = finalVideos[displayOrder[currentIndex] ?? 0];
+      if (vid?.playback_seconds > 0 && plyrInstanceRef.current) {
+        plyrInstanceRef.current.currentTime = vid.playback_seconds;
+      }
+    });
+
     // Handle video end - advance to next
     player.on('ended', () => {
       goToNextRef.current();
@@ -320,20 +370,20 @@ export default function PlaylistPlayer() {
       if (!videoId) return;
 
       saveProgressTimeout.current = setTimeout(() => {
-        const currentTime = Math.floor(player.currentTime);
-        if (currentTime > 0) {
+        const time = Math.floor(plyrInstanceRef.current?.currentTime || 0);
+        if (time > 0) {
           updateVideo.mutate({
             id: videoId,
-            data: { playback_seconds: currentTime },
+            data: { playback_seconds: time },
           });
         }
       }, 5000);
 
       // Check for 90% watched
-      if (!hasMarkedWatchedRef.current) {
-        const currentTime = player.currentTime;
-        const duration = player.duration;
-        if (duration > 0 && currentTime >= duration * 0.9) {
+      if (!hasMarkedWatchedRef.current && plyrInstanceRef.current) {
+        const time = plyrInstanceRef.current.currentTime;
+        const duration = plyrInstanceRef.current.duration;
+        if (duration > 0 && time >= duration * 0.9) {
           hasMarkedWatchedRef.current = true;
           updateVideo.mutate({
             id: videoId,
@@ -342,46 +392,7 @@ export default function PlaylistPlayer() {
         }
       }
     });
-
-    return () => {
-      if (saveProgressTimeout.current) {
-        clearTimeout(saveProgressTimeout.current);
-      }
-      if (plyrInstanceRef.current) {
-        plyrInstanceRef.current.destroy();
-        plyrInstanceRef.current = null;
-      }
-    };
-  }, [updateVideo]);
-
-  // Update source when currentVideo changes
-  useEffect(() => {
-    if (!currentVideo || !plyrInstanceRef.current) return;
-
-    const videoSrc = getVideoSrc(currentVideo);
-    if (!videoSrc) return;
-
-    // Update refs for event handlers
-    currentVideoIdRef.current = currentVideo.id;
-    hasMarkedWatchedRef.current = currentVideo.watched || false;
-
-    // Update URL with current video ID
-    setSearchParams({ v: currentVideo.id }, { replace: true });
-
-    // Update source
-    plyrInstanceRef.current.source = {
-      type: 'video',
-      sources: [{ src: videoSrc, type: 'video/mp4' }],
-    };
-
-    // Restore playback position after source loads
-    plyrInstanceRef.current.once('loadedmetadata', () => {
-      if (currentVideo.playback_seconds > 0 && plyrInstanceRef.current) {
-        plyrInstanceRef.current.currentTime = currentVideo.playback_seconds;
-      }
-      plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
-    });
-  }, [currentVideo?.id, getVideoSrc, setSearchParams]);
+  }, [currentVideo?.id]);
 
   // Scroll current video into view
   useEffect(() => {
