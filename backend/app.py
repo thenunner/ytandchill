@@ -1581,7 +1581,11 @@ def bulk_assign_category():
 
 @app.route('/api/youtube-playlists/scan', methods=['POST'])
 def scan_youtube_playlist():
-    """Scan a YouTube playlist URL and return videos.
+    """Scan a YouTube playlist or channel URL and return videos.
+
+    Supports:
+        - Playlist URLs: youtube.com/playlist?list=PLxxxxx
+        - Channel URLs: youtube.com/@handle, youtube.com/channel/UC..., youtube.com/c/name
 
     Query params:
         filter: 'new' (default) - only videos not in DB
@@ -1594,17 +1598,83 @@ def scan_youtube_playlist():
     if not url:
         return jsonify({'error': 'URL is required'}), 400
 
-    # Extract playlist ID from URL
-    playlist_id = YouTubeAPIClient.extract_playlist_id(url)
-    if not playlist_id:
-        return jsonify({'error': 'Invalid YouTube playlist URL. URL must contain ?list= parameter'}), 400
+    import re
+    youtube = get_youtube_client()
+    playlist_id = None
+    single_video_id = None
+    source_type = 'playlist'
 
-    logger.info(f"Scanning YouTube playlist: {playlist_id} (filter={filter_mode})")
-    set_operation('scanning', f"Scanning YouTube playlist...")
+    # First check if it's a single video URL
+    video_match = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_-]{11})', url)
+    if video_match and 'list=' not in url:  # Single video (not playlist context)
+        single_video_id = video_match.group(1)
+        source_type = 'video'
+        logger.info(f"Detected single video URL: {single_video_id}")
+
+    # If not a single video, try playlist ID
+    if not single_video_id:
+        playlist_id = YouTubeAPIClient.extract_playlist_id(url)
+
+    # If no playlist ID, check if it's a channel URL
+    if not single_video_id and not playlist_id:
+        # Check for channel URL patterns
+        is_channel_url = any(pattern in url for pattern in [
+            'youtube.com/@',
+            'youtube.com/channel/',
+            'youtube.com/c/',
+            'youtube.com/user/'
+        ])
+
+        if is_channel_url:
+            try:
+                # Resolve channel ID from URL
+                channel_id = youtube.resolve_channel_id_from_url(url)
+                if not channel_id:
+                    return jsonify({'error': 'Could not resolve channel from URL'}), 400
+
+                # Get channel info to find uploads playlist
+                channel_info = youtube.get_channel_info(channel_id)
+                if not channel_info:
+                    return jsonify({'error': 'Could not get channel information'}), 400
+
+                playlist_id = channel_info['uploads_playlist']
+                source_type = 'channel'
+                logger.info(f"Resolved channel URL to uploads playlist: {playlist_id}")
+            except Exception as e:
+                logger.error(f"Error resolving channel URL: {e}")
+                return jsonify({'error': f'Failed to resolve channel: {str(e)}'}), 400
+        else:
+            return jsonify({'error': 'Invalid URL. Provide a YouTube video, playlist, or channel URL'}), 400
+
+    logger.info(f"Scanning YouTube {source_type}: {single_video_id or playlist_id} (filter={filter_mode})")
+    set_operation('scanning', f"Scanning YouTube {source_type}...")
 
     try:
-        youtube = get_youtube_client()
-        videos = youtube.get_playlist_videos(playlist_id)
+        # Handle single video vs playlist/channel
+        if single_video_id:
+            # Fetch single video metadata
+            videos_response = youtube.youtube.videos().list(
+                part='snippet,contentDetails,statistics',
+                id=single_video_id
+            ).execute()
+
+            videos = []
+            for video in videos_response.get('items', []):
+                if 'duration' not in video.get('contentDetails', {}):
+                    continue
+                duration_str = video['contentDetails']['duration']
+                duration_sec = parse_iso8601_duration(duration_str)
+                videos.append({
+                    'yt_id': video['id'],
+                    'title': video['snippet']['title'],
+                    'duration_sec': duration_sec,
+                    'upload_date': video['snippet']['publishedAt'][:10].replace('-', ''),
+                    'thumbnail': video['snippet']['thumbnails'].get('high', {}).get('url'),
+                    'channel_title': video['snippet'].get('channelTitle', 'Unknown')
+                })
+        else:
+            # Fetch playlist/channel videos
+            videos = youtube.get_playlist_videos(playlist_id)
 
         with get_session(session_factory) as session:
             # Get existing videos with their status

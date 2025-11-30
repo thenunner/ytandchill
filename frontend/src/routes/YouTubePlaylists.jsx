@@ -47,7 +47,7 @@ export default function YouTubePlaylists() {
         showNotification(msg, 'success');
       }
     } catch (error) {
-      showNotification(error.message || 'Failed to scan playlist', 'error');
+      showNotification(error.message || 'Failed to scan URL', 'error');
     } finally {
       setIsScanning(false);
     }
@@ -160,7 +160,7 @@ export default function YouTubePlaylists() {
     <div className="p-4 space-y-4">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-xl font-bold text-text-primary">Import YouTube Playlist</h1>
+        <h1 className="text-xl font-bold text-text-primary">Import Videos</h1>
       </div>
 
       {/* Scan Form */}
@@ -170,7 +170,7 @@ export default function YouTubePlaylists() {
             type="text"
             value={playlistUrl}
             onChange={(e) => setPlaylistUrl(e.target.value)}
-            placeholder="Paste YouTube playlist URL (e.g., youtube.com/playlist?list=PLxxxxx)"
+            placeholder="Paste YouTube video, playlist, or channel URL"
             className="flex-1 bg-dark-tertiary border border-dark-border rounded-lg px-4 py-2 text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
             disabled={isScanning}
           />
@@ -374,10 +374,10 @@ export default function YouTubePlaylists() {
           <svg className="w-16 h-16 mx-auto text-text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          <h3 className="text-text-primary font-semibold mb-2">Import Videos from YouTube Playlists</h3>
+          <h3 className="text-text-primary font-semibold mb-2">Import Videos from YouTube</h3>
           <p className="text-text-secondary text-sm max-w-md mx-auto">
-            Paste a YouTube playlist URL above to scan for videos. You can select which videos to download
-            and organize them into folders.
+            Paste a YouTube video, playlist, or channel URL above. Select which videos to download
+            as singles without subscribing to the full channel.
           </p>
         </div>
       )}

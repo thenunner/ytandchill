@@ -28,6 +28,8 @@ class DownloadWorker:
         self.paused = True  # Start paused by default to prevent auto-start on backend restart
         self.delay_info = None  # For tracking delay status
         self.rate_limit_message = None  # Persistent rate limit message for UI
+        self.last_download_time = None  # Track when last download finished for rate limiting
+        self.next_download_delay = 0  # Delay in seconds before next download can start
 
         # Ensure download directory exists
         os.makedirs(download_dir, exist_ok=True)
@@ -176,6 +178,11 @@ class DownloadWorker:
                 time.sleep(1)
                 continue
 
+            # Check if we need to wait for inter-download delay
+            if self._wait_for_delay():
+                time.sleep(1)  # Check delay status every second
+                continue
+
             try:
                 with get_session(self.session_factory) as session:
                     # Get next queued video (join with QueueItem for ordering)
@@ -187,7 +194,10 @@ class DownloadWorker:
                         logger.info(f"Found queued video: {queue_item.video.yt_id} - {queue_item.video.title}")
                         self._download_video(session, queue_item)
                     else:
-                        # Queue is empty - clear rate limit message
+                        # Queue is empty - clear delay info (no point showing delay with empty queue)
+                        if self.delay_info:
+                            self.delay_info = None
+                        # Clear rate limit message
                         if self.rate_limit_message:
                             logger.info("Queue empty - clearing rate limit message")
                             self.rate_limit_message = None
@@ -582,39 +592,42 @@ class DownloadWorker:
         logger.debug(f'Download complete, current_download cleared')
 
     def _apply_inter_download_delay(self, download_success):
-        """Apply random delay if more videos are queued to avoid rate limiting."""
-        with get_session(self.session_factory) as session:
-            has_more = session.query(Video).filter(
-                Video.status == 'queued'
-            ).count() > 0
-
-        if has_more and download_success:
+        """Set delay timer after successful download to avoid rate limiting."""
+        if download_success:
             # Random delay: 60 seconds to 3 minutes (60-180 seconds)
-            delay_seconds = random.randint(60, 180)
-            logger.info(f"Delaying {delay_seconds} seconds ({delay_seconds/60:.1f} min) before next download to avoid rate limiting...")
-
-            # Count down the delay and update status
-            start_time = time.time()
-            while time.time() - start_time < delay_seconds:
-                remaining = int(delay_seconds - (time.time() - start_time))
-
-                # Update delay info for status bar
-                if remaining >= 60:
-                    self.delay_info = f"Delayed {remaining//60} min {remaining%60} sec to avoid rate limiting"
-                else:
-                    self.delay_info = f"Delayed {remaining} sec to avoid rate limiting"
-
-                # Log every 10 seconds for debug visibility
-                if remaining % 10 == 0:
-                    logger.debug(f"Delay countdown: {remaining} seconds remaining")
-
-                time.sleep(1)  # Update every second
-
-            # Clear delay info
-            self.delay_info = None
-            logger.info("Delay complete, ready for next download")
+            self.next_download_delay = random.randint(60, 180)
+            self.last_download_time = time.time()
+            logger.info(f"Next download will wait {self.next_download_delay} seconds ({self.next_download_delay/60:.1f} min) to avoid rate limiting")
         else:
-            logger.debug(f"No delay needed (has_more={has_more}, download_success={download_success})")
+            logger.debug(f"No delay needed (download_success={download_success})")
+
+    def _wait_for_delay(self):
+        """Wait for inter-download delay if needed. Returns True if waited, False if no wait needed."""
+        if not self.last_download_time or self.next_download_delay <= 0:
+            return False
+
+        elapsed = time.time() - self.last_download_time
+        remaining = self.next_download_delay - elapsed
+
+        if remaining <= 0:
+            # Delay already passed
+            self.delay_info = None
+            self.last_download_time = None
+            self.next_download_delay = 0
+            return False
+
+        # Still in delay period - update status and wait
+        remaining_int = int(remaining)
+        if remaining_int >= 60:
+            self.delay_info = f"Delayed {remaining_int//60} min {remaining_int%60} sec to avoid rate limiting"
+        else:
+            self.delay_info = f"Delayed {remaining_int} sec to avoid rate limiting"
+
+        # Log occasionally
+        if remaining_int % 30 == 0:
+            logger.debug(f"Delay countdown: {remaining_int} seconds remaining")
+
+        return True
 
     def _download_video(self, session, queue_item):
         """
