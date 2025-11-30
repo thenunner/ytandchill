@@ -182,10 +182,10 @@ export default function Channels() {
       return;
     }
 
-    // Use selected channels if any, otherwise scan all
+    // Use selected channels if any, otherwise scan all (excluding Singles pseudo-channel)
     const channelsToScan = selectedChannels.length > 0
       ? channels.filter(c => selectedChannels.includes(c.id))
-      : channels;
+      : channels.filter(c => c.yt_id !== '__singles__');
 
     if (channelsToScan.length === 0) {
       showNotification('No channels selected', 'info');

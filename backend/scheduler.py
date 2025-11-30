@@ -176,7 +176,8 @@ class AutoRefreshScheduler:
             self.set_operation('auto_refresh', 'Queueing channel scans...')
 
         with get_session(self.session_factory) as session:
-            channels = session.query(Channel).all()
+            # Exclude Singles pseudo-channel from auto-scan
+            channels = session.query(Channel).filter(Channel.yt_id != '__singles__').all()
 
             if not channels:
                 logger.debug("Auto-scan: No channels to scan")
