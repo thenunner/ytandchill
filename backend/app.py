@@ -1650,10 +1650,8 @@ def queue_youtube_playlist_videos():
             singles_channel = Channel(
                 yt_id='__singles__',
                 title='Singles',
-                description='Container for imported single videos',
+                folder_name='Singles',
                 thumbnail=None,
-                subscriber_count=0,
-                video_count=0,
                 auto_download=False
             )
             session.add(singles_channel)
