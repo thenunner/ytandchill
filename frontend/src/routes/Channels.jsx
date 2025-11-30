@@ -819,6 +819,153 @@ export default function Channels() {
         <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
           {filteredAndSortedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
+            {/* Dropdown Menu - OUTSIDE card to avoid overflow:hidden clipping */}
+            {menuOpen === channel.id && (
+              <div className="absolute top-10 right-2 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-[100] w-[200px] animate-scale-in">
+                <div className="py-1 max-h-[400px] overflow-y-auto">
+                  {/* Duration Settings */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowDurationSettings(showDurationSettings === channel.id ? null : channel.id);
+                      setEditingChannel(channel);
+                      setMenuOpen(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
+                  >
+                    <span className="font-medium">Duration Settings</span>
+                  </button>
+
+                  {/* Auto-Download Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const newValue = !channel.auto_download;
+                      updateChannel.mutate({
+                        id: channel.id,
+                        data: { auto_download: newValue }
+                      }, {
+                        onSuccess: () => {
+                          showNotification(
+                            newValue
+                              ? `Auto-download enabled for ${channel.title}`
+                              : `Auto-download disabled for ${channel.title}`,
+                            'success'
+                          );
+                        }
+                      });
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={channel.auto_download || false}
+                      readOnly
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                    />
+                    <span className="font-medium">Auto-Download</span>
+                  </button>
+
+                  {/* Set Category - expands inline */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowCategorySubmenu(showCategorySubmenu === channel.id ? null : channel.id);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center justify-between"
+                  >
+                    <span className="font-medium">Set Category</span>
+                    <svg className={`w-4 h-4 text-text-muted transition-transform ${showCategorySubmenu === channel.id ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                  </button>
+
+                  {/* Category Options - inline expansion */}
+                  {showCategorySubmenu === channel.id && (
+                    <div className="bg-dark-tertiary/50 border-t border-dark-border">
+                      {/* Uncategorized option */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          updateChannel.mutate({
+                            id: channel.id,
+                            data: { category_id: null }
+                          }, {
+                            onSuccess: () => {
+                              showNotification(`${channel.title} set to Uncategorized`, 'success');
+                              setShowCategorySubmenu(null);
+                              setMenuOpen(null);
+                            }
+                          });
+                        }}
+                        className={`w-full px-6 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${!channel.category_id ? 'text-accent' : 'text-text-secondary italic'}`}
+                      >
+                        {!channel.category_id && (
+                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                            <polyline points="20 6 9 17 4 12" stroke="currentColor" strokeWidth="3" fill="none"></polyline>
+                          </svg>
+                        )}
+                        <span className={!channel.category_id ? '' : 'ml-5'}>Uncategorized</span>
+                      </button>
+
+                      {/* Category options */}
+                      {categories?.map(cat => (
+                        <button
+                          key={cat.id}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            updateChannel.mutate({
+                              id: channel.id,
+                              data: { category_id: cat.id }
+                            }, {
+                              onSuccess: () => {
+                                showNotification(`${channel.title} moved to ${cat.name}`, 'success');
+                                setShowCategorySubmenu(null);
+                                setMenuOpen(null);
+                              }
+                            });
+                          }}
+                          className={`w-full px-6 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${channel.category_id === cat.id ? 'text-accent' : 'text-text-primary'}`}
+                        >
+                          {channel.category_id === cat.id && (
+                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+                              <polyline points="20 6 9 17 4 12" stroke="currentColor" strokeWidth="3" fill="none"></polyline>
+                            </svg>
+                          )}
+                          <span className={channel.category_id === cat.id ? '' : 'ml-5'}>{cat.name}</span>
+                        </button>
+                      ))}
+
+                      {/* No categories message */}
+                      {(!categories || categories.length === 0) && (
+                        <div className="px-6 py-2 text-sm text-text-muted italic">
+                          No categories yet
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Delete Channel */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setDeleteConfirm({ id: channel.id, title: channel.title });
+                      setMenuOpen(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/30 transition-colors border-t border-dark-border"
+                  >
+                    <span className="font-medium">Delete Channel</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="card overflow-hidden hover:scale-100">
               {/* Top Header Bar - Checkbox, AUTO and Last Scanned with 3-dot menu */}
               <div className="flex items-center justify-between px-3 py-2 bg-dark-tertiary/50">
@@ -861,157 +1008,6 @@ export default function Channels() {
                         <circle cx="12" cy="19" r="2"></circle>
                       </svg>
                     </button>
-
-                    {/* Dropdown Menu - appears below 3-dot button */}
-                    {menuOpen === channel.id && (
-                      <div className="absolute top-full right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 w-[200px] animate-scale-in">
-                        <div className="py-1">
-                          {/* Duration Settings */}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setShowDurationSettings(showDurationSettings === channel.id ? null : channel.id);
-                              setEditingChannel(channel);
-                              setMenuOpen(null);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
-                          >
-                            <span className="font-medium">Duration Settings</span>
-                          </button>
-
-                          {/* Auto-Download Toggle */}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              const newValue = !channel.auto_download;
-                              updateChannel.mutate({
-                                id: channel.id,
-                                data: { auto_download: newValue }
-                              }, {
-                                onSuccess: () => {
-                                  showNotification(
-                                    newValue
-                                      ? `Auto-download enabled for ${channel.title}`
-                                      : `Auto-download disabled for ${channel.title}`,
-                                    'success'
-                                  );
-                                }
-                              });
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={channel.auto_download || false}
-                              readOnly
-                              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
-                            />
-                            <span className="font-medium">Auto-Download</span>
-                          </button>
-
-                          {/* Set Category */}
-                          <div className="relative">
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                setShowCategorySubmenu(showCategorySubmenu === channel.id ? null : channel.id);
-                              }}
-                              className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center justify-between"
-                            >
-                              <span className="font-medium">Set Category</span>
-                              <svg className="w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="9 18 15 12 9 6"></polyline>
-                              </svg>
-                            </button>
-
-                            {/* Category Submenu */}
-                            {showCategorySubmenu === channel.id && (
-                              <div className="absolute left-full top-0 ml-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 w-48 animate-scale-in">
-                                <div className="py-1 max-h-60 overflow-y-auto">
-                                  {/* Uncategorized option */}
-                                  <button
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      updateChannel.mutate({
-                                        id: channel.id,
-                                        data: { category_id: null }
-                                      }, {
-                                        onSuccess: () => {
-                                          showNotification(`${channel.title} set to Uncategorized`, 'success');
-                                          setShowCategorySubmenu(null);
-                                          setMenuOpen(null);
-                                        }
-                                      });
-                                    }}
-                                    className={`w-full px-4 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${!channel.category_id ? 'text-accent' : 'text-text-secondary italic'}`}
-                                  >
-                                    {!channel.category_id && (
-                                      <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                                        <polyline points="20 6 9 17 4 12" stroke="currentColor" strokeWidth="3" fill="none"></polyline>
-                                      </svg>
-                                    )}
-                                    <span className={!channel.category_id ? '' : 'ml-5'}>Uncategorized</span>
-                                  </button>
-
-                                  {/* Category options */}
-                                  {categories?.map(cat => (
-                                    <button
-                                      key={cat.id}
-                                      onClick={(e) => {
-                                        e.preventDefault();
-                                        e.stopPropagation();
-                                        updateChannel.mutate({
-                                          id: channel.id,
-                                          data: { category_id: cat.id }
-                                        }, {
-                                          onSuccess: () => {
-                                            showNotification(`${channel.title} moved to ${cat.name}`, 'success');
-                                            setShowCategorySubmenu(null);
-                                            setMenuOpen(null);
-                                          }
-                                        });
-                                      }}
-                                      className={`w-full px-4 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${channel.category_id === cat.id ? 'text-accent' : 'text-text-primary'}`}
-                                    >
-                                      {channel.category_id === cat.id && (
-                                        <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                                          <polyline points="20 6 9 17 4 12" stroke="currentColor" strokeWidth="3" fill="none"></polyline>
-                                        </svg>
-                                      )}
-                                      <span className={channel.category_id === cat.id ? '' : 'ml-5'}>{cat.name}</span>
-                                    </button>
-                                  ))}
-
-                                  {/* No categories message */}
-                                  {(!categories || categories.length === 0) && (
-                                    <div className="px-4 py-2 text-sm text-text-muted italic">
-                                      No categories yet
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Delete Channel */}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              setDeleteConfirm({ id: channel.id, title: channel.title });
-                              setMenuOpen(null);
-                            }}
-                            className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/30 transition-colors border-t border-dark-border"
-                          >
-                            <span className="font-medium">Delete Channel</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>
