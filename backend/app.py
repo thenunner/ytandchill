@@ -965,7 +965,8 @@ def health_check():
 @app.route('/api/channels', methods=['GET'])
 def get_channels():
     with get_session(session_factory) as session:
-        channels = session.query(Channel).all()
+        # Filter out soft-deleted channels
+        channels = session.query(Channel).filter(Channel.deleted_at.is_(None)).all()
         result = [serialize_channel(c) for c in channels]
         return jsonify(result)
 
@@ -1112,8 +1113,21 @@ def delete_channel(channel_id):
         if not channel:
             return jsonify({'error': 'Channel not found'}), 404
 
-        session.delete(channel)
-        session.commit()
+        # Soft delete: mark channel as deleted instead of removing
+        channel.deleted_at = datetime.now(timezone.utc)
+
+        # Clean up non-library videos (discovered, ignored, queued, etc.)
+        # but keep library videos so they remain in the user's library
+        non_library_videos = session.query(Video).filter(
+            Video.channel_id == channel_id,
+            Video.status != 'library'
+        ).all()
+
+        for video in non_library_videos:
+            session.delete(video)
+
+        # Also clean up any channel-specific playlists
+        session.query(Playlist).filter(Playlist.channel_id == channel_id).delete()
 
         return '', 204
 

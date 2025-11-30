@@ -953,8 +953,8 @@ export default function Channels() {
             <p className="text-text-secondary mb-4">
               Are you sure you want to delete "<span className="text-text-primary font-semibold">{deleteConfirm.title}</span>"?
             </p>
-            <p className="text-sm text-yellow-400 mb-6">
-              ⚠️ This will permanently delete all scanned videos from this channel. Downloaded videos in your library will not be affected.
+            <p className="text-sm text-text-muted mb-6">
+              This will remove the channel from your subscriptions and clear any pending/discovered videos. Downloaded videos will remain in your library.
             </p>
             <div className="flex gap-3">
               <button

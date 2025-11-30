@@ -22,8 +22,9 @@ class Channel(Base):
     last_scan_time = Column(DateTime)  # When the scan actually executed
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
-    videos = relationship('Video', back_populates='channel', cascade='all, delete-orphan')
+    deleted_at = Column(DateTime, nullable=True, index=True)  # Soft delete: NULL = active, set = deleted
+
+    videos = relationship('Video', back_populates='channel')
     playlists = relationship('Playlist', back_populates='channel', cascade='all, delete-orphan')
 
 class Video(Base):
