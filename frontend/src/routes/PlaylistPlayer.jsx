@@ -275,39 +275,9 @@ export default function PlaylistPlayer() {
     return `/api/media/${relativePath}`;
   }, []);
 
-  // Initialize Plyr and set source when currentVideo is available
+  // Initialize Plyr once (only on mount/unmount)
   useEffect(() => {
-    if (!currentVideo || !videoRef.current) return;
-
-    const videoSrc = getVideoSrc(currentVideo);
-    if (!videoSrc) return;
-
-    // Update refs for event handlers
-    currentVideoIdRef.current = currentVideo.id;
-    hasMarkedWatchedRef.current = currentVideo.watched || false;
-
-    // Update URL with current video ID
-    setSearchParams({ v: currentVideo.id }, { replace: true });
-
-    // If Plyr already exists, just update the source
-    if (plyrInstanceRef.current) {
-      plyrInstanceRef.current.source = {
-        type: 'video',
-        sources: [{ src: videoSrc, type: 'video/mp4' }],
-      };
-
-      // Restore playback position
-      plyrInstanceRef.current.once('loadedmetadata', () => {
-        if (currentVideo.playback_seconds > 0 && plyrInstanceRef.current) {
-          plyrInstanceRef.current.currentTime = currentVideo.playback_seconds;
-        }
-        plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
-      });
-      return;
-    }
-
-    // Initialize Plyr for the first time
-    console.log('Initializing Plyr with source:', videoSrc);
+    if (!videoRef.current || plyrInstanceRef.current) return;
 
     const player = new Plyr(videoRef.current, {
       controls: [
@@ -334,19 +304,6 @@ export default function PlaylistPlayer() {
     });
 
     plyrInstanceRef.current = player;
-
-    // Set source immediately after init
-    player.source = {
-      type: 'video',
-      sources: [{ src: videoSrc, type: 'video/mp4' }],
-    };
-
-    // Restore playback position when metadata loads
-    player.on('loadedmetadata', () => {
-      if (currentVideo.playback_seconds > 0) {
-        player.currentTime = currentVideo.playback_seconds;
-      }
-    });
 
     // Handle video end - advance to next
     player.on('ended', () => {
@@ -395,7 +352,36 @@ export default function PlaylistPlayer() {
         plyrInstanceRef.current = null;
       }
     };
-  }, [currentVideo?.id]);
+  }, [updateVideo]);
+
+  // Update source when currentVideo changes
+  useEffect(() => {
+    if (!currentVideo || !plyrInstanceRef.current) return;
+
+    const videoSrc = getVideoSrc(currentVideo);
+    if (!videoSrc) return;
+
+    // Update refs for event handlers
+    currentVideoIdRef.current = currentVideo.id;
+    hasMarkedWatchedRef.current = currentVideo.watched || false;
+
+    // Update URL with current video ID
+    setSearchParams({ v: currentVideo.id }, { replace: true });
+
+    // Update source
+    plyrInstanceRef.current.source = {
+      type: 'video',
+      sources: [{ src: videoSrc, type: 'video/mp4' }],
+    };
+
+    // Restore playback position after source loads
+    plyrInstanceRef.current.once('loadedmetadata', () => {
+      if (currentVideo.playback_seconds > 0 && plyrInstanceRef.current) {
+        plyrInstanceRef.current.currentTime = currentVideo.playback_seconds;
+      }
+      plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
+    });
+  }, [currentVideo?.id, getVideoSrc, setSearchParams]);
 
   // Scroll current video into view
   useEffect(() => {
