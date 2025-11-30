@@ -7,10 +7,13 @@ import api from './api/client';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
 import ChannelLibrary from './routes/ChannelLibrary';
+import SinglesLibrary from './routes/SinglesLibrary';
 import Playlist from './routes/Playlist';
+import YouTubePlaylists from './routes/YouTubePlaylists';
 import Queue from './routes/Queue';
 import Settings from './routes/Settings';
 import Player from './routes/Player';
+import PlaylistPlayer from './routes/PlaylistPlayer';
 import Setup from './routes/Setup';
 import Login from './routes/Login';
 
@@ -111,6 +114,19 @@ function App() {
       icon: (
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M21 2H3v16h5v4l4-4h5l4-4V2zm-10 9V7m5 4V7"></path>
+        </svg>
+      )
+    },
+    {
+      path: '/videos',
+      label: 'Videos',
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
         </svg>
       )
     },
@@ -427,13 +443,17 @@ function App() {
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
+          <Route path="/videos" element={isAuthenticated ? <YouTubePlaylists /> : <Navigate to="/login" replace />} />
           <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
           <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
           <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+          <Route path="/singles/:folderName" element={isAuthenticated ? <SinglesLibrary /> : <Navigate to="/login" replace />} />
           <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
           <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
           <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
           <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
+          <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
+          <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
         </Routes>
       </main>
     </div>

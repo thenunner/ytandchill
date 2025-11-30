@@ -31,6 +31,13 @@ export default function Library() {
   });
   const [showChannelSortMenu, setShowChannelSortMenu] = useState(false);
 
+  // Singles filters with localStorage persistence
+  const [singlesSortBy, setSinglesSortBy] = useState(() => {
+    return localStorage.getItem('library_singlesSortBy') || 'a_z';
+  });
+  const [showSinglesSortMenu, setShowSinglesSortMenu] = useState(false);
+  const [singlesViewMode, setSinglesViewMode] = useState(localStorage.getItem('singlesViewMode') || 'grid');
+
   const deletePlaylist = useDeletePlaylist();
   const updatePlaylist = useUpdatePlaylist();
   const { showNotification } = useNotification();
@@ -38,6 +45,7 @@ export default function Library() {
   const menuRef = useRef(null);
   const playlistSortMenuRef = useRef(null);
   const channelSortMenuRef = useRef(null);
+  const singlesSortMenuRef = useRef(null);
   const categoryMenuRef = useRef(null);
 
   // Category hooks and state
@@ -74,7 +82,7 @@ export default function Library() {
   // Sync activeTab with URL parameter
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam === 'playlists' || tabParam === 'channels') {
+    if (tabParam === 'playlists' || tabParam === 'channels' || tabParam === 'singles') {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
@@ -88,6 +96,16 @@ export default function Library() {
   useEffect(() => {
     localStorage.setItem('library_channelSortBy', channelSortBy);
   }, [channelSortBy]);
+
+  // Persist singles filters to localStorage
+  useEffect(() => {
+    localStorage.setItem('library_singlesSortBy', singlesSortBy);
+  }, [singlesSortBy]);
+
+  // Persist singles view mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('singlesViewMode', singlesViewMode);
+  }, [singlesViewMode]);
 
   // Persist expanded categories to localStorage
   useEffect(() => {
@@ -142,16 +160,26 @@ export default function Library() {
   // Fetch all playlists
   const { data: playlists, isLoading: playlistsLoading } = usePlaylists();
 
-  // Group videos by channel and get channel info - memoized to prevent thumbnail flickering
+  // Group videos by channel OR folder_name (for playlist videos) - memoized to prevent thumbnail flickering
+  // This creates a flat list of all folders: channel folders + playlist folders
   const allChannelsList = useMemo(() => {
     if (!videos) return [];
 
     return Object.values(videos.reduce((acc, video) => {
-      const channelId = video.channel_id;
-      if (!acc[channelId]) {
-        acc[channelId] = {
-          id: channelId,
-          title: video.channel_title,
+      // Use channel_id if present, otherwise use folder_name prefixed with 'playlist_'
+      // This creates unique keys for both channel and playlist folders
+      const folderId = video.channel_id
+        ? `channel_${video.channel_id}`
+        : (video.folder_name ? `playlist_${video.folder_name}` : null);
+
+      // Skip videos with no channel and no folder_name
+      if (!folderId) return acc;
+
+      if (!acc[folderId]) {
+        acc[folderId] = {
+          id: video.channel_id || video.folder_name,  // Use channel_id or folder_name as ID
+          title: video.channel_title || video.folder_name,  // Use channel title or folder_name
+          isPlaylistFolder: !video.channel_id,  // Flag to identify playlist folders
           videoCount: 0,
           totalSizeBytes: 0,
           videos: [],  // Store all videos for random thumbnail selection
@@ -159,34 +187,36 @@ export default function Library() {
           lastAddedAt: null,
         };
       }
-      acc[channelId].videoCount++;
-      acc[channelId].totalSizeBytes += video.file_size_bytes || 0;
-      acc[channelId].videos.push(video);
+      acc[folderId].videoCount++;
+      acc[folderId].totalSizeBytes += video.file_size_bytes || 0;
+      acc[folderId].videos.push(video);
       if (video.watched) {
-        acc[channelId].watchedCount++;
+        acc[folderId].watchedCount++;
       }
       // Track most recent downloaded_at
       if (video.downloaded_at) {
-        if (!acc[channelId].lastAddedAt || new Date(video.downloaded_at) > new Date(acc[channelId].lastAddedAt)) {
-          acc[channelId].lastAddedAt = video.downloaded_at;
+        if (!acc[folderId].lastAddedAt || new Date(video.downloaded_at) > new Date(acc[folderId].lastAddedAt)) {
+          acc[folderId].lastAddedAt = video.downloaded_at;
         }
       }
       return acc;
-    }, {})).map(channel => {
-      // Pick a random video thumbnail for this channel (only once per video list)
-      const randomVideo = channel.videos[Math.floor(Math.random() * channel.videos.length)];
+    }, {})).map(folder => {
+      // Pick a random video thumbnail for this folder (only once per video list)
+      const randomVideo = folder.videos[Math.floor(Math.random() * folder.videos.length)];
       return {
-        ...channel,
+        ...folder,
         thumbnail: randomVideo.thumb_url,
-        allWatched: channel.watchedCount === channel.videoCount,
+        allWatched: folder.watchedCount === folder.videoCount,
       };
     });
   }, [videos]);
 
-  // Filter and sort channels based on search input
+  // Filter and sort channels based on search input (only actual channel folders, not singles)
   const channelsList = useMemo(() => {
-    // First filter by search
+    // First filter by search and exclude singles folders
     const filtered = allChannelsList.filter(channel => {
+      // Only show actual channel folders, not singles
+      if (channel.isPlaylistFolder) return false;
       // Search filter
       if (!(channel.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
         return false;
@@ -217,16 +247,58 @@ export default function Library() {
     return sorted;
   }, [allChannelsList, searchInput, channelSortBy]);
 
+  // Filter and sort singles folders based on search input
+  const singlesList = useMemo(() => {
+    // First filter by search and only include singles folders
+    const filtered = allChannelsList.filter(folder => {
+      // Only show singles folders (imported via Videos tab)
+      if (!folder.isPlaylistFolder) return false;
+      // Search filter
+      if (!(folder.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+        return false;
+      }
+      return true;
+    });
+
+    // Then sort based on selected option
+    const sorted = [...filtered].sort((a, b) => {
+      switch (singlesSortBy) {
+        case 'a_z':
+          return (a.title || '').localeCompare(b.title || '');
+        case 'z_a':
+          return (b.title || '').localeCompare(a.title || '');
+        case 'most_videos':
+          return b.videoCount - a.videoCount;
+        case 'least_videos':
+          return a.videoCount - b.videoCount;
+        case 'newest_added':
+          return new Date(b.lastAddedAt || 0) - new Date(a.lastAddedAt || 0);
+        case 'oldest_added':
+          return new Date(a.lastAddedAt || 0) - new Date(b.lastAddedAt || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return sorted;
+  }, [allChannelsList, searchInput, singlesSortBy]);
+
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchInput, channelSortBy, playlistSortBy, activeTab]);
+  }, [searchInput, channelSortBy, playlistSortBy, singlesSortBy, activeTab]);
 
   // Paginate channels list
   const paginatedChannelsList = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return channelsList.slice(startIndex, startIndex + itemsPerPage);
   }, [channelsList, currentPage, itemsPerPage]);
+
+  // Paginate singles list
+  const paginatedSinglesList = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return singlesList.slice(startIndex, startIndex + itemsPerPage);
+  }, [singlesList, currentPage, itemsPerPage]);
 
   // Filter and sort playlists
   const filteredPlaylists = useMemo(() => {
@@ -313,6 +385,10 @@ export default function Library() {
       // Close channel sort menu if clicking outside
       if (channelSortMenuRef.current && !channelSortMenuRef.current.contains(event.target)) {
         setShowChannelSortMenu(false);
+      }
+      // Close singles sort menu if clicking outside
+      if (singlesSortMenuRef.current && !singlesSortMenuRef.current.contains(event.target)) {
+        setShowSinglesSortMenu(false);
       }
       // Close category menu if clicking outside
       if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target)) {
@@ -515,6 +591,16 @@ export default function Library() {
                 Channels
               </button>
               <button
+                onClick={() => setActiveTab('singles')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'singles'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                }`}
+              >
+                Singles
+              </button>
+              <button
                 onClick={() => setActiveTab('playlists')}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === 'playlists'
@@ -680,6 +766,197 @@ export default function Library() {
               }}
             />
           </div>
+        ) : activeTab === 'singles' ? (
+          /* Singles: Responsive layout - wraps on mobile */
+          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+            {/* Tabs */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('channels')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'channels'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                }`}
+              >
+                Channels
+              </button>
+              <button
+                onClick={() => setActiveTab('singles')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'singles'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                }`}
+              >
+                Singles
+              </button>
+              <button
+                onClick={() => setActiveTab('playlists')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'playlists'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                }`}
+              >
+                Playlists
+              </button>
+            </div>
+
+            {/* Search - Full width on mobile */}
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search folders..."
+              className="search-input w-full sm:w-[180px]"
+            />
+
+            {/* Sort Button */}
+            <div className="relative" ref={singlesSortMenuRef}>
+              <button
+                onClick={() => setShowSinglesSortMenu(!showSinglesSortMenu)}
+                className="filter-btn"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="4" y1="6" x2="16" y2="6"></line>
+                  <line x1="4" y1="12" x2="13" y2="12"></line>
+                  <line x1="4" y1="18" x2="10" y2="18"></line>
+                </svg>
+                <span>Sort</span>
+              </button>
+
+              {/* Sort Dropdown Menu */}
+              {showSinglesSortMenu && (
+                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
+                  <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
+
+                  {/* A-Z / Z-A */}
+                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex gap-4">
+                        <button
+                          onClick={() => { setSinglesSortBy('a_z'); setShowSinglesSortMenu(false); }}
+                          className={`${singlesSortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
+                        >
+                          A-Z
+                        </button>
+                        <button
+                          onClick={() => { setSinglesSortBy('z_a'); setShowSinglesSortMenu(false); }}
+                          className={`${singlesSortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
+                        >
+                          Z-A
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Videos */}
+                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-text-primary">Videos</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => { setSinglesSortBy('most_videos'); setShowSinglesSortMenu(false); }}
+                          className={`p-1 rounded ${singlesSortBy === 'most_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                          title="Most Videos"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M12 5v14M5 12l7-7 7 7"></path>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => { setSinglesSortBy('least_videos'); setShowSinglesSortMenu(false); }}
+                          className={`p-1 rounded ${singlesSortBy === 'least_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                          title="Least Videos"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M12 19V5M5 12l7 7 7-7"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Added */}
+                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                    <div className="flex items-center gap-3 text-sm">
+                      <span className="text-text-primary">Added</span>
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => { setSinglesSortBy('newest_added'); setShowSinglesSortMenu(false); }}
+                          className={`p-1 rounded ${singlesSortBy === 'newest_added' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                          title="Newest Added"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M12 5v14M5 12l7-7 7 7"></path>
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => { setSinglesSortBy('oldest_added'); setShowSinglesSortMenu(false); }}
+                          className={`p-1 rounded ${singlesSortBy === 'oldest_added' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                          title="Oldest Added"
+                        >
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                            <path d="M12 19V5M5 12l7 7 7-7"></path>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setSinglesViewMode('grid')}
+                className={`p-2 rounded-lg border transition-all ${
+                  singlesViewMode === 'grid'
+                    ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
+                    : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
+                }`}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+              </button>
+              <button
+                onClick={() => setSinglesViewMode('list')}
+                className={`p-2 rounded-lg border transition-all ${
+                  singlesViewMode === 'list'
+                    ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
+                    : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
+                }`}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+
+            {/* Pagination */}
+            <Pagination
+              currentPage={currentPage}
+              totalItems={singlesList.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(value) => {
+                setItemsPerPage(value);
+                localStorage.setItem('library_itemsPerPage', value);
+                setCurrentPage(1);
+              }}
+            />
+          </div>
         ) : (
           /* Playlists: Responsive layout - wraps on mobile */
           <div className="flex flex-wrap items-center gap-3 md:gap-4">
@@ -694,6 +971,16 @@ export default function Library() {
                   }`}
                 >
                   Channels
+                </button>
+                <button
+                  onClick={() => setActiveTab('singles')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'singles'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                  }`}
+                >
+                  Singles
                 </button>
                 <button
                   onClick={() => setActiveTab('playlists')}
@@ -1017,6 +1304,132 @@ export default function Library() {
         </>
       )}
 
+      {/* Singles Tab */}
+      {activeTab === 'singles' && (
+        <>
+          {singlesList.length === 0 ? (
+            <div className="text-center py-20 text-text-secondary">
+              <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} />
+              </svg>
+              {allChannelsList.some(f => f.isPlaylistFolder) && searchInput ? (
+                <>
+                  <p className="text-lg font-medium">No folders match filters</p>
+                  <p className="text-sm mt-2">Remove filters to see them</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-lg font-medium">No imported videos</p>
+                  <p className="text-sm mt-2">Import videos via the Videos tab to see them here</p>
+                </>
+              )}
+            </div>
+          ) : singlesViewMode === 'grid' ? (
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
+          {paginatedSinglesList.map(folder => (
+            <Link
+              key={folder.id}
+              to={`/singles/${encodeURIComponent(folder.id)}`}
+              className="card group transition-colors"
+            >
+              {/* Thumbnail */}
+              <div className="relative aspect-video bg-dark-tertiary rounded-t-xl overflow-hidden">
+                {folder.thumbnail ? (
+                  <img
+                    src={folder.thumbnail}
+                    alt={folder.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <svg className="w-10 h-10 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                    </svg>
+                  </div>
+                )}
+                {/* Last Added Badge */}
+                {folder.lastAddedAt && (
+                  <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                    Last: {formatLastAdded(folder.lastAddedAt)}
+                  </div>
+                )}
+              </div>
+
+              {/* Folder Info */}
+              <div className="p-3">
+                <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors truncate mb-1" title={folder.title}>
+                  {folder.title}
+                </h3>
+                <div className="flex items-center justify-between text-sm text-text-secondary">
+                  <span>{folder.videoCount} video{folder.videoCount !== 1 ? 's' : ''}</span>
+                  <span>{formatFileSize(folder.totalSizeBytes)}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+          {paginatedSinglesList.map(folder => (
+            <Link
+              key={folder.id}
+              to={`/singles/${encodeURIComponent(folder.id)}`}
+              className="card p-0 group hover:bg-dark-hover transition-colors flex items-stretch gap-3 w-full max-w-3xl"
+            >
+              {/* Thumbnail - Full height */}
+              <div className="relative w-32 bg-dark-tertiary rounded-l-lg overflow-hidden flex-shrink-0">
+                {folder.thumbnail ? (
+                  <img
+                    src={folder.thumbnail}
+                    alt={folder.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              {/* Folder Info */}
+              <div className="py-2">
+                <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors whitespace-nowrap">
+                  {folder.title}
+                </h3>
+                <p className="text-sm text-text-secondary whitespace-nowrap">
+                  {folder.videoCount} video{folder.videoCount !== 1 ? 's' : ''}
+                  {folder.lastAddedAt && (
+                    <> • Last Added: {formatLastAdded(folder.lastAddedAt)}</>
+                  )}
+                </p>
+              </div>
+            </Link>
+          ))}
+            </div>
+          )}
+
+          {/* Bottom Pagination */}
+          {singlesList.length > 0 && (
+            <div className="flex justify-center mt-6">
+              <Pagination
+                currentPage={currentPage}
+                totalItems={singlesList.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value);
+                  localStorage.setItem('library_itemsPerPage', value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          )}
+        </>
+      )}
+
       {/* Playlists Tab */}
       {activeTab === 'playlists' && (
         <div key={`playlists-${playlistViewMode}`}>
@@ -1075,6 +1488,19 @@ export default function Library() {
                         {/* Category Dropdown Menu */}
                         {activeCategoryMenuId === categoryId && (
                           <div className="absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/play/category/${categoryId}`);
+                                setActiveCategoryMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M8 5v14l11-7z"/>
+                              </svg>
+                              Play All
+                            </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -1177,6 +1603,19 @@ export default function Library() {
 
                                       {activeMenuId === playlist.id && (
                                         <div className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50">
+                                          <button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              navigate(`/play/playlist/${playlist.id}`);
+                                              setActiveMenuId(null);
+                                            }}
+                                            className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                          >
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                              <path d="M8 5v14l11-7z"/>
+                                            </svg>
+                                            Play All
+                                          </button>
                                           <button
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -1290,6 +1729,16 @@ export default function Library() {
                                       showMenu ? 'w-[140px] opacity-100 pr-3' : 'w-0 opacity-0'
                                     }`}
                                   >
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/play/playlist/${playlist.id}`);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                    >
+                                      Play All
+                                    </button>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
@@ -1468,6 +1917,19 @@ export default function Library() {
                                       <button
                                         onClick={(e) => {
                                           e.stopPropagation();
+                                          navigate(`/play/playlist/${playlist.id}`);
+                                          setActiveMenuId(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                      >
+                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                          <path d="M8 5v14l11-7z"/>
+                                        </svg>
+                                        Play All
+                                      </button>
+                                      <button
+                                        onClick={(e) => {
+                                          e.stopPropagation();
                                           setRenamePlaylistId(playlist.id);
                                           setRenameValue(playlist.title || playlist.name || '');
                                           setShowRenameModal(true);
@@ -1577,6 +2039,16 @@ export default function Library() {
                                   showMenu ? 'w-[140px] opacity-100 pr-3' : 'w-0 opacity-0'
                                 }`}
                               >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/play/playlist/${playlist.id}`);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                >
+                                  Play All
+                                </button>
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();

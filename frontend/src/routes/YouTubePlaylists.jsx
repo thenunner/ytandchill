@@ -1,0 +1,383 @@
+import { useState, useRef, useEffect } from 'react';
+import { useScanYouTubePlaylist, useQueuePlaylistVideos, useSinglesFolders } from '../api/queries';
+import { useNotification } from '../contexts/NotificationContext';
+
+export default function YouTubePlaylists() {
+  const { showNotification } = useNotification();
+  const scanPlaylist = useScanYouTubePlaylist();
+  const queueVideos = useQueuePlaylistVideos();
+  const { data: existingFolders = [], refetch: refetchFolders } = useSinglesFolders();
+
+  // State
+  const [playlistUrl, setPlaylistUrl] = useState('');
+  const [scanResults, setScanResults] = useState(null);
+  const [selectedVideos, setSelectedVideos] = useState(new Set());
+  const [folderName, setFolderName] = useState('');
+  const [showFolderDropdown, setShowFolderDropdown] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const [isQueueing, setIsQueueing] = useState(false);
+
+  const folderDropdownRef = useRef(null);
+
+  // Close folder dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (folderDropdownRef.current && !folderDropdownRef.current.contains(event.target)) {
+        setShowFolderDropdown(false);
+      }
+    };
+
+    if (showFolderDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showFolderDropdown]);
+
+  const handleScan = async (e) => {
+    e.preventDefault();
+    if (!playlistUrl.trim()) {
+      showNotification('Please enter a playlist URL', 'error');
+      return;
+    }
+
+    setIsScanning(true);
+    setScanResults(null);
+    setSelectedVideos(new Set());
+
+    try {
+      const result = await scanPlaylist.mutateAsync(playlistUrl);
+      setScanResults(result);
+
+      if (result.videos.length === 0) {
+        showNotification(
+          result.total_in_playlist > 0
+            ? `All ${result.total_in_playlist} videos already in your library`
+            : 'No videos found in playlist',
+          'info'
+        );
+      } else {
+        showNotification(
+          `Found ${result.new_videos_count} new videos (${result.already_in_db} already downloaded)`,
+          'success'
+        );
+        // Auto-select all new videos
+        setSelectedVideos(new Set(result.videos.map(v => v.yt_id)));
+      }
+    } catch (error) {
+      showNotification(error.message || 'Failed to scan playlist', 'error');
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (scanResults?.videos) {
+      setSelectedVideos(new Set(scanResults.videos.map(v => v.yt_id)));
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedVideos(new Set());
+  };
+
+  const handleToggleSelect = (ytId) => {
+    const newSelected = new Set(selectedVideos);
+    if (newSelected.has(ytId)) {
+      newSelected.delete(ytId);
+    } else {
+      newSelected.add(ytId);
+    }
+    setSelectedVideos(newSelected);
+  };
+
+  const handleRemoveSelected = () => {
+    if (scanResults?.videos) {
+      const remainingVideos = scanResults.videos.filter(v => !selectedVideos.has(v.yt_id));
+      setScanResults({ ...scanResults, videos: remainingVideos });
+      setSelectedVideos(new Set());
+    }
+  };
+
+  const handleQueueSelected = async () => {
+    if (selectedVideos.size === 0) {
+      showNotification('No videos selected', 'error');
+      return;
+    }
+
+    if (!folderName.trim()) {
+      showNotification('Please enter a folder name', 'error');
+      return;
+    }
+
+    setIsQueueing(true);
+
+    try {
+      const videosToQueue = scanResults.videos.filter(v => selectedVideos.has(v.yt_id));
+      const result = await queueVideos.mutateAsync({
+        videos: videosToQueue,
+        folderName: folderName.trim()
+      });
+
+      showNotification(
+        `Queued ${result.queued} videos to Singles/${result.folder_name}`,
+        'success'
+      );
+
+      // Remove queued videos from results
+      const remainingVideos = scanResults.videos.filter(v => !selectedVideos.has(v.yt_id));
+      setScanResults({ ...scanResults, videos: remainingVideos });
+      setSelectedVideos(new Set());
+
+      // Refresh folder list
+      refetchFolders();
+
+    } catch (error) {
+      showNotification(error.message || 'Failed to queue videos', 'error');
+    } finally {
+      setIsQueueing(false);
+    }
+  };
+
+  const formatDuration = (seconds) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return hrs > 0
+      ? `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+      : `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '';
+    const year = dateStr.slice(0, 4);
+    const month = dateStr.slice(4, 6);
+    const day = dateStr.slice(6, 8);
+    return `${month}/${day}/${year}`;
+  };
+
+  return (
+    <div className="p-4 space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-xl font-bold text-text-primary">Import YouTube Playlist</h1>
+      </div>
+
+      {/* Scan Form */}
+      <form onSubmit={handleScan} className="bg-dark-secondary rounded-lg p-4">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            type="text"
+            value={playlistUrl}
+            onChange={(e) => setPlaylistUrl(e.target.value)}
+            placeholder="Paste YouTube playlist URL (e.g., youtube.com/playlist?list=PLxxxxx)"
+            className="flex-1 bg-dark-tertiary border border-dark-border rounded-lg px-4 py-2 text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
+            disabled={isScanning}
+          />
+          <button
+            type="submit"
+            disabled={isScanning || !playlistUrl.trim()}
+            className="px-6 py-2 bg-accent hover:bg-accent/80 disabled:bg-dark-tertiary disabled:text-text-secondary text-white font-semibold rounded-lg transition-colors"
+          >
+            {isScanning ? (
+              <span className="flex items-center gap-2">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                </svg>
+                Scanning...
+              </span>
+            ) : (
+              'Scan Playlist'
+            )}
+          </button>
+        </div>
+      </form>
+
+      {/* Results Summary */}
+      {scanResults && (
+        <div className="bg-dark-secondary rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="text-text-secondary">
+              {scanResults.videos.length === 0 ? (
+                <span>No new videos to import</span>
+              ) : (
+                <span>
+                  Found <span className="text-text-primary font-semibold">{scanResults.videos.length}</span> new videos
+                  {scanResults.already_in_db > 0 && (
+                    <span className="text-text-muted"> ({scanResults.already_in_db} already downloaded)</span>
+                  )}
+                </span>
+              )}
+            </div>
+
+            {scanResults.videos.length > 0 && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleSelectAll}
+                  className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-border text-text-secondary rounded-lg transition-colors"
+                >
+                  Select All
+                </button>
+                <button
+                  onClick={handleClearSelection}
+                  className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-border text-text-secondary rounded-lg transition-colors"
+                >
+                  Clear
+                </button>
+                <span className="text-text-muted text-sm">
+                  {selectedVideos.size} selected
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Action Bar */}
+          {scanResults.videos.length > 0 && selectedVideos.size > 0 && (
+            <div className="mt-4 pt-4 border-t border-dark-border flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              {/* Folder Selection */}
+              <div className="relative flex-1" ref={folderDropdownRef}>
+                <div className="flex">
+                  <input
+                    type="text"
+                    value={folderName}
+                    onChange={(e) => setFolderName(e.target.value)}
+                    placeholder="Folder name (e.g., Tech_Tutorials)"
+                    className="flex-1 bg-dark-tertiary border border-dark-border rounded-l-lg px-4 py-2 text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowFolderDropdown(!showFolderDropdown)}
+                    className="px-3 bg-dark-tertiary border border-l-0 border-dark-border rounded-r-lg text-text-secondary hover:bg-dark-border transition-colors"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M6 9l6 6 6-6" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Folder Dropdown */}
+                {showFolderDropdown && existingFolders.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
+                    {existingFolders.map((folder) => (
+                      <button
+                        key={folder}
+                        onClick={() => {
+                          setFolderName(folder);
+                          setShowFolderDropdown(false);
+                        }}
+                        className="w-full text-left px-4 py-2 text-text-secondary hover:bg-dark-tertiary transition-colors"
+                      >
+                        {folder}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handleRemoveSelected}
+                  className="px-4 py-2 bg-dark-tertiary hover:bg-red-500/20 text-text-secondary hover:text-red-400 rounded-lg transition-colors"
+                >
+                  Remove
+                </button>
+                <button
+                  onClick={handleQueueSelected}
+                  disabled={isQueueing || !folderName.trim()}
+                  className="px-4 py-2 bg-accent hover:bg-accent/80 disabled:bg-dark-tertiary disabled:text-text-secondary text-white font-semibold rounded-lg transition-colors"
+                >
+                  {isQueueing ? 'Queueing...' : `Queue ${selectedVideos.size} Videos`}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Video Grid */}
+      {scanResults?.videos && scanResults.videos.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {scanResults.videos.map((video) => (
+            <div
+              key={video.yt_id}
+              onClick={() => handleToggleSelect(video.yt_id)}
+              className={`bg-dark-secondary rounded-lg overflow-hidden cursor-pointer transition-all ${
+                selectedVideos.has(video.yt_id)
+                  ? 'ring-2 ring-accent'
+                  : 'hover:bg-dark-tertiary'
+              }`}
+            >
+              {/* Thumbnail */}
+              <div className="relative aspect-video bg-dark-tertiary">
+                {video.thumbnail ? (
+                  <img
+                    src={video.thumbnail}
+                    alt={video.title}
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-text-muted">
+                    <svg className="w-12 h-12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="2" y="2" width="20" height="20" rx="2" />
+                      <path d="M10 8l6 4-6 4V8z" fill="currentColor" />
+                    </svg>
+                  </div>
+                )}
+
+                {/* Duration Badge */}
+                <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
+                  {formatDuration(video.duration_sec)}
+                </div>
+
+                {/* Selection Indicator */}
+                <div className={`absolute top-2 left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                  selectedVideos.has(video.yt_id)
+                    ? 'bg-accent border-accent'
+                    : 'bg-black/50 border-white/50'
+                }`}>
+                  {selectedVideos.has(video.yt_id) && (
+                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <path d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+
+              {/* Video Info */}
+              <div className="p-3">
+                <h3 className="text-text-primary font-medium text-sm line-clamp-2 mb-1">
+                  {video.title}
+                </h3>
+                <div className="flex items-center gap-2 text-xs text-text-secondary">
+                  <span>{video.channel_title}</span>
+                  {video.upload_date && (
+                    <>
+                      <span>•</span>
+                      <span>{formatDate(video.upload_date)}</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!scanResults && !isScanning && (
+        <div className="bg-dark-secondary rounded-lg p-8 text-center">
+          <svg className="w-16 h-16 mx-auto text-text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+          </svg>
+          <h3 className="text-text-primary font-semibold mb-2">Import Videos from YouTube Playlists</h3>
+          <p className="text-text-secondary text-sm max-w-md mx-auto">
+            Paste a YouTube playlist URL above to scan for videos. You can select which videos to download
+            and organize them into folders.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -806,6 +806,7 @@ def serialize_video(video):
         'yt_id': video.yt_id,
         'channel_id': video.channel_id,
         'channel_title': video.channel.title if video.channel else None,
+        'folder_name': video.folder_name,  # For playlist videos without channel
         'title': video.title,
         'duration_sec': video.duration_sec,
         'upload_date': video.upload_date,
@@ -1204,6 +1205,7 @@ def get_videos():
     with get_session(session_factory) as session:
         # Parse query parameters
         channel_id = request.args.get('channel_id', type=int)
+        folder_name = request.args.get('folder_name')  # For playlist videos
         status = request.args.get('status')
         watched = request.args.get('watched')
         ignored = request.args.get('ignored')
@@ -1229,6 +1231,8 @@ def get_videos():
 
         if channel_id:
             query = query.filter(Video.channel_id == channel_id)
+        if folder_name:
+            query = query.filter(Video.folder_name == folder_name)
         # Handle ignored filter (includes both 'ignored' and 'geoblocked' statuses)
         if ignored is not None:
             has_ignored = ignored.lower() == 'true'
@@ -1559,6 +1563,145 @@ def bulk_assign_category():
             'updated_count': updated_count,
             'total_requested': len(playlist_ids)
         })
+
+# ==================== YOUTUBE PLAYLIST IMPORT ENDPOINTS ====================
+
+@app.route('/api/youtube-playlists/scan', methods=['POST'])
+def scan_youtube_playlist():
+    """Scan a YouTube playlist URL and return videos not already in DB."""
+    data = request.json
+    url = data.get('url', '')
+
+    if not url:
+        return jsonify({'error': 'URL is required'}), 400
+
+    # Extract playlist ID from URL
+    playlist_id = YouTubeAPIClient.extract_playlist_id(url)
+    if not playlist_id:
+        return jsonify({'error': 'Invalid YouTube playlist URL. URL must contain ?list= parameter'}), 400
+
+    logger.info(f"Scanning YouTube playlist: {playlist_id}")
+    set_operation('scanning', f"Scanning YouTube playlist...")
+
+    try:
+        youtube = get_youtube_client()
+        videos = youtube.get_playlist_videos(playlist_id)
+
+        # Filter out videos already in DB
+        with get_session(session_factory) as session:
+            existing_yt_ids = set(
+                v.yt_id for v in session.query(Video.yt_id).all()
+            )
+            new_videos = [v for v in videos if v['yt_id'] not in existing_yt_ids]
+
+        already_in_db = len(videos) - len(new_videos)
+        logger.info(f"Playlist scan complete: {len(videos)} total, {len(new_videos)} new, {already_in_db} already in DB")
+
+        # Clear operation status
+        clear_operation()
+
+        return jsonify({
+            'total_in_playlist': len(videos),
+            'new_videos_count': len(new_videos),
+            'already_in_db': already_in_db,
+            'videos': new_videos
+        })
+
+    except HttpError as e:
+        logger.error(f"YouTube API error scanning playlist: {e}")
+        clear_operation()
+        return jsonify({'error': f'YouTube API error: {str(e)}'}), 500
+    except ValueError as e:
+        logger.error(f"Configuration error: {e}")
+        clear_operation()
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        logger.error(f"Error scanning playlist: {e}", exc_info=True)
+        clear_operation()
+        return jsonify({'error': f'Failed to scan playlist: {str(e)}'}), 500
+
+@app.route('/api/youtube-playlists/queue', methods=['POST'])
+def queue_youtube_playlist_videos():
+    """Queue videos from a YouTube playlist for download."""
+    data = request.json
+    videos_data = data.get('videos', [])
+    folder_name = data.get('folder_name', '').strip()
+
+    if not videos_data:
+        return jsonify({'error': 'No videos provided'}), 400
+
+    if not folder_name:
+        return jsonify({'error': 'Folder name is required'}), 400
+
+    # Sanitize folder name (remove special characters)
+    import re
+    folder_name = re.sub(r'[<>:"/\\|?*]', '_', folder_name)
+
+    logger.info(f"Queueing {len(videos_data)} videos to folder: Singles/{folder_name}")
+
+    with get_session(session_factory) as session:
+        added = 0
+        skipped = 0
+
+        # Get max queue position once
+        max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
+
+        for v in videos_data:
+            # Check if video already exists by yt_id
+            existing = session.query(Video).filter(Video.yt_id == v['yt_id']).first()
+            if existing:
+                logger.debug(f"Skipping existing video: {v['yt_id']}")
+                skipped += 1
+                continue
+
+            # Create video record
+            video = Video(
+                yt_id=v['yt_id'],
+                title=v['title'],
+                duration_sec=v.get('duration_sec', 0),
+                upload_date=v.get('upload_date'),
+                thumb_url=v.get('thumbnail'),
+                channel_id=None,  # Not tied to a channel
+                folder_name=folder_name,
+                status='queued'
+            )
+            session.add(video)
+            session.flush()  # Get the video ID
+
+            # Add to queue
+            max_pos += 1
+            queue_item = QueueItem(video_id=video.id, queue_position=max_pos)
+            session.add(queue_item)
+            added += 1
+            logger.debug(f"Queued video: {v['title']} (ID: {video.id})")
+
+        session.commit()
+
+    logger.info(f"Playlist queue complete: {added} added, {skipped} skipped")
+
+    # Auto-resume the download worker
+    if added > 0 and download_worker.paused:
+        download_worker.resume()
+        logger.info("Auto-resumed download worker after queueing playlist videos")
+
+    return jsonify({
+        'queued': added,
+        'skipped': skipped,
+        'folder_name': folder_name
+    })
+
+@app.route('/api/singles-folders', methods=['GET'])
+def get_singles_folders():
+    """Return list of existing Singles folder names for dropdown."""
+    singles_dir = os.path.join('downloads', 'Singles')
+
+    if not os.path.exists(singles_dir):
+        return jsonify([])
+
+    folders = [f for f in os.listdir(singles_dir)
+               if os.path.isdir(os.path.join(singles_dir, f))]
+
+    return jsonify(sorted(folders))
 
 # ==================== CHANNEL CATEGORY ENDPOINTS ====================
 

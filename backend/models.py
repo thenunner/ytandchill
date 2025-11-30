@@ -31,10 +31,10 @@ class Channel(Base):
 
 class Video(Base):
     __tablename__ = 'videos'
-    
+
     id = Column(Integer, primary_key=True)
     yt_id = Column(String(100), unique=True, nullable=False, index=True)
-    channel_id = Column(Integer, ForeignKey('channels.id'), nullable=False, index=True)
+    channel_id = Column(Integer, ForeignKey('channels.id'), nullable=True, index=True)  # Nullable for playlist videos
     title = Column(String(300), nullable=False)
     duration_sec = Column(Integer, nullable=False)
     upload_date = Column(String(20))  # YYYYMMDD format from yt-dlp
@@ -46,7 +46,8 @@ class Video(Base):
     playback_seconds = Column(Integer, default=0)
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     downloaded_at = Column(DateTime)
-    
+    folder_name = Column(String(200), nullable=True)  # For playlist videos (when channel_id is NULL)
+
     channel = relationship('Channel', back_populates='videos')
     queue_items = relationship('QueueItem', back_populates='video', cascade='all, delete-orphan')
     playlist_videos = relationship('PlaylistVideo', back_populates='video', cascade='all, delete-orphan')

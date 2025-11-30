@@ -267,3 +267,100 @@ class YouTubeAPIClient:
         except Exception as e:
             logger.error(f'Error resolving channel ID from URL {url}: {e}', exc_info=True)
             return None
+
+    def get_playlist_videos(self, playlist_id, max_results=500):
+        """
+        Fetch all videos from a YouTube playlist.
+
+        Args:
+            playlist_id: YouTube playlist ID (starts with 'PL')
+            max_results: Maximum number of videos to fetch (default: 500)
+
+        Returns:
+            list: List of video dicts with keys: yt_id, title, duration_sec, upload_date, thumbnail, channel_title
+            Empty list on error
+        """
+        try:
+            logger.info(f'Scanning YouTube playlist: {playlist_id}')
+            videos = []
+            next_page_token = None
+
+            while len(videos) < max_results:
+                # Get videos from playlist (paginated)
+                playlist_response = self.youtube.playlistItems().list(
+                    part='snippet,contentDetails',
+                    playlistId=playlist_id,
+                    maxResults=min(50, max_results - len(videos)),
+                    pageToken=next_page_token
+                ).execute()
+
+                video_ids = [item['contentDetails']['videoId'] for item in playlist_response.get('items', [])]
+                logger.debug(f'Found {len(video_ids)} video IDs in playlist page')
+
+                if video_ids:
+                    # Get detailed video info (including duration) in batch
+                    videos_response = self.youtube.videos().list(
+                        part='snippet,contentDetails,statistics',
+                        id=','.join(video_ids)
+                    ).execute()
+
+                    for video in videos_response.get('items', []):
+                        # Skip videos without duration (deleted, private, etc)
+                        if 'duration' not in video.get('contentDetails', {}):
+                            logger.debug(f"Skipping video {video['id']}: no duration (possibly deleted/private)")
+                            continue
+
+                        # Parse ISO 8601 duration (PT1H2M10S -> seconds)
+                        duration_str = video['contentDetails']['duration']
+                        duration_sec = parse_iso8601_duration(duration_str)
+
+                        # Skip videos under 2 minutes (120 seconds) - filters out Shorts
+                        if duration_sec < 120:
+                            logger.debug(f"Skipping video {video['id']}: duration {duration_sec}s (<2 min)")
+                            continue
+
+                        videos.append({
+                            'yt_id': video['id'],
+                            'title': video['snippet']['title'],
+                            'duration_sec': duration_sec,
+                            'upload_date': video['snippet']['publishedAt'][:10].replace('-', ''),
+                            'thumbnail': video['snippet']['thumbnails'].get('high', {}).get('url'),
+                            'channel_title': video['snippet'].get('channelTitle', 'Unknown')
+                        })
+
+                next_page_token = playlist_response.get('nextPageToken')
+                if not next_page_token:
+                    break
+
+            logger.info(f'Playlist scan complete: {len(videos)} videos found')
+            return videos
+
+        except HttpError as e:
+            logger.error(f'YouTube API error scanning playlist {playlist_id}: {e}')
+            raise
+        except Exception as e:
+            logger.error(f'Error in get_playlist_videos for {playlist_id}: {e}', exc_info=True)
+            return []
+
+    @staticmethod
+    def extract_playlist_id(url):
+        """
+        Extract playlist ID from YouTube playlist URL.
+
+        Supports:
+        - youtube.com/playlist?list=PLxxxxx
+        - youtube.com/watch?v=xxx&list=PLxxxxx
+
+        Args:
+            url: YouTube URL containing playlist ID
+
+        Returns:
+            str: Playlist ID if found
+            None: If playlist ID not found in URL
+        """
+        import re
+        # Match list= parameter in URL
+        match = re.search(r'[?&]list=([^&]+)', url)
+        if match:
+            return match.group(1)
+        return None

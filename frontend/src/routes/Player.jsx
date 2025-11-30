@@ -34,9 +34,15 @@ export default function Player() {
       console.log('Initializing Plyr...');
       console.log('VideoRef element:', videoRef.current);
 
-      // Construct video source path
+      // Construct video source path - extract path after 'downloads/'
+      // Handles both channel videos (downloads/ChannelFolder/video.mp4)
+      // and singles (downloads/Singles/FolderName/video.mp4)
       const pathParts = video.file_path.replace(/\\/g, '/').split('/');
-      const videoSrc = `/api/media/${pathParts.slice(-2).join('/')}`;
+      const downloadsIndex = pathParts.indexOf('downloads');
+      const relativePath = downloadsIndex >= 0
+        ? pathParts.slice(downloadsIndex + 1).join('/')
+        : pathParts.slice(-2).join('/');  // Fallback for edge cases
+      const videoSrc = `/api/media/${relativePath}`;
       console.log('Constructed videoSrc:', videoSrc);
 
       // Initialize Plyr

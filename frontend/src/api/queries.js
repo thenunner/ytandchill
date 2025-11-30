@@ -451,3 +451,28 @@ export function useLogs(lines = 500) {
     refetchInterval: 5000, // Refresh logs every 5 seconds
   });
 }
+
+// YouTube Playlist Import
+export function useScanYouTubePlaylist() {
+  return useMutation({
+    mutationFn: (url) => api.scanYouTubePlaylist(url),
+  });
+}
+
+export function useQueuePlaylistVideos() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ videos, folderName }) => api.queuePlaylistVideos(videos, folderName),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['queue']);
+      queryClient.invalidateQueries(['videos']);
+    },
+  });
+}
+
+export function useSinglesFolders() {
+  return useQuery({
+    queryKey: ['singles-folders'],
+    queryFn: () => api.getSinglesFolders(),
+  });
+}

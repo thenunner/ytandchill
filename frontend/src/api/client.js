@@ -349,6 +349,25 @@ class APIClient {
   getLogs(lines = 500) {
     return this.request(`/logs?lines=${lines}`);
   }
+
+  // YouTube Playlist Import
+  scanYouTubePlaylist(url) {
+    return this.request('/youtube-playlists/scan', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    });
+  }
+
+  queuePlaylistVideos(videos, folderName) {
+    return this.request('/youtube-playlists/queue', {
+      method: 'POST',
+      body: JSON.stringify({ videos, folder_name: folderName }),
+    });
+  }
+
+  getSinglesFolders() {
+    return this.request('/singles-folders');
+  }
 }
 
 export default new APIClient();

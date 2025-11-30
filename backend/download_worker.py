@@ -237,7 +237,8 @@ class DownloadWorker:
         Validate video and channel exist, prepare for download.
 
         Returns:
-            tuple: (video, channel, channel_dir) or (None, None, None) if validation fails
+            tuple: (video, channel, download_dir) or (None, None, None) if validation fails
+            Note: channel may be None for playlist videos - download_dir will be set from folder_name
         """
         video = session.query(Video).filter(Video.id == queue_item.video_id).first()
         if not video:
@@ -249,14 +250,20 @@ class DownloadWorker:
         logger.info(f"Starting download for video: {video.yt_id} - {video.title}")
 
         channel = video.channel
-        if not channel:
-            logger.error(f"Channel not found for video {video.yt_id}, resetting to 'discovered'")
-            video.status = 'discovered'
-            session.delete(queue_item)
-            session.commit()
-            return None, None, None
 
-        logger.debug(f"Channel: {channel.title}, Folder: {channel.folder_name}")
+        # Determine download directory based on whether video has a channel or folder_name
+        if channel:
+            # Channel video - use channel folder
+            logger.debug(f"Channel: {channel.title}, Folder: {channel.folder_name}")
+            video_dir = os.path.join(self.download_dir, channel.folder_name)
+        elif video.folder_name:
+            # Singles video (imported via Videos tab) - use Singles/{folder_name}
+            logger.debug(f"Singles video, Folder: Singles/{video.folder_name}")
+            video_dir = os.path.join(self.download_dir, 'Singles', video.folder_name)
+        else:
+            # No channel and no folder_name - use Singles/Uncategorized
+            logger.warning(f"Video {video.yt_id} has no channel or folder_name, using Singles/Uncategorized")
+            video_dir = os.path.join(self.download_dir, 'Singles', 'Uncategorized')
 
         # Update status to downloading
         video.status = 'downloading'
@@ -264,10 +271,9 @@ class DownloadWorker:
         logger.info(f"Video {video.yt_id} status updated to 'downloading'")
 
         # Prepare download path
-        channel_dir = os.path.join(self.download_dir, channel.folder_name)
-        os.makedirs(channel_dir, exist_ok=True)
+        os.makedirs(video_dir, exist_ok=True)
 
-        return video, channel, channel_dir
+        return video, channel, video_dir
 
     def _setup_progress_tracking(self, queue_item, video):
         """
@@ -563,7 +569,9 @@ class DownloadWorker:
 
             # Log completion with file details
             size_mb = video.file_size_bytes / (1024 * 1024)
-            logger.info(f'Download complete: {video.title[:50]} ({size_mb:.1f} MB) - saved to {channel.folder_name}/')
+            # Get folder name for logging (handle both channel and playlist videos)
+            folder_display = channel.folder_name if channel else f"Singles/{video.folder_name or 'Uncategorized'}"
+            logger.info(f'Download complete: {video.title[:50]} ({size_mb:.1f} MB) - saved to {folder_display}/')
             logger.debug(f'File path: {video_file_path}')
 
             # Delete queue item - download complete
