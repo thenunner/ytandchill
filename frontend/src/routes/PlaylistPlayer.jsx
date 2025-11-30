@@ -28,6 +28,7 @@ export default function PlaylistPlayer() {
   const saveProgressTimeout = useRef(null);
   const sidebarRef = useRef(null);
   const mobileQueueRef = useRef(null);
+  const preloadVideoRef = useRef(null); // Hidden video for preloading next
 
   const updateVideo = useUpdateVideo();
 
@@ -143,6 +144,17 @@ export default function PlaylistPlayer() {
     if (actualIndex === undefined) return finalVideos[0];
     return finalVideos[actualIndex];
   }, [finalVideos, displayOrder, currentIndex]);
+
+  // Next video for preloading
+  const nextVideo = useMemo(() => {
+    if (finalVideos.length === 0) return null;
+    const nextIndex = currentIndex + 1;
+    if (nextIndex >= displayOrder.length) {
+      // If looping, next is first video
+      return isLooping ? finalVideos[displayOrder[0]] : null;
+    }
+    return finalVideos[displayOrder[nextIndex]];
+  }, [finalVideos, displayOrder, currentIndex, isLooping]);
 
   // Set initial index based on startVideoId
   useEffect(() => {
@@ -285,6 +297,11 @@ export default function PlaylistPlayer() {
         plyrInstanceRef.current.destroy();
         plyrInstanceRef.current = null;
       }
+      // Clean up preload video
+      if (preloadVideoRef.current) {
+        preloadVideoRef.current.src = '';
+        preloadVideoRef.current.load();
+      }
     };
   }, []);
 
@@ -400,6 +417,20 @@ export default function PlaylistPlayer() {
       }
     });
   }, [currentVideo?.id]);
+
+  // Preload next video in queue for faster transitions
+  useEffect(() => {
+    if (!nextVideo || !preloadVideoRef.current) return;
+
+    const nextSrc = getVideoSrc(nextVideo);
+    if (!nextSrc) return;
+
+    // Only preload if source is different
+    if (preloadVideoRef.current.src !== nextSrc) {
+      preloadVideoRef.current.src = nextSrc;
+      preloadVideoRef.current.load();
+    }
+  }, [nextVideo?.id, getVideoSrc]);
 
   // Scroll current video into view
   useEffect(() => {
@@ -645,6 +676,13 @@ export default function PlaylistPlayer() {
               className="w-full h-auto"
               playsInline
               preload="auto"
+            />
+            {/* Hidden preload video for next in queue */}
+            <video
+              ref={preloadVideoRef}
+              className="hidden"
+              preload="auto"
+              muted
             />
           </div>
 
