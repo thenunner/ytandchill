@@ -1,37 +1,18 @@
-import { useState, useRef, useEffect } from 'react';
-import { useScanYouTubePlaylist, useQueuePlaylistVideos, useSinglesFolders } from '../api/queries';
+import { useState } from 'react';
+import { useScanYouTubePlaylist, useQueuePlaylistVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 
 export default function YouTubePlaylists() {
   const { showNotification } = useNotification();
   const scanPlaylist = useScanYouTubePlaylist();
   const queueVideos = useQueuePlaylistVideos();
-  const { data: existingFolders = [], refetch: refetchFolders } = useSinglesFolders();
 
   // State
   const [playlistUrl, setPlaylistUrl] = useState('');
   const [scanResults, setScanResults] = useState(null);
   const [selectedVideos, setSelectedVideos] = useState(new Set());
-  const [folderName, setFolderName] = useState('');
-  const [showFolderDropdown, setShowFolderDropdown] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [isQueueing, setIsQueueing] = useState(false);
-
-  const folderDropdownRef = useRef(null);
-
-  // Close folder dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (folderDropdownRef.current && !folderDropdownRef.current.contains(event.target)) {
-        setShowFolderDropdown(false);
-      }
-    };
-
-    if (showFolderDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showFolderDropdown]);
 
   const handleScan = async (e) => {
     e.preventDefault();
@@ -60,8 +41,6 @@ export default function YouTubePlaylists() {
           `Found ${result.new_videos_count} new videos (${result.already_in_db} already downloaded)`,
           'success'
         );
-        // Auto-select all new videos
-        setSelectedVideos(new Set(result.videos.map(v => v.yt_id)));
       }
     } catch (error) {
       showNotification(error.message || 'Failed to scan playlist', 'error');
@@ -104,32 +83,18 @@ export default function YouTubePlaylists() {
       return;
     }
 
-    if (!folderName.trim()) {
-      showNotification('Please enter a folder name', 'error');
-      return;
-    }
-
     setIsQueueing(true);
 
     try {
       const videosToQueue = scanResults.videos.filter(v => selectedVideos.has(v.yt_id));
-      const result = await queueVideos.mutateAsync({
-        videos: videosToQueue,
-        folderName: folderName.trim()
-      });
+      const result = await queueVideos.mutateAsync({ videos: videosToQueue });
 
-      showNotification(
-        `Queued ${result.queued} videos to Singles/${result.folder_name}`,
-        'success'
-      );
+      showNotification(`Queued ${result.queued} videos`, 'success');
 
       // Remove queued videos from results
       const remainingVideos = scanResults.videos.filter(v => !selectedVideos.has(v.yt_id));
       setScanResults({ ...scanResults, videos: remainingVideos });
       setSelectedVideos(new Set());
-
-      // Refresh folder list
-      refetchFolders();
 
     } catch (error) {
       showNotification(error.message || 'Failed to queue videos', 'error');
@@ -233,63 +198,20 @@ export default function YouTubePlaylists() {
 
           {/* Action Bar */}
           {scanResults.videos.length > 0 && selectedVideos.size > 0 && (
-            <div className="mt-4 pt-4 border-t border-dark-border flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-              {/* Folder Selection */}
-              <div className="relative flex-1" ref={folderDropdownRef}>
-                <div className="flex">
-                  <input
-                    type="text"
-                    value={folderName}
-                    onChange={(e) => setFolderName(e.target.value)}
-                    placeholder="Folder name (e.g., Tech_Tutorials)"
-                    className="flex-1 bg-dark-tertiary border border-dark-border rounded-l-lg px-4 py-2 text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowFolderDropdown(!showFolderDropdown)}
-                    className="px-3 bg-dark-tertiary border border-l-0 border-dark-border rounded-r-lg text-text-secondary hover:bg-dark-border transition-colors"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Folder Dropdown */}
-                {showFolderDropdown && existingFolders.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 max-h-48 overflow-y-auto">
-                    {existingFolders.map((folder) => (
-                      <button
-                        key={folder}
-                        onClick={() => {
-                          setFolderName(folder);
-                          setShowFolderDropdown(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-text-secondary hover:bg-dark-tertiary transition-colors"
-                      >
-                        {folder}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2">
-                <button
-                  onClick={handleRemoveSelected}
-                  className="px-4 py-2 bg-dark-tertiary hover:bg-red-500/20 text-text-secondary hover:text-red-400 rounded-lg transition-colors"
-                >
-                  Remove
-                </button>
-                <button
-                  onClick={handleQueueSelected}
-                  disabled={isQueueing || !folderName.trim()}
-                  className="px-4 py-2 bg-accent hover:bg-accent/80 disabled:bg-dark-tertiary disabled:text-text-secondary text-white font-semibold rounded-lg transition-colors"
-                >
-                  {isQueueing ? 'Queueing...' : `Queue ${selectedVideos.size} Videos`}
-                </button>
-              </div>
+            <div className="mt-4 pt-4 border-t border-dark-border flex justify-end gap-2">
+              <button
+                onClick={handleRemoveSelected}
+                className="px-4 py-2 bg-dark-tertiary hover:bg-red-500/20 text-text-secondary hover:text-red-400 rounded-lg transition-colors"
+              >
+                Remove
+              </button>
+              <button
+                onClick={handleQueueSelected}
+                disabled={isQueueing}
+                className="px-4 py-2 bg-accent hover:bg-accent/80 disabled:bg-dark-tertiary disabled:text-text-secondary text-white font-semibold rounded-lg transition-colors"
+              >
+                {isQueueing ? 'Queueing...' : `Queue ${selectedVideos.size} Videos`}
+              </button>
             </div>
           )}
         </div>

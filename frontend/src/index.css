@@ -22,8 +22,8 @@
   --text-muted: 220 9% 46%;        /* #6b7280 */
 
   /* Accent */
-  --accent: 220 10% 70%;           /* #a8b0bc - Lighter gray for better visibility */
-  --accent-hover: 220 10% 80%;     /* #c8ccd4 - Even lighter on hover */
+  --accent: 220 10% 45%;           /* #656b78 - Muted gray */
+  --accent-hover: 220 10% 55%;     /* #7d8491 - Slightly lighter on hover */
 
   /* Scrollbar */
   --scrollbar-track: 220 10% 8%;   /* Same as bg-secondary */
@@ -31,7 +31,7 @@
   --scrollbar-thumb-hover: 220 5% 30%;
 
   /* Plyr player */
-  --plyr-main: 220 10% 70%;        /* Same as accent */
+  --plyr-main: 220 10% 45%;        /* Same as accent */
 }
 
 /* Fatal Red Theme */

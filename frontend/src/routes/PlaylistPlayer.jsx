@@ -315,6 +315,21 @@ export default function PlaylistPlayer() {
 
       plyrInstanceRef.current = player;
 
+      // Set initial source immediately if video is already available
+      // This fixes a race condition where currentVideo is set before Plyr initializes
+      const initialVideo = finalVideos[displayOrder[currentIndex] ?? 0];
+      if (initialVideo) {
+        const videoSrc = getVideoSrc(initialVideo);
+        if (videoSrc) {
+          currentVideoIdRef.current = initialVideo.id;
+          hasMarkedWatchedRef.current = initialVideo.watched || false;
+          player.source = {
+            type: 'video',
+            sources: [{ src: videoSrc, type: 'video/mp4' }],
+          };
+        }
+      }
+
       // Handle video end - advance to next (preserves fullscreen!)
       player.on('ended', () => {
         goToNextRef.current();
@@ -363,7 +378,7 @@ export default function PlaylistPlayer() {
         }
       };
     }
-  }, [hasVideos, updateVideo]);
+  }, [hasVideos, updateVideo, finalVideos, displayOrder, currentIndex, getVideoSrc]);
 
   // Update video source when currentVideo changes (preserves fullscreen!)
   useEffect(() => {

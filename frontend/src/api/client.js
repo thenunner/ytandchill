@@ -358,15 +358,11 @@ class APIClient {
     });
   }
 
-  queuePlaylistVideos(videos, folderName) {
+  queuePlaylistVideos(videos) {
     return this.request('/youtube-playlists/queue', {
       method: 'POST',
-      body: JSON.stringify({ videos, folder_name: folderName }),
+      body: JSON.stringify({ videos }),
     });
-  }
-
-  getSinglesFolders() {
-    return this.request('/singles-folders');
   }
 }
 

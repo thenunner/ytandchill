@@ -1625,19 +1625,11 @@ def queue_youtube_playlist_videos():
     """Queue videos from a YouTube playlist for download."""
     data = request.json
     videos_data = data.get('videos', [])
-    folder_name = data.get('folder_name', '').strip()
 
     if not videos_data:
         return jsonify({'error': 'No videos provided'}), 400
 
-    if not folder_name:
-        return jsonify({'error': 'Folder name is required'}), 400
-
-    # Sanitize folder name (remove special characters)
-    import re
-    folder_name = re.sub(r'[<>:"/\\|?*]', '_', folder_name)
-
-    logger.info(f"Queueing {len(videos_data)} videos to folder: Singles/{folder_name}")
+    logger.info(f"Queueing {len(videos_data)} videos to Singles folder")
 
     with get_session(session_factory) as session:
         added = 0
@@ -1677,7 +1669,7 @@ def queue_youtube_playlist_videos():
                 upload_date=v.get('upload_date'),
                 thumb_url=v.get('thumbnail'),
                 channel_id=singles_channel.id,  # Use the Singles pseudo-channel
-                folder_name=folder_name,
+                folder_name='Singles',
                 status='queued'
             )
             session.add(video)
@@ -1701,22 +1693,8 @@ def queue_youtube_playlist_videos():
 
     return jsonify({
         'queued': added,
-        'skipped': skipped,
-        'folder_name': folder_name
+        'skipped': skipped
     })
-
-@app.route('/api/singles-folders', methods=['GET'])
-def get_singles_folders():
-    """Return list of existing Singles folder names for dropdown."""
-    singles_dir = os.path.join('downloads', 'Singles')
-
-    if not os.path.exists(singles_dir):
-        return jsonify([])
-
-    folders = [f for f in os.listdir(singles_dir)
-               if os.path.isdir(os.path.join(singles_dir, f))]
-
-    return jsonify(sorted(folders))
 
 # ==================== CHANNEL CATEGORY ENDPOINTS ====================
 

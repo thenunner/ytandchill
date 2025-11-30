@@ -462,7 +462,7 @@ export function useScanYouTubePlaylist() {
 export function useQueuePlaylistVideos() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ videos, folderName }) => api.queuePlaylistVideos(videos, folderName),
+    mutationFn: ({ videos }) => api.queuePlaylistVideos(videos),
     onSuccess: () => {
       queryClient.invalidateQueries(['queue']);
       queryClient.invalidateQueries(['videos']);
@@ -470,9 +470,3 @@ export function useQueuePlaylistVideos() {
   });
 }
 
-export function useSinglesFolders() {
-  return useQuery({
-    queryKey: ['singles-folders'],
-    queryFn: () => api.getSinglesFolders(),
-  });
-}
