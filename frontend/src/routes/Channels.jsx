@@ -377,8 +377,9 @@ export default function Channels() {
 
   // Filter and sort channels
   const filteredAndSortedChannels = (() => {
-    // First filter by search
+    // First filter by search (and exclude Singles pseudo-channel)
     let filtered = channels?.filter(channel =>
+      channel.yt_id !== '__singles__' &&
       (channel.title || '').toLowerCase().includes(searchInput.toLowerCase())
     ) || [];
 
