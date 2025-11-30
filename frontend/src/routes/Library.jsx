@@ -1546,7 +1546,7 @@ export default function Library() {
                             return (
                               <div
                                 key={playlist.id}
-                                className={`card cursor-pointer transition-colors ${
+                                className={`card relative cursor-pointer transition-colors ${
                                   isSelected ? 'ring-2 ring-accent/60' : ''
                                 } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
                                 onClick={(e) => {
@@ -1583,90 +1583,90 @@ export default function Library() {
                                       </svg>
                                     </div>
                                   )}
-
-                                  {/* 3-Dot Menu */}
-                                  {!editMode && (
-                                    <div className="absolute top-2 right-2 z-20" ref={activeMenuId === playlist.id ? menuRef : null}>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setActiveMenuId(activeMenuId === playlist.id ? null : playlist.id);
-                                        }}
-                                        className="bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
-                                      >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                          <circle cx="12" cy="5" r="2"></circle>
-                                          <circle cx="12" cy="12" r="2"></circle>
-                                          <circle cx="12" cy="19" r="2"></circle>
-                                        </svg>
-                                      </button>
-
-                                      {activeMenuId === playlist.id && (
-                                        <div className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50">
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              navigate(`/play/playlist/${playlist.id}`);
-                                              setActiveMenuId(null);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                          >
-                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                              <path d="M8 5v14l11-7z"/>
-                                            </svg>
-                                            Play All
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setRenamePlaylistId(playlist.id);
-                                              setRenameValue(playlist.title || playlist.name || '');
-                                              setShowRenameModal(true);
-                                              setActiveMenuId(null);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                          >
-                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                            </svg>
-                                            Rename
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              setSelectedPlaylistForCategory(playlist.id);
-                                              setCategoryActionType('single');
-                                              setShowCategorySelectorModal(true);
-                                              setActiveMenuId(null);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                          >
-                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                            </svg>
-                                            Category Options
-                                          </button>
-                                          <button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              handleDeletePlaylist(playlist.id);
-                                            }}
-                                            className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                          >
-                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                              <polyline points="3 6 5 6 21 6"></polyline>
-                                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                              <line x1="10" y1="11" x2="10" y2="17"></line>
-                                              <line x1="14" y1="11" x2="14" y2="17"></line>
-                                            </svg>
-                                            Delete
-                                          </button>
-                                        </div>
-                                      )}
-                                    </div>
-                                  )}
                                 </div>
+
+                                {/* 3-Dot Menu - Outside thumbnail to avoid overflow clipping */}
+                                {!editMode && (
+                                  <div className="absolute top-2 right-2 z-20" ref={activeMenuId === playlist.id ? menuRef : null}>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveMenuId(activeMenuId === playlist.id ? null : playlist.id);
+                                      }}
+                                      className="bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
+                                    >
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                        <circle cx="12" cy="5" r="2"></circle>
+                                        <circle cx="12" cy="12" r="2"></circle>
+                                        <circle cx="12" cy="19" r="2"></circle>
+                                      </svg>
+                                    </button>
+
+                                    {activeMenuId === playlist.id && (
+                                      <div className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50">
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/play/playlist/${playlist.id}`);
+                                            setActiveMenuId(null);
+                                          }}
+                                          className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                        >
+                                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M8 5v14l11-7z"/>
+                                          </svg>
+                                          Play All
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setRenamePlaylistId(playlist.id);
+                                            setRenameValue(playlist.title || playlist.name || '');
+                                            setShowRenameModal(true);
+                                            setActiveMenuId(null);
+                                          }}
+                                          className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                        >
+                                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                          </svg>
+                                          Rename
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedPlaylistForCategory(playlist.id);
+                                            setCategoryActionType('single');
+                                            setShowCategorySelectorModal(true);
+                                            setActiveMenuId(null);
+                                          }}
+                                          className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                        >
+                                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                          </svg>
+                                          Category Options
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDeletePlaylist(playlist.id);
+                                          }}
+                                          className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                        >
+                                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                          </svg>
+                                          Delete
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
 
                                 {/* Playlist info */}
                                 <div className="p-3">
@@ -1853,7 +1853,7 @@ export default function Library() {
                         return (
                           <div
                             key={playlist.id}
-                            className={`card cursor-pointer transition-colors ${
+                            className={`card relative cursor-pointer transition-colors ${
                               isSelected ? 'ring-2 ring-accent/60' : ''
                             } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
                             onClick={(e) => {
@@ -1890,94 +1890,95 @@ export default function Library() {
                                   </svg>
                                 </div>
                               )}
-
-                              {/* 3-Dot Menu - Show when NOT in edit mode */}
-                              {!editMode && (
-                                <div className="absolute top-2 right-2 z-20" ref={activeMenuId === playlist.id ? menuRef : null}>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setActiveMenuId(activeMenuId === playlist.id ? null : playlist.id);
-                                    }}
-                                    className="bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
-                                  >
-                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                      <circle cx="12" cy="5" r="2"></circle>
-                                      <circle cx="12" cy="12" r="2"></circle>
-                                      <circle cx="12" cy="19" r="2"></circle>
-                                    </svg>
-                                  </button>
-
-                                  {/* Dropdown Menu */}
-                                  {activeMenuId === playlist.id && (
-                                    <div
-                                      className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50"
-                                      onMouseLeave={(e) => e.stopPropagation()}
-                                    >
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          navigate(`/play/playlist/${playlist.id}`);
-                                          setActiveMenuId(null);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                      >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                          <path d="M8 5v14l11-7z"/>
-                                        </svg>
-                                        Play All
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setRenamePlaylistId(playlist.id);
-                                          setRenameValue(playlist.title || playlist.name || '');
-                                          setShowRenameModal(true);
-                                          setActiveMenuId(null);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                      >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                        </svg>
-                                        Rename
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          setSelectedPlaylistForCategory(playlist.id);
-                                          setCategoryActionType('single');
-                                          setShowCategorySelectorModal(true);
-                                          setActiveMenuId(null);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                      >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 3h9a2 2 0 0 1 2 2z"></path>
-                                        </svg>
-                                        Category Options
-                                      </button>
-                                      <button
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleDeletePlaylist(playlist.id);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                      >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <polyline points="3 6 5 6 21 6"></polyline>
-                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                          <line x1="10" y1="11" x2="10" y2="17"></line>
-                                          <line x1="14" y1="11" x2="14" y2="17"></line>
-                                        </svg>
-                                        Delete
-                                      </button>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
                             </div>
+
+                            {/* 3-Dot Menu - Outside thumbnail to avoid overflow clipping */}
+                            {!editMode && (
+                              <div className="absolute top-2 right-2 z-20" ref={activeMenuId === playlist.id ? menuRef : null}>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenuId(activeMenuId === playlist.id ? null : playlist.id);
+                                  }}
+                                  className="bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
+                                >
+                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="5" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="19" r="2"></circle>
+                                  </svg>
+                                </button>
+
+                                {/* Dropdown Menu */}
+                                {activeMenuId === playlist.id && (
+                                  <div
+                                    className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50"
+                                    onMouseLeave={(e) => e.stopPropagation()}
+                                  >
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/play/playlist/${playlist.id}`);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                    >
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M8 5v14l11-7z"/>
+                                      </svg>
+                                      Play All
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setRenamePlaylistId(playlist.id);
+                                        setRenameValue(playlist.title || playlist.name || '');
+                                        setShowRenameModal(true);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                    >
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                      </svg>
+                                      Rename
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedPlaylistForCategory(playlist.id);
+                                        setCategoryActionType('single');
+                                        setShowCategorySelectorModal(true);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                    >
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 3h9a2 2 0 0 1 2 2z"></path>
+                                      </svg>
+                                      Category Options
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeletePlaylist(playlist.id);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                    >
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                                      </svg>
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
                             {/* Playlist info */}
                             <div className="p-3">
                               <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2 mb-1" title={playlist.title || playlist.name}>
