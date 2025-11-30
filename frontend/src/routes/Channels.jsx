@@ -610,12 +610,16 @@ export default function Channels() {
               </span>
             </button>
 
-            {/* Category Filter Dropdown */}
+            {/* Category Filter/Assign Dropdown */}
             {showCategoryFilter && (
               <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-64 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
                 <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase flex justify-between items-center">
-                  <span>Filter by Category</span>
-                  {selectedCategories.length > 0 && (
+                  <span>
+                    {selectedChannels.length > 0
+                      ? `Assign ${selectedChannels.length} channel${selectedChannels.length > 1 ? 's' : ''} to:`
+                      : 'Filter by Category'}
+                  </span>
+                  {selectedChannels.length === 0 && selectedCategories.length > 0 && (
                     <button
                       onClick={() => setSelectedCategories([])}
                       className="text-accent hover:text-accent/80 text-xs normal-case"
@@ -626,40 +630,111 @@ export default function Channels() {
                 </div>
 
                 {/* Uncategorized option */}
-                <label className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={selectedCategories.includes('uncategorized')}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedCategories([...selectedCategories, 'uncategorized']);
-                      } else {
-                        setSelectedCategories(selectedCategories.filter(c => c !== 'uncategorized'));
+                <button
+                  className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer w-full text-left"
+                  onClick={async () => {
+                    if (selectedChannels.length > 0) {
+                      // Bulk assign mode - set all selected channels to uncategorized
+                      const count = selectedChannels.length;
+                      showNotification(`Assigning ${count} channel${count > 1 ? 's' : ''} to Uncategorized...`, 'info');
+
+                      let successCount = 0;
+                      let errorCount = 0;
+
+                      for (const channelId of selectedChannels) {
+                        try {
+                          await updateChannel.mutateAsync({ id: channelId, data: { category_id: null } });
+                          successCount++;
+                        } catch (error) {
+                          console.error(`Failed to update channel ${channelId}:`, error);
+                          errorCount++;
+                        }
                       }
-                    }}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
-                  />
+
+                      if (errorCount === 0) {
+                        showNotification(`${successCount} channel${successCount > 1 ? 's' : ''} set to Uncategorized`, 'success');
+                      } else {
+                        showNotification(`${successCount} assigned, ${errorCount} failed`, 'warning');
+                      }
+
+                      setSelectedChannels([]);
+                      setShowCategoryFilter(false);
+                    } else {
+                      // Filter mode - toggle uncategorized filter
+                      if (selectedCategories.includes('uncategorized')) {
+                        setSelectedCategories(selectedCategories.filter(c => c !== 'uncategorized'));
+                      } else {
+                        setSelectedCategories([...selectedCategories, 'uncategorized']);
+                      }
+                    }
+                  }}
+                >
+                  {selectedChannels.length === 0 && (
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes('uncategorized')}
+                      readOnly
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                    />
+                  )}
                   <span className="text-sm text-text-secondary italic">Uncategorized</span>
-                </label>
+                </button>
 
                 {/* Category list */}
                 {categories?.map(category => (
-                  <label key={category.id} className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedCategories.includes(category.id)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedCategories([...selectedCategories, category.id]);
-                        } else {
-                          setSelectedCategories(selectedCategories.filter(c => c !== category.id));
+                  <button
+                    key={category.id}
+                    className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer w-full text-left"
+                    onClick={async () => {
+                      if (selectedChannels.length > 0) {
+                        // Bulk assign mode
+                        const count = selectedChannels.length;
+                        showNotification(`Assigning ${count} channel${count > 1 ? 's' : ''} to ${category.name}...`, 'info');
+
+                        let successCount = 0;
+                        let errorCount = 0;
+
+                        for (const channelId of selectedChannels) {
+                          try {
+                            await updateChannel.mutateAsync({ id: channelId, data: { category_id: category.id } });
+                            successCount++;
+                          } catch (error) {
+                            console.error(`Failed to update channel ${channelId}:`, error);
+                            errorCount++;
+                          }
                         }
-                      }}
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
-                    />
+
+                        if (errorCount === 0) {
+                          showNotification(`${successCount} channel${successCount > 1 ? 's' : ''} assigned to ${category.name}`, 'success');
+                        } else {
+                          showNotification(`${successCount} assigned, ${errorCount} failed`, 'warning');
+                        }
+
+                        // Invalidate channel-categories to update counts
+                        queryClient.invalidateQueries(['channel-categories']);
+                        setSelectedChannels([]);
+                        setShowCategoryFilter(false);
+                      } else {
+                        // Filter mode - toggle category filter
+                        if (selectedCategories.includes(category.id)) {
+                          setSelectedCategories(selectedCategories.filter(c => c !== category.id));
+                        } else {
+                          setSelectedCategories([...selectedCategories, category.id]);
+                        }
+                      }
+                    }}
+                  >
+                    {selectedChannels.length === 0 && (
+                      <input
+                        type="checkbox"
+                        checked={selectedCategories.includes(category.id)}
+                        readOnly
+                        className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                      />
+                    )}
                     <span className="text-sm text-text-primary">{category.name}</span>
                     <span className="text-xs text-text-muted ml-auto">{category.channel_count}</span>
-                  </label>
+                  </button>
                 ))}
 
                 {/* Manage Categories */}
