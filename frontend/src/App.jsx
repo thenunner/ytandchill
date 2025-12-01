@@ -8,7 +8,7 @@ import Channels from './routes/Channels';
 import Library from './routes/Library';
 import ChannelLibrary from './routes/ChannelLibrary';
 import Playlist from './routes/Playlist';
-import YouTubePlaylists from './routes/YouTubePlaylists';
+import Videos from './routes/Videos';
 import Queue from './routes/Queue';
 import Settings from './routes/Settings';
 import Player from './routes/Player';
@@ -479,7 +479,7 @@ function App() {
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
           <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
-          <Route path="/videos" element={isAuthenticated ? <YouTubePlaylists /> : <Navigate to="/login" replace />} />
+          <Route path="/videos" element={isAuthenticated ? <Videos /> : <Navigate to="/login" replace />} />
           <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
           <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
           <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />

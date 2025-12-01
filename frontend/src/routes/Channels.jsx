@@ -930,6 +930,37 @@ export default function Channels() {
             {menuOpen === channel.id && (
               <div className="absolute top-10 right-2 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-[100] w-[200px] animate-scale-in">
                 <div className="py-1 max-h-[400px] overflow-y-auto">
+                  {/* Auto-Download Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const newValue = !channel.auto_download;
+                      updateChannel.mutate({
+                        id: channel.id,
+                        data: { auto_download: newValue }
+                      }, {
+                        onSuccess: () => {
+                          showNotification(
+                            newValue
+                              ? `Auto-download enabled for ${channel.title}`
+                              : `Auto-download disabled for ${channel.title}`,
+                            'success'
+                          );
+                        }
+                      });
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={channel.auto_download || false}
+                      readOnly
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
+                    />
+                    <span className="font-medium">Auto-Download</span>
+                  </button>
+
                   {/* Duration Settings */}
                   <button
                     onClick={(e) => {
@@ -997,37 +1028,6 @@ export default function Channels() {
                       </button>
                     </div>
                   )}
-
-                  {/* Auto-Download Toggle */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const newValue = !channel.auto_download;
-                      updateChannel.mutate({
-                        id: channel.id,
-                        data: { auto_download: newValue }
-                      }, {
-                        onSuccess: () => {
-                          showNotification(
-                            newValue
-                              ? `Auto-download enabled for ${channel.title}`
-                              : `Auto-download disabled for ${channel.title}`,
-                            'success'
-                          );
-                        }
-                      });
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={channel.auto_download || false}
-                      readOnly
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
-                    />
-                    <span className="font-medium">Auto-Download</span>
-                  </button>
 
                   {/* Set Category - expands inline */}
                   <button

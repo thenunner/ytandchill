@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useScanYouTubePlaylist, useQueuePlaylistVideos, useRemovePlaylistVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 
-export default function YouTubePlaylists() {
+export default function Videos() {
   const { showNotification } = useNotification();
   const scanPlaylist = useScanYouTubePlaylist();
   const queueVideos = useQueuePlaylistVideos();
@@ -33,6 +33,19 @@ export default function YouTubePlaylists() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Scroll detection for scroll-to-top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Save URL to history (called on successful scan)
   const saveUrlToHistory = (url) => {
     const trimmedUrl = url.trim();
@@ -50,6 +63,7 @@ export default function YouTubePlaylists() {
   const [filterMode, setFilterMode] = useState('new'); // 'new' or 'all'
   const [statusFilter, setStatusFilter] = useState('available'); // 'all', 'available', 'ignored', 'error'
   const [searchInput, setSearchInput] = useState(''); // Search filter for video titles
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const handleScan = async (e, filter = filterMode) => {
     if (e) e.preventDefault();
@@ -294,7 +308,7 @@ export default function YouTubePlaylists() {
 
       {/* Results Summary */}
       {scanResults && (
-        <div className="bg-dark-secondary rounded-lg p-4">
+        <div className="sticky top-[100px] z-40 bg-dark-secondary/95 backdrop-blur-lg rounded-lg p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               <div className="text-text-secondary">
@@ -515,6 +529,19 @@ export default function YouTubePlaylists() {
             as singles without subscribing to the full channel.
           </p>
         </div>
+      )}
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-colors z-50 animate-fade-in"
+          aria-label="Scroll to top"
+        >
+          <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="18 15 12 9 6 15"></polyline>
+          </svg>
+        </button>
       )}
     </div>
   );
