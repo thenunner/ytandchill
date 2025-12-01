@@ -249,7 +249,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
           </h3>
 
           {/* Row 2: Scan and Last Video dates */}
-          <div className="flex items-center gap-2 text-xs text-text-secondary">
+          <div className="flex items-center gap-2 text-sm text-text-secondary">
             <span>Scan: <span className="text-text-primary">{formatScanTime(channel.last_scan_time) || 'None'}</span></span>
             <span className="w-1 h-1 bg-text-muted rounded-full flex-shrink-0"></span>
             <span>Last Video: <span className="text-text-primary">{formatVideoDate(channel.last_video_date) || 'None'}</span></span>
@@ -260,13 +260,13 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             {/* AUTO badge */}
             {channel.auto_download && (
               <>
-                <span className="text-green-500 text-[10px] font-bold">AUTO</span>
+                <span className="text-green-500 text-xs font-bold">AUTO</span>
                 <span className="w-1 h-1 bg-text-muted rounded-full flex-shrink-0"></span>
               </>
             )}
             {/* Downloaded */}
-            <div className="flex items-center gap-0.5 text-xs font-semibold text-accent-text" title="Downloaded">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="flex items-center gap-0.5 text-sm font-semibold text-accent-text" title="Downloaded">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -275,8 +275,8 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             </div>
 
             {/* Discovered */}
-            <div className="flex items-center gap-0.5 text-xs font-semibold text-gray-400" title="To Review">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="flex items-center gap-0.5 text-sm font-semibold text-gray-400" title="To Review">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <circle cx="12" cy="12" r="1"></circle>
               </svg>
@@ -284,8 +284,8 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             </div>
 
             {/* Ignored */}
-            <div className="flex items-center gap-0.5 text-xs font-semibold text-gray-400" title="Ignored">
-              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="flex items-center gap-0.5 text-sm font-semibold text-gray-400" title="Ignored">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
               </svg>
