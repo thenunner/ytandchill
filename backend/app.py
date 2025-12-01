@@ -1761,19 +1761,20 @@ def queue_youtube_playlist_videos():
             # Check if video already exists by yt_id
             existing = session.query(Video).filter(Video.yt_id == v['yt_id']).first()
             if existing:
-                # If video was removed, re-queue it
-                if existing.status == 'removed':
+                # Only allow queueing discovered or ignored videos
+                if existing.status in ['discovered', 'ignored']:
                     existing.status = 'queued'
-                    # Check if already in queue
+                    # Check if already has queue item
                     in_queue = session.query(QueueItem).filter(QueueItem.video_id == existing.id).first()
                     if not in_queue:
                         max_pos += 1
                         queue_item = QueueItem(video_id=existing.id, queue_position=max_pos)
                         session.add(queue_item)
                     added += 1
-                    logger.debug(f"Re-queued removed video: {v['yt_id']}")
+                    logger.debug(f"Re-queued existing video: {v['yt_id']} (was {existing.status})")
                 else:
-                    logger.debug(f"Skipping existing video: {v['yt_id']}")
+                    # Skip removed, queued, downloading, library
+                    logger.debug(f"Skipping video with status '{existing.status}': {v['yt_id']}")
                     skipped += 1
                 continue
 
@@ -1814,14 +1815,14 @@ def queue_youtube_playlist_videos():
 
 @app.route('/api/youtube-playlists/remove', methods=['POST'])
 def remove_youtube_playlist_videos():
-    """Mark videos as 'removed' so they don't appear in New scans."""
+    """Mark videos as 'ignored' so they don't appear in New scans (user choice to skip)."""
     data = request.json
     videos_data = data.get('videos', [])
 
     if not videos_data:
         return jsonify({'error': 'No videos provided'}), 400
 
-    logger.info(f"Marking {len(videos_data)} videos as removed")
+    logger.info(f"Marking {len(videos_data)} videos as ignored")
 
     with get_session(session_factory) as session:
         removed = 0
@@ -1845,11 +1846,11 @@ def remove_youtube_playlist_videos():
             # Check if video exists
             existing = session.query(Video).filter(Video.yt_id == yt_id).first()
             if existing:
-                # Update existing to removed status
-                existing.status = 'removed'
+                # Update existing to ignored status (user choice to skip)
+                existing.status = 'ignored'
                 removed += 1
             else:
-                # Create new record with removed status
+                # Create new record with ignored status
                 video = Video(
                     yt_id=yt_id,
                     title=v.get('title', 'Unknown') if isinstance(v, dict) else 'Unknown',
@@ -1858,14 +1859,14 @@ def remove_youtube_playlist_videos():
                     thumb_url=v.get('thumbnail') if isinstance(v, dict) else None,
                     channel_id=singles_channel.id,
                     folder_name='Singles',
-                    status='removed'
+                    status='ignored'
                 )
                 session.add(video)
                 removed += 1
 
         session.commit()
 
-    logger.info(f"Marked {removed} videos as removed")
+    logger.info(f"Marked {removed} videos as ignored")
     return jsonify({'removed': removed})
 
 # ==================== CHANNEL CATEGORY ENDPOINTS ====================

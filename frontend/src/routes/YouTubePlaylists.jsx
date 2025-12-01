@@ -82,13 +82,13 @@ export default function YouTubePlaylists() {
       const videosToRemove = scanResults.videos.filter(v => selectedVideos.has(v.yt_id));
       await removeVideos.mutateAsync({ videos: videosToRemove });
 
-      showNotification(`Marked ${videosToRemove.length} videos as removed`, 'success');
+      showNotification(`Marked ${videosToRemove.length} videos as ignored`, 'success');
 
-      // Update local state - mark as removed or remove from list
+      // Update local state - mark as ignored or remove from list
       if (filterMode === 'all') {
-        // In "all" mode, update status to 'removed'
+        // In "all" mode, update status to 'ignored'
         const updatedVideos = scanResults.videos.map(v =>
-          selectedVideos.has(v.yt_id) ? { ...v, status: 'removed' } : v
+          selectedVideos.has(v.yt_id) ? { ...v, status: 'ignored' } : v
         );
         setScanResults({ ...scanResults, videos: updatedVideos });
       } else {
@@ -234,7 +234,7 @@ export default function YouTubePlaylists() {
                 <span>
                   Found <span className="text-text-primary font-semibold">{scanResults.videos.length}</span> new videos
                   {scanResults.already_in_db > 0 && (
-                    <span className="text-text-muted"> ({scanResults.already_in_db} already downloaded)</span>
+                    <span className="text-text-muted"> ({scanResults.already_in_db} previously seen)</span>
                   )}
                 </span>
               )}
@@ -267,9 +267,9 @@ export default function YouTubePlaylists() {
               <button
                 onClick={handleRemoveSelected}
                 disabled={isRemoving}
-                className="px-4 py-2 bg-dark-tertiary hover:bg-red-500/20 text-text-secondary hover:text-red-400 disabled:opacity-50 rounded-lg transition-colors"
+                className="px-4 py-2 bg-dark-tertiary hover:bg-yellow-500/20 text-text-secondary hover:text-yellow-400 disabled:opacity-50 rounded-lg transition-colors"
               >
-                {isRemoving ? 'Removing...' : 'Remove'}
+                {isRemoving ? 'Ignoring...' : 'Ignore'}
               </button>
               <button
                 onClick={handleQueueSelected}
@@ -324,12 +324,14 @@ export default function YouTubePlaylists() {
                   <div className={`absolute top-2 right-2 text-xs px-2 py-0.5 rounded font-medium ${
                     video.status === 'library' ? 'bg-green-500/90 text-white' :
                     video.status === 'queued' ? 'bg-blue-500/90 text-white' :
+                    video.status === 'ignored' ? 'bg-yellow-500/90 text-black' :
                     video.status === 'removed' ? 'bg-red-500/90 text-white' :
                     'bg-gray-500/90 text-white'
                   }`}>
                     {video.status === 'library' ? 'Downloaded' :
                      video.status === 'queued' ? 'Queued' :
-                     video.status === 'removed' ? 'Removed' :
+                     video.status === 'ignored' ? 'Ignored' :
+                     video.status === 'removed' ? 'Error' :
                      video.status}
                   </div>
                 )}
