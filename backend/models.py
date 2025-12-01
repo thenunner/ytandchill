@@ -102,11 +102,12 @@ class PlaylistVideo(Base):
 
 class QueueItem(Base):
     __tablename__ = 'queue_items'
-    
+
     id = Column(Integer, primary_key=True)
     video_id = Column(Integer, ForeignKey('videos.id'), nullable=False, index=True)
     queue_position = Column(Integer, nullable=True, index=True)  # Position in queue for ordering
     status = Column(String(20), default='pending', index=True)  # pending, downloading, paused, completed, failed, cancelled
+    prior_status = Column(String(20), nullable=True)  # Video's status before queueing (discovered, ignored, removed, NULL)
     progress_pct = Column(Float, default=0.0)
     speed_bps = Column(Float, default=0.0)
     eta_seconds = Column(Integer, default=0)
@@ -114,7 +115,7 @@ class QueueItem(Base):
     log = Column(Text)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
-    
+
     video = relationship('Video', back_populates='queue_items')
 
 class Setting(Base):

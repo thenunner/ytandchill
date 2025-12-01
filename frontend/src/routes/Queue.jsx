@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
-import { useQueue, usePauseQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
+import { useQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -134,7 +134,6 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
 
 export default function Queue() {
   const { data: queue, isLoading } = useQueue();
-  const pauseQueue = usePauseQueue();
   const resumeQueue = useResumeQueue();
   const cancelCurrent = useCancelCurrent();
   const removeFromQueue = useRemoveFromQueue();
@@ -215,15 +214,6 @@ export default function Queue() {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
-  };
-
-  const handlePause = async () => {
-    try {
-      await pauseQueue.mutateAsync();
-      showNotification('Queue paused', 'success');
-    } catch (error) {
-      showNotification(error.message, 'error');
-    }
   };
 
   const handleResume = async () => {
@@ -345,20 +335,16 @@ export default function Queue() {
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-4">
         <div className="flex space-x-2">
-          <button
-            onClick={handlePause}
-            disabled={pauseQueue.isPending}
-            className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {pauseQueue.isPending ? 'Pausing...' : 'Pause'}
-          </button>
-          <button
-            onClick={handleResume}
-            disabled={resumeQueue.isPending}
-            className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {resumeQueue.isPending ? 'Resuming...' : 'Resume'}
-          </button>
+          {/* Only show Resume when queue is paused (e.g., after restart) */}
+          {workerPaused && (
+            <button
+              onClick={handleResume}
+              disabled={resumeQueue.isPending}
+              className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-accent hover:bg-accent-hover text-white rounded transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {resumeQueue.isPending ? 'Resuming...' : 'Resume'}
+            </button>
+          )}
           <button
             onClick={() => setShowClearConfirm(true)}
             disabled={clearQueue.isPending}

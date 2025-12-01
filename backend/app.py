@@ -673,7 +673,7 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         if status == 'discovered' and channel.auto_download:
             video.status = 'queued'
             max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
-            queue_item = QueueItem(video_id=video.id, queue_position=max_pos + 1)
+            queue_item = QueueItem(video_id=video.id, queue_position=max_pos + 1, prior_status='discovered')
             session.add(queue_item)
             auto_queued_count += 1
             logger.info(f"[{idx}/{total_videos}] Auto-queued: '{video.title}' (position {max_pos + 1})")
@@ -1763,22 +1763,23 @@ def queue_youtube_playlist_videos():
             if existing:
                 # Only allow queueing discovered or ignored videos
                 if existing.status in ['discovered', 'ignored']:
+                    prior_status = existing.status
                     existing.status = 'queued'
                     # Check if already has queue item
                     in_queue = session.query(QueueItem).filter(QueueItem.video_id == existing.id).first()
                     if not in_queue:
                         max_pos += 1
-                        queue_item = QueueItem(video_id=existing.id, queue_position=max_pos)
+                        queue_item = QueueItem(video_id=existing.id, queue_position=max_pos, prior_status=prior_status)
                         session.add(queue_item)
                     added += 1
-                    logger.debug(f"Re-queued existing video: {v['yt_id']} (was {existing.status})")
+                    logger.debug(f"Re-queued existing video: {v['yt_id']} (was {prior_status})")
                 else:
                     # Skip removed, queued, downloading, library
                     logger.debug(f"Skipping video with status '{existing.status}': {v['yt_id']}")
                     skipped += 1
                 continue
 
-            # Create video record
+            # Create video record (new videos have NULL prior_status)
             video = Video(
                 yt_id=v['yt_id'],
                 title=v['title'],
@@ -1792,9 +1793,9 @@ def queue_youtube_playlist_videos():
             session.add(video)
             session.flush()  # Get the video ID
 
-            # Add to queue
+            # Add to queue (prior_status=NULL for new videos)
             max_pos += 1
-            queue_item = QueueItem(video_id=video.id, queue_position=max_pos)
+            queue_item = QueueItem(video_id=video.id, queue_position=max_pos, prior_status=None)
             session.add(queue_item)
             added += 1
             logger.debug(f"Queued video: {v['title']} (ID: {video.id})")
@@ -2220,11 +2221,12 @@ def add_to_queue():
             logger.debug(f"Video '{video.title}' (ID: {video_id}) already in queue with status: {video.status}")
             return jsonify({'error': 'Video already in queue'}), 400
 
-        # Set video status to queued and create queue item
+        # Save prior status and set video status to queued
+        prior_status = video.status
         video.status = 'queued'
         # Get max queue position and add to bottom
         max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
-        item = QueueItem(video_id=video_id, queue_position=max_pos + 1)
+        item = QueueItem(video_id=video_id, queue_position=max_pos + 1, prior_status=prior_status)
         session.add(item)
         session.commit()
 
@@ -2277,10 +2279,11 @@ def add_to_queue_bulk():
                 skipped_count += 1
                 continue
 
-            # Add to queue
+            # Add to queue - save prior status
+            prior_status = video.status
             video.status = 'queued'
             max_pos += 1
-            item = QueueItem(video_id=video_id, queue_position=max_pos)
+            item = QueueItem(video_id=video_id, queue_position=max_pos, prior_status=prior_status)
             session.add(item)
             added_count += 1
             logger.debug(f"Bulk add: Added video '{video.title}' (ID: {video_id}) to queue at position {max_pos}")
@@ -2335,9 +2338,9 @@ def remove_from_queue(item_id):
         if video and video.status == 'downloading':
             return jsonify({'error': 'Cannot remove item currently downloading'}), 400
 
-        # Reset video status back to discovered
+        # Restore video status to prior_status (what it was before queueing)
         if video and video.status in ['queued', 'downloading']:
-            video.status = 'discovered'
+            video.status = item.prior_status  # Restore to discovered, ignored, removed, or NULL
 
         session.delete(item)
         session.commit()
