@@ -148,7 +148,7 @@ export default function Queue() {
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Check if current theme is a light theme
-  const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
+  const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'debug';
 
   // Track scroll position to preserve it during queue updates from move operations
   const scrollPositionRef = useRef(null);

@@ -8,11 +8,9 @@ export const themes = {
   subnet: 'Subnet',
   archive: 'Archive',
   buffer: 'Buffer',
-  init: 'Init',
   gateway: 'Gateway',
   online: 'Online',
   pixel: 'Pixel',
-  standby: 'Standby',
   debug: 'Debug',
 };
 
@@ -27,7 +25,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-kernel', 'theme-fatal', 'theme-subnet', 'theme-archive', 'theme-buffer', 'theme-init', 'theme-gateway', 'theme-online', 'theme-pixel', 'theme-standby', 'theme-debug');
+    root.classList.remove('theme-kernel', 'theme-fatal', 'theme-subnet', 'theme-archive', 'theme-buffer', 'theme-gateway', 'theme-online', 'theme-pixel', 'theme-debug');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

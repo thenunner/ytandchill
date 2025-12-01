@@ -14,7 +14,7 @@ export default function ConfirmModal({
   const { theme } = useTheme();
 
   // Light themes need dark text
-  const isLightTheme = ['online', 'pixel', 'standby', 'debug'].includes(theme);
+  const isLightTheme = ['online', 'pixel', 'debug'].includes(theme);
 
   // Close on Escape key
   useEffect(() => {

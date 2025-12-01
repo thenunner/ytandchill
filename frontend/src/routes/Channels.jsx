@@ -207,12 +207,10 @@ export default function Channels() {
       batchLabel = `Scan ${channelsToScan.length} channels`;
     }
 
-    // Set scanning status immediately (optimistic UI)
-    try {
-      await api.setOperation('scanning', 'Scanning channels for new videos');
-    } catch (error) {
-      // Ignore errors, backend will set it anyway
-    }
+    // Set scanning status immediately (optimistic UI) - don't await, fire and forget
+    api.setOperation('scanning', 'Scanning channels for new videos').catch(() => {});
+    // Immediately refetch queue to pick up the new operation status
+    queryClient.invalidateQueries(['queue']);
 
     // Queue all channels at once (non-blocking)
     let queued = 0;

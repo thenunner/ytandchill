@@ -154,36 +154,6 @@
   --plyr-main: 35 40% 75%;
 }
 
-/* Init Green/Wheat Theme */
-.theme-init {
-  /* Backgrounds */
-  --bg-primary: 100 10% 10%;       /* #181C14 */
-  --bg-secondary: 100 7% 20%;      /* #3C3D37 */
-  --bg-tertiary: 100 8% 26%;       /* darker muted green */
-  --bg-hover: 100 10% 45%;
-
-  /* Borders */
-  --border: 100 8% 25%;
-  --border-light: 100 10% 35%;
-
-  /* Text */
-  --text-primary: 40 30% 88%;      /* #ECDFCC tone */
-  --text-secondary: 40 20% 70%;
-  --text-muted: 40 15% 55%;
-
-  /* Accent */
-  --accent: 40 40% 68%;            /* darker wheat for better button visibility */
-  --accent-hover: 40 45% 78%;
-
-  /* Scrollbar */
-  --scrollbar-track: 100 7% 20%;
-  --scrollbar-thumb: 100 8% 38%;
-  --scrollbar-thumb-hover: 100 10% 45%;
-
-  /* Plyr player */
-  --plyr-main: 40 40% 68%;         /* wheat tone */
-}
-
 /* Gateway Gray/Teal Theme */
 .theme-gateway {
   /* Backgrounds */
@@ -272,36 +242,6 @@
 
   /* Plyr player */
   --plyr-main: 315 80% 75%;        /* Same as accent */
-}
-
-/* Standby Light Wheat/Orange Theme */
-.theme-standby {
-  /* Backgrounds */
-  --bg-primary: 38 65% 88%;        /* Golden wheat background */
-  --bg-secondary: 36 60% 82%;      /* Soft amber (cards) */
-  --bg-tertiary: 35 55% 75%;       /* Warm amber (elevated) */
-  --bg-hover: 35 60% 70%;          /* Orange-tinted hover */
-
-  /* Borders */
-  --border: 35 35% 68%;
-  --border-light: 35 40% 75%;
-
-  /* Text - Dark for light theme */
-  --text-primary: 25 35% 25%;      /* deep brown text */
-  --text-secondary: 25 25% 40%;
-  --text-muted: 25 15% 55%;
-
-  /* Accent */
-  --accent: 35 100% 55%;           /* #FF9D00 bright orange */
-  --accent-hover: 35 100% 65%;
-
-  /* Scrollbar */
-  --scrollbar-track: 36 60% 82%;
-  --scrollbar-thumb: 35 45% 65%;
-  --scrollbar-thumb-hover: 35 50% 58%;
-
-  /* Plyr player */
-  --plyr-main: 35 100% 55%;        /* Same as accent */
 }
 
 /* Debug Light Cream/Blue Theme */

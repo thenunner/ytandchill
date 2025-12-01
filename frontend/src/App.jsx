@@ -30,7 +30,7 @@ function App() {
   const errorMessageRef = useRef(null);
 
   // Check if current theme is a light theme
-  const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
+  const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'debug';
 
   // Handle new queue structure (must be defined before useEffect that uses it)
   const queue = queueData?.queue_items || queueData || [];
@@ -65,17 +65,17 @@ function App() {
     return () => clearInterval(interval);
   }, [showQuickLogs]);
 
-  // Auto-clear scan completion message after 5 seconds
+  // Auto-clear scan completion message after 10 seconds
   useEffect(() => {
     if (prevOperationTypeRef.current === 'scanning' && currentOperation?.type === 'scan_complete') {
-      // Scan just completed - clear message after 5 seconds
+      // Scan just completed - clear message after 10 seconds
       const timer = setTimeout(async () => {
         try {
           await api.clearOperation();
         } catch (error) {
           console.error('Failed to clear operation:', error);
         }
-      }, 5000);
+      }, 10000);
 
       return () => clearTimeout(timer);
     }

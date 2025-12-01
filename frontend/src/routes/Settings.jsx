@@ -206,7 +206,7 @@ export default function Settings() {
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
               <div className="flex items-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v4.0.16</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v4.0.16</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center gap-3 order-3 md:order-4">
@@ -218,7 +218,7 @@ export default function Settings() {
               {/* yt-dlp - Mobile: (1,2), Desktop: (2,2) */}
               <div className="flex items-center gap-3 order-2 md:order-5">
                 <span className="text-text-secondary w-16">yt-dlp</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
             </div>
 
@@ -355,7 +355,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
               Kernel
@@ -367,7 +367,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
               Fatal
@@ -379,7 +379,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
               Subnet
@@ -391,7 +391,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
               Archive
@@ -403,22 +403,10 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
               Buffer
-            </button>
-            <button
-              onClick={() => { setTheme('init'); showNotification('Theme changed to Init', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'init'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-yellow-200 after:to-yellow-100'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(40, 40%, 68%)' }}></div>
-              Init
             </button>
             <button
               onClick={() => { setTheme('gateway'); showNotification('Theme changed to Gateway', 'success'); }}
@@ -427,7 +415,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-400 after:to-cyan-200'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
               Gateway
@@ -446,7 +434,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
               Online
@@ -458,22 +446,10 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
               Pixel
-            </button>
-            <button
-              onClick={() => { setTheme('standby'); showNotification('Theme changed to Standby', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'standby'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-orange-500 after:to-orange-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 100%, 55%)' }}></div>
-              Standby
             </button>
             <button
               onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
@@ -482,7 +458,7 @@ export default function Settings() {
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
                   : ''
               }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
               Debug
@@ -741,7 +717,7 @@ export default function Settings() {
               <div className="space-y-0.5">
                 {logsData.logs.map((line, index) => {
                   // Parse log line to color only the [LEVEL] part
-                  const isLight = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
+                  const isLight = theme === 'online' || theme === 'pixel' || theme === 'debug';
                   const baseTextColor = isLight ? 'text-black' : 'text-white';
 
                   // Match pattern: "timestamp - [LEVEL] - message"
