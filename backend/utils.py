@@ -1,15 +1,21 @@
 """
-Shared utility functions for the YouTube downloader backend.
+Shared utility functions and logging configuration for the YouTube downloader backend.
 """
 
+import logging
+import logging.handlers
 import os
 import random
 import re
 import time
 import threading
 import urllib.request
-from models import Setting
+from models import init_db, Setting
 
+
+# =============================================================================
+# Helper Functions
+# =============================================================================
 
 def parse_iso8601_duration(duration):
     """
@@ -20,14 +26,6 @@ def parse_iso8601_duration(duration):
 
     Returns:
         int: Total duration in seconds
-
-    Examples:
-        >>> parse_iso8601_duration("PT1H2M10S")
-        3730
-        >>> parse_iso8601_duration("PT30M")
-        1800
-        >>> parse_iso8601_duration("PT45S")
-        45
     """
     pattern = r'PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?'
     match = re.match(pattern, duration)
@@ -78,6 +76,10 @@ def get_random_video_thumbnail(playlist_videos):
     return random_video.thumb_url if random_video else None
 
 
+# =============================================================================
+# Settings Manager
+# =============================================================================
+
 class SettingsManager:
     """
     Centralized settings manager with caching to reduce database queries.
@@ -88,31 +90,12 @@ class SettingsManager:
 
     Usage:
         settings = SettingsManager(session_factory)
-
-        # Get settings
         value = settings.get('some_key', default='fallback')
         enabled = settings.get_bool('auto_refresh_enabled')
-        minutes = settings.get_int('max_minutes', default=120)
-
-        # Get SponsorBlock categories (cached)
-        categories = settings.get_sponsorblock_categories()
-
-        # Update settings (invalidates cache)
         settings.set('some_key', 'new_value')
-
-        # Clear cache manually if needed
-        settings.invalidate()  # Clear all
-        settings.invalidate('some_key')  # Clear specific key
     """
 
     def __init__(self, session_factory, cache_ttl=5):
-        """
-        Initialize the settings manager.
-
-        Args:
-            session_factory: SQLAlchemy session factory
-            cache_ttl: Cache time-to-live in seconds (default: 5)
-        """
         self.session_factory = session_factory
         self.cache_ttl = cache_ttl
         self._cache = {}
@@ -120,62 +103,29 @@ class SettingsManager:
         self._lock = threading.Lock()
 
     def get(self, key, default=None):
-        """
-        Get setting value with caching.
-
-        Args:
-            key: Setting key to retrieve
-            default: Default value if setting not found
-
-        Returns:
-            Setting value or default if not found
-        """
+        """Get setting value with caching."""
         with self._lock:
-            # Check cache first
             if key in self._cache:
-                # Check if cache is still valid
                 if time.time() - self._cache_time[key] < self.cache_ttl:
                     return self._cache[key]
 
-            # Cache miss or expired - query database
             session = self.session_factory()
             try:
                 setting = session.query(Setting).filter(Setting.key == key).first()
                 value = setting.value if setting else default
-
-                # Update cache
                 self._cache[key] = value
                 self._cache_time[key] = time.time()
-
                 return value
             finally:
                 session.close()
 
     def get_bool(self, key, default=False):
-        """
-        Get setting as boolean value.
-
-        Args:
-            key: Setting key to retrieve
-            default: Default boolean value if setting not found
-
-        Returns:
-            Boolean value (True if value is 'true', False otherwise)
-        """
+        """Get setting as boolean value."""
         value = self.get(key, 'true' if default else 'false')
         return value == 'true' if value is not None else default
 
     def get_int(self, key, default=0):
-        """
-        Get setting as integer value.
-
-        Args:
-            key: Setting key to retrieve
-            default: Default integer value if setting not found
-
-        Returns:
-            Integer value or default if conversion fails
-        """
+        """Get setting as integer value."""
         value = self.get(key, str(default))
         try:
             return int(value) if value is not None else default
@@ -183,13 +133,7 @@ class SettingsManager:
             return default
 
     def set(self, key, value):
-        """
-        Set setting value and invalidate cache for this key.
-
-        Args:
-            key: Setting key to update
-            value: New value for the setting
-        """
+        """Set setting value and invalidate cache for this key."""
         session = self.session_factory()
         try:
             setting = session.query(Setting).filter(Setting.key == key).first()
@@ -200,7 +144,6 @@ class SettingsManager:
                 session.add(setting)
             session.commit()
 
-            # Invalidate cache for this key
             with self._lock:
                 self._cache.pop(key, None)
                 self._cache_time.pop(key, None)
@@ -208,40 +151,124 @@ class SettingsManager:
             session.close()
 
     def get_sponsorblock_categories(self):
-        """
-        Get list of enabled SponsorBlock categories.
-
-        Checks the three SponsorBlock settings and returns a list of
-        enabled categories. This is a commonly used operation, so it's
-        cached like other settings.
-
-        Returns:
-            list: Enabled SponsorBlock categories (e.g., ['sponsor', 'selfpromo'])
-        """
+        """Get list of enabled SponsorBlock categories."""
         categories = []
-
         if self.get_bool('sponsorblock_remove_sponsor'):
             categories.append('sponsor')
         if self.get_bool('sponsorblock_remove_selfpromo'):
             categories.append('selfpromo')
         if self.get_bool('sponsorblock_remove_interaction'):
             categories.append('interaction')
-
         return categories
 
     def invalidate(self, key=None):
-        """
-        Clear cache entries.
-
-        Args:
-            key: Specific key to invalidate, or None to clear all cache
-        """
+        """Clear cache entries."""
         with self._lock:
             if key is None:
-                # Clear entire cache
                 self._cache.clear()
                 self._cache_time.clear()
             else:
-                # Clear specific key
                 self._cache.pop(key, None)
                 self._cache_time.pop(key, None)
+
+
+# =============================================================================
+# Logging Configuration
+# =============================================================================
+
+# Custom API log level (between DEBUG=10 and INFO=20)
+API_LEVEL = 15
+logging.addLevelName(API_LEVEL, 'API')
+
+def _api_log(self, message, *args, **kwargs):
+    """Log API GET requests at API level."""
+    if self.isEnabledFor(API_LEVEL):
+        self._log(API_LEVEL, message, args, **kwargs)
+
+logging.Logger.api = _api_log
+
+# Logging configuration
+LOG_DIR = 'logs'
+os.makedirs(LOG_DIR, exist_ok=True)
+LOG_FILE = os.path.join(LOG_DIR, 'app.log')
+MAX_BYTES = 50 * 1024 * 1024  # 50 MB
+BACKUP_COUNT = 2  # 3 files total
+DEFAULT_LOG_LEVEL = 'INFO'
+
+# Initialize settings manager for logging (uses its own DB session)
+_engine, _Session = init_db()
+_logging_settings = SettingsManager(_Session, cache_ttl=5)
+
+
+def get_log_level_from_db():
+    """Get the logging level from the database."""
+    try:
+        level = _logging_settings.get('log_level', DEFAULT_LOG_LEVEL)
+        return level.upper() if level else DEFAULT_LOG_LEVEL
+    except Exception as e:
+        print(f'Failed to get log level from database: {e}')
+        return DEFAULT_LOG_LEVEL
+
+
+def set_log_level_in_db(level):
+    """Set the logging level in the database."""
+    try:
+        _logging_settings.set('log_level', level.upper())
+        return True
+    except Exception as e:
+        print(f'Failed to set log level in database: {e}')
+        return False
+
+
+def setup_logging():
+    """Configure logging with rotating file handler."""
+    log_level_str = get_log_level_from_db()
+
+    if log_level_str == 'API':
+        log_level = API_LEVEL
+    else:
+        log_level = getattr(logging, log_level_str, logging.INFO)
+
+    file_handler = logging.handlers.RotatingFileHandler(
+        LOG_FILE,
+        maxBytes=MAX_BYTES,
+        backupCount=BACKUP_COUNT,
+        encoding='utf-8'
+    )
+
+    formatter = logging.Formatter(
+        '%(asctime)s - [%(levelname)s] - %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S'
+    )
+    file_handler.setFormatter(formatter)
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_level)
+    root_logger.handlers = []
+    root_logger.addHandler(file_handler)
+
+    console_handler = logging.StreamHandler()
+    console_handler.setFormatter(formatter)
+    root_logger.addHandler(console_handler)
+
+    return root_logger
+
+
+def update_log_level(level):
+    """Update the logging level at runtime."""
+    level_str = level.upper()
+
+    if level_str == 'API':
+        log_level = API_LEVEL
+    else:
+        log_level = getattr(logging, level_str, logging.INFO)
+
+    if set_log_level_in_db(level_str):
+        root_logger = logging.getLogger()
+        root_logger.setLevel(log_level)
+        return True
+    return False
+
+
+# Initialize logging when module is imported
+logger = setup_logging()

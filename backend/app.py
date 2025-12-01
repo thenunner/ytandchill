@@ -11,12 +11,11 @@ from download_worker import DownloadWorker
 from scheduler import AutoRefreshScheduler
 from googleapiclient.errors import HttpError
 from youtube_client import YouTubeAPIClient
-import logging_config
 import logging
 import atexit
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
-from utils import parse_iso8601_duration, download_thumbnail, get_random_video_thumbnail
+from utils import parse_iso8601_duration, download_thumbnail, get_random_video_thumbnail, update_log_level
 from werkzeug.security import check_password_hash, generate_password_hash, safe_join
 import threading
 from queue import Queue
@@ -2576,7 +2575,7 @@ def update_settings():
         for key, value in data.items():
             # Handle log level changes separately (update_log_level manages its own DB session)
             if key == 'log_level':
-                logging_config.update_log_level(value)
+                update_log_level(value)
                 continue
 
             settings_manager.set(key, value)
