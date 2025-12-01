@@ -800,7 +800,11 @@ export default function Channels() {
             onClick={() => handleScanAllChannels(false)}
             disabled={!channels || channels.length === 0 || isScanRunning}
             className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
-            title={isScanRunning ? "Scan in progress..." : "Scan for new videos since last scan"}
+            title={isScanRunning
+              ? "Scan in progress..."
+              : selectedChannels.length > 0
+                ? "Scan selected channels for new videos since last scan"
+                : "Scan all channels for new videos since last scan"}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 4 23 10 17 10"></polyline>
@@ -814,7 +818,11 @@ export default function Channels() {
             onClick={() => handleScanAllChannels(true)}
             disabled={!channels || channels.length === 0 || isScanRunning}
             className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
-            title={isScanRunning ? "Scan in progress..." : "Full scan - rescan all videos"}
+            title={isScanRunning
+              ? "Scan in progress..."
+              : selectedChannels.length > 0
+                ? "Rescan selected channels for all videos"
+                : "Rescan all channels for all videos"}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -913,17 +921,6 @@ export default function Channels() {
         </div>
       )}
 
-      {/* Overlay for Duration Settings - closes on click outside */}
-      {showDurationSettings !== null && (
-        <div
-          className="fixed inset-0 z-40 bg-transparent"
-          onClick={() => {
-            setShowDurationSettings(null);
-            setEditingChannel(null);
-          }}
-        />
-      )}
-
       {/* Channels Grid/List */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
@@ -939,13 +936,67 @@ export default function Channels() {
                       e.preventDefault();
                       e.stopPropagation();
                       setShowDurationSettings(showDurationSettings === channel.id ? null : channel.id);
-                      setEditingChannel(channel);
-                      setMenuOpen(null);
+                      if (showDurationSettings !== channel.id) {
+                        setEditingChannel(channel);
+                      }
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center justify-between"
                   >
                     <span className="font-medium">Duration Settings</span>
+                    <svg className={`w-4 h-4 text-text-muted transition-transform ${showDurationSettings === channel.id ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
                   </button>
+
+                  {/* Duration Settings - inline expansion */}
+                  {showDurationSettings === channel.id && (
+                    <div className="bg-dark-tertiary/50 border-t border-dark-border p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <label className="block text-xs text-text-secondary mb-1">Min</label>
+                          <input
+                            type="number"
+                            value={editingChannel?.id === channel.id ? editingChannel.min_minutes : channel.min_minutes}
+                            onChange={(e) => setEditingChannel({
+                              ...channel,
+                              min_minutes: Number(e.target.value),
+                              max_minutes: editingChannel?.id === channel.id ? editingChannel.max_minutes : channel.max_minutes
+                            })}
+                            onClick={(e) => e.stopPropagation()}
+                            className="input text-sm py-1 w-full"
+                            min="0"
+                          />
+                        </div>
+                        <div className="flex-1">
+                          <label className="block text-xs text-text-secondary mb-1">Max</label>
+                          <input
+                            type="number"
+                            value={editingChannel?.id === channel.id ? editingChannel.max_minutes : channel.max_minutes}
+                            onChange={(e) => setEditingChannel({
+                              ...channel,
+                              max_minutes: Number(e.target.value),
+                              min_minutes: editingChannel?.id === channel.id ? editingChannel.min_minutes : channel.min_minutes
+                            })}
+                            onClick={(e) => e.stopPropagation()}
+                            className="input text-sm py-1 w-full"
+                            min="0"
+                          />
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleUpdateFilters(editingChannel || channel);
+                          setShowDurationSettings(null);
+                          setMenuOpen(null);
+                        }}
+                        className="w-full btn btn-primary btn-sm"
+                      >
+                        Save
+                      </button>
+                    </div>
+                  )}
 
                   {/* Auto-Download Toggle */}
                   <button
@@ -1204,55 +1255,6 @@ export default function Channels() {
                 </div>
               </Link>
 
-              {/* Duration Settings Panel - inside card */}
-              {showDurationSettings === channel.id && editingChannel?.id === channel.id && (
-                <div
-                  className="border-t border-dark-border p-4 bg-dark-tertiary/50 animate-slide-down"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-text-secondary mb-1">
-                        Min Minutes
-                      </label>
-                      <input
-                        type="number"
-                        value={editingChannel.min_minutes}
-                        onChange={(e) => setEditingChannel({
-                          ...editingChannel,
-                          min_minutes: Number(e.target.value)
-                        })}
-                        className="input text-sm py-1.5 w-full"
-                        min="0"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-xs font-medium text-text-secondary mb-1">
-                        Max Minutes
-                      </label>
-                      <input
-                        type="number"
-                        value={editingChannel.max_minutes}
-                        onChange={(e) => setEditingChannel({
-                          ...editingChannel,
-                          max_minutes: Number(e.target.value)
-                        })}
-                        className="input text-sm py-1.5 w-full"
-                        min="0"
-                      />
-                    </div>
-                    <button
-                      onClick={() => {
-                        handleUpdateFilters(editingChannel);
-                        setShowDurationSettings(null);
-                      }}
-                      className="btn btn-primary btn-sm"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
           ))}
