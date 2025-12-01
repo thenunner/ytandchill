@@ -1103,6 +1103,23 @@ export default function Library() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
+                                navigate(`/play/category/${categoryId}?shuffle=true`);
+                                setActiveCategoryMenuId(null);
+                              }}
+                              className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="16 3 21 3 21 8"></polyline>
+                                <line x1="4" y1="20" x2="21" y2="3"></line>
+                                <polyline points="21 16 21 21 16 21"></polyline>
+                                <line x1="15" y1="15" x2="21" y2="21"></line>
+                                <line x1="4" y1="4" x2="9" y2="9"></line>
+                              </svg>
+                              Shuffle
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setRenameCategoryId(categoryId);
                                 setRenameCategoryValue(category.name);
                                 setShowRenameCategoryModal(true);
@@ -1215,6 +1232,23 @@ export default function Library() {
                                             <path d="M8 5v14l11-7z"/>
                                           </svg>
                                           Play All
+                                        </button>
+                                        <button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/play/playlist/${playlist.id}?shuffle=true`);
+                                            setActiveMenuId(null);
+                                          }}
+                                          className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                        >
+                                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                            <polyline points="16 3 21 3 21 8"></polyline>
+                                            <line x1="4" y1="20" x2="21" y2="3"></line>
+                                            <polyline points="21 16 21 21 16 21"></polyline>
+                                            <line x1="15" y1="15" x2="21" y2="21"></line>
+                                            <line x1="4" y1="4" x2="9" y2="9"></line>
+                                          </svg>
+                                          Shuffle
                                         </button>
                                         <button
                                           onClick={(e) => {
@@ -1337,6 +1371,16 @@ export default function Library() {
                                       className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
                                     >
                                       Play All
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/play/playlist/${playlist.id}?shuffle=true`);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                    >
+                                      Shuffle
                                     </button>
                                     <button
                                       onClick={(e) => {
@@ -1530,6 +1574,23 @@ export default function Library() {
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation();
+                                        navigate(`/play/playlist/${playlist.id}?shuffle=true`);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                    >
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <polyline points="16 3 21 3 21 8"></polyline>
+                                        <line x1="4" y1="20" x2="21" y2="3"></line>
+                                        <polyline points="21 16 21 21 16 21"></polyline>
+                                        <line x1="15" y1="15" x2="21" y2="21"></line>
+                                        <line x1="4" y1="4" x2="9" y2="9"></line>
+                                      </svg>
+                                      Shuffle
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
                                         setRenamePlaylistId(playlist.id);
                                         setRenameValue(playlist.title || playlist.name || '');
                                         setShowRenameModal(true);
@@ -1648,6 +1709,16 @@ export default function Library() {
                                   className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
                                 >
                                   Play All
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/play/playlist/${playlist.id}?shuffle=true`);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                >
+                                  Shuffle
                                 </button>
                                 <button
                                   onClick={(e) => {

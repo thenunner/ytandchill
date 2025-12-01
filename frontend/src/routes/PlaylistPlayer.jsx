@@ -11,15 +11,16 @@ export default function PlaylistPlayer() {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
 
-  // Get starting video from URL if provided
+  // Get starting video and shuffle param from URL if provided
   const startVideoId = searchParams.get('v');
+  const startShuffled = searchParams.get('shuffle') === 'true';
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLooping, setIsLooping] = useState(() => {
     const saved = localStorage.getItem('playlistLoop');
     return saved === 'true';
   });
-  const [isShuffled, setIsShuffled] = useState(false);
+  const [isShuffled, setIsShuffled] = useState(startShuffled);
   const [shuffledOrder, setShuffledOrder] = useState([]);
   const [showMobileQueue, setShowMobileQueue] = useState(false);
 
@@ -168,6 +169,19 @@ export default function PlaylistPlayer() {
       }
     }
   }, [startVideoId, finalVideos, isShuffled]);
+
+  // Initialize shuffle order when starting shuffled
+  useEffect(() => {
+    if (startShuffled && finalVideos.length > 0 && shuffledOrder.length === 0) {
+      const indices = finalVideos.map((_, i) => i);
+      // Fisher-Yates shuffle
+      for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+      }
+      setShuffledOrder(indices);
+    }
+  }, [startShuffled, finalVideos.length, shuffledOrder.length]);
 
   // Shuffle function
   const shuffleArray = useCallback((arr) => {

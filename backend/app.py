@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory, send_file, Response, session
+from flask import Flask, request, jsonify, send_from_directory, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import secrets
@@ -16,9 +16,8 @@ import logging
 import atexit
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
-from utils import parse_iso8601_duration
+from utils import parse_iso8601_duration, download_thumbnail, get_random_video_thumbnail
 from werkzeug.security import check_password_hash, generate_password_hash, safe_join
-from functools import wraps
 import threading
 from queue import Queue
 
@@ -109,7 +108,7 @@ def check_single_instance():
 check_single_instance()
 
 # YouTube Data API Helper Functions
-def get_youtube_api_key(session=None):
+def get_youtube_api_key():
     """Get YouTube API key from settings"""
     return settings_manager.get('youtube_api_key')
 
@@ -483,9 +482,6 @@ def init_settings():
 init_settings()
 
 # Helper functions
-def get_db():
-    return session_factory()
-
 def serialize_channel(channel):
     # Calculate video counts based on status
     discovered_count = len([v for v in channel.videos if v.status == 'discovered'])
@@ -825,18 +821,16 @@ def serialize_video(video):
 
 def serialize_category(category):
     """Serialize category with playlist count"""
+    import random
     playlist_count = len(category.playlists) if category.playlists else 0
 
     # Get a random playlist thumbnail if category has playlists
     thumbnail = None
     if category.playlists:
-        import random
         playlists_with_videos = [p for p in category.playlists if p.playlist_videos]
         if playlists_with_videos:
             random_playlist = random.choice(playlists_with_videos)
-            random_video = random.choice(random_playlist.playlist_videos).video
-            if random_video:
-                thumbnail = random_video.thumb_url
+            thumbnail = get_random_video_thumbnail(random_playlist.playlist_videos)
 
     return {
         'id': category.id,
@@ -848,14 +842,8 @@ def serialize_category(category):
     }
 
 def serialize_playlist(playlist):
-    import random
-
     # Get a random video thumbnail if playlist has videos
-    thumbnail = None
-    if playlist.playlist_videos:
-        random_video = random.choice(playlist.playlist_videos).video
-        if random_video:
-            thumbnail = random_video.thumb_url
+    thumbnail = get_random_video_thumbnail(playlist.playlist_videos)
 
     # Include category info
     category_info = None
@@ -1020,23 +1008,14 @@ def create_channel():
             folder_name = channel_info['title'].replace(' ', '_').replace('/', '_')[:50]
 
             # Download channel thumbnail locally
-            import urllib.request
-            thumbnails_dir = os.path.join('downloads', 'thumbnails')
-            os.makedirs(thumbnails_dir, exist_ok=True)
-
             thumbnail_path = None
             if channel_info['thumbnail']:
-                try:
-                    thumbnail_filename = f"{channel_id}.jpg"
-                    local_file_path = os.path.join(thumbnails_dir, thumbnail_filename)
-                    urllib.request.urlretrieve(channel_info['thumbnail'], local_file_path)
-
+                thumbnail_filename = f"{channel_id}.jpg"
+                local_file_path = os.path.join('downloads', 'thumbnails', thumbnail_filename)
+                if download_thumbnail(channel_info['thumbnail'], local_file_path):
                     # Store relative path (without 'downloads/' prefix) since media endpoint serves from downloads/
                     thumbnail_path = os.path.join('thumbnails', thumbnail_filename)
                     print(f'Downloaded channel thumbnail for {channel_id}')
-                except Exception as e:
-                    print(f'Failed to download channel thumbnail: {e}')
-                    thumbnail_path = None
 
             channel = Channel(
                 yt_id=channel_id,

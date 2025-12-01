@@ -1,28 +1,13 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timezone, timedelta
-import yt_dlp
 import subprocess
 import os
 from models import Channel, Video, Setting, QueueItem, get_session
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from utils import parse_iso8601_duration
 from sqlalchemy import func
 import logging
 
 logger = logging.getLogger(__name__)
 
-def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
-    """Format date for scan status message. Returns 'None' if no date."""
-    if datetime_obj:
-        return datetime_obj.strftime('%m/%d')
-    elif yyyymmdd_string:
-        # Parse YYYYMMDD format
-        year = yyyymmdd_string[0:4]
-        month = yyyymmdd_string[4:6]
-        day = yyyymmdd_string[6:8]
-        return f"{month}/{day}"
-    return "None"
 
 class AutoRefreshScheduler:
     def __init__(self, session_factory, download_worker=None, settings_manager=None, set_operation_callback=None, clear_operation_callback=None, queue_scan_callback=None):

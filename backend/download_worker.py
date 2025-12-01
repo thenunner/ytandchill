@@ -7,8 +7,7 @@ import logging
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
 from models import Video, QueueItem, Setting, get_session
-from sqlalchemy.orm import Session
-import signal
+from utils import download_thumbnail
 import glob
 
 logger = logging.getLogger(__name__)
@@ -388,14 +387,11 @@ class DownloadWorker:
 
     def _download_thumbnail(self, video, channel_dir):
         """Download video thumbnail from YouTube."""
-        import urllib.request
         thumb_path = os.path.join(channel_dir, f'{video.yt_id}.jpg')
-        try:
-            logger.debug(f'Downloading thumbnail from {video.thumb_url}')
-            urllib.request.urlretrieve(video.thumb_url, thumb_path)
+        if download_thumbnail(video.thumb_url, thumb_path):
             logger.debug(f'Downloaded thumbnail for {video.yt_id}')
-        except Exception as thumb_error:
-            logger.warning(f'Failed to download thumbnail: {thumb_error}')
+        else:
+            logger.warning(f'Failed to download thumbnail for {video.yt_id}')
 
     def _configure_download_options(self, channel_dir, video_yt_id, progress_hook):
         """

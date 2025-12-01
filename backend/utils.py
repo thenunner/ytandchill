@@ -2,9 +2,12 @@
 Shared utility functions for the YouTube downloader backend.
 """
 
+import os
+import random
 import re
 import time
 import threading
+import urllib.request
 from models import Setting
 
 
@@ -36,6 +39,43 @@ def parse_iso8601_duration(duration):
     seconds = int(match.group(3) or 0)
 
     return hours * 3600 + minutes * 60 + seconds
+
+
+def download_thumbnail(url, save_path):
+    """
+    Download a thumbnail from URL to local path.
+
+    Args:
+        url: URL of the thumbnail to download
+        save_path: Local file path to save the thumbnail
+
+    Returns:
+        bool: True if download succeeded, False otherwise
+    """
+    if not url:
+        return False
+    try:
+        os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        urllib.request.urlretrieve(url, save_path)
+        return True
+    except Exception:
+        return False
+
+
+def get_random_video_thumbnail(playlist_videos):
+    """
+    Get a random thumbnail URL from a list of playlist videos.
+
+    Args:
+        playlist_videos: List of PlaylistVideo objects
+
+    Returns:
+        str or None: Thumbnail URL of a random video, or None if no videos
+    """
+    if not playlist_videos:
+        return None
+    random_video = random.choice(playlist_videos).video
+    return random_video.thumb_url if random_video else None
 
 
 class SettingsManager:
