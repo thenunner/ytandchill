@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import logging
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
-from models import Video, QueueItem, Setting, get_session
+from database import Video, QueueItem, Setting, get_session
 from utils import download_thumbnail
 import glob
 

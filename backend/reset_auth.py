@@ -1,4 +1,4 @@
-from models import init_db, Setting, get_session
+from database import init_db, Setting, get_session
 
 engine, Session = init_db()
 

@@ -10,7 +10,7 @@ import re
 import time
 import threading
 import urllib.request
-from models import init_db, Setting
+from database import init_db, Setting
 
 
 # =============================================================================
@@ -266,6 +266,7 @@ def update_log_level(level):
     if set_log_level_in_db(level_str):
         root_logger = logging.getLogger()
         root_logger.setLevel(log_level)
+        root_logger.info(f'Log level changed to {level_str}')
         return True
     return False
 

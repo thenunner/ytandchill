@@ -6,11 +6,11 @@ from datetime import datetime, timezone, timedelta
 import os
 import yt_dlp
 import subprocess
-from models import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, ChannelCategory, get_session
-from download_worker import DownloadWorker
+from database import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, ChannelCategory, get_session
+from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
 from googleapiclient.errors import HttpError
-from youtube_client import YouTubeAPIClient
+from scanner import YouTubeAPIClient
 import logging
 import atexit
 from sqlalchemy.orm import joinedload
@@ -2578,18 +2578,21 @@ def update_settings():
                 update_log_level(value)
                 continue
 
-            settings_manager.set(key, value)
-
-            # Track auto-refresh toggle (execute AFTER commit)
+            # Check if auto-refresh settings changed BEFORE updating
             if key == 'auto_refresh_enabled':
-                if value == 'true':
-                    needs_enable = True
-                else:
-                    needs_disable = True
+                current = settings_manager.get('auto_refresh_enabled', 'false')
+                if value != current:
+                    if value == 'true':
+                        needs_enable = True
+                    else:
+                        needs_disable = True
 
-            # Track auto-refresh time change (execute AFTER commit)
             if key == 'auto_refresh_time':
-                needs_reschedule = True
+                current = settings_manager.get('auto_refresh_time')
+                if value != current:
+                    needs_reschedule = True
+
+            settings_manager.set(key, value)
 
     # Now execute scheduler actions with committed values
     if needs_enable:
@@ -2597,7 +2600,8 @@ def update_settings():
     elif needs_disable:
         scheduler.disable()
 
-    if needs_reschedule:
+    # Only reschedule if time changed but we didn't just enable (enable already uses new time)
+    if needs_reschedule and not needs_enable:
         scheduler.reschedule()
 
     return jsonify({'success': True})

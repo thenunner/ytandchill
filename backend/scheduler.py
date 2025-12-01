@@ -2,7 +2,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timezone, timedelta
 import subprocess
 import os
-from models import Channel, Video, Setting, QueueItem, get_session
+from database import Channel, Video, Setting, QueueItem, get_session
 from sqlalchemy import func
 import logging
 
