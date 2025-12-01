@@ -535,13 +535,11 @@ class DownloadWorker:
                     self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Copyright takedown detected')
                     return False, False, False, False, None
 
-                # Check for empty file errors - often rate limiting or network issues
+                # Check for empty file errors - DRM protected content, mark as removed and continue
                 if 'downloaded file is empty' in error_str.lower() or 'empty file' in error_str.lower():
-                    logger.warning(f'Empty file error for {video.yt_id} - likely rate limiting, will retry later')
-                    self.last_error_message = f"{video.title[:50]} - Empty file (may be DRM protected)"
-                    self._handle_rate_limit(session, video, queue_item)
-                    rate_limited = True
-                    break
+                    self.last_error_message = f"{video.title[:50]} - Empty file (DRM protected)"
+                    self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Empty file - likely DRM protected')
+                    return False, False, False, False, None
 
                 logger.error(f'Download attempt {attempt} failed for {video.yt_id}: {error_str}')
 
