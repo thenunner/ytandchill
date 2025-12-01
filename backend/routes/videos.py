@@ -15,7 +15,7 @@ from sqlalchemy.orm import joinedload
 import logging
 import os
 
-from database import Video, QueueItem, playlist_videos, get_session
+from database import Video, QueueItem, PlaylistVideo, get_session
 
 logger = logging.getLogger(__name__)
 
@@ -198,9 +198,7 @@ def delete_video(video_id):
         if is_singles:
             # Hard delete Singles videos - allows re-downloading
             # Remove from any playlists first
-            session.execute(
-                playlist_videos.delete().where(playlist_videos.c.video_id == video.id)
-            )
+            session.query(PlaylistVideo).filter(PlaylistVideo.video_id == video.id).delete()
             session.delete(video)
             print(f"Hard deleted Singles video: {video.yt_id}")
         else:
