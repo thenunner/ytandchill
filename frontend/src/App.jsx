@@ -26,6 +26,8 @@ function App() {
   const [showQuickLogs, setShowQuickLogs] = useState(false);
   const [logsData, setLogsData] = useState(null);
   const prevOperationTypeRef = useRef(null);
+  const [visibleErrorMessage, setVisibleErrorMessage] = useState(null);
+  const errorMessageRef = useRef(null);
 
   // Check if current theme is a light theme
   const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'standby' || theme === 'debug';
@@ -80,6 +82,28 @@ function App() {
 
     prevOperationTypeRef.current = currentOperation?.type;
   }, [currentOperation?.type]);
+
+  // Auto-hide error message after 10 seconds
+  useEffect(() => {
+    // When a new error message appears, show it and start fade timer
+    if (lastErrorMessage && lastErrorMessage !== errorMessageRef.current) {
+      errorMessageRef.current = lastErrorMessage;
+      setVisibleErrorMessage(lastErrorMessage);
+
+      // Hide after 10 seconds
+      const timer = setTimeout(() => {
+        setVisibleErrorMessage(null);
+      }, 10000);
+
+      return () => clearTimeout(timer);
+    }
+
+    // If backend cleared the error message, hide it immediately
+    if (!lastErrorMessage && errorMessageRef.current) {
+      errorMessageRef.current = null;
+      setVisibleErrorMessage(null);
+    }
+  }, [lastErrorMessage]);
 
   // Auth checks using React Query (following autobrr/qui pattern)
   const { data: firstRunData, isLoading: firstRunLoading, error: firstRunError } = useFirstRunCheck();
@@ -212,7 +236,7 @@ function App() {
         </div>
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
-        {(downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || lastErrorMessage || health) && (
+        {(downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || health) && (
           <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
@@ -305,15 +329,15 @@ function App() {
                   </div>
                 )}
 
-                {/* Last Error Message */}
-                {lastErrorMessage && !notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && (
+                {/* Last Error Message (auto-fades after 10 seconds) */}
+                {visibleErrorMessage && !notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"></circle>
                       <line x1="12" y1="8" x2="12" y2="12"></line>
                       <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
-                    <span className="text-red-400">{lastErrorMessage}</span>
+                    <span className="text-red-400">{visibleErrorMessage}</span>
                   </div>
                 )}
 
