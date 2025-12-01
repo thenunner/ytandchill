@@ -41,7 +41,7 @@ class Video(Base):
     thumb_url = Column(String(500))
     file_path = Column(String(500))
     file_size_bytes = Column(Integer)
-    status = Column(String(20), default='discovered', index=True)  # discovered, ignored, geoblocked, queued, downloading, library
+    status = Column(String(20), default='discovered', index=True)  # discovered, ignored, removed, queued, downloading, library
     watched = Column(Boolean, default=False, index=True)
     playback_seconds = Column(Integer, default=0)
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

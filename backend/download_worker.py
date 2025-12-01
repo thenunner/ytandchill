@@ -13,6 +13,27 @@ import glob
 
 logger = logging.getLogger(__name__)
 
+
+class YtDlpLogger:
+    """Custom logger for yt-dlp that routes output to our logging system."""
+
+    def debug(self, msg):
+        # yt-dlp sends most info as debug, log at INFO for visibility
+        if msg.startswith('[debug]'):
+            logger.debug(f'[yt-dlp] {msg}')
+        else:
+            logger.info(f'[yt-dlp] {msg}')
+
+    def info(self, msg):
+        logger.info(f'[yt-dlp] {msg}')
+
+    def warning(self, msg):
+        logger.warning(f'[yt-dlp] {msg}')
+
+    def error(self, msg):
+        logger.error(f'[yt-dlp] {msg}')
+
+
 class DownloadWorker:
     # Timeout constants
     PROGRESS_TIMEOUT = 1800  # 30 minutes of no progress triggers timeout
@@ -30,6 +51,7 @@ class DownloadWorker:
         self.rate_limit_message = None  # Persistent rate limit message for UI
         self.last_download_time = None  # Track when last download finished for rate limiting
         self.next_download_delay = 0  # Delay in seconds before next download can start
+        self.last_error_message = None  # Last download error for UI display
 
         # Ensure download directory exists
         os.makedirs(download_dir, exist_ok=True)
@@ -119,12 +141,12 @@ class DownloadWorker:
                 logger.warning(f'Failed to delete thumbnail: {thumb_error}')
 
         # Update database
-        video.status = 'ignored'
+        video.status = 'removed'
         if queue_item:
             session.delete(queue_item)
         session.commit()
         self.current_download = None
-        logger.info(f'Successfully moved video to ignored: {video.yt_id}')
+        logger.info(f'Successfully moved video to removed: {video.yt_id}')
 
     def _handle_rate_limit(self, session, video, queue_item, cookies_path=None, error_code=None):
         """
@@ -383,15 +405,17 @@ class DownloadWorker:
         ydl_opts = {
             'format': 'best',  # Let yt-dlp choose best available format
             'outtmpl': os.path.join(channel_dir, f'{video_yt_id}.%(ext)s'),
-            'quiet': True,
-            'no_warnings': True,
+            'quiet': False,  # Enable output for logging
+            'verbose': True,  # Verbose output for debugging
+            'no_warnings': False,  # Show warnings
+            'logger': YtDlpLogger(),  # Custom logger to route to our logging system
             'progress_hooks': [progress_hook],
             'nocheckcertificate': True,
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
             'socket_timeout': 30,
             'retries': 3,
             'continue': True,
-            'noprogress': False,
+            'noprogress': True,  # Disable progress bar (we use progress_hooks instead)
             'concurrent_fragment_downloads': 3,  # Download 3 fragments in parallel for better performance
             'postprocessor_args': {
                 'ffmpeg': ['-movflags', '+faststart']  # Move MOOV atom to beginning for fast video seeking
@@ -450,9 +474,10 @@ class DownloadWorker:
                 download_success = True
 
             except GeoRestrictedError as geo_error:
-                # Video is geo-blocked - mark as geoblocked and skip
+                # Video is geo-blocked - mark as removed and skip
                 logger.warning(f'Video geo-blocked: {video.title} ({video.yt_id})')
-                video.status = 'geoblocked'
+                self.last_error_message = f"{video.title[:50]} - Geo-blocked in your region"
+                video.status = 'removed'
                 session.delete(queue_item)
                 session.commit()
                 self.current_download = None
@@ -482,32 +507,38 @@ class DownloadWorker:
                 # Check for age verification errors - move to ignored status
                 if 'verify your age' in error_str.lower() or \
                    ('age' in error_str.lower() and 'verif' in error_str.lower()):
+                    self.last_error_message = f"{video.title[:50]} - Age verification required"
                     self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Age verification required')
                     return False, False, False, False, None
 
                 # Check for private videos - auto-ignore
                 if 'private' in error_str.lower() and 'video' in error_str.lower():
+                    self.last_error_message = f"{video.title[:50]} - Private video"
                     self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Private video detected')
                     return False, False, False, False, None
 
                 # Check for deleted/unavailable videos - auto-ignore
                 if 'removed' in error_str.lower() or 'unavailable' in error_str.lower() or 'does not exist' in error_str.lower():
+                    self.last_error_message = f"{video.title[:50]} - Video unavailable/removed"
                     self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Deleted/unavailable video detected')
                     return False, False, False, False, None
 
                 # Check for members-only content - auto-ignore
                 if ('members' in error_str.lower() and 'only' in error_str.lower()) or 'join this channel' in error_str.lower():
+                    self.last_error_message = f"{video.title[:50]} - Members-only content"
                     self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Members-only content detected')
                     return False, False, False, False, None
 
                 # Check for copyright takedowns - auto-ignore
                 if 'copyright' in error_str.lower():
+                    self.last_error_message = f"{video.title[:50]} - Copyright takedown"
                     self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Copyright takedown detected')
                     return False, False, False, False, None
 
                 # Check for empty file errors - often rate limiting or network issues
                 if 'downloaded file is empty' in error_str.lower() or 'empty file' in error_str.lower():
                     logger.warning(f'Empty file error for {video.yt_id} - likely rate limiting, will retry later')
+                    self.last_error_message = f"{video.title[:50]} - Empty file (may be DRM protected)"
                     self._handle_rate_limit(session, video, queue_item)
                     rate_limited = True
                     break
@@ -517,6 +548,7 @@ class DownloadWorker:
                 # Check for rate limiting errors
                 if ('rate' in error_str.lower() and 'limit' in error_str.lower()) or \
                    ("This content isn't available" in error_str and 'try again later' in error_str.lower()):
+                    self.last_error_message = f"{video.title[:50]} - Rate limited by YouTube"
                     self._handle_rate_limit(session, video, queue_item)
                     rate_limited = True
                     break
@@ -526,7 +558,9 @@ class DownloadWorker:
                         attempt += 1
                         time.sleep(2)
                     else:
-                        raise Exception('SSL certificate error persists. Try: pip install --upgrade yt-dlp certifi')
+                        self.last_error_message = f"{video.title[:50]} - SSL certificate error"
+                        logger.error('SSL certificate error persists. Try: pip install --upgrade yt-dlp certifi')
+                        break
 
                 elif '403' in error_str or 'Forbidden' in error_str:
                     if attempt < max_attempts:
@@ -535,6 +569,7 @@ class DownloadWorker:
                         attempt += 1
                     else:
                         # Also pause on 403 errors as they often indicate rate limiting
+                        self.last_error_message = f"{video.title[:50]} - 403 Forbidden (rate limit)"
                         self._handle_rate_limit(session, video, queue_item, cookies_path, '403')
                         rate_limited = True
                         break
@@ -546,7 +581,10 @@ class DownloadWorker:
                         attempt += 1
                     else:
                         # Max attempts reached - fail gracefully instead of crashing
-                        logger.error(f'Max attempts reached for {video.yt_id}, giving up')
+                        # Truncate error message for display
+                        short_error = error_str[:100] + '...' if len(error_str) > 100 else error_str
+                        self.last_error_message = f"{video.title[:50]} - {short_error}"
+                        logger.error(f'Max attempts reached for {video.yt_id}, giving up: {error_str}')
                         break
 
         # Check if timed out
@@ -582,8 +620,9 @@ class DownloadWorker:
             # Success - mark as library and delete queue item
             logger.info(f'Successfully downloaded video {video.yt_id}')
 
-            # Clear rate limit message on successful download
+            # Clear rate limit message and error message on successful download
             self.rate_limit_message = None
+            self.last_error_message = None
 
             # Get file path and size
             video_file_path = os.path.join(channel_dir, f'{video.yt_id}.{ext}')

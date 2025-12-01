@@ -177,8 +177,8 @@ export default function VideoCard({
     if (isQueued) {
       return { text: 'QUEUED', bg: 'bg-blue-600/95', position: 'top' };
     }
-    if (video.status === 'geoblocked') {
-      return { text: 'GEO-BLOCKED', bg: 'bg-red-600/95', position: 'bottom' };
+    if (video.status === 'removed') {
+      return { text: 'REMOVED', bg: 'bg-red-600/95', position: 'bottom' };
     }
     if (video.status === 'ignored') {
       return { text: 'IGNORED', bg: 'bg-gray-900/70', position: 'bottom' };

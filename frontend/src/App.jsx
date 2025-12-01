@@ -38,6 +38,7 @@ function App() {
   const isPaused = queueData?.is_paused || false;
   const isAutoRefreshing = queueData?.is_auto_refreshing || false;
   const lastAutoRefresh = queueData?.last_auto_refresh || null;
+  const lastErrorMessage = queueData?.last_error_message || null;
 
   // Poll logs for quick logs panel
   useEffect(() => {
@@ -211,7 +212,7 @@ function App() {
         </div>
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
-        {(downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || health) && (
+        {(downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || lastErrorMessage || health) && (
           <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
@@ -301,6 +302,18 @@ function App() {
                     <span className="text-yellow-400">
                       {queueLog || 'Queue paused. Press Resume to continue.'}
                     </span>
+                  </div>
+                )}
+
+                {/* Last Error Message */}
+                {lastErrorMessage && !notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="12"></line>
+                      <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                    <span className="text-red-400">{lastErrorMessage}</span>
                   </div>
                 )}
 

@@ -2186,6 +2186,9 @@ def get_queue():
         # Get rate limit message from download worker
         rate_limit_message = download_worker.rate_limit_message if hasattr(download_worker, 'rate_limit_message') else None
 
+        # Get last error message from download worker
+        last_error_message = download_worker.last_error_message if hasattr(download_worker, 'last_error_message') else None
+
         return jsonify({
             'queue_items': queue_items,
             'current_download': current_download,
@@ -2195,7 +2198,8 @@ def get_queue():
             'is_auto_refreshing': is_auto_refreshing,
             'last_auto_refresh': last_auto_refresh.isoformat() if last_auto_refresh else None,
             'auto_refresh_enabled': auto_refresh_enabled,
-            'rate_limit_message': rate_limit_message
+            'rate_limit_message': rate_limit_message,
+            'last_error_message': last_error_message
         })
 
 @app.route('/api/queue', methods=['POST'])
