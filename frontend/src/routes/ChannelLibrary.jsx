@@ -992,6 +992,37 @@ export default function ChannelLibrary() {
                     <span className="font-medium">Duration Settings</span>
                   </button>
 
+                  {/* Auto-Download Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const newValue = !channel.auto_download;
+                      updateChannel.mutate({
+                        id: channel.id,
+                        data: { auto_download: newValue }
+                      }, {
+                        onSuccess: () => {
+                          showNotification(
+                            newValue
+                              ? `Auto-download enabled for ${channel.title}`
+                              : `Auto-download disabled for ${channel.title}`,
+                            'success'
+                          );
+                        }
+                      });
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={channel.auto_download || false}
+                      readOnly
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
+                    />
+                    <span className="font-medium">Auto-Download</span>
+                  </button>
+
                   {/* Delete Channel */}
                   <button
                     onClick={(e) => {
@@ -1068,6 +1099,11 @@ export default function ChannelLibrary() {
           {/* Stats Bar - Only in discovery mode */}
           {!isLibraryMode && (
             <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
+              {/* Auto indicator */}
+              {channel.auto_download && (
+                <span className="text-green-500 text-[10px] font-bold tracking-wide mr-1" title="Auto-download enabled">AUTO</span>
+              )}
+
               {/* Downloaded */}
               <div className="flex items-center gap-1 text-sm font-semibold text-accent" title="Downloaded videos">
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
