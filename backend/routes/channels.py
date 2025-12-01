@@ -5,8 +5,6 @@ Handles:
 - GET/POST /api/channels - List/create channels
 - PATCH/DELETE /api/channels/<id> - Update/delete channel
 - POST /api/channels/<id>/scan - Queue channel scan
-- GET /api/channels/scan-status - Get scan queue status
-- GET /api/channels/batch-scan-status - Get batch scan status
 - GET/POST /api/channel-categories - List/create channel categories
 - PATCH/DELETE /api/channel-categories/<id> - Update/delete channel category
 """
@@ -33,17 +31,13 @@ _get_youtube_client = None
 _set_operation = None
 _clear_operation = None
 _queue_channel_scan = None
-_get_scan_queue_status = None
-_get_scan_globals = None  # Function to get scan worker globals
 
 
 def init_channels_routes(session_factory, limiter, serialize_channel, get_youtube_client,
-                         set_operation, clear_operation, queue_channel_scan,
-                         get_scan_queue_status, get_scan_globals):
+                         set_operation, clear_operation, queue_channel_scan):
     """Initialize the channels routes with required dependencies."""
     global _session_factory, _limiter, _serialize_channel, _get_youtube_client
     global _set_operation, _clear_operation, _queue_channel_scan
-    global _get_scan_queue_status, _get_scan_globals
     _session_factory = session_factory
     _limiter = limiter
     _serialize_channel = serialize_channel
@@ -51,8 +45,6 @@ def init_channels_routes(session_factory, limiter, serialize_channel, get_youtub
     _set_operation = set_operation
     _clear_operation = clear_operation
     _queue_channel_scan = queue_channel_scan
-    _get_scan_queue_status = get_scan_queue_status
-    _get_scan_globals = get_scan_globals
 
 
 # =============================================================================
@@ -269,26 +261,6 @@ def scan_channel(channel_id):
             # result is False - batch in progress or already queued
             logger.debug(f"Scan rejected for channel {channel.title} (ID: {channel_id}) - batch in progress or already queued")
             return jsonify({'status': 'batch_in_progress', 'message': 'A scan is already running. Please wait.'}), 409
-
-
-@channels_bp.route('/api/channels/scan-status', methods=['GET'])
-def get_scan_status():
-    """Get current scan queue status"""
-    status = _get_scan_queue_status()
-    return jsonify(status)
-
-
-@channels_bp.route('/api/channels/batch-scan-status', methods=['GET'])
-def get_batch_scan_status():
-    """Check batch scan status and pending auto-scan"""
-    scan_globals = _get_scan_globals()
-    return jsonify({
-        'batch_in_progress': scan_globals['batch_in_progress'],
-        'auto_scan_pending': scan_globals['auto_scan_pending'],
-        'queue_size': scan_globals['queue_size'],
-        'current': scan_globals['current'],
-        'total': scan_globals['total']
-    })
 
 
 # =============================================================================

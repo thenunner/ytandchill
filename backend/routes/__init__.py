@@ -19,8 +19,7 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
                         serialize_video=None, get_youtube_client=None, set_operation=None,
                         clear_operation=None, parse_iso8601_duration=None,
                         serialize_category=None, serialize_playlist=None,
-                        serialize_channel=None, queue_channel_scan=None,
-                        get_scan_queue_status=None, get_scan_globals=None):
+                        serialize_channel=None, queue_channel_scan=None):
     """
     Register all blueprints with the Flask app.
 
@@ -42,8 +41,6 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
         serialize_playlist: Function to serialize playlist objects
         serialize_channel: Function to serialize channel objects
         queue_channel_scan: Function to queue a channel scan
-        get_scan_queue_status: Function to get scan queue status
-        get_scan_globals: Function to get scan worker global state
     """
     # Initialize and register settings blueprint
     init_settings_routes(session_factory, settings_manager, scheduler, download_worker)
@@ -75,8 +72,7 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
         app.register_blueprint(library_bp)
 
     # Initialize and register channels blueprint
-    if serialize_channel and queue_channel_scan and get_scan_queue_status and get_scan_globals:
+    if serialize_channel and queue_channel_scan:
         init_channels_routes(session_factory, limiter, serialize_channel, get_youtube_client,
-                            set_operation, clear_operation, queue_channel_scan,
-                            get_scan_queue_status, get_scan_globals)
+                            set_operation, clear_operation, queue_channel_scan)
         app.register_blueprint(channels_bp)

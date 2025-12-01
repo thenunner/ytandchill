@@ -771,32 +771,6 @@ def queue_channel_scan(channel_id, force_full=False, reset_counters=False, is_ba
     logger.debug(f"Added channel {channel_id} to scan queue (force_full={force_full}) - Total queued: {scan_total_channels}")
     return True
 
-def get_scan_queue_status():
-    """Get current scan queue status"""
-    queue_items = list(scan_queue.queue)
-    queue_size = len(queue_items)
-
-    # Get channel IDs in queue
-    queued_channel_ids = [item['channel_id'] for item in queue_items]
-
-    return {
-        'queue_size': queue_size,
-        'queued_channel_ids': queued_channel_ids,
-        'current_operation': current_operation.copy(),
-        'scan_current': scan_current_channel,
-        'scan_total': scan_total_channels
-    }
-
-def get_scan_globals():
-    """Get current scan worker global state for channels blueprint."""
-    return {
-        'batch_in_progress': scan_batch_in_progress,
-        'auto_scan_pending': scan_pending_auto_scan,
-        'queue_size': scan_queue.qsize(),
-        'current': scan_current_channel,
-        'total': scan_total_channels
-    }
-
 # Initialize scheduler with operation tracking callbacks and scan queue function
 scheduler = AutoRefreshScheduler(session_factory, download_worker, settings_manager, set_operation, clear_operation, queue_channel_scan)
 scheduler.start()
@@ -908,9 +882,7 @@ register_blueprints(
     serialize_category=serialize_category,
     serialize_playlist=serialize_playlist,
     serialize_channel=serialize_channel,
-    queue_channel_scan=queue_channel_scan,
-    get_scan_queue_status=get_scan_queue_status,
-    get_scan_globals=get_scan_globals
+    queue_channel_scan=queue_channel_scan
 )
 
 # Operation status
