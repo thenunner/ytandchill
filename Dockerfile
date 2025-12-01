@@ -42,6 +42,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy backend Python files
 COPY backend/*.py ./
+COPY backend/routes/ ./routes/
 
 # Copy built frontend from Stage 1
 COPY --from=frontend-builder /frontend/dist ./dist
