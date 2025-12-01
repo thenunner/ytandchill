@@ -16,6 +16,7 @@ export default function YouTubePlaylists() {
   const [isQueueing, setIsQueueing] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [filterMode, setFilterMode] = useState('new'); // 'new' or 'all'
+  const [statusFilter, setStatusFilter] = useState('available'); // 'all', 'available', 'ignored', 'error'
 
   const handleScan = async (e, filter = filterMode) => {
     if (e) e.preventDefault();
@@ -28,6 +29,7 @@ export default function YouTubePlaylists() {
     setScanResults(null);
     setSelectedVideos(new Set());
     setFilterMode(filter);
+    setStatusFilter('available'); // Reset to available filter
 
     try {
       const result = await scanPlaylist.mutateAsync({ url: playlistUrl, filter });
@@ -55,7 +57,15 @@ export default function YouTubePlaylists() {
 
   const handleSelectAll = () => {
     if (scanResults?.videos) {
-      setSelectedVideos(new Set(scanResults.videos.map(v => v.yt_id)));
+      // Only select visible/filtered videos
+      const filteredVideos = scanResults.videos.filter(video => {
+        if (filterMode !== 'all' || statusFilter === 'all') return true;
+        if (statusFilter === 'available') return !video.status || video.status === 'discovered';
+        if (statusFilter === 'ignored') return video.status === 'ignored';
+        if (statusFilter === 'error') return video.status === 'removed';
+        return true;
+      });
+      setSelectedVideos(new Set(filteredVideos.map(v => v.yt_id)));
     }
   };
 
@@ -241,22 +251,62 @@ export default function YouTubePlaylists() {
             </div>
 
             {scanResults.videos.length > 0 && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSelectAll}
-                  className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-border text-text-secondary rounded-lg transition-colors"
-                >
-                  Select All
-                </button>
-                <button
-                  onClick={handleClearSelection}
-                  className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-border text-text-secondary rounded-lg transition-colors"
-                >
-                  Clear
-                </button>
-                <span className="text-text-muted text-sm">
-                  {selectedVideos.size} selected
-                </span>
+              <div className="flex items-center gap-4">
+                {/* Status Filter (only in All mode) */}
+                {filterMode === 'all' && (
+                  <div className="flex items-center gap-1 bg-dark-tertiary rounded-lg p-1">
+                    <button
+                      onClick={() => setStatusFilter('available')}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        statusFilter === 'available' ? 'bg-accent text-white' : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      Available
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter('ignored')}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        statusFilter === 'ignored' ? 'bg-yellow-500 text-black' : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      Ignored
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter('error')}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        statusFilter === 'error' ? 'bg-red-500 text-white' : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      Errors
+                    </button>
+                    <button
+                      onClick={() => setStatusFilter('all')}
+                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                        statusFilter === 'all' ? 'bg-dark-border text-text-primary' : 'text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      All
+                    </button>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSelectAll}
+                    className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-border text-text-secondary rounded-lg transition-colors"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={handleClearSelection}
+                    className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-border text-text-secondary rounded-lg transition-colors"
+                  >
+                    Clear
+                  </button>
+                  <span className="text-text-muted text-sm">
+                    {selectedVideos.size} selected
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -286,7 +336,15 @@ export default function YouTubePlaylists() {
       {/* Video Grid */}
       {scanResults?.videos && scanResults.videos.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {scanResults.videos.map((video) => (
+          {scanResults.videos
+            .filter(video => {
+              if (filterMode !== 'all' || statusFilter === 'all') return true;
+              if (statusFilter === 'available') return !video.status || video.status === 'discovered';
+              if (statusFilter === 'ignored') return video.status === 'ignored';
+              if (statusFilter === 'error') return video.status === 'removed';
+              return true;
+            })
+            .map((video) => (
             <div
               key={video.yt_id}
               onClick={() => handleToggleSelect(video.yt_id)}
