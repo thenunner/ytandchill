@@ -11,16 +11,16 @@ from .video_tools import video_tools_bp, init_video_tools_routes
 from .media import media_bp
 from .videos import videos_bp, init_videos_routes
 from .library import library_bp, init_library_routes
-
-# Future blueprints:
-# from .channels import channels_bp, init_channels_routes
+from .channels import channels_bp, init_channels_routes
 
 
 def register_blueprints(app, session_factory, settings_manager, scheduler, download_worker,
                         limiter=None, serialize_queue_item=None, get_current_operation=None,
                         serialize_video=None, get_youtube_client=None, set_operation=None,
                         clear_operation=None, parse_iso8601_duration=None,
-                        serialize_category=None, serialize_playlist=None):
+                        serialize_category=None, serialize_playlist=None,
+                        serialize_channel=None, queue_channel_scan=None,
+                        get_scan_queue_status=None, get_scan_globals=None):
     """
     Register all blueprints with the Flask app.
 
@@ -40,6 +40,10 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
         parse_iso8601_duration: Function to parse ISO 8601 duration strings
         serialize_category: Function to serialize category objects
         serialize_playlist: Function to serialize playlist objects
+        serialize_channel: Function to serialize channel objects
+        queue_channel_scan: Function to queue a channel scan
+        get_scan_queue_status: Function to get scan queue status
+        get_scan_globals: Function to get scan worker global state
     """
     # Initialize and register settings blueprint
     init_settings_routes(session_factory, settings_manager, scheduler, download_worker)
@@ -69,3 +73,10 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
     if serialize_category and serialize_playlist and serialize_video:
         init_library_routes(session_factory, limiter, serialize_category, serialize_playlist, serialize_video)
         app.register_blueprint(library_bp)
+
+    # Initialize and register channels blueprint
+    if serialize_channel and queue_channel_scan and get_scan_queue_status and get_scan_globals:
+        init_channels_routes(session_factory, limiter, serialize_channel, get_youtube_client,
+                            set_operation, clear_operation, queue_channel_scan,
+                            get_scan_queue_status, get_scan_globals)
+        app.register_blueprint(channels_bp)
