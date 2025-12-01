@@ -335,8 +335,8 @@ export default function Queue() {
     <div className="space-y-4 animate-fade-in">
       <div className="flex items-center gap-4">
         <div className="flex space-x-2">
-          {/* Only show Resume when queue is paused (e.g., after restart) */}
-          {workerPaused && (
+          {/* Only show Resume when queue is paused AND has items */}
+          {workerPaused && hasQueuedItems && (
             <button
               onClick={handleResume}
               disabled={resumeQueue.isPending}
