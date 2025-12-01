@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useScanYouTubePlaylist, useQueuePlaylistVideos, useRemovePlaylistVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -11,12 +11,45 @@ export default function YouTubePlaylists() {
   // State
   const [playlistUrl, setPlaylistUrl] = useState('');
   const [scanResults, setScanResults] = useState(null);
+
+  // URL history state
+  const [showUrlHistory, setShowUrlHistory] = useState(false);
+  const [urlHistory, setUrlHistory] = useState(() => {
+    const saved = localStorage.getItem('videos_url_history');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const urlInputRef = useRef(null);
+  const urlHistoryRef = useRef(null);
+
+  // Click outside to close URL history dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (urlHistoryRef.current && !urlHistoryRef.current.contains(event.target) &&
+          urlInputRef.current && !urlInputRef.current.contains(event.target)) {
+        setShowUrlHistory(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Save URL to history (called on successful scan)
+  const saveUrlToHistory = (url) => {
+    const trimmedUrl = url.trim();
+    if (!trimmedUrl) return;
+
+    // Remove if already exists, then add to front
+    const newHistory = [trimmedUrl, ...urlHistory.filter(u => u !== trimmedUrl)].slice(0, 5);
+    setUrlHistory(newHistory);
+    localStorage.setItem('videos_url_history', JSON.stringify(newHistory));
+  };
   const [selectedVideos, setSelectedVideos] = useState(new Set());
   const [isScanning, setIsScanning] = useState(false);
   const [isQueueing, setIsQueueing] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [filterMode, setFilterMode] = useState('new'); // 'new' or 'all'
   const [statusFilter, setStatusFilter] = useState('available'); // 'all', 'available', 'ignored', 'error'
+  const [searchInput, setSearchInput] = useState(''); // Search filter for video titles
 
   const handleScan = async (e, filter = filterMode) => {
     if (e) e.preventDefault();
@@ -30,10 +63,14 @@ export default function YouTubePlaylists() {
     setSelectedVideos(new Set());
     setFilterMode(filter);
     setStatusFilter('available'); // Reset to available filter
+    setSearchInput(''); // Clear search
 
     try {
       const result = await scanPlaylist.mutateAsync({ url: playlistUrl, filter });
       setScanResults(result);
+
+      // Save URL to history on successful scan
+      saveUrlToHistory(playlistUrl);
 
       if (result.videos.length === 0) {
         showNotification(
@@ -168,22 +205,44 @@ export default function YouTubePlaylists() {
 
   return (
     <div className="p-4 space-y-4">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-xl font-bold text-text-primary">Import Videos</h1>
-      </div>
-
       {/* Scan Form */}
       <form onSubmit={handleScan} className="bg-dark-secondary rounded-lg p-4">
         <div className="flex flex-col sm:flex-row gap-3">
-          <input
-            type="text"
-            value={playlistUrl}
-            onChange={(e) => setPlaylistUrl(e.target.value)}
-            placeholder="Paste YouTube video, playlist, or channel URL"
-            className="flex-1 bg-dark-tertiary border border-dark-border rounded-lg px-4 py-2 text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
-            disabled={isScanning}
-          />
+          <div className="flex-1 relative">
+            <input
+              ref={urlInputRef}
+              type="text"
+              value={playlistUrl}
+              onChange={(e) => setPlaylistUrl(e.target.value)}
+              onFocus={() => urlHistory.length > 0 && setShowUrlHistory(true)}
+              placeholder="Paste YouTube video, playlist, or channel URL"
+              className="w-full bg-dark-tertiary border border-dark-border rounded-lg px-4 py-2 text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
+              disabled={isScanning}
+            />
+            {/* URL History Dropdown */}
+            {showUrlHistory && urlHistory.length > 0 && (
+              <div
+                ref={urlHistoryRef}
+                className="absolute top-full left-0 right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 overflow-hidden"
+              >
+                <div className="py-1">
+                  {urlHistory.map((url, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setPlaylistUrl(url);
+                        setShowUrlHistory(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors truncate"
+                      title={url}
+                    >
+                      {url}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex gap-2">
             <button
               type="button"
@@ -237,16 +296,27 @@ export default function YouTubePlaylists() {
       {scanResults && (
         <div className="bg-dark-secondary rounded-lg p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="text-text-secondary">
-              {scanResults.videos.length === 0 ? (
-                <span>No new videos to import</span>
-              ) : (
-                <span>
-                  Found <span className="text-text-primary font-semibold">{scanResults.videos.length}</span> new videos
-                  {scanResults.already_in_db > 0 && (
-                    <span className="text-text-muted"> ({scanResults.already_in_db} previously seen)</span>
-                  )}
-                </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <div className="text-text-secondary">
+                {scanResults.videos.length === 0 ? (
+                  <span>No new videos to import</span>
+                ) : (
+                  <span>
+                    Found <span className="text-text-primary font-semibold">{scanResults.videos.length}</span> new videos
+                    {scanResults.already_in_db > 0 && (
+                      <span className="text-text-muted"> ({scanResults.already_in_db} previously seen)</span>
+                    )}
+                  </span>
+                )}
+              </div>
+              {scanResults.videos.length > 0 && (
+                <input
+                  type="text"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  placeholder="Search..."
+                  className="bg-dark-tertiary border border-dark-border rounded-lg px-3 py-1 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent w-40"
+                />
               )}
             </div>
 
@@ -338,6 +408,11 @@ export default function YouTubePlaylists() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {scanResults.videos
             .filter(video => {
+              // Search filter
+              if (searchInput && !(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+                return false;
+              }
+              // Status filter (only in All mode)
               if (filterMode !== 'all' || statusFilter === 'all') return true;
               if (statusFilter === 'available') return !video.status || video.status === 'discovered';
               if (statusFilter === 'ignored') return video.status === 'ignored';
@@ -434,7 +509,7 @@ export default function YouTubePlaylists() {
           <svg className="w-16 h-16 mx-auto text-text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
-          <h3 className="text-text-primary font-semibold mb-2">Import Videos from YouTube</h3>
+          <h3 className="text-text-primary font-semibold mb-2">Paste a URL to get started</h3>
           <p className="text-text-secondary text-sm max-w-md mx-auto">
             Paste a YouTube video, playlist, or channel URL above. Select which videos to download
             as singles without subscribing to the full channel.

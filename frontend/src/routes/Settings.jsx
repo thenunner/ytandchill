@@ -177,11 +177,6 @@ export default function Settings() {
   return (
     <>
     <div className="animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-text-primary">Settings</h2>
-      </div>
-
       {/* Single column layout for desktop */}
       <div className="flex flex-col gap-4 w-full max-w-[960px]">
           {/* Card 1: System Status + Stats + Reset User */}
@@ -206,7 +201,7 @@ export default function Settings() {
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
               <div className="flex items-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v4.2.0</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v4.3.0</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center gap-3 order-3 md:order-4">
