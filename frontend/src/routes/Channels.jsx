@@ -514,7 +514,7 @@ export default function Channels() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => { setSortBy('most_downloaded'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_downloaded' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'most_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Most Downloaded"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -523,7 +523,7 @@ export default function Channels() {
                       </button>
                       <button
                         onClick={() => { setSortBy('least_downloaded'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_downloaded' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'least_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Least Downloaded"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -541,7 +541,7 @@ export default function Channels() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => { setSortBy('most_to_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Most To Review"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -550,7 +550,7 @@ export default function Channels() {
                       </button>
                       <button
                         onClick={() => { setSortBy('least_to_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Least To Review"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -568,7 +568,7 @@ export default function Channels() {
                     <div className="flex gap-1">
                       <button
                         onClick={() => { setSortBy('newest_scanned'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Newest Scanned"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -577,7 +577,7 @@ export default function Channels() {
                       </button>
                       <button
                         onClick={() => { setSortBy('oldest_scanned'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                        className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Oldest Scanned"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -621,7 +621,7 @@ export default function Channels() {
                   {selectedChannels.length === 0 && selectedCategories.length > 0 && (
                     <button
                       onClick={() => setSelectedCategories([])}
-                      className="text-accent hover:text-accent/80 text-xs normal-case"
+                      className="text-accent-text hover:text-accent-text/80 text-xs normal-case"
                     >
                       Clear
                     </button>
@@ -673,7 +673,7 @@ export default function Channels() {
                       type="checkbox"
                       checked={selectedCategories.includes('uncategorized')}
                       readOnly
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
                     />
                   )}
                   <span className="text-sm text-text-secondary italic">Uncategorized</span>
@@ -728,7 +728,7 @@ export default function Channels() {
                         type="checkbox"
                         checked={selectedCategories.includes(category.id)}
                         readOnly
-                        className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                        className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
                       />
                     )}
                     <span className="text-sm text-text-primary">{category.name}</span>
@@ -743,7 +743,7 @@ export default function Channels() {
                       setShowCategoryFilter(false);
                       setShowCategoryModal(true);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-accent hover:bg-dark-hover"
+                    className="w-full px-4 py-2 text-left text-sm text-accent-text hover:bg-dark-hover"
                   >
                     Manage Categories...
                   </button>
@@ -754,7 +754,7 @@ export default function Channels() {
 
           {/* Selection indicator */}
           {selectedChannels.length > 0 && (
-            <span className="text-xs text-accent font-medium">
+            <span className="text-xs text-accent-text font-medium">
               {selectedChannels.length} selected
             </span>
           )}
@@ -937,7 +937,7 @@ export default function Channels() {
                       type="checkbox"
                       checked={channel.auto_download || false}
                       readOnly
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
                     />
                     <span className="font-medium">Auto-Download</span>
                   </button>
@@ -976,7 +976,7 @@ export default function Channels() {
                             }
                           });
                         }}
-                        className={`w-full px-6 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${!channel.category_id ? 'text-accent' : 'text-text-secondary italic'}`}
+                        className={`w-full px-6 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${!channel.category_id ? 'text-accent-text' : 'text-text-secondary italic'}`}
                       >
                         {!channel.category_id && (
                           <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
@@ -1004,7 +1004,7 @@ export default function Channels() {
                               }
                             });
                           }}
-                          className={`w-full px-6 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${channel.category_id === cat.id ? 'text-accent' : 'text-text-primary'}`}
+                          className={`w-full px-6 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${channel.category_id === cat.id ? 'text-accent-text' : 'text-text-primary'}`}
                         >
                           {channel.category_id === cat.id && (
                             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
@@ -1057,7 +1057,7 @@ export default function Channels() {
                       }
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent cursor-pointer"
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text cursor-pointer"
                   />
                   {channel.auto_download && (
                     <span className="text-green-500 text-[10px] font-bold tracking-wide">AUTO</span>
@@ -1110,7 +1110,7 @@ export default function Channels() {
                 {/* Content Section */}
                 <div className="p-3 space-y-2">
                   {/* Title */}
-                  <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent transition-colors" title={channel.title}>
+                  <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent-text transition-colors" title={channel.title}>
                     {channel.title}
                   </h3>
 
@@ -1123,7 +1123,7 @@ export default function Channels() {
                   {/* Stats - Downloaded (left), Discovered (middle), Ignored (right) */}
                   <div className="flex items-center justify-between">
                     {/* Downloaded - Far Left */}
-                    <div className="flex items-center gap-1 text-sm font-semibold text-accent" title="Downloaded videos">
+                    <div className="flex items-center gap-1 text-sm font-semibold text-accent-text" title="Downloaded videos">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>

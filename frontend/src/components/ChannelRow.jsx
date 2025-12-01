@@ -227,7 +227,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
         {/* Info Section - 3 rows */}
         <div className="flex-1 min-w-0 space-y-1 py-3 flex flex-col justify-center">
           {/* Row 1: Title */}
-          <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-1 leading-tight" title={channel.title}>
+          <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent-text transition-colors line-clamp-1 leading-tight" title={channel.title}>
             {channel.title}
           </h3>
 
@@ -248,7 +248,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
               </>
             )}
             {/* Downloaded */}
-            <div className="flex items-center gap-1 text-sm font-semibold text-accent" title="Downloaded">
+            <div className="flex items-center gap-1 text-sm font-semibold text-accent-text" title="Downloaded">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>

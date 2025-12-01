@@ -102,7 +102,7 @@ function Login() {
               id="rememberMe"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-accent focus:ring-offset-0"
+              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-accent focus:ring-offset-0"
             />
             <label htmlFor="rememberMe" className="text-sm text-text-secondary cursor-pointer">
               Remember me for 1 year (otherwise 90 days)

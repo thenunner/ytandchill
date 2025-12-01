@@ -206,7 +206,7 @@ export default function Settings() {
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
               <div className="flex items-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v4.0.17</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v4.0.18</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center gap-3 order-3 md:order-4">
@@ -494,7 +494,7 @@ export default function Settings() {
                     href="https://console.cloud.google.com/apis/credentials"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-accent hover:underline font-semibold"
+                    className="text-accent-text hover:underline font-semibold"
                   >
                     Google Cloud Console
                   </a>
@@ -622,7 +622,7 @@ export default function Settings() {
                     type="checkbox"
                     checked={removeSponsor}
                     onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
                   />
                   <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
                 </label>
@@ -631,7 +631,7 @@ export default function Settings() {
                     type="checkbox"
                     checked={removeSelfpromo}
                     onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
                   />
                   <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
                 </label>
@@ -640,7 +640,7 @@ export default function Settings() {
                     type="checkbox"
                     checked={removeInteraction}
                     onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-2 focus:ring-accent cursor-pointer"
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
                   />
                   <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
                 </label>
@@ -677,11 +677,11 @@ export default function Settings() {
                 className="w-full h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
               <div className="flex justify-between text-xs font-mono mt-1">
-                <span className={logLevel === 'DEBUG' ? 'text-accent font-bold' : 'text-text-primary'}>DEBUG</span>
-                <span className={logLevel === 'INFO' ? 'text-accent font-bold' : 'text-text-primary'}>INFO</span>
-                <span className={logLevel === 'API' ? 'text-accent font-bold' : 'text-text-primary'}>API</span>
-                <span className={logLevel === 'WARNING' ? 'text-accent font-bold' : 'text-text-primary'}>WARN</span>
-                <span className={logLevel === 'ERROR' ? 'text-accent font-bold' : 'text-text-primary'}>ERROR</span>
+                <span className={logLevel === 'DEBUG' ? 'text-accent-text font-bold' : 'text-text-primary'}>DEBUG</span>
+                <span className={logLevel === 'INFO' ? 'text-accent-text font-bold' : 'text-text-primary'}>INFO</span>
+                <span className={logLevel === 'API' ? 'text-accent-text font-bold' : 'text-text-primary'}>API</span>
+                <span className={logLevel === 'WARNING' ? 'text-accent-text font-bold' : 'text-text-primary'}>WARN</span>
+                <span className={logLevel === 'ERROR' ? 'text-accent-text font-bold' : 'text-text-primary'}>ERROR</span>
               </div>
               <div className="flex justify-between items-end mt-2">
                 <span className="text-sm text-text-secondary">Logging level</span>
@@ -792,7 +792,7 @@ export default function Settings() {
               </div>
 
               <p className="text-xs text-text-muted mt-4">
-                Data provided by <a href="https://sponsor.ajay.app" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">SponsorBlock API</a> - a community-driven project.
+                Data provided by <a href="https://sponsor.ajay.app" target="_blank" rel="noopener noreferrer" className="text-accent-text hover:underline">SponsorBlock API</a> - a community-driven project.
               </p>
             </div>
           </div>

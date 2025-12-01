@@ -11,6 +11,7 @@ export default {
         accent: {
           DEFAULT: 'hsl(var(--accent))',
           hover: 'hsl(var(--accent-hover))',
+          text: 'hsl(var(--accent-text))',
         },
         dark: {
           primary: 'hsl(var(--bg-primary))',

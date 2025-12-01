@@ -572,13 +572,13 @@ export default function Library() {
                       <div className="flex gap-4">
                         <button
                           onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
-                          className={`${channelSortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
+                          className={`${channelSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
                         >
                           A-Z
                         </button>
                         <button
                           onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
-                          className={`${channelSortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
+                          className={`${channelSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
                         >
                           Z-A
                         </button>
@@ -593,7 +593,7 @@ export default function Library() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                          className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                           title="Most Videos"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -602,7 +602,7 @@ export default function Library() {
                         </button>
                         <button
                           onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                          className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                           title="Least Videos"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -620,7 +620,7 @@ export default function Library() {
                       <div className="flex gap-1">
                         <button
                           onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                          className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                           title="Newest Added"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -629,7 +629,7 @@ export default function Library() {
                         </button>
                         <button
                           onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                          className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                           title="Oldest Added"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -731,7 +731,7 @@ export default function Library() {
               {/* + Category Button */}
               <button
                 onClick={() => setShowCreateCategoryModal(true)}
-                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-accent border border-accent/30 hover:border-accent/50 flex items-center gap-2 whitespace-nowrap"
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-accent-text border border-accent/30 hover:border-accent/50 flex items-center gap-2 whitespace-nowrap"
                 title="Create new category"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -802,13 +802,13 @@ export default function Library() {
                         <div className="flex gap-4">
                           <button
                             onClick={() => { setPlaylistSortBy('a_z'); setShowPlaylistSortMenu(false); }}
-                            className={`${playlistSortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
+                            className={`${playlistSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
                           >
                             A-Z
                           </button>
                           <button
                             onClick={() => { setPlaylistSortBy('z_a'); setShowPlaylistSortMenu(false); }}
-                            className={`${playlistSortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
+                            className={`${playlistSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
                           >
                             Z-A
                           </button>
@@ -823,7 +823,7 @@ export default function Library() {
                         <div className="flex gap-1">
                           <button
                             onClick={() => { setPlaylistSortBy('most_videos'); setShowPlaylistSortMenu(false); }}
-                            className={`p-1 rounded ${playlistSortBy === 'most_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                            className={`p-1 rounded ${playlistSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                             title="Most Videos"
                           >
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -832,7 +832,7 @@ export default function Library() {
                           </button>
                           <button
                             onClick={() => { setPlaylistSortBy('least_videos'); setShowPlaylistSortMenu(false); }}
-                            className={`p-1 rounded ${playlistSortBy === 'least_videos' ? 'text-accent' : 'text-text-muted hover:text-text-primary'}`}
+                            className={`p-1 rounded ${playlistSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                             title="Least Videos"
                           >
                             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
@@ -1177,7 +1177,7 @@ export default function Library() {
                                   {/* Selection Checkmark */}
                                   {isSelected && editMode && (
                                     <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
-                                      <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                      <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                       </svg>
                                     </div>
@@ -1393,7 +1393,7 @@ export default function Library() {
                                   {/* Selection Checkmark */}
                                   {isSelected && editMode && (
                                     <div className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 shadow-lg z-10">
-                                      <svg className="w-3 h-3 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                      <svg className="w-3 h-3 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                         <polyline points="20 6 9 17 4 12"></polyline>
                                       </svg>
                                     </div>
@@ -1484,7 +1484,7 @@ export default function Library() {
                               {/* Selection Checkmark - Show when in edit mode and selected */}
                               {isSelected && editMode && (
                                 <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
-                                  <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                  <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                   </svg>
                                 </div>
@@ -1704,7 +1704,7 @@ export default function Library() {
                               {/* Selection Checkmark */}
                               {isSelected && editMode && (
                                 <div className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 shadow-lg z-10">
-                                  <svg className="w-3 h-3 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                  <svg className="w-3 h-3 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                   </svg>
                                 </div>
@@ -1959,7 +1959,7 @@ export default function Library() {
               {!showCreateInSelector ? (
                 <button
                   onClick={() => setShowCreateInSelector(true)}
-                  className="w-full px-4 py-2 text-left rounded-lg hover:bg-dark-hover transition-colors flex items-center gap-2 text-sm font-medium text-accent"
+                  className="w-full px-4 py-2 text-left rounded-lg hover:bg-dark-hover transition-colors flex items-center gap-2 text-sm font-medium text-accent-text"
                 >
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />

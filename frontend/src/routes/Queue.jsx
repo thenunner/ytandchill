@@ -514,7 +514,7 @@ export default function Queue() {
                   <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-accent transition-colors">
                     {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
                   </p>
-                  <span className="text-xs text-accent font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+                  <span className="text-xs text-accent-text font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
                     Click to remove
                   </span>
                 </div>

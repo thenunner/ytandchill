@@ -22,8 +22,9 @@
   --text-muted: 220 12% 60%;       /* #8b92a6 - Improved contrast */
 
   /* Accent */
-  --accent: 210 55% 45%;           /* Darker blue for white text contrast (5.2:1) */
-  --accent-hover: 210 60% 55%;     /* Lighter blue on hover */
+  --accent: 210 60% 52%;           /* Blue - for buttons/backgrounds */
+  --accent-hover: 210 65% 62%;     /* Lighter blue on hover */
+  --accent-text: 210 65% 65%;      /* Brighter blue for text readability */
 
   /* Scrollbar */
   --scrollbar-track: 220 10% 8%;   /* Same as bg-secondary */
@@ -31,7 +32,7 @@
   --scrollbar-thumb-hover: 220 6% 37%; /* Same as bg-hover */
 
   /* Plyr player */
-  --plyr-main: 210 55% 45%;        /* Same as accent */
+  --plyr-main: 210 60% 52%;        /* Same as accent */
 }
 
 /* Fatal Red Theme */
@@ -52,8 +53,9 @@
   --text-muted: 220 8% 62%;        /* Improved contrast for muted text */
 
   /* Accent - YouTube Red */
-  --accent: 0 100% 45%;            /* Darker red for better white text contrast (4.8:1) */
+  --accent: 0 100% 45%;            /* Darker red for buttons/backgrounds */
   --accent-hover: 0 100% 55%;      /* Lighter red on hover */
+  --accent-text: 0 100% 60%;       /* Brighter red for text readability */
 
   /* Scrollbar */
   --scrollbar-track: 0 8% 10%;
@@ -82,8 +84,9 @@
   --text-muted: 220 10% 58%;       /* Improved muted text contrast */
 
   /* Accent - Muted Blue */
-  --accent: 220 50% 35%;           /* Darker blue for better white text contrast (4.8:1) */
-  --accent-hover: 220 50% 45%;     /* Lighter on hover */
+  --accent: 220 55% 50%;           /* Blue - for buttons/backgrounds */
+  --accent-hover: 220 55% 60%;     /* Lighter on hover */
+  --accent-text: 220 60% 65%;      /* Brighter blue for text readability */
 
   /* Scrollbar */
   --scrollbar-track: 220 45% 8%;
@@ -91,7 +94,7 @@
   --scrollbar-thumb-hover: 220 50% 45%;
 
   /* Plyr player */
-  --plyr-main: 220 50% 35%;        /* Same as accent */
+  --plyr-main: 220 55% 50%;        /* Same as accent */
 }
 
 /* Archive Brown Theme */
@@ -112,8 +115,9 @@
   --text-muted: 220 10% 58%;       /* Improved muted text contrast */
 
   /* Accent - Sage Green */
-  --accent: 95 25% 40%;            /* Darker sage for white text contrast */
-  --accent-hover: 95 28% 50%;      /* Brighter sage hover */
+  --accent: 95 35% 50%;            /* Sage - for buttons/backgrounds */
+  --accent-hover: 95 38% 60%;      /* Brighter sage hover */
+  --accent-text: 95 45% 58%;       /* Brighter sage for text readability */
 
   /* Scrollbar */
   --scrollbar-track: 25 28% 9%;
@@ -121,7 +125,7 @@
   --scrollbar-thumb-hover: 95 25% 45%;
 
   /* Plyr player */
-  --plyr-main: 95 25% 40%;         /* Same as accent */
+  --plyr-main: 95 35% 50%;         /* Same as accent */
 }
 
 /* Buffer Gray/Beige Theme */
@@ -142,8 +146,9 @@
   --text-muted: 30 18% 48%;        /* Darker for better readability */
 
   /* Accent */
-  --accent: 35 55% 45%;            /* More saturated, darker for white text */
+  --accent: 35 55% 45%;            /* Orange - for buttons/backgrounds */
   --accent-hover: 35 60% 55%;      /* Brighter hover */
+  --accent-text: 35 60% 58%;       /* Brighter orange for text readability */
 
   /* Scrollbar */
   --scrollbar-track: 215 12% 22%;
@@ -172,8 +177,9 @@
   --text-muted: 0 0% 68%;          /* Improved muted text contrast */
 
   /* Accent */
-  --accent: 182 100% 38%;          /* Brighter teal for better visibility */
+  --accent: 182 100% 38%;          /* Teal - for buttons/backgrounds */
   --accent-hover: 182 100% 48%;    /* Lighter on hover */
+  --accent-text: 182 100% 50%;     /* Brighter teal for text readability */
 
   /* Scrollbar */
   --scrollbar-track: 215 12% 22%;
@@ -202,8 +208,9 @@
   --text-muted: 130 12% 38%;       /* Much darker for readability on light bg */
 
   /* Accent */
-  --accent: 115 35% 38%;           /* Darker green for light backgrounds */
-  --accent-hover: 115 40% 48%;     /* Brighter on hover */
+  --accent: 115 45% 32%;           /* Dark green for buttons/backgrounds */
+  --accent-hover: 115 50% 40%;     /* Slightly brighter on hover */
+  --accent-text: 115 50% 25%;      /* Darker green for text on light bg */
 
   /* Scrollbar */
   --scrollbar-track: 105 30% 85%;
@@ -211,7 +218,7 @@
   --scrollbar-thumb-hover: 105 32% 45%;
 
   /* Plyr player */
-  --plyr-main: 115 35% 38%;        /* Same as accent */
+  --plyr-main: 115 45% 32%;        /* Same as accent */
 }
 
 /* Pixel Light Pink/Cream Theme */
@@ -232,8 +239,9 @@
   --text-muted: 330 20% 38%;       /* Much darker for readability */
 
   /* Accent */
-  --accent: 315 70% 45%;           /* Darker pink for interactive elements */
-  --accent-hover: 315 75% 55%;     /* Brighter on hover */
+  --accent: 315 60% 38%;           /* Dark pink for buttons/backgrounds */
+  --accent-hover: 315 65% 48%;     /* Slightly brighter on hover */
+  --accent-text: 315 65% 30%;      /* Darker pink for text on light bg */
 
   /* Scrollbar */
   --scrollbar-track: 330 45% 88%;
@@ -241,7 +249,7 @@
   --scrollbar-thumb-hover: 330 50% 50%;
 
   /* Plyr player */
-  --plyr-main: 315 70% 45%;        /* Same as accent */
+  --plyr-main: 315 60% 38%;        /* Same as accent */
 }
 
 /* Debug Light Cream/Blue Theme */
@@ -262,8 +270,9 @@
   --text-muted: 210 18% 38%;       /* Much darker for readability */
 
   /* Accent */
-  --accent: 210 35% 42%;           /* Darker blue for light backgrounds */
-  --accent-hover: 210 38% 52%;     /* Brighter on hover */
+  --accent: 210 45% 35%;           /* Dark blue for buttons/backgrounds */
+  --accent-hover: 210 50% 45%;     /* Slightly brighter on hover */
+  --accent-text: 210 50% 28%;      /* Darker blue for text on light bg */
 
   /* Scrollbar */
   --scrollbar-track: 200 30% 82%;
@@ -271,7 +280,7 @@
   --scrollbar-thumb-hover: 200 35% 45%;
 
   /* Plyr player */
-  --plyr-main: 210 35% 42%;        /* Same as accent */
+  --plyr-main: 210 45% 35%;        /* Same as accent */
 }
 /* ===== END THEME SYSTEM ===== */
 

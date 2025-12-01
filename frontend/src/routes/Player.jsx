@@ -358,7 +358,7 @@ export default function Player() {
           <button
             onClick={toggleWatched}
             className={`icon-btn hover:bg-accent hover:border-accent ${
-              video.watched ? 'bg-accent/20 border-accent/40 text-accent' : ''
+              video.watched ? 'bg-accent/20 border-accent/40 text-accent-text' : ''
             }`}
             title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
           >
@@ -433,7 +433,7 @@ export default function Player() {
               {video.playback_seconds > 0 && (
                 <>
                   <span>•</span>
-                  <span className="text-accent">
+                  <span className="text-accent-text">
                     Resume from {formatDuration(video.playback_seconds)}
                   </span>
                 </>
@@ -445,7 +445,7 @@ export default function Player() {
               <span
                 className={`stat-pill ${
                   video.watched
-                    ? 'bg-accent/20 border-accent/40 text-accent'
+                    ? 'bg-accent/20 border-accent/40 text-accent-text'
                     : 'bg-yellow-600/20 border-yellow-600/40 text-yellow-400'
                 }`}
               >

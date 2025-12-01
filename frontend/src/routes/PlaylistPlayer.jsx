@@ -499,7 +499,7 @@ export default function PlaylistPlayer() {
       {/* Video info */}
       <div className="flex-1 min-w-0 py-1">
         <p className={`text-sm font-medium line-clamp-2 ${
-          isCurrent ? 'text-accent' : 'text-text-primary'
+          isCurrent ? 'text-accent-text' : 'text-text-primary'
         }`}>
           {video.title}
         </p>
@@ -507,7 +507,7 @@ export default function PlaylistPlayer() {
           {video.playlistName || video.channel_title || 'Video'}
         </p>
         {video.watched && (
-          <span className="inline-flex items-center gap-1 text-xs text-accent mt-1">
+          <span className="inline-flex items-center gap-1 text-xs text-accent-text mt-1">
             <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
@@ -599,7 +599,7 @@ export default function PlaylistPlayer() {
             onClick={toggleShuffle}
             className={`p-3 rounded-lg border transition-all ${
               isShuffled
-                ? 'bg-accent/20 border-accent text-accent'
+                ? 'bg-accent/20 border-accent text-accent-text'
                 : 'bg-dark-secondary border-dark-border text-text-secondary hover:text-text-primary hover:border-dark-border-light'
             }`}
             aria-label={`Shuffle ${isShuffled ? 'on' : 'off'}`}
@@ -620,7 +620,7 @@ export default function PlaylistPlayer() {
             onClick={toggleLoop}
             className={`p-3 rounded-lg border transition-all ${
               isLooping
-                ? 'bg-accent/20 border-accent text-accent'
+                ? 'bg-accent/20 border-accent text-accent-text'
                 : 'bg-dark-secondary border-dark-border text-text-secondary hover:text-text-primary hover:border-dark-border-light'
             }`}
             aria-label={`Loop ${isLooping ? 'on' : 'off'}`}

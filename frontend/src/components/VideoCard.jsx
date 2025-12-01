@@ -332,7 +332,7 @@ export default function VideoCard({
         {/* Selection Checkmark - Top Right (Show when selection is active) */}
         {isSelected && onToggleSelect && (
           <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
-            <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </div>

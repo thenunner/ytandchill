@@ -177,7 +177,7 @@ export default function VideoRow({
       {isSelected && onToggleSelect && !isDownloaded && (
         <div className="flex-shrink-0 pl-3">
           <div className="w-8 h-8 flex items-center justify-center bg-black/80 text-white rounded-full">
-            <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
               <polyline points="20 6 9 17 4 12"></polyline>
             </svg>
           </div>
