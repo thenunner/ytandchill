@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 
-export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete, navigate, showNotification }) {
+export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete, navigate, showNotification, editMode, isSelected, onToggleSelect }) {
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [minMinutes, setMinMinutes] = useState(channel.min_minutes || 0);
@@ -94,41 +94,56 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
   return (
     <div
       ref={cardRef}
-      className="card p-0 cursor-pointer transition-all group w-full overflow-x-auto"
+      className={`card p-0 cursor-pointer transition-all w-full overflow-x-auto relative ${
+        isSelected ? 'ring-2 ring-accent/60' : ''
+      } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
       onClick={(e) => {
-        if (!e.target.closest('button') && !e.target.closest('input')) {
+        if (editMode) {
+          onToggleSelect?.(channel.id);
+        } else if (!e.target.closest('button') && !e.target.closest('input')) {
           navigate(`/channel/${channel.id}`);
         }
       }}
     >
+      {/* Checkmark overlay when selected in edit mode */}
+      {editMode && isSelected && (
+        <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
+          <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+        </div>
+      )}
+
       {/* Inner flex container that expands when menu opens */}
       <div className={`flex items-stretch ${
-        showMenu
+        showMenu && !editMode
           ? showSettings
             ? 'min-w-[753px]' // Base 393px + drawer 100px + settings 260px
             : 'min-w-[493px]'  // Base 393px + drawer 100px
           : 'min-w-full'
       }`}
       >
-      {/* 3-Dot Menu Button - Full height */}
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          setShowMenu(!showMenu);
-          if (showSettings) setShowSettings(false);
-        }}
-        className="flex-shrink-0 w-10 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary transition-colors border-r border-dark-border"
-      >
-        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="5" r="2"></circle>
-          <circle cx="12" cy="12" r="2"></circle>
-          <circle cx="12" cy="19" r="2"></circle>
-        </svg>
-      </button>
+      {/* 3-Dot Menu Button and Drawers - hidden in edit mode */}
+      {!editMode && (
+        <>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowMenu(!showMenu);
+            if (showSettings) setShowSettings(false);
+          }}
+          className="flex-shrink-0 w-10 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary transition-colors border-r border-dark-border"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="2"></circle>
+            <circle cx="12" cy="12" r="2"></circle>
+            <circle cx="12" cy="19" r="2"></circle>
+          </svg>
+        </button>
 
-      {/* Sliding Drawer Menu - Settings (row 1) and Delete (row 2) */}
+        {/* Sliding Drawer Menu - Settings (row 1) and Delete (row 2) */}
       <div
-        className={`flex flex-col justify-center gap-2 overflow-hidden transition-all duration-200 ease-in-out ${
+        className={`flex flex-col justify-center gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
           showMenu ? 'w-[100px] opacity-100 px-2' : 'w-0 opacity-0'
         }`}
       >
@@ -137,7 +152,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             e.stopPropagation();
             setShowSettings(!showSettings);
           }}
-          className={`px-3 py-1.5 text-sm text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap ${showSettings ? 'ring-1 ring-accent' : ''}`}
+          className={`px-3 py-1 text-sm text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap ${showSettings ? 'ring-1 ring-accent' : ''}`}
         >
           Settings
         </button>
@@ -148,7 +163,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             setShowMenu(false);
             setShowSettings(false);
           }}
-          className="px-3 py-1.5 text-sm text-red-400 hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+          className="px-3 py-1 text-sm text-red-400 hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
         >
           Delete
         </button>
@@ -156,7 +171,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
 
       {/* Channel Settings Slide-out - Row 1: Min/Max, Row 2: Auto-Download, Save button */}
       <div
-        className={`flex flex-col justify-center gap-2 overflow-hidden transition-all duration-200 ease-in-out ${
+        className={`flex flex-col justify-center gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
           showSettings && showMenu ? 'w-[260px] opacity-100 px-2' : 'w-0 opacity-0'
         }`}
       >
@@ -204,11 +219,13 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
           </button>
         </div>
       </div>
+        </>
+      )}
 
       {/* Content - Thumbnail + Info */}
-      <div className="flex items-stretch gap-2 sm:gap-3 flex-1 pl-0 sm:pl-3 pr-3">
+      <div className="flex items-stretch gap-2 sm:gap-2 flex-1 pl-0 sm:pl-2 pr-2">
         {/* Thumbnail - Always visible, fills card height on mobile */}
-        <div className="relative w-[60px] sm:w-[140px] h-[88px] sm:h-auto flex-shrink-0 bg-dark-tertiary rounded overflow-hidden my-0 sm:my-3 ml-0 sm:ml-0">
+        <div className="relative w-[50px] sm:w-[100px] h-[60px] sm:h-auto flex-shrink-0 bg-dark-tertiary rounded overflow-hidden my-0 sm:my-1.5 ml-0 sm:ml-0">
           {channel.thumbnail ? (
             <img
               src={channel.thumbnail}
@@ -225,7 +242,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
         </div>
 
         {/* Info Section - 3 rows */}
-        <div className="flex-1 min-w-0 space-y-1 py-3 flex flex-col justify-center">
+        <div className="flex-1 min-w-0 space-y-0.5 py-1.5 flex flex-col justify-center">
           {/* Row 1: Title */}
           <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent-text transition-colors line-clamp-1 leading-tight" title={channel.title}>
             {channel.title}
@@ -239,17 +256,17 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
           </div>
 
           {/* Row 3: AUTO badge + Stats (Downloaded, To Review, Ignored) */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* AUTO badge */}
             {channel.auto_download && (
               <>
-                <span className="text-green-500 text-xs font-bold">(AUTO)</span>
+                <span className="text-green-500 text-[10px] font-bold">AUTO</span>
                 <span className="w-1 h-1 bg-text-muted rounded-full flex-shrink-0"></span>
               </>
             )}
             {/* Downloaded */}
-            <div className="flex items-center gap-1 text-sm font-semibold text-accent-text" title="Downloaded">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="flex items-center gap-0.5 text-xs font-semibold text-accent-text" title="Downloaded">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                 <polyline points="7 10 12 15 17 10"></polyline>
                 <line x1="12" y1="15" x2="12" y2="3"></line>
@@ -258,8 +275,8 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             </div>
 
             {/* Discovered */}
-            <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="To Review">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="flex items-center gap-0.5 text-xs font-semibold text-gray-400" title="To Review">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <circle cx="12" cy="12" r="1"></circle>
               </svg>
@@ -267,8 +284,8 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             </div>
 
             {/* Ignored */}
-            <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="Ignored">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="flex items-center gap-0.5 text-xs font-semibold text-gray-400" title="Ignored">
+              <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"></circle>
                 <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
               </svg>

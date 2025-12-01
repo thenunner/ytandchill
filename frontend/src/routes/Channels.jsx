@@ -35,6 +35,7 @@ export default function Channels() {
   const [showSortMenu, setShowSortMenu] = useState(false); // Sort menu visibility
   const [viewMode, setViewMode] = useState(localStorage.getItem('channelsViewMode') || 'grid'); // Grid or list view
   const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
+  const [editMode, setEditMode] = useState(false); // Edit mode for bulk selection
   const sortMenuRef = useRef(null);
 
   // Category filter state
@@ -752,11 +753,46 @@ export default function Channels() {
             )}
           </div>
 
-          {/* Selection indicator */}
-          {selectedChannels.length > 0 && (
-            <span className="text-xs text-accent-text font-medium">
-              {selectedChannels.length} selected
-            </span>
+          {/* Edit/Done Button */}
+          <button
+            onClick={() => {
+              setEditMode(!editMode);
+              setSelectedChannels([]);
+            }}
+            className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+            <span>{editMode ? 'Done' : 'Edit'}</span>
+          </button>
+
+          {/* Selection indicator and bulk actions - only in edit mode */}
+          {editMode && (
+            <>
+              {selectedChannels.length > 0 && (
+                <span className="text-xs text-accent-text font-medium">
+                  {selectedChannels.length} selected
+                </span>
+              )}
+              {filteredAndSortedChannels.length > 0 && (
+                <button
+                  onClick={() => setSelectedChannels(filteredAndSortedChannels.map(c => c.id))}
+                  className="btn btn-primary btn-sm"
+                >
+                  Select All ({filteredAndSortedChannels.length})
+                </button>
+              )}
+              {selectedChannels.length > 0 && (
+                <button
+                  onClick={() => setSelectedChannels([])}
+                  className="btn btn-secondary btn-sm"
+                >
+                  Clear
+                </button>
+              )}
+            </>
           )}
 
           {/* Scan New Button */}
@@ -1040,55 +1076,70 @@ export default function Channels() {
               </div>
             )}
 
-            <div className="card overflow-hidden hover:scale-100">
-              {/* Top Header Bar - Checkbox, AUTO and Last Scanned with 3-dot menu */}
+            <div
+              className={`card overflow-hidden cursor-pointer transition-all ${
+                selectedChannels.includes(channel.id) ? 'ring-2 ring-accent/60' : ''
+              } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'hover:scale-100'}`}
+              onClick={() => {
+                if (editMode) {
+                  setSelectedChannels(prev =>
+                    prev.includes(channel.id)
+                      ? prev.filter(id => id !== channel.id)
+                      : [...prev, channel.id]
+                  );
+                }
+              }}
+            >
+              {/* Checkmark overlay when selected in edit mode */}
+              {editMode && selectedChannels.includes(channel.id) && (
+                <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
+                  <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </div>
+              )}
+
+              {/* Top Header Bar - AUTO badge and 3-dot menu */}
               <div className="flex items-center justify-between px-3 py-2 bg-dark-tertiary/50">
-                {/* Left: Checkbox + AUTO badge */}
+                {/* Left: AUTO badge */}
                 <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={selectedChannels.includes(channel.id)}
-                    onChange={(e) => {
-                      e.stopPropagation();
-                      if (selectedChannels.includes(channel.id)) {
-                        setSelectedChannels(selectedChannels.filter(id => id !== channel.id));
-                      } else {
-                        setSelectedChannels([...selectedChannels, channel.id]);
-                      }
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text cursor-pointer"
-                  />
                   {channel.auto_download && (
                     <span className="text-green-500 text-[10px] font-bold tracking-wide">AUTO</span>
                   )}
                 </div>
 
-                {/* Right: 3-dot menu */}
-                <div className="flex items-center gap-2">
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        setShowCategorySubmenu(null);
-                        setMenuOpen(menuOpen === channel.id ? null : channel.id);
-                      }}
-                      className="p-1 rounded hover:bg-dark-hover transition-colors"
-                    >
-                      <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-                        <circle cx="12" cy="5" r="2"></circle>
-                        <circle cx="12" cy="12" r="2"></circle>
-                        <circle cx="12" cy="19" r="2"></circle>
-                      </svg>
-                    </button>
+                {/* Right: 3-dot menu - hidden in edit mode */}
+                {!editMode && (
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setShowCategorySubmenu(null);
+                          setMenuOpen(menuOpen === channel.id ? null : channel.id);
+                        }}
+                        className="p-1 rounded hover:bg-dark-hover transition-colors"
+                      >
+                        <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                          <circle cx="12" cy="5" r="2"></circle>
+                          <circle cx="12" cy="12" r="2"></circle>
+                          <circle cx="12" cy="19" r="2"></circle>
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <Link
                 to={`/channel/${channel.id}`}
                 className="block"
+                onClick={(e) => {
+                  if (editMode) {
+                    e.preventDefault();
+                  }
+                }}
               >
                 {/* Channel Logo Banner */}
                 <div className="relative w-full h-24 bg-dark-tertiary">
@@ -1217,6 +1268,13 @@ export default function Channels() {
               onDelete={setDeleteConfirm}
               navigate={navigate}
               showNotification={showNotification}
+              editMode={editMode}
+              isSelected={selectedChannels.includes(channel.id)}
+              onToggleSelect={(id) => {
+                setSelectedChannels(prev =>
+                  prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+                );
+              }}
             />
           ))}
         </div>
