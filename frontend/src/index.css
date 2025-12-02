@@ -710,3 +710,8 @@ select {
 .plyr-exit-fullscreen-btn:active {
   transform: translateX(-50%) scale(0.95);
 }
+
+/* Hide Plyr's default play button in fullscreen (we have our own) */
+.plyr--fullscreen .plyr__control--overlaid {
+  display: none !important;
+}
