@@ -188,6 +188,34 @@ export default function Player() {
           </svg>
         `;
 
+        // Exit fullscreen button
+        const exitFsButton = document.createElement('button');
+        exitFsButton.className = 'plyr-exit-fullscreen-btn';
+        exitFsButton.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        `;
+        exitFsButton.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        });
+        exitFsButton.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (document.exitFullscreen) {
+            document.exitFullscreen();
+          } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+          }
+        });
+
         // Assemble overlay
         touchOverlay.appendChild(zoneLeft);
         touchOverlay.appendChild(zoneCenter);
@@ -195,11 +223,13 @@ export default function Player() {
         touchOverlay.appendChild(skipLeftBubble);
         touchOverlay.appendChild(skipRightBubble);
         touchOverlay.appendChild(centerIndicator);
+        touchOverlay.appendChild(exitFsButton);
 
         // Double-tap tracking
         const lastTap = { left: 0, right: 0 };
         const doubleTapDelay = 300;
         const skipAmount = 10;
+        let exitButtonTimeout = null;
 
         const showBubble = (bubble) => {
           bubble.classList.add('show');
@@ -212,9 +242,18 @@ export default function Player() {
           setTimeout(() => centerIndicator.classList.remove('show'), 300);
         };
 
+        const showExitButton = () => {
+          exitFsButton.classList.add('visible');
+          if (exitButtonTimeout) clearTimeout(exitButtonTimeout);
+          exitButtonTimeout = setTimeout(() => {
+            exitFsButton.classList.remove('visible');
+          }, 3000);
+        };
+
         // Zone touch/click handlers - use touchend for touch devices (avoids 300ms delay)
         const handleLeftTap = (e) => {
           e.preventDefault();
+          showExitButton();
           const now = Date.now();
           if (now - lastTap.left < doubleTapDelay) {
             player.currentTime = Math.max(player.currentTime - skipAmount, 0);
@@ -227,6 +266,7 @@ export default function Player() {
 
         const handleRightTap = (e) => {
           e.preventDefault();
+          showExitButton();
           const now = Date.now();
           if (now - lastTap.right < doubleTapDelay) {
             player.currentTime = Math.min(player.currentTime + skipAmount, player.duration || Infinity);
@@ -239,6 +279,7 @@ export default function Player() {
 
         const handleCenterTap = (e) => {
           e.preventDefault();
+          showExitButton();
           if (player.playing) {
             player.pause();
             showCenterIndicator(false);
