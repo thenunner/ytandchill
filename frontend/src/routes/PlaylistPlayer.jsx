@@ -30,9 +30,6 @@ export default function PlaylistPlayer() {
   const sidebarRef = useRef(null);
   const mobileQueueRef = useRef(null);
   const preloadVideoRef = useRef(null); // Hidden video for preloading next
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [touchFeedback, setTouchFeedback] = useState(null); // { zone: 'left'|'center'|'right', action: string }
-  const lastTapRef = useRef({ time: 0, zone: null });
 
   const updateVideo = useUpdateVideo();
 
@@ -388,6 +385,131 @@ export default function PlaylistPlayer() {
       sources: [{ src: videoSrc, type: 'video/mp4' }],
     };
 
+    // ===== FULLSCREEN TOUCH CONTROLS =====
+    // Create touch overlay that lives inside Plyr's container (visible in fullscreen)
+    const touchOverlay = document.createElement('div');
+    touchOverlay.className = 'plyr-touch-overlay';
+
+    // Create zones
+    const zoneLeft = document.createElement('div');
+    zoneLeft.className = 'plyr-touch-zone plyr-touch-zone--left';
+
+    const zoneCenter = document.createElement('div');
+    zoneCenter.className = 'plyr-touch-zone plyr-touch-zone--center';
+
+    const zoneRight = document.createElement('div');
+    zoneRight.className = 'plyr-touch-zone plyr-touch-zone--right';
+
+    // Create feedback bubbles
+    const skipLeftBubble = document.createElement('div');
+    skipLeftBubble.className = 'plyr-skip-bubble plyr-skip-bubble--left';
+    skipLeftBubble.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12.5 3C17.15 3 21.08 6.03 22.47 10.22L20.1 11C19.05 7.81 16.04 5.5 12.5 5.5C10.54 5.5 8.77 6.22 7.38 7.38L10 10H3V3L5.6 5.6C7.45 4 9.85 3 12.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.1 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
+      </svg>
+      <span>10s</span>
+    `;
+
+    const skipRightBubble = document.createElement('div');
+    skipRightBubble.className = 'plyr-skip-bubble plyr-skip-bubble--right';
+    skipRightBubble.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11.5 3C6.85 3 2.92 6.03 1.53 10.22L3.9 11C4.95 7.81 7.96 5.5 11.5 5.5C13.46 5.5 15.23 6.22 16.62 7.38L14 10H21V3L18.4 5.6C16.55 4 14.15 3 11.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.1 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
+      </svg>
+      <span>10s</span>
+    `;
+
+    const centerIndicator = document.createElement('div');
+    centerIndicator.className = 'plyr-center-indicator';
+    centerIndicator.innerHTML = `
+      <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor">
+        <polygon points="5 3 19 12 5 21 5 3"/>
+      </svg>
+      <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor">
+        <rect x="6" y="4" width="4" height="16"/>
+        <rect x="14" y="4" width="4" height="16"/>
+      </svg>
+    `;
+
+    // Assemble overlay
+    touchOverlay.appendChild(zoneLeft);
+    touchOverlay.appendChild(zoneCenter);
+    touchOverlay.appendChild(zoneRight);
+    touchOverlay.appendChild(skipLeftBubble);
+    touchOverlay.appendChild(skipRightBubble);
+    touchOverlay.appendChild(centerIndicator);
+
+    // Double-tap tracking
+    const lastTap = { left: 0, right: 0 };
+    const doubleTapDelay = 300;
+    const skipAmount = 10;
+
+    const showBubble = (bubble) => {
+      bubble.classList.add('show');
+      setTimeout(() => bubble.classList.remove('show'), 500);
+    };
+
+    const showCenterIndicator = (isPlaying) => {
+      centerIndicator.classList.toggle('playing', isPlaying);
+      centerIndicator.classList.add('show');
+      setTimeout(() => centerIndicator.classList.remove('show'), 300);
+    };
+
+    // Zone click handlers
+    zoneLeft.addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastTap.left < doubleTapDelay) {
+        player.currentTime = Math.max(player.currentTime - skipAmount, 0);
+        showBubble(skipLeftBubble);
+        lastTap.left = 0;
+      } else {
+        lastTap.left = now;
+      }
+    });
+
+    zoneRight.addEventListener('click', () => {
+      const now = Date.now();
+      if (now - lastTap.right < doubleTapDelay) {
+        player.currentTime = Math.min(player.currentTime + skipAmount, player.duration || Infinity);
+        showBubble(skipRightBubble);
+        lastTap.right = 0;
+      } else {
+        lastTap.right = now;
+      }
+    });
+
+    zoneCenter.addEventListener('click', () => {
+      if (player.playing) {
+        player.pause();
+        showCenterIndicator(false);
+      } else {
+        player.play();
+        showCenterIndicator(true);
+      }
+    });
+
+    // Inject into Plyr's container
+    player.elements.container.appendChild(touchOverlay);
+
+    // Show overlay only in fullscreen (use both Plyr events and native API)
+    const showOverlay = () => { touchOverlay.classList.add('active'); };
+    const hideOverlay = () => { touchOverlay.classList.remove('active'); };
+
+    player.on('enterfullscreen', showOverlay);
+    player.on('exitfullscreen', hideOverlay);
+
+    // Backup: native fullscreen API
+    const handleFsChange = () => {
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        showOverlay();
+      } else {
+        hideOverlay();
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    document.addEventListener('webkitfullscreenchange', handleFsChange);
+    // ===== END FULLSCREEN TOUCH CONTROLS =====
+
     // Restore playback position when metadata loads
     player.on('loadedmetadata', () => {
       const vid = finalVideos[displayOrder[currentIndex] ?? 0];
@@ -448,67 +570,6 @@ export default function PlaylistPlayer() {
       preloadVideoRef.current.load();
     }
   }, [nextVideo?.id, getVideoSrc]);
-
-  // Track fullscreen state for touch controls
-  useEffect(() => {
-    const player = plyrInstanceRef.current;
-    if (!player) return;
-
-    const handleFullscreenChange = () => {
-      setIsFullscreen(player.fullscreen.active);
-    };
-
-    player.on('enterfullscreen', handleFullscreenChange);
-    player.on('exitfullscreen', handleFullscreenChange);
-
-    return () => {
-      player.off('enterfullscreen', handleFullscreenChange);
-      player.off('exitfullscreen', handleFullscreenChange);
-    };
-  }, [currentVideo?.id]);
-
-  // Fullscreen touch handler - double tap for rewind/ff, single tap for play/pause
-  const handleFullscreenTouch = useCallback((e) => {
-    if (!isFullscreen || !plyrInstanceRef.current) return;
-
-    const player = plyrInstanceRef.current;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.touches?.[0]?.clientX || e.clientX;
-    const relativeX = (x - rect.left) / rect.width;
-
-    // Determine zone: left third, center third, right third
-    let zone;
-    if (relativeX < 0.33) zone = 'left';
-    else if (relativeX > 0.67) zone = 'right';
-    else zone = 'center';
-
-    const now = Date.now();
-    const timeSinceLastTap = now - lastTapRef.current.time;
-    const sameZone = lastTapRef.current.zone === zone;
-
-    // Double tap detection (within 300ms, same zone)
-    if (timeSinceLastTap < 300 && sameZone && zone !== 'center') {
-      // Double tap on left or right - rewind/fast-forward
-      if (zone === 'left') {
-        player.rewind(10);
-        setTouchFeedback({ zone: 'left', action: '-10s' });
-      } else {
-        player.forward(10);
-        setTouchFeedback({ zone: 'right', action: '+10s' });
-      }
-      lastTapRef.current = { time: 0, zone: null }; // Reset to prevent triple tap
-    } else {
-      // Single tap - play/pause only on center, or first tap of potential double tap
-      if (zone === 'center') {
-        player.togglePlay();
-        setTouchFeedback({ zone: 'center', action: player.paused ? 'pause' : 'play' });
-      }
-      lastTapRef.current = { time: now, zone };
-    }
-
-    // Clear feedback after animation
-    setTimeout(() => setTouchFeedback(null), 500);
-  }, [isFullscreen]);
 
   // Scroll current video into view
   useEffect(() => {
@@ -871,56 +932,6 @@ export default function PlaylistPlayer() {
         </div>
       )}
 
-      {/* Fullscreen Touch Overlay - fixed position to cover Plyr's fullscreen */}
-      {isFullscreen && (
-        <div
-          className="fixed inset-0 z-[9999]"
-          onTouchEnd={handleFullscreenTouch}
-          onClick={handleFullscreenTouch}
-        >
-          {/* Touch feedback indicators */}
-          {touchFeedback && (
-            <>
-              {touchFeedback.zone === 'left' && (
-                <div className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-center animate-pulse">
-                  <div className="bg-black/60 rounded-full p-4 text-white flex flex-col items-center">
-                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12.5 3C17.15 3 21.08 6.03 22.47 10.22L20.1 11C19.05 7.81 16.04 5.5 12.5 5.5C10.54 5.5 8.77 6.22 7.38 7.38L10 10H3V3L5.6 5.6C7.45 4 9.85 3 12.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.1 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
-                    </svg>
-                    <span className="text-lg font-bold mt-1">{touchFeedback.action}</span>
-                  </div>
-                </div>
-              )}
-              {touchFeedback.zone === 'right' && (
-                <div className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-center animate-pulse">
-                  <div className="bg-black/60 rounded-full p-4 text-white flex flex-col items-center">
-                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M11.5 3C6.85 3 2.92 6.03 1.53 10.22L3.9 11C4.95 7.81 7.96 5.5 11.5 5.5C13.46 5.5 15.23 6.22 16.62 7.38L14 10H21V3L18.4 5.6C16.55 4 14.15 3 11.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.1 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
-                    </svg>
-                    <span className="text-lg font-bold mt-1">{touchFeedback.action}</span>
-                  </div>
-                </div>
-              )}
-              {touchFeedback.zone === 'center' && (
-                <div className="absolute inset-0 flex items-center justify-center animate-pulse">
-                  <div className="bg-black/60 rounded-full p-6 text-white">
-                    {touchFeedback.action === 'play' ? (
-                      <svg className="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
-                        <polygon points="5 3 19 12 5 21 5 3"/>
-                      </svg>
-                    ) : (
-                      <svg className="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
-                        <rect x="6" y="4" width="4" height="16"/>
-                        <rect x="14" y="4" width="4" height="16"/>
-                      </svg>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }
