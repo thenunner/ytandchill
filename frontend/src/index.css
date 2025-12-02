@@ -674,6 +674,12 @@ select {
   justify-content: center;
   width: 120px;
   height: 120px;
+  min-width: 120px;
+  min-height: 120px;
+  max-width: 120px;
+  max-height: 120px;
+  padding: 0;
+  border: none;
   background: rgba(0, 0, 0, 0.7);
   border-radius: 50%;
   color: white;
@@ -682,6 +688,8 @@ select {
   pointer-events: none;
   cursor: pointer;
   z-index: 200;
+  flex-shrink: 0;
+  aspect-ratio: 1 / 1;
 }
 
 .plyr-exit-fullscreen-btn svg {
