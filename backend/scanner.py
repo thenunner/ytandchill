@@ -194,7 +194,20 @@ class YouTubeAPIClient:
             if 'youtube.com/@' in url:
                 handle = url.split('/@')[1].split('/')[0].split('?')[0]
 
-                # Try forUsername first (works for some handles)
+                # Try forHandle first (works for @handle format)
+                try:
+                    response = self.youtube.channels().list(
+                        part='snippet',
+                        forHandle=handle
+                    ).execute()
+                    if response.get('items'):
+                        channel_id = response['items'][0]['id']
+                        logger.debug(f'Resolved @{handle} to {channel_id} via forHandle')
+                        return channel_id
+                except HttpError as e:
+                    logger.debug(f'forHandle lookup failed for @{handle}: {e}')
+
+                # Try forUsername as fallback (works for some older handles)
                 try:
                     response = self.youtube.channels().list(
                         part='snippet',
@@ -207,7 +220,7 @@ class YouTubeAPIClient:
                 except HttpError:
                     pass
 
-                # Fallback: Use search with exact query match
+                # Last resort: Use search with exact query match
                 search_response = self.youtube.search().list(
                     part='snippet',
                     q=f'"{handle}"',
@@ -233,9 +246,9 @@ class YouTubeAPIClient:
                                 logger.debug(f'Resolved @{handle} to {channel_id} via search')
                                 return channel_id
 
-                    # If no exact match found, return first result
+                    # If no exact match found, return first result (with warning)
                     channel_id = search_response['items'][0]['snippet']['channelId']
-                    logger.debug(f'Resolved @{handle} to {channel_id} (first search result)')
+                    logger.warning(f'No exact handle match for @{handle}, using first search result: {channel_id}')
                     return channel_id
 
             # Handle /channel/UC... URLs (direct channel ID)

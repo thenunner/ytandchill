@@ -95,6 +95,22 @@ def create_channel():
                     # Update duration filters if provided
                     existing.min_minutes = data.get('min_minutes', 0)
                     existing.max_minutes = data.get('max_minutes', 0)
+
+                    # Refresh channel info and thumbnail
+                    try:
+                        channel_info = youtube_client.get_channel_info(existing.yt_id)
+                        if channel_info:
+                            existing.title = channel_info['title']
+                            # Re-download thumbnail
+                            if channel_info['thumbnail']:
+                                thumbnail_filename = f"{existing.yt_id}.jpg"
+                                local_file_path = os.path.join('downloads', 'thumbnails', thumbnail_filename)
+                                if download_thumbnail(channel_info['thumbnail'], local_file_path):
+                                    existing.thumbnail = os.path.join('thumbnails', thumbnail_filename)
+                                    logger.info(f"Re-downloaded thumbnail for restored channel: {existing.title}")
+                    except Exception as e:
+                        logger.warning(f"Could not refresh channel info during restore: {e}")
+
                     session.commit()
 
                     # Queue a full scan to rediscover videos
