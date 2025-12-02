@@ -278,8 +278,8 @@ def acquire_scan_batch_lock(is_auto_scan=False, batch_label=''):
         scan_batch_label = batch_label
         logger.debug(f"Scan batch lock ACQUIRED: {batch_label}")
 
-        # Set status bar message immediately
-        set_operation('scanning', "Scanning channels for new videos")
+        # Set status bar message using batch label for context
+        set_operation('scanning', f"Scanning: {batch_label}")
 
         return True
 
