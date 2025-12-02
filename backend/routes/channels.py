@@ -89,8 +89,29 @@ def create_channel():
             # Check if already exists
             existing = session.query(Channel).filter(Channel.yt_id == channel_id).first()
             if existing:
-                _clear_operation()
-                return jsonify({'error': 'Channel already exists'}), 400
+                # If soft-deleted, restore it and queue a full scan
+                if existing.deleted_at is not None:
+                    existing.deleted_at = None
+                    # Update duration filters if provided
+                    existing.min_minutes = data.get('min_minutes', 0)
+                    existing.max_minutes = data.get('max_minutes', 0)
+                    session.commit()
+
+                    # Queue a full scan to rediscover videos
+                    _queue_channel_scan(existing.id, force_full=True)
+                    logger.info(f"Restored soft-deleted channel: {existing.title} (ID: {existing.id}) and queued full scan")
+
+                    _clear_operation()
+                    return jsonify({
+                        'id': existing.id,
+                        'yt_id': existing.yt_id,
+                        'title': existing.title,
+                        'restored': True,
+                        'scan_result': {'status': 'queued'}
+                    }), 200
+                else:
+                    _clear_operation()
+                    return jsonify({'error': 'Channel already exists'}), 400
 
             # Get channel info
             try:
