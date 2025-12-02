@@ -217,7 +217,7 @@ export default function Settings() {
               </div>
               {/* Google API */}
               <div className="flex items-center gap-3 order-5 md:order-6">
-                <span className="text-text-secondary w-20">Google API</span>
+                <span className="text-text-secondary w-24">Google API</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.google_api_version || 'Unknown'}</span>
               </div>
             </div>

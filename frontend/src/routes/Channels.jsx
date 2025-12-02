@@ -61,9 +61,10 @@ export default function Channels() {
   const isScanRunning = currentOperation?.type === 'scanning';
 
   useEffect(() => {
-    // Detect when scan completes (type changes from 'scanning' to 'scan_complete')
-    if (prevOperationTypeRef.current === 'scanning' && currentOperation?.type === 'scan_complete') {
-      // Scan just completed - refetch channels to show updated last_scan_time
+    // Detect when scan completes (type changes to 'scan_complete' from anything else)
+    // This catches both: scanning->scan_complete AND cases where we missed the 'scanning' state
+    if (currentOperation?.type === 'scan_complete' && prevOperationTypeRef.current !== 'scan_complete') {
+      // Scan just completed - refetch channels to show updated counts and last_scan_time
       queryClient.invalidateQueries(['channels']);
 
       // Clear selected channels
