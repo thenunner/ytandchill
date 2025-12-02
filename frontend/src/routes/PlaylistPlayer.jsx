@@ -748,7 +748,7 @@ export default function PlaylistPlayer() {
         {/* Player Area */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Video Player */}
-          <div className="bg-black rounded-xl overflow-hidden min-h-[300px] md:min-h-[400px] relative">
+          <div className="bg-black rounded-xl overflow-hidden min-h-[300px] md:min-h-[400px]">
             <video
               ref={videoRef}
               className="w-full h-auto"
@@ -762,56 +762,6 @@ export default function PlaylistPlayer() {
               preload="auto"
               muted
             />
-            {/* Fullscreen Touch Overlay - only visible in fullscreen */}
-            {isFullscreen && (
-              <div
-                className="absolute inset-0 z-50"
-                onTouchEnd={handleFullscreenTouch}
-                onClick={handleFullscreenTouch}
-              >
-                {/* Touch feedback indicators */}
-                {touchFeedback && (
-                  <>
-                    {touchFeedback.zone === 'left' && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-center animate-pulse">
-                        <div className="bg-black/60 rounded-full p-4 text-white flex flex-col items-center">
-                          <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12.5 3C17.15 3 21.08 6.03 22.47 10.22L20.1 11C19.05 7.81 16.04 5.5 12.5 5.5C10.54 5.5 8.77 6.22 7.38 7.38L10 10H3V3L5.6 5.6C7.45 4 9.85 3 12.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.1 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
-                          </svg>
-                          <span className="text-lg font-bold mt-1">{touchFeedback.action}</span>
-                        </div>
-                      </div>
-                    )}
-                    {touchFeedback.zone === 'right' && (
-                      <div className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-center animate-pulse">
-                        <div className="bg-black/60 rounded-full p-4 text-white flex flex-col items-center">
-                          <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M11.5 3C6.85 3 2.92 6.03 1.53 10.22L3.9 11C4.95 7.81 7.96 5.5 11.5 5.5C13.46 5.5 15.23 6.22 16.62 7.38L14 10H21V3L18.4 5.6C16.55 4 14.15 3 11.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.1 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
-                          </svg>
-                          <span className="text-lg font-bold mt-1">{touchFeedback.action}</span>
-                        </div>
-                      </div>
-                    )}
-                    {touchFeedback.zone === 'center' && (
-                      <div className="absolute inset-0 flex items-center justify-center animate-pulse">
-                        <div className="bg-black/60 rounded-full p-6 text-white">
-                          {touchFeedback.action === 'play' ? (
-                            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
-                              <polygon points="5 3 19 12 5 21 5 3"/>
-                            </svg>
-                          ) : (
-                            <svg className="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
-                              <rect x="6" y="4" width="4" height="16"/>
-                              <rect x="14" y="4" width="4" height="16"/>
-                            </svg>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Controls Below Player */}
@@ -918,6 +868,57 @@ export default function PlaylistPlayer() {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Fullscreen Touch Overlay - fixed position to cover Plyr's fullscreen */}
+      {isFullscreen && (
+        <div
+          className="fixed inset-0 z-[9999]"
+          onTouchEnd={handleFullscreenTouch}
+          onClick={handleFullscreenTouch}
+        >
+          {/* Touch feedback indicators */}
+          {touchFeedback && (
+            <>
+              {touchFeedback.zone === 'left' && (
+                <div className="absolute left-0 top-0 bottom-0 w-1/3 flex items-center justify-center animate-pulse">
+                  <div className="bg-black/60 rounded-full p-4 text-white flex flex-col items-center">
+                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12.5 3C17.15 3 21.08 6.03 22.47 10.22L20.1 11C19.05 7.81 16.04 5.5 12.5 5.5C10.54 5.5 8.77 6.22 7.38 7.38L10 10H3V3L5.6 5.6C7.45 4 9.85 3 12.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.1 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
+                    </svg>
+                    <span className="text-lg font-bold mt-1">{touchFeedback.action}</span>
+                  </div>
+                </div>
+              )}
+              {touchFeedback.zone === 'right' && (
+                <div className="absolute right-0 top-0 bottom-0 w-1/3 flex items-center justify-center animate-pulse">
+                  <div className="bg-black/60 rounded-full p-4 text-white flex flex-col items-center">
+                    <svg className="w-10 h-10" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M11.5 3C6.85 3 2.92 6.03 1.53 10.22L3.9 11C4.95 7.81 7.96 5.5 11.5 5.5C13.46 5.5 15.23 6.22 16.62 7.38L14 10H21V3L18.4 5.6C16.55 4 14.15 3 11.5 3M10 12V22H8V14H6V12H10M18 14V20C18 21.11 17.11 22 16 22H14C12.9 22 12 21.1 12 20V14C12 12.9 12.9 12 14 12H16C17.11 12 18 12.9 18 14M14 14V20H16V14H14Z"/>
+                    </svg>
+                    <span className="text-lg font-bold mt-1">{touchFeedback.action}</span>
+                  </div>
+                </div>
+              )}
+              {touchFeedback.zone === 'center' && (
+                <div className="absolute inset-0 flex items-center justify-center animate-pulse">
+                  <div className="bg-black/60 rounded-full p-6 text-white">
+                    {touchFeedback.action === 'play' ? (
+                      <svg className="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
+                        <polygon points="5 3 19 12 5 21 5 3"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-12 h-12" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="4" width="4" height="16"/>
+                        <rect x="14" y="4" width="4" height="16"/>
+                      </svg>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       )}
     </div>
