@@ -15,7 +15,7 @@ import subprocess
 import os
 import logging
 import yt_dlp
-import googleapiclient
+from importlib.metadata import version as pkg_version
 
 from database import Setting, get_session
 from utils import update_log_level
@@ -138,7 +138,10 @@ def health_check():
     ytdlp_version = yt_dlp.version.__version__
 
     # Check google-api-python-client version
-    google_api_version = googleapiclient.__version__
+    try:
+        google_api_version = pkg_version('google-api-python-client')
+    except Exception:
+        google_api_version = 'Unknown'
 
     # Check auto-refresh status
     auto_refresh_enabled = _settings_manager.get_bool('auto_refresh_enabled')
