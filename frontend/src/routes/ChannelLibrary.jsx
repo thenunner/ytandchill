@@ -364,10 +364,18 @@ export default function ChannelLibrary() {
   });
   }, [videos, searchInput, hideWatched, hidePlaylisted, sort]);
 
-  // Reset page when filters change
+  // Reset page when FILTERS change (not when data changes from bulk actions)
   useEffect(() => {
     setCurrentPage(1);
-  }, [videos, searchInput, hideWatched, hidePlaylisted, sort, contentFilter]);
+  }, [searchInput, hideWatched, hidePlaylisted, sort, contentFilter]);
+
+  // Adjust page if current page is now empty (after bulk delete/ignore)
+  useEffect(() => {
+    const totalPages = Math.ceil(sortedVideos.length / itemsPerPage);
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [sortedVideos.length, itemsPerPage, currentPage]);
 
   // Paginate videos
   const paginatedVideos = useMemo(() => {
@@ -559,6 +567,10 @@ export default function ChannelLibrary() {
 
   const selectAll = () => {
     setSelectedVideos(sortedVideos.map(v => v.id));
+  };
+
+  const selectPage = () => {
+    setSelectedVideos(paginatedVideos.map(v => v.id));
   };
 
   const clearSelection = () => {
@@ -819,12 +831,20 @@ export default function ChannelLibrary() {
             <>
               {/* Select All - Always visible */}
               {sortedVideos.length > 0 && (
-                <button
-                  onClick={selectAll}
-                  className="btn btn-primary btn-sm"
-                >
-                  Select All ({sortedVideos.length})
-                </button>
+                <>
+                  <button
+                    onClick={selectAll}
+                    className="btn btn-primary btn-sm"
+                  >
+                    Select All ({sortedVideos.length})
+                  </button>
+                  <button
+                    onClick={selectPage}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Select Page ({paginatedVideos.length})
+                  </button>
+                </>
               )}
 
               {/* Action Buttons - Appear when videos are selected */}
@@ -859,12 +879,20 @@ export default function ChannelLibrary() {
             <>
               {/* Select All - Always visible */}
               {sortedVideos.length > 0 && (
-                <button
-                  onClick={selectAll}
-                  className="btn btn-primary btn-sm"
-                >
-                  Select All ({sortedVideos.length})
-                </button>
+                <>
+                  <button
+                    onClick={selectAll}
+                    className="btn btn-primary btn-sm"
+                  >
+                    Select All ({sortedVideos.length})
+                  </button>
+                  <button
+                    onClick={selectPage}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Select Page ({paginatedVideos.length})
+                  </button>
+                </>
               )}
 
               {/* Action Buttons - Appear when videos are selected */}
