@@ -192,9 +192,8 @@ export default function Player() {
         const exitFsButton = document.createElement('button');
         exitFsButton.className = 'plyr-exit-fullscreen-btn';
         exitFsButton.innerHTML = `
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
           </svg>
         `;
         exitFsButton.addEventListener('touchend', (e) => {
