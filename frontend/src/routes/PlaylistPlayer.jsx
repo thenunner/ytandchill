@@ -455,8 +455,9 @@ export default function PlaylistPlayer() {
       setTimeout(() => centerIndicator.classList.remove('show'), 300);
     };
 
-    // Zone click handlers
-    zoneLeft.addEventListener('click', () => {
+    // Zone touch/click handlers - use touchend for touch devices (avoids 300ms delay)
+    const handleLeftTap = (e) => {
+      e.preventDefault();
       const now = Date.now();
       if (now - lastTap.left < doubleTapDelay) {
         player.currentTime = Math.max(player.currentTime - skipAmount, 0);
@@ -465,9 +466,10 @@ export default function PlaylistPlayer() {
       } else {
         lastTap.left = now;
       }
-    });
+    };
 
-    zoneRight.addEventListener('click', () => {
+    const handleRightTap = (e) => {
+      e.preventDefault();
       const now = Date.now();
       if (now - lastTap.right < doubleTapDelay) {
         player.currentTime = Math.min(player.currentTime + skipAmount, player.duration || Infinity);
@@ -476,9 +478,10 @@ export default function PlaylistPlayer() {
       } else {
         lastTap.right = now;
       }
-    });
+    };
 
-    zoneCenter.addEventListener('click', () => {
+    const handleCenterTap = (e) => {
+      e.preventDefault();
       if (player.playing) {
         player.pause();
         showCenterIndicator(false);
@@ -486,7 +489,17 @@ export default function PlaylistPlayer() {
         player.play();
         showCenterIndicator(true);
       }
-    });
+    };
+
+    // Touch events (primary for mobile)
+    zoneLeft.addEventListener('touchend', handleLeftTap);
+    zoneRight.addEventListener('touchend', handleRightTap);
+    zoneCenter.addEventListener('touchend', handleCenterTap);
+
+    // Click events (fallback for mouse)
+    zoneLeft.addEventListener('click', handleLeftTap);
+    zoneRight.addEventListener('click', handleRightTap);
+    zoneCenter.addEventListener('click', handleCenterTap);
 
     // Inject into Plyr's container
     player.elements.container.appendChild(touchOverlay);

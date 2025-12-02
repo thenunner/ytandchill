@@ -569,8 +569,8 @@ select {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   background: rgba(0, 0, 0, 0.7);
   border-radius: 50%;
   color: white;
@@ -580,20 +580,20 @@ select {
 }
 
 .plyr-skip-bubble--left {
-  left: calc(16.66% - 40px);
+  left: calc(16.66% - 60px);
 }
 
 .plyr-skip-bubble--right {
-  right: calc(16.66% - 40px);
+  right: calc(16.66% - 60px);
 }
 
 .plyr-skip-bubble svg {
-  width: 32px;
-  height: 32px;
+  width: 50px;
+  height: 50px;
 }
 
 .plyr-skip-bubble span {
-  font-size: 14px;
+  font-size: 18px;
   font-weight: bold;
   margin-top: 4px;
 }
@@ -612,8 +612,8 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 80px;
-  height: 80px;
+  width: 120px;
+  height: 120px;
   background: rgba(0, 0, 0, 0.7);
   border-radius: 50%;
   color: white;
@@ -623,8 +623,8 @@ select {
 }
 
 .plyr-center-indicator svg {
-  width: 40px;
-  height: 40px;
+  width: 60px;
+  height: 60px;
 }
 
 .plyr-center-indicator .play-icon {
