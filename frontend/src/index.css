@@ -672,10 +672,9 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
-  background: rgba(0, 0, 0, 0.8);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  width: 120px;
+  height: 120px;
+  background: rgba(0, 0, 0, 0.7);
   border-radius: 50%;
   color: white;
   opacity: 0;
@@ -686,8 +685,8 @@ select {
 }
 
 .plyr-exit-fullscreen-btn svg {
-  width: 32px;
-  height: 32px;
+  width: 60px;
+  height: 60px;
 }
 
 .plyr-exit-fullscreen-btn.visible {

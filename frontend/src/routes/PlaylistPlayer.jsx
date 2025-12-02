@@ -479,10 +479,21 @@ export default function PlaylistPlayer() {
       setTimeout(() => bubble.classList.remove('show'), 500);
     };
 
-    const showCenterIndicator = (isPlaying) => {
-      centerIndicator.classList.toggle('playing', isPlaying);
-      centerIndicator.classList.add('show');
-      setTimeout(() => centerIndicator.classList.remove('show'), 300);
+    const updateCenterIndicator = () => {
+      if (player.paused) {
+        // Show play icon and keep visible when paused
+        centerIndicator.classList.remove('playing');
+        centerIndicator.classList.add('show', 'persistent');
+      } else {
+        // Show pause icon briefly when playing
+        centerIndicator.classList.add('playing', 'show');
+        centerIndicator.classList.remove('persistent');
+        setTimeout(() => {
+          if (!centerIndicator.classList.contains('persistent')) {
+            centerIndicator.classList.remove('show');
+          }
+        }, 300);
+      }
     };
 
     const showExitButton = () => {
@@ -492,6 +503,11 @@ export default function PlaylistPlayer() {
         exitFsButton.classList.remove('visible');
       }, 3000);
     };
+
+    // Listen to player state changes to keep play button visible when paused
+    player.on('pause', updateCenterIndicator);
+    player.on('play', updateCenterIndicator);
+    player.on('playing', updateCenterIndicator);
 
     // Zone touch/click handlers - use touchend for touch devices (avoids 300ms delay)
     const handleLeftTap = (e) => {
@@ -525,11 +541,10 @@ export default function PlaylistPlayer() {
       showExitButton();
       if (player.playing) {
         player.pause();
-        showCenterIndicator(false);
       } else {
         player.play();
-        showCenterIndicator(true);
       }
+      // updateCenterIndicator will be called by pause/play events
     };
 
     // Touch events (primary for mobile)
