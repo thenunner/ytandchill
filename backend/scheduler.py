@@ -83,8 +83,8 @@ class AutoRefreshScheduler:
             )
             logger.info(f"Auto-refresh rescheduled to {hour:02d}:{minute:02d}")
 
-    def update_ytdlp(self):
-        """Update yt-dlp to the latest version"""
+    def update_dependencies(self):
+        """Update yt-dlp and google-api-python-client to latest versions"""
         try:
             # Get current yt-dlp version
             try:
@@ -118,8 +118,9 @@ class AutoRefreshScheduler:
 
             # Run pip upgrade using --user flag for non-root permissions
             # Use [default] extras to include yt-dlp-ejs for JavaScript runtime support
+            # Also upgrade google-api-python-client for YouTube API improvements
             result = subprocess.run(
-                ['pip', 'install', '--user', '--upgrade', 'yt-dlp[default]'],
+                ['pip', 'install', '--user', '--upgrade', 'yt-dlp[default]', 'google-api-python-client'],
                 capture_output=True,
                 text=True,
                 timeout=300  # 5 minute timeout
@@ -128,7 +129,7 @@ class AutoRefreshScheduler:
             if result.returncode == 0:
                 # Check if it was already up-to-date or actually updated
                 if "already satisfied" in result.stdout.lower() or "requirement already satisfied" in result.stdout.lower():
-                    logger.info(f"Auto-scan: yt-dlp already up-to-date (version {current_version})")
+                    logger.info(f"Auto-scan: Dependencies already up-to-date (yt-dlp {current_version})")
                 else:
                     # Get new version
                     try:
@@ -139,11 +140,11 @@ class AutoRefreshScheduler:
                             timeout=10
                         )
                         new_version = new_version_result.stdout.strip() if new_version_result.returncode == 0 else "unknown"
-                        logger.info(f"Auto-scan: yt-dlp updated successfully ({current_version} → {new_version})")
+                        logger.info(f"Auto-scan: Dependencies updated (yt-dlp {current_version} → {new_version})")
                     except Exception:
-                        logger.info("Auto-scan: yt-dlp updated successfully")
+                        logger.info("Auto-scan: Dependencies updated successfully")
             else:
-                logger.warning(f"Auto-scan: yt-dlp update failed: {result.stderr}")
+                logger.warning(f"Auto-scan: Dependency update failed: {result.stderr}")
         except Exception as e:
             logger.error(f"Auto-scan: Error updating yt-dlp: {e}")
 
@@ -151,10 +152,10 @@ class AutoRefreshScheduler:
         """Queue scans for all channels and update yt-dlp"""
         logger.info("Auto-scan: Starting scheduled auto-scan")
 
-        # First, update yt-dlp
+        # First, update dependencies (yt-dlp and google-api-python-client)
         if self.set_operation:
-            self.set_operation('auto_refresh', 'Updating yt-dlp...')
-        self.update_ytdlp()
+            self.set_operation('auto_refresh', 'Updating dependencies...')
+        self.update_dependencies()
 
         # Then queue all channels for scanning
         if self.set_operation:

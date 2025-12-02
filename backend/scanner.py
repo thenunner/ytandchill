@@ -204,7 +204,8 @@ class YouTubeAPIClient:
                         channel_id = response['items'][0]['id']
                         logger.debug(f'Resolved @{handle} to {channel_id} via forHandle')
                         return channel_id
-                except HttpError as e:
+                except (HttpError, TypeError) as e:
+                    # TypeError if forHandle not supported by API client version
                     logger.debug(f'forHandle lookup failed for @{handle}: {e}')
 
                 # Try forUsername as fallback (works for some older handles)
@@ -241,8 +242,8 @@ class YouTubeAPIClient:
 
                         if channel_details.get('items'):
                             custom_url = channel_details['items'][0]['snippet'].get('customUrl', '')
-                            # Check if customUrl matches the handle (with or without @)
-                            if custom_url.lower() == f'@{handle.lower()}' or custom_url.lower() == handle.lower():
+                            # Check if customUrl matches the handle (case-sensitive)
+                            if custom_url == f'@{handle}' or custom_url == handle:
                                 logger.debug(f'Resolved @{handle} to {channel_id} via search')
                                 return channel_id
 

@@ -15,6 +15,7 @@ import subprocess
 import os
 import logging
 import yt_dlp
+import googleapiclient
 
 from database import Setting, get_session
 from utils import update_log_level
@@ -136,6 +137,9 @@ def health_check():
     # Check yt-dlp version
     ytdlp_version = yt_dlp.version.__version__
 
+    # Check google-api-python-client version
+    google_api_version = googleapiclient.__version__
+
     # Check auto-refresh status
     auto_refresh_enabled = _settings_manager.get_bool('auto_refresh_enabled')
     auto_refresh_time = _settings_manager.get('auto_refresh_time', '03:00')
@@ -185,6 +189,7 @@ def health_check():
         'status': 'ok',
         'ffmpeg_available': ffmpeg_available,
         'ytdlp_version': ytdlp_version,
+        'google_api_version': google_api_version,
         'auto_refresh_enabled': auto_refresh_enabled,
         'auto_refresh_time': auto_refresh_time,
         'download_worker_running': worker_alive,
