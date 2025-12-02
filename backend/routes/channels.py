@@ -114,10 +114,10 @@ def create_channel():
                     session.commit()
 
                     # Queue a full scan to rediscover videos
-                    _queue_channel_scan(existing.id, force_full=True)
+                    _queue_channel_scan(existing.id, force_full=True, is_batch_start=True, batch_label=existing.title)
                     logger.info(f"Restored soft-deleted channel: {existing.title} (ID: {existing.id}) and queued full scan")
 
-                    _clear_operation()
+                    # Don't clear_operation - let scan completion set scan_complete status
                     return jsonify({
                         'id': existing.id,
                         'yt_id': existing.yt_id,
@@ -166,10 +166,11 @@ def create_channel():
 
             # Queue initial full scan of the channel (runs in background)
             # force_full=True ensures we get the entire channel history
-            _queue_channel_scan(channel.id, force_full=True)
+            # is_batch_start=True ensures scan_complete is set when done
+            _queue_channel_scan(channel.id, force_full=True, is_batch_start=True, batch_label=channel.title)
             logger.info(f"Queued initial full scan for new channel: {channel.title} (ID: {channel.id})")
 
-            _clear_operation()
+            # Don't clear_operation - let scan completion set scan_complete status
             result = _serialize_channel(channel)
             result['scan_result'] = {
                 'message': 'Initial scan queued',
