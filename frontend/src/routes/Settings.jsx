@@ -334,7 +334,7 @@ export default function Settings() {
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
               <div className="flex items-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v5.4.1</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v5.4.2</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center gap-3 order-3 md:order-4">
@@ -795,98 +795,82 @@ export default function Settings() {
                     displayTimes.push({ hour: 0, minute: 0 });
                   }
 
+                  const renderTimeBox = (time, index, mobileWidth = false) => {
+                    const isDisabled = scanMode === 'interval' && index > 0;
+                    return (
+                      <div key={index} className="flex items-center gap-1.5">
+                        <span className="text-text-primary text-sm font-bold w-4">{index + 1}.</span>
+                        <select
+                          value={time.hour}
+                          onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
+                          disabled={isDisabled}
+                          className={`input text-sm font-mono py-1.5 ${mobileWidth ? 'px-1 w-12' : 'px-1.5 w-14'} ${
+                            isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <option key={i} value={i}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="text-text-primary text-sm font-bold">:</span>
+                        <select
+                          value={time.minute}
+                          onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
+                          disabled={isDisabled}
+                          className={`input text-sm font-mono py-1.5 ${mobileWidth ? 'px-1 w-12' : 'px-1.5 w-14'} ${
+                            isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          {Array.from({ length: 60 }, (_, i) => (
+                            <option key={i} value={i}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    );
+                  };
+
                   return (
                     <>
-                      {/* Desktop: All 4 time boxes + Save in one row */}
-                      <div className="hidden md:flex md:items-center md:gap-3">
-                        {displayTimes.map((time, index) => {
-                          const isDisabled = scanMode === 'interval' && index > 0;
-                          return (
-                            <div key={index} className="flex items-center gap-1.5">
-                              <span className="text-text-primary text-sm font-bold w-4">{index + 1}.</span>
-                              <select
-                                value={time.hour}
-                                onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
-                                disabled={isDisabled}
-                                className={`input text-sm font-mono py-1.5 px-1.5 w-14 ${
-                                  isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              >
-                                {Array.from({ length: 24 }, (_, i) => (
-                                  <option key={i} value={i}>
-                                    {i.toString().padStart(2, '0')}
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="text-text-primary text-sm font-bold">:</span>
-                              <select
-                                value={time.minute}
-                                onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
-                                disabled={isDisabled}
-                                className={`input text-sm font-mono py-1.5 px-1.5 w-14 ${
-                                  isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              >
-                                {Array.from({ length: 60 }, (_, i) => (
-                                  <option key={i} value={i}>
-                                    {i.toString().padStart(2, '0')}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          );
-                        })}
-
-                        {/* Save Button */}
-                        <button
-                          onClick={handleSaveAutoRefresh}
-                          className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                        >
-                          Save
-                        </button>
+                      {/* Desktop: Two rows - Row 1: 1 & 3, Row 2: 2 & 4 + Save */}
+                      <div className="hidden md:flex md:flex-col gap-2">
+                        {/* Row 1: Time boxes 1 and 3 */}
+                        <div className="flex items-center gap-8">
+                          {renderTimeBox(displayTimes[0], 0)}
+                          {renderTimeBox(displayTimes[2], 2)}
+                        </div>
+                        {/* Row 2: Time boxes 2 and 4 + Save */}
+                        <div className="flex items-center gap-8">
+                          {renderTimeBox(displayTimes[1], 1)}
+                          {renderTimeBox(displayTimes[3], 3)}
+                          <button
+                            onClick={handleSaveAutoRefresh}
+                            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 ml-4"
+                          >
+                            Save
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Mobile: Stacked time boxes + Save */}
+                      {/* Mobile: Two columns - Column 1: 1 & 2, Column 2: 3 & 4, Save below */}
                       <div className="flex md:hidden flex-col gap-2">
-                        {displayTimes.map((time, index) => {
-                          const isDisabled = scanMode === 'interval' && index > 0;
-                          return (
-                            <div key={index} className="flex items-center gap-1.5">
-                              <span className="text-text-primary text-sm font-bold w-4">{index + 1}.</span>
-                              <select
-                                value={time.hour}
-                                onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
-                                disabled={isDisabled}
-                                className={`input text-sm font-mono py-1.5 px-1 w-12 ${
-                                  isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              >
-                                {Array.from({ length: 24 }, (_, i) => (
-                                  <option key={i} value={i}>
-                                    {i.toString().padStart(2, '0')}
-                                  </option>
-                                ))}
-                              </select>
-                              <span className="text-text-primary text-sm font-bold">:</span>
-                              <select
-                                value={time.minute}
-                                onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
-                                disabled={isDisabled}
-                                className={`input text-sm font-mono py-1.5 px-1 w-12 ${
-                                  isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                                }`}
-                              >
-                                {Array.from({ length: 60 }, (_, i) => (
-                                  <option key={i} value={i}>
-                                    {i.toString().padStart(2, '0')}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-                          );
-                        })}
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Column 1: Time boxes 1 and 2 */}
+                          <div className="flex flex-col gap-2">
+                            {renderTimeBox(displayTimes[0], 0, true)}
+                            {renderTimeBox(displayTimes[1], 1, true)}
+                          </div>
+                          {/* Column 2: Time boxes 3 and 4 */}
+                          <div className="flex flex-col gap-2">
+                            {renderTimeBox(displayTimes[2], 2, true)}
+                            {renderTimeBox(displayTimes[3], 3, true)}
+                          </div>
+                        </div>
 
-                        {/* Save Button - same width as Manual/Repeat buttons */}
+                        {/* Save Button */}
                         <button
                           onClick={handleSaveAutoRefresh}
                           className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3"
