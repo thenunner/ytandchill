@@ -656,167 +656,175 @@ export default function Settings() {
           <div className="card p-4 w-full">
             <h3 className="text-sm font-semibold text-text-primary mb-3">Auto-Scan Daily</h3>
 
-            {/* Mode Selector */}
-            <div className="flex gap-2 mb-3">
-              <button
-                onClick={() => handleModeSwitch('times')}
-                className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${
-                  scanMode === 'times'
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                }`}
-              >
-                Specific Times
-              </button>
-              <button
-                onClick={() => handleModeSwitch('interval')}
-                className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${
-                  scanMode === 'interval'
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                }`}
-              >
-                Every X Hours
-              </button>
-            </div>
-
-            {/* Time Boxes */}
-            <div className="space-y-2 mb-3">
-              {getPreviewTimes().map((time, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <select
-                    value={time.hour}
-                    onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
-                    disabled={scanMode === 'interval' && index > 0}
-                    className={`input text-sm font-mono py-1.5 px-2 w-16 ${
-                      scanMode === 'interval' && index > 0 ? 'opacity-50 cursor-not-allowed' : ''
+            <div className="flex gap-6">
+              {/* Left Side: Controls */}
+              <div className="flex flex-col gap-3">
+                {/* Mode Selector */}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => handleModeSwitch('times')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${
+                      scanMode === 'times'
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
                     }`}
                   >
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {i.toString().padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-                  <span className="text-text-primary text-sm font-bold">:</span>
-                  <select
-                    value={time.minute}
-                    onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
-                    disabled={scanMode === 'interval' && index > 0}
-                    className={`input text-sm font-mono py-1.5 px-2 w-16 ${
-                      scanMode === 'interval' && index > 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    Manual Time
+                  </button>
+                  <button
+                    onClick={() => handleModeSwitch('interval')}
+                    className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${
+                      scanMode === 'interval'
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
                     }`}
                   >
-                    {Array.from({ length: 60 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {i.toString().padStart(2, '0')}
-                      </option>
-                    ))}
-                  </select>
-
-                  {scanMode === 'times' && scanTimes.length > 1 && (
-                    <button
-                      onClick={() => removeScanTime(index)}
-                      className="text-sm text-red-400 hover:text-red-300 font-bold px-2"
-                    >
-                      Remove
-                    </button>
-                  )}
-
-                  {scanMode === 'interval' && index > 0 && (
-                    <span className="text-xs text-text-muted font-medium">(auto)</span>
-                  )}
+                    Repeated Time
+                  </button>
                 </div>
-              ))}
-            </div>
 
-            {/* Add Time Button (only in specific times mode) */}
-            {scanMode === 'times' && scanTimes.length < 4 && (
-              <button
-                onClick={addScanTime}
-                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-xs font-bold px-3 mb-3"
-              >
-                + Add Time (max 4)
-              </button>
-            )}
+                {/* Interval Dropdown (only in interval mode, above ON/OFF and Save) */}
+                {scanMode === 'interval' && (
+                  <select
+                    value={scanInterval}
+                    onChange={(e) => setScanInterval(parseInt(e.target.value))}
+                    className="input text-sm font-mono py-1.5 px-2"
+                    style={{ width: '158px' }}
+                  >
+                    <option value={6}>Every 6 hours (4x daily)</option>
+                    <option value={8}>Every 8 hours (3x daily)</option>
+                    <option value={12}>Every 12 hours (2x daily)</option>
+                  </select>
+                )}
 
-            {/* Interval Dropdown (only in interval mode) */}
-            {scanMode === 'interval' && (
-              <div className="mb-3">
-                <select
-                  value={scanInterval}
-                  onChange={(e) => setScanInterval(parseInt(e.target.value))}
-                  className="input text-sm font-mono py-1.5 px-2 w-full"
+                {/* ON/OFF Toggle */}
+                <div className="flex border border-dark-border rounded-md overflow-hidden w-fit">
+                  <button
+                    onClick={async () => {
+                      setAutoRefresh(false);
+                      try {
+                        await updateSettings.mutateAsync({
+                          auto_refresh_enabled: 'false',
+                          auto_refresh_config: JSON.stringify({
+                            mode: scanMode,
+                            times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
+                            interval_hours: scanMode === 'interval' ? scanInterval : null,
+                            interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
+                          })
+                        });
+                        showNotification('Auto-scan disabled', 'success');
+                      } catch (error) {
+                        showNotification(error.message || 'Failed to disable auto-scan', 'error');
+                      }
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                      !autoRefresh
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    OFF
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setAutoRefresh(true);
+                      try {
+                        await updateSettings.mutateAsync({
+                          auto_refresh_enabled: 'true',
+                          auto_refresh_config: JSON.stringify({
+                            mode: scanMode,
+                            times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
+                            interval_hours: scanMode === 'interval' ? scanInterval : null,
+                            interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
+                          })
+                        });
+                        showNotification('Auto-scan enabled', 'success');
+                      } catch (error) {
+                        showNotification(error.message || 'Failed to enable auto-scan', 'error');
+                      }
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                      autoRefresh
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    ON
+                  </button>
+                </div>
+
+                {/* Save Button */}
+                <button
+                  onClick={handleSaveAutoRefresh}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
                 >
-                  <option value={6}>Every 6 hours (4x daily)</option>
-                  <option value={8}>Every 8 hours (3x daily)</option>
-                  <option value={12}>Every 12 hours (2x daily)</option>
-                </select>
+                  Save
+                </button>
               </div>
-            )}
 
-            {/* Save Button */}
-            <button
-              onClick={handleSaveAutoRefresh}
-              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 mb-3"
-            >
-              Save
-            </button>
+              {/* Right Side: All 4 Time Boxes */}
+              <div className="space-y-2">
+                {(() => {
+                  // Always show 4 time boxes
+                  const displayTimes = getPreviewTimes();
+                  // Pad to 4 if needed
+                  while (displayTimes.length < 4) {
+                    displayTimes.push({ hour: 0, minute: 0 });
+                  }
 
-            {/* ON/OFF Toggle */}
-            <div className="flex border border-dark-border rounded-md overflow-hidden w-fit">
-              <button
-                onClick={async () => {
-                  setAutoRefresh(false);
-                  try {
-                    await updateSettings.mutateAsync({
-                      auto_refresh_enabled: 'false',
-                      auto_refresh_config: JSON.stringify({
-                        mode: scanMode,
-                        times: scanMode === 'times' ? scanTimes.map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
-                        interval_hours: scanMode === 'interval' ? scanInterval : null,
-                        interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
-                      })
-                    });
-                    showNotification('Auto-scan disabled', 'success');
-                  } catch (error) {
-                    showNotification(error.message || 'Failed to disable auto-scan', 'error');
-                  }
-                }}
-                className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                  !autoRefresh
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                }`}
-              >
-                OFF
-              </button>
-              <button
-                onClick={async () => {
-                  setAutoRefresh(true);
-                  try {
-                    await updateSettings.mutateAsync({
-                      auto_refresh_enabled: 'true',
-                      auto_refresh_config: JSON.stringify({
-                        mode: scanMode,
-                        times: scanMode === 'times' ? scanTimes.map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
-                        interval_hours: scanMode === 'interval' ? scanInterval : null,
-                        interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
-                      })
-                    });
-                    showNotification('Auto-scan enabled', 'success');
-                  } catch (error) {
-                    showNotification(error.message || 'Failed to enable auto-scan', 'error');
-                  }
-                }}
-                className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                  autoRefresh
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                }`}
-              >
-                ON
-              </button>
+                  return displayTimes.slice(0, 4).map((time, index) => {
+                    // For Manual Time mode: grey out if 00:00 or duplicate
+                    let isDisabled = false;
+                    if (scanMode === 'times') {
+                      // Grey out if this is a duplicate time or if it's 00:00 and not the first box
+                      const timeStr = `${time.hour}:${time.minute}`;
+                      const isDuplicate = displayTimes.slice(0, index).some(t => t.hour === time.hour && t.minute === time.minute);
+                      const isZero = time.hour === 0 && time.minute === 0 && index > 0;
+                      isDisabled = isDuplicate || isZero;
+                    } else {
+                      // For Repeated Time mode: only first is editable
+                      isDisabled = index > 0;
+                    }
+
+                    return (
+                      <div key={index} className="flex items-center gap-2">
+                        <select
+                          value={time.hour}
+                          onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
+                          disabled={isDisabled}
+                          className={`input text-sm font-mono py-1.5 px-2 w-16 ${
+                            isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          {Array.from({ length: 24 }, (_, i) => (
+                            <option key={i} value={i}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="text-text-primary text-sm font-bold">:</span>
+                        <select
+                          value={time.minute}
+                          onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
+                          disabled={isDisabled}
+                          className={`input text-sm font-mono py-1.5 px-2 w-16 ${
+                            isDisabled ? 'opacity-50 cursor-not-allowed' : ''
+                          }`}
+                        >
+                          {Array.from({ length: 60 }, (_, i) => (
+                            <option key={i} value={i}>
+                              {i.toString().padStart(2, '0')}
+                            </option>
+                          ))}
+                        </select>
+                        {scanMode === 'interval' && index > 0 && (
+                          <span className="text-xs text-text-muted font-medium">(auto)</span>
+                        )}
+                      </div>
+                    );
+                  });
+                })()}
+              </div>
             </div>
           </div>
 
