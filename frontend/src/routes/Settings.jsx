@@ -756,14 +756,14 @@ export default function Settings() {
                 {/* Save Button */}
                 <button
                   onClick={handleSaveAutoRefresh}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-3"
                 >
                   Save
                 </button>
               </div>
 
-              {/* Right Side: All 4 Time Boxes */}
-              <div className="space-y-2">
+              {/* Right Side: All 4 Time Boxes (2 columns) */}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                 {(() => {
                   // Always show 4 time boxes
                   const displayTimes = getPreviewTimes();
@@ -773,21 +773,12 @@ export default function Settings() {
                   }
 
                   return displayTimes.slice(0, 4).map((time, index) => {
-                    // For Manual Time mode: grey out if 00:00 or duplicate
-                    let isDisabled = false;
-                    if (scanMode === 'times') {
-                      // Grey out if this is a duplicate time or if it's 00:00 and not the first box
-                      const timeStr = `${time.hour}:${time.minute}`;
-                      const isDuplicate = displayTimes.slice(0, index).some(t => t.hour === time.hour && t.minute === time.minute);
-                      const isZero = time.hour === 0 && time.minute === 0 && index > 0;
-                      isDisabled = isDuplicate || isZero;
-                    } else {
-                      // For Repeated Time mode: only first is editable
-                      isDisabled = index > 0;
-                    }
+                    // Only gray out in Repeated Time mode (boxes 2-4)
+                    const isDisabled = scanMode === 'interval' && index > 0;
 
                     return (
                       <div key={index} className="flex items-center gap-2">
+                        <span className="text-text-primary text-sm font-bold">{index + 1}.</span>
                         <select
                           value={time.hour}
                           onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
