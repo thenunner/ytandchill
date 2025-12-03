@@ -105,6 +105,12 @@ def update_settings():
                 if value != current:
                     needs_reschedule = True
 
+            # Check if auto_refresh_config changed (new multi-scan system)
+            if key == 'auto_refresh_config':
+                current = _settings_manager.get('auto_refresh_config')
+                if value != current:
+                    needs_reschedule = True
+
             _settings_manager.set(key, value)
 
     # Now execute scheduler actions with committed values

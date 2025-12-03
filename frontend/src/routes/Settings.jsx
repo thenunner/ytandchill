@@ -19,6 +19,10 @@ export default function Settings() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshHour, setRefreshHour] = useState(3);
   const [refreshMinute, setRefreshMinute] = useState(0);
+  // New multi-scan state
+  const [scanMode, setScanMode] = useState('times'); // 'times' or 'interval'
+  const [scanTimes, setScanTimes] = useState([{ hour: 3, minute: 0 }]); // Array of 1-4 times
+  const [scanInterval, setScanInterval] = useState(6); // 6, 8, or 12 hours
   const [youtubeApiKey, setYoutubeApiKey] = useState('');
   const [logLevel, setLogLevel] = useState('INFO');
 
@@ -58,11 +62,38 @@ export default function Settings() {
       setAutoRefresh(settings.auto_refresh_enabled === 'true');
       setYoutubeApiKey(settings.youtube_api_key || '');
       setLogLevel(settings.log_level || 'INFO');
-      // Parse refresh time if stored (format: "HH:MM")
-      if (settings.auto_refresh_time) {
-        const [hour, minute] = settings.auto_refresh_time.split(':');
-        setRefreshHour(parseInt(hour) || 3);
-        setRefreshMinute(parseInt(minute) || 0);
+      // Parse auto_refresh_config (new multi-scan system)
+      if (settings.auto_refresh_config) {
+        try {
+          const config = JSON.parse(settings.auto_refresh_config);
+          setScanMode(config.mode);
+
+          if (config.mode === 'times') {
+            const times = config.times.map(t => {
+              const [h, m] = t.split(':');
+              return { hour: parseInt(h), minute: parseInt(m) };
+            });
+            setScanTimes(times);
+          } else if (config.mode === 'interval') {
+            // Interval mode - load start time and interval
+            setScanInterval(config.interval_hours);
+            if (config.interval_start) {
+              const [h, m] = config.interval_start.split(':');
+              setScanTimes([{ hour: parseInt(h), minute: parseInt(m) }]);
+            }
+          }
+        } catch (e) {
+          console.error('Failed to parse auto_refresh_config:', e);
+        }
+      } else {
+        // Legacy format: Parse refresh time if stored (format: "HH:MM")
+        if (settings.auto_refresh_time) {
+          const [hour, minute] = settings.auto_refresh_time.split(':');
+          setRefreshHour(parseInt(hour) || 3);
+          setRefreshMinute(parseInt(minute) || 0);
+          // Also set scanTimes for the new UI
+          setScanTimes([{ hour: parseInt(hour) || 3, minute: parseInt(minute) || 0 }]);
+        }
       }
       // Load SponsorBlock settings
       setRemoveSponsor(settings.sponsorblock_remove_sponsor === 'true');
@@ -101,6 +132,81 @@ export default function Settings() {
     } catch (error) {
       console.error(`Failed to save ${setting}:`, error);
       setValue(currentValue); // Revert on error
+    }
+  };
+
+  // Auto-Scan helper functions
+  const getPreviewTimes = () => {
+    if (scanMode !== 'interval' || scanTimes.length === 0) return scanTimes;
+
+    const startTime = scanTimes[0];
+    const numScans = scanInterval === 6 ? 4 : scanInterval === 8 ? 3 : 2;
+    const preview = [startTime]; // First time is editable
+
+    for (let i = 1; i < numScans; i++) {
+      const totalMinutes = (startTime.hour * 60 + startTime.minute) + (scanInterval * i * 60);
+      const hour = Math.floor(totalMinutes / 60) % 24;
+      const minute = totalMinutes % 60;
+      preview.push({ hour, minute });
+    }
+
+    return preview;
+  };
+
+  const handleModeSwitch = (newMode) => {
+    setScanMode(newMode);
+
+    if (newMode === 'interval') {
+      // When switching to interval, auto-fill first time with current time
+      const now = new Date();
+      setScanTimes([{ hour: now.getHours(), minute: now.getMinutes() }]);
+      setScanInterval(6); // Default to 6 hours
+    }
+  };
+
+  const updateScanTime = (index, field, value) => {
+    const newTimes = [...scanTimes];
+    newTimes[index] = { ...newTimes[index], [field]: parseInt(value) };
+    setScanTimes(newTimes);
+  };
+
+  const addScanTime = () => {
+    if (scanTimes.length >= 4) {
+      showNotification('Maximum 4 scan times allowed', 'error');
+      return;
+    }
+    setScanTimes([...scanTimes, { hour: 0, minute: 0 }]);
+  };
+
+  const removeScanTime = (index) => {
+    if (scanTimes.length <= 1) {
+      showNotification('At least one scan time required', 'error');
+      return;
+    }
+    setScanTimes(scanTimes.filter((_, i) => i !== index));
+  };
+
+  const handleSaveAutoRefresh = async () => {
+    try {
+      const config = {
+        mode: scanMode,
+        times: scanMode === 'times'
+          ? scanTimes.map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`)
+          : [],
+        interval_hours: scanMode === 'interval' ? scanInterval : null,
+        interval_start: scanMode === 'interval' && scanTimes.length > 0
+          ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}`
+          : null
+      };
+
+      await updateSettings.mutateAsync({
+        auto_refresh_enabled: autoRefresh ? 'true' : 'false',
+        auto_refresh_config: JSON.stringify(config)
+      });
+
+      showNotification('Auto-scan schedule updated', 'success');
+    } catch (error) {
+      showNotification(error.message || 'Failed to save auto-scan settings', 'error');
     }
   };
 
@@ -201,7 +307,7 @@ export default function Settings() {
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
               <div className="flex items-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v5.3.1</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v5.4.0</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center gap-3 order-3 md:order-4">
@@ -501,14 +607,90 @@ export default function Settings() {
                 </p>
               </div>
 
-              {/* Auto-Scan Daily Section */}
+              {/* SponsorBlock Section */}
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-text-primary mb-3">Auto-Scan Daily</h3>
-                <div className="flex items-center gap-3 mb-2">
+                <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+                  SponsorBlock
+                  <button
+                    onClick={() => setShowSponsorBlockHelp(true)}
+                    className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                    title="What is SponsorBlock?"
+                  >
+                    ?
+                  </button>
+                </h3>
+                <div className="flex flex-col gap-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={removeSponsor}
+                      onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                    />
+                    <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={removeSelfpromo}
+                      onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                    />
+                    <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={removeInteraction}
+                      onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                    />
+                    <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card 4: Auto-Scan Daily */}
+          <div className="card p-4 w-full">
+            <h3 className="text-sm font-semibold text-text-primary mb-3">Auto-Scan Daily</h3>
+
+            {/* Mode Selector */}
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => handleModeSwitch('times')}
+                className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${
+                  scanMode === 'times'
+                    ? 'bg-accent text-white'
+                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                }`}
+              >
+                Specific Times
+              </button>
+              <button
+                onClick={() => handleModeSwitch('interval')}
+                className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${
+                  scanMode === 'interval'
+                    ? 'bg-accent text-white'
+                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                }`}
+              >
+                Every X Hours
+              </button>
+            </div>
+
+            {/* Time Boxes */}
+            <div className="space-y-2 mb-3">
+              {getPreviewTimes().map((time, index) => (
+                <div key={index} className="flex items-center gap-2">
                   <select
-                    value={refreshHour}
-                    onChange={(e) => setRefreshHour(parseInt(e.target.value))}
-                    className="input text-sm font-mono py-1.5 px-2 w-16"
+                    value={time.hour}
+                    onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
+                    disabled={scanMode === 'interval' && index > 0}
+                    className={`input text-sm font-mono py-1.5 px-2 w-16 ${
+                      scanMode === 'interval' && index > 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
                     {Array.from({ length: 24 }, (_, i) => (
                       <option key={i} value={i}>
@@ -518,9 +700,12 @@ export default function Settings() {
                   </select>
                   <span className="text-text-primary text-sm font-bold">:</span>
                   <select
-                    value={refreshMinute}
-                    onChange={(e) => setRefreshMinute(parseInt(e.target.value))}
-                    className="input text-sm font-mono py-1.5 px-2 w-16"
+                    value={time.minute}
+                    onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
+                    disabled={scanMode === 'interval' && index > 0}
+                    className={`input text-sm font-mono py-1.5 px-2 w-16 ${
+                      scanMode === 'interval' && index > 0 ? 'opacity-50 cursor-not-allowed' : ''
+                    }`}
                   >
                     {Array.from({ length: 60 }, (_, i) => (
                       <option key={i} value={i}>
@@ -528,123 +713,110 @@ export default function Settings() {
                       </option>
                     ))}
                   </select>
-                  <button
-                    onClick={async () => {
-                      const timeString = `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`;
-                      try {
-                        const payload = {
-                          auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                          auto_refresh_time: timeString,
-                          youtube_api_key: youtubeApiKey,
-                          log_level: logLevel,
-                        };
-                        await updateSettings.mutateAsync(payload);
-                        const period = refreshHour >= 12 ? 'pm' : 'am';
-                        const hour12 = refreshHour === 0 ? 12 : refreshHour > 12 ? refreshHour - 12 : refreshHour;
-                        showNotification(`Time changed to ${hour12}:${refreshMinute.toString().padStart(2, '0')}${period}`, 'success');
-                      } catch (error) {
-                        showNotification(error.message || 'Failed to save time', 'error');
-                      }
-                    }}
-                    className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                  >
-                    Save
-                  </button>
-                </div>
-                <div className="flex border border-dark-border rounded-md overflow-hidden w-fit">
-                  <button
-                    onClick={async () => {
-                      setAutoRefresh(false);
-                      try {
-                        await updateSettings.mutateAsync({
-                          auto_refresh_enabled: 'false',
-                          auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                          youtube_api_key: youtubeApiKey,
-                          log_level: logLevel,
-                        });
-                        showNotification('Auto-scan disabled', 'success');
-                      } catch (error) {
-                        showNotification(error.message || 'Failed to save auto refresh', 'error');
-                      }
-                    }}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      !autoRefresh
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    OFF
-                  </button>
-                  <button
-                    onClick={async () => {
-                      setAutoRefresh(true);
-                      try {
-                        await updateSettings.mutateAsync({
-                          auto_refresh_enabled: 'true',
-                          auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                          youtube_api_key: youtubeApiKey,
-                          log_level: logLevel,
-                        });
-                        showNotification('Auto-scan enabled', 'success');
-                      } catch (error) {
-                        showNotification(error.message || 'Failed to save auto refresh', 'error');
-                      }
-                    }}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      autoRefresh
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    ON
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Card 4: SponsorBlock */}
-          <div className="card p-4 w-full">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between w-full gap-3">
-              <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-                SponsorBlock
-                <button
-                  onClick={() => setShowSponsorBlockHelp(true)}
-                  className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
-                  title="What is SponsorBlock?"
+                  {scanMode === 'times' && scanTimes.length > 1 && (
+                    <button
+                      onClick={() => removeScanTime(index)}
+                      className="text-sm text-red-400 hover:text-red-300 font-bold px-2"
+                    >
+                      Remove
+                    </button>
+                  )}
+
+                  {scanMode === 'interval' && index > 0 && (
+                    <span className="text-xs text-text-muted font-medium">(auto)</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Add Time Button (only in specific times mode) */}
+            {scanMode === 'times' && scanTimes.length < 4 && (
+              <button
+                onClick={addScanTime}
+                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-xs font-bold px-3 mb-3"
+              >
+                + Add Time (max 4)
+              </button>
+            )}
+
+            {/* Interval Dropdown (only in interval mode) */}
+            {scanMode === 'interval' && (
+              <div className="mb-3">
+                <select
+                  value={scanInterval}
+                  onChange={(e) => setScanInterval(parseInt(e.target.value))}
+                  className="input text-sm font-mono py-1.5 px-2 w-full"
                 >
-                  ?
-                </button>
-              </h3>
-              <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={removeSponsor}
-                    onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                  />
-                  <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={removeSelfpromo}
-                    onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                  />
-                  <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={removeInteraction}
-                    onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                  />
-                  <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
-                </label>
+                  <option value={6}>Every 6 hours (4x daily)</option>
+                  <option value={8}>Every 8 hours (3x daily)</option>
+                  <option value={12}>Every 12 hours (2x daily)</option>
+                </select>
               </div>
+            )}
+
+            {/* Save Button */}
+            <button
+              onClick={handleSaveAutoRefresh}
+              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 mb-3"
+            >
+              Save
+            </button>
+
+            {/* ON/OFF Toggle */}
+            <div className="flex border border-dark-border rounded-md overflow-hidden w-fit">
+              <button
+                onClick={async () => {
+                  setAutoRefresh(false);
+                  try {
+                    await updateSettings.mutateAsync({
+                      auto_refresh_enabled: 'false',
+                      auto_refresh_config: JSON.stringify({
+                        mode: scanMode,
+                        times: scanMode === 'times' ? scanTimes.map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
+                        interval_hours: scanMode === 'interval' ? scanInterval : null,
+                        interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
+                      })
+                    });
+                    showNotification('Auto-scan disabled', 'success');
+                  } catch (error) {
+                    showNotification(error.message || 'Failed to disable auto-scan', 'error');
+                  }
+                }}
+                className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                  !autoRefresh
+                    ? 'bg-accent text-white'
+                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                }`}
+              >
+                OFF
+              </button>
+              <button
+                onClick={async () => {
+                  setAutoRefresh(true);
+                  try {
+                    await updateSettings.mutateAsync({
+                      auto_refresh_enabled: 'true',
+                      auto_refresh_config: JSON.stringify({
+                        mode: scanMode,
+                        times: scanMode === 'times' ? scanTimes.map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
+                        interval_hours: scanMode === 'interval' ? scanInterval : null,
+                        interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
+                      })
+                    });
+                    showNotification('Auto-scan enabled', 'success');
+                  } catch (error) {
+                    showNotification(error.message || 'Failed to enable auto-scan', 'error');
+                  }
+                }}
+                className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                  autoRefresh
+                    ? 'bg-accent text-white'
+                    : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                }`}
+              >
+                ON
+              </button>
             </div>
           </div>
 

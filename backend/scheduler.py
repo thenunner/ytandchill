@@ -2,6 +2,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timezone, timedelta
 import subprocess
 import os
+import json
 from database import Channel, Video, Setting, QueueItem, get_session
 from sqlalchemy import func
 import logging
@@ -20,26 +21,88 @@ class AutoRefreshScheduler:
         self.clear_operation = clear_operation_callback
         self.queue_scan = queue_scan_callback
     
-    def _get_refresh_time(self):
-        """Get auto-refresh time from database settings"""
-        time_value = self.settings_manager.get('auto_refresh_time', '3:0')
-        hour, minute = time_value.split(':')
-        return int(hour), int(minute)
+    def _get_refresh_config(self):
+        """Get auto-refresh configuration from database settings, migrating legacy format if needed"""
+        config_json = self.settings_manager.get('auto_refresh_config')
 
-    def start(self):
-        # Check if auto-refresh is enabled
-        if self.settings_manager.get_bool('auto_refresh_enabled'):
-            self.enabled = True
-            # Get user-configured time from database
-            hour, minute = self._get_refresh_time()
+        if not config_json:
+            # Migrate from legacy auto_refresh_time setting
+            legacy_time = self.settings_manager.get('auto_refresh_time', '3:0')
+            # Ensure proper HH:MM format
+            parts = legacy_time.split(':')
+            hour = int(parts[0])
+            minute = int(parts[1]) if len(parts) > 1 else 0
+            formatted_time = f"{hour:02d}:{minute:02d}"
+
+            config = {
+                'mode': 'times',
+                'times': [formatted_time]
+            }
+            self.settings_manager.set('auto_refresh_config', json.dumps(config))
+            logger.info(f"Migrated legacy auto_refresh_time '{legacy_time}' to new config format")
+            return config
+
+        return json.loads(config_json)
+
+    def _remove_all_jobs(self):
+        """Remove all auto-refresh jobs (both time-based and interval-based)"""
+        # Remove time-based jobs (up to 4)
+        for i in range(4):
+            job_id = f'auto_refresh_{i}'
+            if self.scheduler.get_job(job_id):
+                self.scheduler.remove_job(job_id)
+                logger.debug(f"Removed job: {job_id}")
+
+        # Remove interval-based job
+        if self.scheduler.get_job('auto_refresh_interval'):
+            self.scheduler.remove_job('auto_refresh_interval')
+            logger.debug("Removed job: auto_refresh_interval")
+
+    def _schedule_jobs(self):
+        """Schedule jobs based on current configuration (specific times or interval mode)"""
+        config = self._get_refresh_config()
+
+        if config['mode'] == 'times':
+            # Schedule cron jobs for specific times
+            for idx, time_str in enumerate(config['times']):
+                hour, minute = time_str.split(':')
+                self.scheduler.add_job(
+                    self.scan_all_channels,
+                    'cron',
+                    hour=int(hour),
+                    minute=int(minute),
+                    id=f'auto_refresh_{idx}'
+                )
+                logger.info(f"Auto-refresh scheduled at {hour}:{minute} (job: auto_refresh_{idx})")
+
+        elif config['mode'] == 'interval':
+            # Schedule interval job with custom start time
+            interval_hours = config['interval_hours']
+            start_time = config.get('interval_start', '00:00')
+            hour, minute = start_time.split(':')
+
+            # Calculate next run time based on start time
+            now = datetime.now()
+            start_datetime = now.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
+
+            # If start time already passed today, schedule for next occurrence based on interval
+            if start_datetime <= now:
+                start_datetime += timedelta(hours=interval_hours)
+
             self.scheduler.add_job(
                 self.scan_all_channels,
-                'cron',
-                hour=hour,
-                minute=minute,
-                id='auto_refresh'
+                'interval',
+                hours=interval_hours,
+                next_run_time=start_datetime,
+                id='auto_refresh_interval'
             )
-            logger.info(f"Auto-refresh scheduled for {hour:02d}:{minute:02d}")
+            logger.info(f"Auto-refresh scheduled every {interval_hours} hours starting at {start_datetime.strftime('%Y-%m-%d %H:%M')}")
+
+    def start(self):
+        """Start the scheduler and set up auto-refresh jobs if enabled"""
+        if self.settings_manager.get_bool('auto_refresh_enabled'):
+            self.enabled = True
+            self._schedule_jobs()
 
         self.scheduler.start()
     
@@ -47,41 +110,25 @@ class AutoRefreshScheduler:
         self.scheduler.shutdown()
     
     def enable(self):
+        """Enable auto-refresh and schedule jobs based on current configuration"""
         if not self.enabled:
             self.enabled = True
-            if not self.scheduler.get_job('auto_refresh'):
-                # Get user-configured time from database
-                hour, minute = self._get_refresh_time()
-                self.scheduler.add_job(
-                    self.scan_all_channels,
-                    'cron',
-                    hour=hour,
-                    minute=minute,
-                    id='auto_refresh'
-                )
-                logger.info(f"Auto-refresh enabled and scheduled for {hour:02d}:{minute:02d}")
+            self._remove_all_jobs()  # Clean slate
+            self._schedule_jobs()
+            logger.info("Auto-refresh enabled")
     
     def disable(self):
+        """Disable auto-refresh and remove all jobs"""
         self.enabled = False
-        if self.scheduler.get_job('auto_refresh'):
-            self.scheduler.remove_job('auto_refresh')
+        self._remove_all_jobs()
+        logger.info("Auto-refresh disabled")
 
     def reschedule(self):
-        """Reschedule the auto-refresh job with updated time from database"""
-        if self.enabled and self.scheduler.get_job('auto_refresh'):
-            # Remove existing job
-            self.scheduler.remove_job('auto_refresh')
-            # Get updated time from database
-            hour, minute = self._get_refresh_time()
-            # Add job with new time
-            self.scheduler.add_job(
-                self.scan_all_channels,
-                'cron',
-                hour=hour,
-                minute=minute,
-                id='auto_refresh'
-            )
-            logger.info(f"Auto-refresh rescheduled to {hour:02d}:{minute:02d}")
+        """Reschedule jobs with updated configuration from database"""
+        if self.enabled:
+            self._remove_all_jobs()
+            self._schedule_jobs()
+            logger.info("Auto-refresh jobs rescheduled")
 
     def update_dependencies(self):
         """Update yt-dlp and google-api-python-client to latest versions"""
