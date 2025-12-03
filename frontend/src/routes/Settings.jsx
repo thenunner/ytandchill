@@ -756,7 +756,8 @@ export default function Settings() {
                 {/* Save Button */}
                 <button
                   onClick={handleSaveAutoRefresh}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-3"
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-xs font-bold px-3 rounded transition-all"
+                  style={{ width: '105px' }}
                 >
                   Save
                 </button>
