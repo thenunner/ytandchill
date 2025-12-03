@@ -713,8 +713,9 @@ export default function Settings() {
               </div>
             </div>
 
-            {/* Row 1: Mode Selector + Interval Dropdown (if Repeated Time) */}
-            <div className="flex items-center gap-3 mb-3">
+            {/* Mode Selector + Interval Dropdown */}
+            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-3">
+              {/* Mode Selector Buttons */}
               <div className="flex gap-2">
                 <button
                   onClick={() => handleModeSwitch('times')}
@@ -724,7 +725,7 @@ export default function Settings() {
                       : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
                   }`}
                 >
-                  Manual Time
+                  Manual
                 </button>
                 <button
                   onClick={() => handleModeSwitch('interval')}
@@ -734,17 +735,17 @@ export default function Settings() {
                       : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
                   }`}
                 >
-                  Repeated Time
+                  Repeat
                 </button>
               </div>
 
-              {/* Interval Dropdown (only visible in Repeated Time mode) */}
+              {/* Interval Dropdown (only visible in Repeat mode) */}
               {scanMode === 'interval' && (
                 <select
                   value={scanInterval}
                   onChange={(e) => setScanInterval(parseInt(e.target.value))}
-                  className="input text-sm font-mono py-1.5 px-2"
-                  style={{ width: '158px' }}
+                  className="input text-sm font-mono py-1.5 px-2 w-full md:w-auto"
+                  style={{ maxWidth: '158px' }}
                 >
                   <option value={6}>Every 6 hours (4x daily)</option>
                   <option value={8}>Every 8 hours (3x daily)</option>
@@ -753,28 +754,29 @@ export default function Settings() {
               )}
             </div>
 
-            {/* Rows 2 & 3: Time Boxes (2 per row) */}
-            <div className="space-y-2 mb-3">
-              {(() => {
-                const displayTimes = getPreviewTimes();
-                while (displayTimes.length < 4) {
-                  displayTimes.push({ hour: 0, minute: 0 });
-                }
+            {/* Time Boxes + Save Button */}
+            {(() => {
+              const displayTimes = getPreviewTimes();
+              while (displayTimes.length < 4) {
+                displayTimes.push({ hour: 0, minute: 0 });
+              }
 
-                return (
-                  <>
-                    {/* Row 2: Time Box 1 and 2 + Save Button */}
-                    <div className="flex items-center gap-4">
+              return (
+                <div className="flex flex-col md:flex-row md:items-start gap-3">
+                  {/* Mobile: 2 columns (1/2, 3/4) | Desktop: 2 rows */}
+                  <div className="grid grid-cols-2 md:flex md:flex-col gap-2 flex-1">
+                    {/* Desktop Row 1 / Mobile Column 1 (boxes 1 & 2) */}
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-4 col-span-2 md:col-span-1">
                       {displayTimes.slice(0, 2).map((time, index) => {
                         const isDisabled = scanMode === 'interval' && index > 0;
                         return (
-                          <div key={index} className="flex items-center gap-2">
+                          <div key={index} className="flex items-center gap-1.5">
                             <span className="text-text-primary text-sm font-bold w-4">{index + 1}.</span>
                             <select
                               value={time.hour}
                               onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
                               disabled={isDisabled}
-                              className={`input text-sm font-mono py-1.5 px-2 w-16 ${
+                              className={`input text-sm font-mono py-1.5 px-1.5 w-14 ${
                                 isDisabled ? 'opacity-50 cursor-not-allowed' : ''
                               }`}
                             >
@@ -789,7 +791,7 @@ export default function Settings() {
                               value={time.minute}
                               onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
                               disabled={isDisabled}
-                              className={`input text-sm font-mono py-1.5 px-2 w-16 ${
+                              className={`input text-sm font-mono py-1.5 px-1.5 w-14 ${
                                 isDisabled ? 'opacity-50 cursor-not-allowed' : ''
                               }`}
                             >
@@ -802,29 +804,21 @@ export default function Settings() {
                           </div>
                         );
                       })}
-
-                      {/* Save Button */}
-                      <button
-                        onClick={handleSaveAutoRefresh}
-                        className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                      >
-                        Save
-                      </button>
                     </div>
 
-                    {/* Row 3: Time Box 3 and 4 */}
-                    <div className="flex items-center gap-4">
+                    {/* Desktop Row 2 / Mobile Column 2 (boxes 3 & 4) */}
+                    <div className="flex flex-col md:flex-row gap-2 md:gap-4 col-span-2 md:col-span-1">
                       {displayTimes.slice(2, 4).map((time, index) => {
                         const actualIndex = index + 2;
                         const isDisabled = scanMode === 'interval' && actualIndex > 0;
                         return (
-                          <div key={actualIndex} className="flex items-center gap-2">
+                          <div key={actualIndex} className="flex items-center gap-1.5">
                             <span className="text-text-primary text-sm font-bold w-4">{actualIndex + 1}.</span>
                             <select
                               value={time.hour}
                               onChange={(e) => updateScanTime(actualIndex, 'hour', e.target.value)}
                               disabled={isDisabled}
-                              className={`input text-sm font-mono py-1.5 px-2 w-16 ${
+                              className={`input text-sm font-mono py-1.5 px-1.5 w-14 ${
                                 isDisabled ? 'opacity-50 cursor-not-allowed' : ''
                               }`}
                             >
@@ -839,7 +833,7 @@ export default function Settings() {
                               value={time.minute}
                               onChange={(e) => updateScanTime(actualIndex, 'minute', e.target.value)}
                               disabled={isDisabled}
-                              className={`input text-sm font-mono py-1.5 px-2 w-16 ${
+                              className={`input text-sm font-mono py-1.5 px-1.5 w-14 ${
                                 isDisabled ? 'opacity-50 cursor-not-allowed' : ''
                               }`}
                             >
@@ -853,10 +847,18 @@ export default function Settings() {
                         );
                       })}
                     </div>
-                  </>
-                );
-              })()}
-            </div>
+                  </div>
+
+                  {/* Save Button - Below on mobile, right on desktop */}
+                  <button
+                    onClick={handleSaveAutoRefresh}
+                    className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 w-full md:w-auto"
+                  >
+                    Save
+                  </button>
+                </div>
+              );
+            })()}
           </div>
 
           {/* Card 5: Logging */}
