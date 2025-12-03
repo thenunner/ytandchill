@@ -718,7 +718,7 @@ export default function Settings() {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleModeSwitch('times')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${
+                  className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
                     scanMode === 'times'
                       ? 'bg-accent text-white'
                       : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
@@ -728,7 +728,7 @@ export default function Settings() {
                 </button>
                 <button
                   onClick={() => handleModeSwitch('interval')}
-                  className={`px-3 py-1.5 text-xs font-bold rounded transition-all ${
+                  className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
                     scanMode === 'interval'
                       ? 'bg-accent text-white'
                       : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
@@ -763,13 +763,13 @@ export default function Settings() {
 
                 return (
                   <>
-                    {/* Row 2: Time Box 1 and 2 */}
-                    <div className="flex gap-4">
+                    {/* Row 2: Time Box 1 and 2 + Save Button */}
+                    <div className="flex items-center gap-4">
                       {displayTimes.slice(0, 2).map((time, index) => {
                         const isDisabled = scanMode === 'interval' && index > 0;
                         return (
                           <div key={index} className="flex items-center gap-2">
-                            <span className="text-text-primary text-sm font-bold">{index + 1}.</span>
+                            <span className="text-text-primary text-sm font-bold w-4">{index + 1}.</span>
                             <select
                               value={time.hour}
                               onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
@@ -799,22 +799,27 @@ export default function Settings() {
                                 </option>
                               ))}
                             </select>
-                            {scanMode === 'interval' && index > 0 && (
-                              <span className="text-xs text-text-muted font-medium">(auto)</span>
-                            )}
                           </div>
                         );
                       })}
+
+                      {/* Save Button */}
+                      <button
+                        onClick={handleSaveAutoRefresh}
+                        className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+                      >
+                        Save
+                      </button>
                     </div>
 
-                    {/* Row 3: Time Box 3 and 4 + Save Button */}
-                    <div className="flex gap-4 items-center">
+                    {/* Row 3: Time Box 3 and 4 */}
+                    <div className="flex items-center gap-4">
                       {displayTimes.slice(2, 4).map((time, index) => {
                         const actualIndex = index + 2;
                         const isDisabled = scanMode === 'interval' && actualIndex > 0;
                         return (
                           <div key={actualIndex} className="flex items-center gap-2">
-                            <span className="text-text-primary text-sm font-bold">{actualIndex + 1}.</span>
+                            <span className="text-text-primary text-sm font-bold w-4">{actualIndex + 1}.</span>
                             <select
                               value={time.hour}
                               onChange={(e) => updateScanTime(actualIndex, 'hour', e.target.value)}
@@ -844,21 +849,9 @@ export default function Settings() {
                                 </option>
                               ))}
                             </select>
-                            {scanMode === 'interval' && actualIndex > 0 && (
-                              <span className="text-xs text-text-muted font-medium">(auto)</span>
-                            )}
                           </div>
                         );
                       })}
-
-                      {/* Save Button */}
-                      <button
-                        onClick={handleSaveAutoRefresh}
-                        className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-xs font-bold px-3 rounded transition-all ml-2"
-                        style={{ width: '105px' }}
-                      >
-                        Save
-                      </button>
                     </div>
                   </>
                 );
