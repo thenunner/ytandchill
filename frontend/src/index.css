@@ -302,7 +302,6 @@
   /* Modern Card Component */
   .card {
     @apply bg-dark-secondary rounded-xl border border-dark-border shadow-card overflow-hidden;
-    @apply hover:shadow-card-hover hover:-translate-y-0.5 transition-all duration-300 ease-out;
   }
 
   /* Card active/focus states - make selection visible like tabs */
