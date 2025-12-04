@@ -143,14 +143,9 @@ export default function Player() {
         updateButtonState();
 
         // ===== FULLSCREEN TOUCH CONTROLS =====
-        // Detect if device is primarily a touch device (mobile/tablet)
+        // TEMPORARILY DISABLED - Testing if overlay is causing control bar issues
         const isTouchDevice = () => {
-          // More robust detection: check for mobile/tablet user agent AND touch support
-          const hasTouchPoints = navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
-          const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-          // Only return true if BOTH touch is supported AND it's a mobile device
-          return hasTouchPoints && isMobileUA;
+          return false; // Disable touch overlay entirely for now
         };
 
         // Only create touch overlay on touch devices
