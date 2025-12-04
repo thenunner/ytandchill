@@ -715,7 +715,30 @@ select {
   display: none !important;
 } */
 
-/* Force Plyr controls to be visible and clickable in fullscreen on desktop */
+/* Force Plyr controls to be visible and clickable on desktop (both fullscreen and normal mode) */
+/* This targets devices with fine pointer (mouse) - desktop/laptop devices */
+@media (pointer: fine) {
+  .plyr__controls {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    display: flex !important;
+    z-index: 999 !important;
+  }
+
+  /* Ensure individual control buttons are always clickable */
+  .plyr__control {
+    pointer-events: auto !important;
+  }
+
+  /* Prevent Plyr from auto-hiding controls on desktop */
+  .plyr--hide-controls .plyr__controls {
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+  }
+}
+
+/* Additional rules for fullscreen mode to ensure controls work there too */
 .plyr--fullscreen .plyr__controls {
   opacity: 1 !important;
   visibility: visible !important;
@@ -724,12 +747,10 @@ select {
   z-index: 999 !important;
 }
 
-/* Ensure individual control buttons are clickable */
 .plyr--fullscreen .plyr__control {
   pointer-events: auto !important;
 }
 
-/* Prevent Plyr from auto-hiding controls in fullscreen */
 .plyr--fullscreen.plyr--hide-controls .plyr__controls {
   opacity: 1 !important;
   transform: translateY(0) !important;
