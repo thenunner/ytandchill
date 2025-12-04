@@ -67,7 +67,7 @@ export default function Player() {
           speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
           seekTime: 10,
           autoplay: true,
-          clickToPlay: true, // Explicitly enable click-to-play
+          clickToPlay: false, // Disable click-to-play to prevent interfering with controls
           hideControls: false, // Force controls to stay visible
           keyboard: {
             focused: true,

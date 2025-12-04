@@ -462,6 +462,24 @@
   --plyr-control-color: hsl(var(--text-primary));
   --plyr-tooltip-background: hsl(var(--bg-secondary));
   --plyr-tooltip-color: hsl(var(--text-primary));
+  position: relative;
+}
+
+/* Ensure controls are always above video and clickable */
+.plyr__controls {
+  position: relative;
+  z-index: 3 !important;
+  pointer-events: auto !important;
+}
+
+.plyr__control {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.plyr__progress {
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
 .plyr--video {
