@@ -410,6 +410,7 @@ export default function PlaylistPlayer() {
         display: none;
         z-index: 150;
         -webkit-tap-highlight-color: transparent;
+        pointer-events: auto;
       `;
 
       // Create left, center, right zones for double-tap detection
@@ -423,6 +424,9 @@ export default function PlaylistPlayer() {
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
+        pointer-events: auto;
+        z-index: 151;
       `;
 
       const centerZone = document.createElement('div');
@@ -435,6 +439,9 @@ export default function PlaylistPlayer() {
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
+        pointer-events: auto;
+        z-index: 151;
       `;
 
       const rightZone = document.createElement('div');
@@ -447,6 +454,9 @@ export default function PlaylistPlayer() {
         display: flex;
         align-items: center;
         justify-content: center;
+        cursor: pointer;
+        pointer-events: auto;
+        z-index: 151;
       `;
 
       // Visual feedback containers
