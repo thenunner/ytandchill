@@ -152,12 +152,11 @@ export default function Player() {
         };
         updateButtonState();
 
-        // ===== MOBILE TOUCH CONTROLS =====
-        // Add simple tap-to-show touch controls for mobile devices only
+        // ===== YOUTUBE-STYLE MOBILE TOUCH CONTROLS =====
         if (isMobileDevice()) {
-          console.log('Initializing mobile touch controls');
+          console.log('Initializing YouTube-style touch controls');
 
-          // Create touch overlay container
+          // Create touch overlay
           const touchOverlay = document.createElement('div');
           touchOverlay.className = 'plyr-touch-overlay';
           touchOverlay.style.cssText = `
@@ -165,121 +164,113 @@ export default function Player() {
             top: 0;
             left: 0;
             right: 0;
-            bottom: 100px;
+            bottom: 60px;
             display: none;
             z-index: 150;
             -webkit-tap-highlight-color: transparent;
           `;
 
-          // Container for floating buttons
-          const buttonContainer = document.createElement('div');
-          buttonContainer.style.cssText = `
+          // Create left, center, right zones for double-tap detection
+          const leftZone = document.createElement('div');
+          leftZone.style.cssText = `
             position: absolute;
-            top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-          `;
-
-          // Modern glass-morphism button base style
-          const getButtonStyle = (size = 120) => `
-            position: absolute;
-            background: rgba(255, 255, 255, 0.12);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1.5px solid rgba(255, 255, 255, 0.25);
-            border-radius: 50%;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
-            width: ${size}px;
-            height: ${size}px;
+            top: 0;
+            width: 35%;
+            height: 100%;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            pointer-events: auto;
-            cursor: pointer;
           `;
 
-          let activeTimeout = null;
+          const centerZone = document.createElement('div');
+          centerZone.style.cssText = `
+            position: absolute;
+            left: 35%;
+            top: 0;
+            width: 30%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          `;
 
-          // Create buttons
-          const createButton = (type, html, size = 120) => {
-            const btn = document.createElement('button');
-            btn.className = `plyr-touch-btn plyr-touch-btn--${type}`;
-            btn.innerHTML = html;
-            btn.style.cssText = getButtonStyle(size);
-            return btn;
+          const rightZone = document.createElement('div');
+          rightZone.style.cssText = `
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 35%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          `;
+
+          // Visual feedback containers
+          const createFeedback = () => {
+            const feedback = document.createElement('div');
+            feedback.style.cssText = `
+              position: absolute;
+              width: 100%;
+              height: 100%;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              opacity: 0;
+              transition: opacity 0.3s ease;
+              pointer-events: none;
+              background: rgba(0, 0, 0, 0.3);
+            `;
+            return feedback;
           };
 
-          const playPauseBtn = createButton('play', `
-            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 50px; height: 50px;">
-              <polygon points="8 5 19 12 8 19 8 5"/>
-            </svg>
-            <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 50px; height: 50px; display: none;">
-              <rect x="7" y="4" width="3" height="16" rx="1.5"/>
-              <rect x="14" y="4" width="3" height="16" rx="1.5"/>
-            </svg>
-          `, 130);
-
-          const rewindBtn = createButton('rewind', `
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
+          const leftFeedback = createFeedback();
+          leftFeedback.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="white" style="width: 60px; height: 60px;">
               <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
             </svg>
-            <span style="margin-top: 4px;">10s</span>
-          `);
+            <div style="color: white; font-size: 18px; font-weight: 600; margin-top: 8px;">10 seconds</div>
+          `;
 
-          const forwardBtn = createButton('forward', `
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
+          const rightFeedback = createFeedback();
+          rightFeedback.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="white" style="width: 60px; height: 60px;">
               <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
             </svg>
-            <span style="margin-top: 4px;">10s</span>
-          `);
+            <div style="color: white; font-size: 18px; font-weight: 600; margin-top: 8px;">10 seconds</div>
+          `;
 
-          const exitBtn = createButton('exit', `
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 36px; height: 36px;">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          const centerFeedback = createFeedback();
+          centerFeedback.innerHTML = `
+            <svg class="play-icon" viewBox="0 0 24 24" fill="white" style="width: 80px; height: 80px;">
+              <polygon points="8 5 19 12 8 19 8 5"/>
             </svg>
-            <span style="margin-top: 2px; font-size: 11px;">Exit</span>
-          `, 110);
+            <svg class="pause-icon" viewBox="0 0 24 24" fill="white" style="width: 80px; height: 80px; display: none;">
+              <rect x="6" y="4" width="4" height="16" rx="2"/>
+              <rect x="14" y="4" width="4" height="16" rx="2"/>
+            </svg>
+          `;
 
-          buttonContainer.appendChild(playPauseBtn);
-          buttonContainer.appendChild(rewindBtn);
-          buttonContainer.appendChild(forwardBtn);
-          buttonContainer.appendChild(exitBtn);
+          leftZone.appendChild(leftFeedback);
+          centerZone.appendChild(centerFeedback);
+          rightZone.appendChild(rightFeedback);
 
-          // Function to show button(s) at location
-          const showButton = (button, x, y) => {
-            button.style.left = `${x}px`;
-            button.style.top = `${y}px`;
-            button.style.transform = 'translate(-50%, -50%) scale(1)';
-            button.style.opacity = '1';
-            button.style.pointerEvents = 'auto';
+          // Double-tap detection
+          let lastTapTime = 0;
+          let lastTapZone = null;
+
+          const showFeedback = (feedbackElement, duration = 500) => {
+            feedbackElement.style.opacity = '1';
+            setTimeout(() => {
+              feedbackElement.style.opacity = '0';
+            }, duration);
           };
 
-          const hideAllButtons = () => {
-            [playPauseBtn, rewindBtn, forwardBtn, exitBtn].forEach(btn => {
-              btn.style.opacity = '0';
-              btn.style.transform = 'translate(-50%, -50%) scale(0.8)';
-              btn.style.pointerEvents = 'none';
-            });
-          };
-
-          const scheduleHide = () => {
-            if (activeTimeout) clearTimeout(activeTimeout);
-            activeTimeout = setTimeout(hideAllButtons, 1000);
-          };
-
-          // Update play/pause icon
-          const updatePlayPauseIcon = () => {
-            const playIcon = playPauseBtn.querySelector('.play-icon');
-            const pauseIcon = playPauseBtn.querySelector('.pause-icon');
+          const updateCenterIcon = () => {
+            const playIcon = centerFeedback.querySelector('.play-icon');
+            const pauseIcon = centerFeedback.querySelector('.pause-icon');
             if (player.playing) {
               playIcon.style.display = 'none';
               pauseIcon.style.display = 'block';
@@ -289,88 +280,95 @@ export default function Player() {
             }
           };
 
-          // Touch overlay click handler
-          touchOverlay.addEventListener('click', (e) => {
-            const rect = touchOverlay.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const width = rect.width;
-            const height = rect.height;
+          // Handle left zone double-tap (rewind)
+          leftZone.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const now = Date.now();
+            const timeSinceLastTap = now - lastTapTime;
 
-            hideAllButtons();
-
-            // Top area (top 20% of screen) - show exit button only
-            if (y < height * 0.2) {
-              showButton(exitBtn, x, y);
-              scheduleHide();
-              return;
+            if (timeSinceLastTap < 300 && lastTapZone === 'left') {
+              // Double tap - rewind
+              player.rewind(10);
+              showFeedback(leftFeedback);
+              lastTapTime = 0;
+              lastTapZone = null;
+            } else {
+              // Single tap - toggle controls
+              lastTapTime = now;
+              lastTapZone = 'left';
+              if (player.elements.controls) {
+                const isHidden = player.elements.controls.style.opacity === '0';
+                player.elements.controls.style.opacity = isHidden ? '1' : '0';
+              }
             }
+          });
 
-            // Left area (left 30% excluding top)
-            if (x < width * 0.3) {
-              showButton(rewindBtn, x, y);
-              scheduleHide();
-              return;
+          // Handle center zone double-tap (play/pause)
+          centerZone.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const now = Date.now();
+            const timeSinceLastTap = now - lastTapTime;
+
+            if (timeSinceLastTap < 300 && lastTapZone === 'center') {
+              // Double tap - play/pause
+              player.togglePlay();
+              updateCenterIcon();
+              showFeedback(centerFeedback);
+              lastTapTime = 0;
+              lastTapZone = null;
+            } else {
+              // Single tap - toggle controls
+              lastTapTime = now;
+              lastTapZone = 'center';
+              if (player.elements.controls) {
+                const isHidden = player.elements.controls.style.opacity === '0';
+                player.elements.controls.style.opacity = isHidden ? '1' : '0';
+              }
             }
+          });
 
-            // Right area (right 30% excluding top)
-            if (x > width * 0.7) {
-              showButton(forwardBtn, x, y);
-              scheduleHide();
-              return;
+          // Handle right zone double-tap (fast forward)
+          rightZone.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const now = Date.now();
+            const timeSinceLastTap = now - lastTapTime;
+
+            if (timeSinceLastTap < 300 && lastTapZone === 'right') {
+              // Double tap - fast forward
+              player.forward(10);
+              showFeedback(rightFeedback);
+              lastTapTime = 0;
+              lastTapZone = null;
+            } else {
+              // Single tap - toggle controls
+              lastTapTime = now;
+              lastTapZone = 'right';
+              if (player.elements.controls) {
+                const isHidden = player.elements.controls.style.opacity === '0';
+                player.elements.controls.style.opacity = isHidden ? '1' : '0';
+              }
             }
-
-            // Center area - show play/pause + exit above it
-            updatePlayPauseIcon();
-            showButton(playPauseBtn, x, y);
-            showButton(exitBtn, x, y - 130); // Show exit 130px above play/pause
-            scheduleHide();
           });
 
-          // Button actions
-          playPauseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            player.togglePlay();
-            updatePlayPauseIcon();
-            scheduleHide();
-          });
+          // Update center icon when player state changes
+          player.on('play', updateCenterIcon);
+          player.on('pause', updateCenterIcon);
+          player.on('playing', updateCenterIcon);
 
-          rewindBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            player.rewind(10);
-            scheduleHide();
-          });
-
-          forwardBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            player.forward(10);
-            scheduleHide();
-          });
-
-          exitBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            player.fullscreen.exit();
-          });
-
-          // Listen to player events
-          player.on('play', updatePlayPauseIcon);
-          player.on('pause', updatePlayPauseIcon);
-          player.on('playing', updatePlayPauseIcon);
-
-          // Assemble and attach
-          touchOverlay.appendChild(buttonContainer);
+          // Assemble overlay
+          touchOverlay.appendChild(leftZone);
+          touchOverlay.appendChild(centerZone);
+          touchOverlay.appendChild(rightZone);
           player.elements.container.appendChild(touchOverlay);
 
           // Show/hide overlay in fullscreen
           player.on('enterfullscreen', () => {
             touchOverlay.style.display = 'block';
-            updatePlayPauseIcon();
+            updateCenterIcon();
           });
 
           player.on('exitfullscreen', () => {
             touchOverlay.style.display = 'none';
-            hideAllButtons();
-            if (activeTimeout) clearTimeout(activeTimeout);
           });
         }
 
