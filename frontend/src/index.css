@@ -666,7 +666,9 @@ select {
 .plyr--fullscreen .plyr__controls,
 .plyr--fullscreen .plyr__controls *,
 .plyr--fullscreen .plyr__menu,
-.plyr--fullscreen .plyr__menu * {
+.plyr--fullscreen .plyr__menu *,
+.plyr--fullscreen .plyr-touch-overlay,
+.plyr--fullscreen .plyr-touch-overlay * {
   pointer-events: auto !important;
 }
 
