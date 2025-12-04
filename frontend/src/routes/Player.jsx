@@ -74,7 +74,7 @@ export default function Player() {
           speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
           seekTime: 10,
           autoplay: true,
-          clickToPlay: !isMobileDevice(), // Enable click-to-play on desktop, disable on mobile
+          clickToPlay: true, // Enable click-to-play everywhere
           hideControls: false, // Force controls to stay visible
           keyboard: {
             focused: true,
@@ -358,11 +358,23 @@ export default function Player() {
           // Show/hide overlay in fullscreen
           player.on('enterfullscreen', () => {
             touchOverlay.style.display = 'block';
-            updateCenterIcon();
+            updatePlayPauseIcon();
+
+            // Hide the play-large button in fullscreen on mobile
+            const playLargeBtn = player.elements.container.querySelector('.plyr__control--overlaid');
+            if (playLargeBtn) {
+              playLargeBtn.style.display = 'none';
+            }
           });
 
           player.on('exitfullscreen', () => {
             touchOverlay.style.display = 'none';
+
+            // Show the play-large button again when exiting fullscreen
+            const playLargeBtn = player.elements.container.querySelector('.plyr__control--overlaid');
+            if (playLargeBtn) {
+              playLargeBtn.style.display = '';
+            }
           });
         }
 
