@@ -406,20 +406,28 @@ export default function PlaylistPlayer() {
         if (isMobileDevice()) {
           console.log('Initializing YouTube-style touch controls');
 
-          // Double-tap to enter fullscreen when NOT in fullscreen (on video element)
+          // Double-tap to enter fullscreen when NOT in fullscreen, prevent exit when IN fullscreen
+          // Use touchend for instant response (no 300ms delay)
           let lastVideoTapTime = 0;
-          player.media.addEventListener('click', (e) => {
-            if (!player.fullscreen.active) {
-              const currentTime = Date.now();
-              const isDoubleTap = (currentTime - lastVideoTapTime) < 300;
+          player.media.addEventListener('touchend', (e) => {
+            const currentTime = Date.now();
+            const isDoubleTap = (currentTime - lastVideoTapTime) < 250;
 
+            if (!player.fullscreen.active) {
+              // NOT in fullscreen - double tap to enter
               if (isDoubleTap) {
                 e.preventDefault();
                 player.fullscreen.enter();
               }
-
-              lastVideoTapTime = currentTime;
+            } else {
+              // IN fullscreen - prevent double tap from exiting
+              if (isDoubleTap) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
             }
+
+            lastVideoTapTime = currentTime;
           });
 
           // Create touch overlay that covers the video area
@@ -553,16 +561,19 @@ export default function PlaylistPlayer() {
             }
           };
 
-          // Detect which zone was tapped
-          touchOverlay.addEventListener('click', (e) => {
+          // Detect which zone was tapped (use touchend for instant response)
+          touchOverlay.addEventListener('touchend', (e) => {
+            e.preventDefault(); // Prevent ghost clicks
+
+            const touch = e.changedTouches[0];
             const rect = touchOverlay.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
             const width = rect.width;
             const height = rect.height;
 
             const currentTime = Date.now();
-            const isDoubleTap = (currentTime - lastTapTime) < 300;
+            const isDoubleTap = (currentTime - lastTapTime) < 250;
 
             let zone = null;
             let button = null;
