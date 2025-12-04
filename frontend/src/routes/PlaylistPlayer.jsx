@@ -406,6 +406,22 @@ export default function PlaylistPlayer() {
         if (isMobileDevice()) {
           console.log('Initializing YouTube-style touch controls');
 
+          // Double-tap to enter fullscreen when NOT in fullscreen (on video element)
+          let lastVideoTapTime = 0;
+          player.media.addEventListener('click', (e) => {
+            if (!player.fullscreen.active) {
+              const currentTime = Date.now();
+              const isDoubleTap = (currentTime - lastVideoTapTime) < 300;
+
+              if (isDoubleTap) {
+                e.preventDefault();
+                player.fullscreen.enter();
+              }
+
+              lastVideoTapTime = currentTime;
+            }
+          });
+
           // Create touch overlay that covers the video area
           const touchOverlay = document.createElement('div');
           touchOverlay.className = 'plyr-touch-overlay';
