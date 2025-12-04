@@ -714,3 +714,23 @@ select {
 /* .plyr--fullscreen .plyr__control--overlaid {
   display: none !important;
 } */
+
+/* Force Plyr controls to be visible and clickable in fullscreen on desktop */
+.plyr--fullscreen .plyr__controls {
+  opacity: 1 !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  display: flex !important;
+  z-index: 999 !important;
+}
+
+/* Ensure individual control buttons are clickable */
+.plyr--fullscreen .plyr__control {
+  pointer-events: auto !important;
+}
+
+/* Prevent Plyr from auto-hiding controls in fullscreen */
+.plyr--fullscreen.plyr--hide-controls .plyr__controls {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}

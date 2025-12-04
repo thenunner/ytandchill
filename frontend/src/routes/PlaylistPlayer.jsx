@@ -411,7 +411,8 @@ export default function PlaylistPlayer() {
     };
 
     // Only create touch overlay on touch devices
-    if (isTouchDevice()) {
+    // TEMPORARILY DISABLED - touch detection not working correctly
+    if (false && isTouchDevice()) {
       // Create touch overlay that lives inside Plyr's container (visible in fullscreen)
       const touchOverlay = document.createElement('div');
     touchOverlay.className = 'plyr-touch-overlay';
