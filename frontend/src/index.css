@@ -482,6 +482,15 @@
   cursor: pointer !important;
 }
 
+/* Ensure plyr video wrapper doesn't block controls */
+.plyr__video-wrapper {
+  pointer-events: none;
+}
+
+.plyr__video-wrapper video {
+  pointer-events: auto;
+}
+
 .plyr--video {
   @apply bg-black;
 }
@@ -546,12 +555,12 @@ select {
   bottom: 0;
   z-index: 100;
   display: none;
-  pointer-events: none;
+  pointer-events: none !important; /* Force pointer-events off to prevent blocking */
 }
 
 .plyr-touch-overlay.active {
   display: flex;
-  pointer-events: auto;
+  pointer-events: none !important; /* Keep disabled even when active to prevent blocking controls */
 }
 
 /* Touch zones - invisible but clickable */
@@ -560,6 +569,7 @@ select {
   top: 0;
   bottom: 60px; /* Leave room for Plyr controls */
   cursor: pointer;
+  pointer-events: none !important; /* Ensure zones never block clicks */
 }
 
 .plyr-touch-zone--left {
@@ -762,10 +772,27 @@ select {
   visibility: visible !important;
   pointer-events: auto !important;
   display: flex !important;
-  z-index: 999 !important;
+  z-index: 9999 !important; /* Even higher z-index in fullscreen */
+  position: relative !important;
 }
 
 .plyr--fullscreen .plyr__control {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.plyr--fullscreen .plyr__progress {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure video doesn't capture clicks over controls in fullscreen */
+.plyr--fullscreen .plyr__video-wrapper {
+  pointer-events: none !important;
+}
+
+/* But keep the actual video element interactive for native controls fallback */
+.plyr--fullscreen .plyr__video-wrapper video {
   pointer-events: auto !important;
 }
 
