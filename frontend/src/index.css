@@ -710,7 +710,7 @@ select {
   transform: translateX(-50%) scale(0.95);
 }
 
-/* Hide Plyr's default play button in fullscreen (we have our own) */
-.plyr--fullscreen .plyr__control--overlaid {
+/* Note: Removed the rule that hid big play button in fullscreen to debug control bar issue */
+/* .plyr--fullscreen .plyr__control--overlaid {
   display: none !important;
-}
+} */

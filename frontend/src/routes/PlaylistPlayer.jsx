@@ -372,8 +372,10 @@ export default function PlaylistPlayer() {
       speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
       seekTime: 10,
       autoplay: true,
+      clickToPlay: true, // Explicitly enable click-to-play
+      hideControls: false, // Force controls to stay visible
       keyboard: { focused: true, global: false },
-      fullscreen: { enabled: true, fallback: true, iosNative: true },
+      fullscreen: { enabled: true, fallback: true, iosNative: true, container: null },
       tooltips: { controls: true, seek: true },
     });
 
