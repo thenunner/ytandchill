@@ -108,6 +108,14 @@ export default function Player() {
 
         console.log('Source set to:', videoSrc);
 
+        // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
+        player.on('dblclick', (event) => {
+          if (player.fullscreen.active) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        });
+
         // Create custom theater mode button
         const toggleTheaterMode = () => {
           setIsTheaterMode(prev => {
@@ -187,7 +195,7 @@ export default function Player() {
             color: white;
             opacity: 0;
             transform: scale(0.9);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: opacity 0.2s ease, transform 0.2s ease;
             pointer-events: auto !important;
             cursor: pointer;
             z-index: 200;

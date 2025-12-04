@@ -394,6 +394,14 @@ export default function PlaylistPlayer() {
       sources: [{ src: videoSrc, type: 'video/mp4' }],
     };
 
+    // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
+    player.on('dblclick', (event) => {
+      if (player.fullscreen.active) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    });
+
         // ===== MOBILE TOUCH CONTROLS (YOUTUBE-STYLE) =====
         if (isMobileDevice()) {
           console.log('Initializing YouTube-style touch controls');
@@ -429,7 +437,7 @@ export default function PlaylistPlayer() {
             color: white;
             opacity: 0;
             transform: scale(0.9);
-            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            transition: opacity 0.2s ease, transform 0.2s ease;
             pointer-events: auto !important;
             cursor: pointer;
             z-index: 200;
