@@ -395,6 +395,7 @@ export default function PlaylistPlayer() {
 
       // If device has fine pointer (mouse), it's NOT a touch device
       if (hasFinePointer) {
+        console.log('Touch detection: Desktop/mouse detected (fine pointer)');
         return false;
       }
 
@@ -404,7 +405,9 @@ export default function PlaylistPlayer() {
       // Also check for mobile user agent as fallback
       const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-      return hasCoarsePointer || isMobileUA;
+      const isTouch = hasCoarsePointer || isMobileUA;
+      console.log('Touch detection:', isTouch ? 'Mobile/touch device' : 'Desktop');
+      return isTouch;
     };
 
     // Only create touch overlay on touch devices
@@ -600,6 +603,26 @@ export default function PlaylistPlayer() {
       document.addEventListener('fullscreenchange', handleFsChange);
       document.addEventListener('webkitfullscreenchange', handleFsChange);
     }
+
+    // ===== FORCE CONTROLS TO STAY VISIBLE IN FULLSCREEN =====
+    // Ensure Plyr controls remain visible and clickable in fullscreen on desktop
+    player.on('enterfullscreen', () => {
+      console.log('Entered fullscreen');
+      // Force controls to show and prevent auto-hide
+      setTimeout(() => {
+        if (player.elements.controls) {
+          player.elements.controls.style.opacity = '1';
+          player.elements.controls.style.pointerEvents = 'auto';
+          player.elements.controls.style.display = 'flex';
+          player.elements.controls.style.zIndex = '999';
+          console.log('Forced controls visible:', player.elements.controls);
+        }
+      }, 100);
+    });
+
+    player.on('exitfullscreen', () => {
+      console.log('Exited fullscreen');
+    });
     // ===== END FULLSCREEN TOUCH CONTROLS =====
 
     // Restore playback position when metadata loads
