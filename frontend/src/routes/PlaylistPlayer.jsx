@@ -387,10 +387,205 @@ export default function PlaylistPlayer() {
       sources: [{ src: videoSrc, type: 'video/mp4' }],
     };
 
-    // ===== TOUCH OVERLAY REMOVED =====
-    // Touch overlay code completely removed to prevent interference with controls
-    // If touch controls are needed in the future, they should be reimplemented
-    // without blocking desktop control clicks
+    // ===== MOBILE TOUCH CONTROLS =====
+    // Add visible touch controls for mobile devices only
+    const isMobileDevice = () => {
+      // Must have coarse pointer (touch) AND be a mobile device
+      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isMobile = hasCoarsePointer && isMobileUA;
+      console.log('Mobile touch detection:', isMobile ? 'Mobile device' : 'Desktop/laptop');
+      return isMobile;
+    };
+
+    if (isMobileDevice()) {
+      // Create touch controls container
+      const touchControls = document.createElement('div');
+      touchControls.className = 'plyr-mobile-controls';
+      touchControls.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 100px;
+        display: none;
+        z-index: 150;
+        pointer-events: none;
+      `;
+
+      // Rewind button (left)
+      const rewindBtn = document.createElement('button');
+      rewindBtn.className = 'plyr-mobile-btn plyr-mobile-btn--rewind';
+      rewindBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
+        </svg>
+        <span>10s</span>
+      `;
+      rewindBtn.style.cssText = `
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        pointer-events: auto;
+        cursor: pointer;
+      `;
+
+      // Play/Pause button (center)
+      const playPauseBtn = document.createElement('button');
+      playPauseBtn.className = 'plyr-mobile-btn plyr-mobile-btn--play';
+      playPauseBtn.innerHTML = `
+        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+        <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px; display: none;">
+          <rect x="6" y="4" width="4" height="16"/>
+          <rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      `;
+      playPauseBtn.style.cssText = `
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 90px;
+        height: 90px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        pointer-events: auto;
+        cursor: pointer;
+      `;
+
+      // Fast forward button (right)
+      const fastForwardBtn = document.createElement('button');
+      fastForwardBtn.className = 'plyr-mobile-btn plyr-mobile-btn--forward';
+      fastForwardBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+        </svg>
+        <span>10s</span>
+      `;
+      fastForwardBtn.style.cssText = `
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 80px;
+        height: 80px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        font-weight: bold;
+        pointer-events: auto;
+        cursor: pointer;
+      `;
+
+      // Exit fullscreen button (top center)
+      const exitFsBtn = document.createElement('button');
+      exitFsBtn.className = 'plyr-mobile-btn plyr-mobile-btn--exit';
+      exitFsBtn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 30px; height: 30px;">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      `;
+      exitFsBtn.style.cssText = `
+        position: absolute;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        pointer-events: auto;
+        cursor: pointer;
+      `;
+
+      // Add event listeners
+      rewindBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        player.rewind(10);
+      });
+
+      playPauseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        player.togglePlay();
+      });
+
+      fastForwardBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        player.forward(10);
+      });
+
+      exitFsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        player.fullscreen.exit();
+      });
+
+      // Update play/pause icon based on player state
+      const updatePlayPauseIcon = () => {
+        const playIcon = playPauseBtn.querySelector('.play-icon');
+        const pauseIcon = playPauseBtn.querySelector('.pause-icon');
+        if (player.playing) {
+          playIcon.style.display = 'none';
+          pauseIcon.style.display = 'block';
+        } else {
+          playIcon.style.display = 'block';
+          pauseIcon.style.display = 'none';
+        }
+      };
+
+      player.on('play', updatePlayPauseIcon);
+      player.on('pause', updatePlayPauseIcon);
+      player.on('playing', updatePlayPauseIcon);
+
+      // Assemble controls
+      touchControls.appendChild(rewindBtn);
+      touchControls.appendChild(playPauseBtn);
+      touchControls.appendChild(fastForwardBtn);
+      touchControls.appendChild(exitFsBtn);
+
+      // Add to player container
+      player.elements.container.appendChild(touchControls);
+
+      // Show/hide controls based on fullscreen state
+      player.on('enterfullscreen', () => {
+        touchControls.style.display = 'block';
+        updatePlayPauseIcon();
+      });
+
+      player.on('exitfullscreen', () => {
+        touchControls.style.display = 'none';
+      });
+    }
 
     // ===== FORCE CONTROLS TO STAY VISIBLE IN FULLSCREEN =====
     // Ensure Plyr controls remain visible and clickable in fullscreen on desktop

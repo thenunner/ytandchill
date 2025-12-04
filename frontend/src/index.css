@@ -546,197 +546,37 @@ select {
   }
 }
 
-/* ===== FULLSCREEN TOUCH CONTROLS ===== */
-.plyr-touch-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 100;
-  display: none;
-  pointer-events: none !important; /* Force pointer-events off to prevent blocking */
+/* ===== MOBILE TOUCH CONTROLS ===== */
+/* Visible touch controls for mobile devices only */
+.plyr-mobile-controls {
+  /* Container styling handled inline in JS */
 }
 
-.plyr-touch-overlay.active {
-  display: flex;
-  pointer-events: none !important; /* Keep disabled even when active to prevent blocking controls */
+.plyr-mobile-btn {
+  transition: all 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Touch zones - invisible but clickable */
-.plyr-touch-zone {
-  position: absolute;
-  top: 0;
-  bottom: 60px; /* Leave room for Plyr controls */
-  cursor: pointer;
-  pointer-events: none !important; /* Ensure zones never block clicks */
+.plyr-mobile-btn:active {
+  transform: scale(0.9) !important;
+  background: rgba(0, 0, 0, 0.9) !important;
 }
 
-.plyr-touch-zone--left {
-  left: 0;
-  width: 33.33%;
+.plyr-mobile-btn svg {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 4px;
 }
 
-.plyr-touch-zone--center {
-  left: 33.33%;
-  width: 33.33%;
+.plyr-mobile-btn--play svg {
+  /* Play/pause button already has inline sizing */
 }
 
-.plyr-touch-zone--right {
-  right: 0;
-  width: 33.33%;
+.plyr-mobile-btn--exit:active {
+  transform: translateX(-50%) scale(0.9) !important;
 }
 
-/* Skip bubbles (rewind/forward feedback) */
-.plyr-skip-bubble {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 120px;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 50%;
-  color: white;
-  opacity: 0;
-  transition: opacity 0.15s ease-out;
-  pointer-events: none;
-}
-
-.plyr-skip-bubble--left {
-  left: calc(16.66% - 60px);
-}
-
-.plyr-skip-bubble--right {
-  right: calc(16.66% - 60px);
-}
-
-.plyr-skip-bubble svg {
-  width: 50px;
-  height: 50px;
-}
-
-.plyr-skip-bubble span {
-  font-size: 18px;
-  font-weight: bold;
-  margin-top: 4px;
-}
-
-.plyr-skip-bubble.show {
-  opacity: 1;
-  animation: bubble-pop 0.5s ease-out;
-}
-
-/* Center play/pause indicator */
-.plyr-center-indicator {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 120px;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 50%;
-  color: white;
-  opacity: 0;
-  transition: opacity 0.15s ease-out;
-  pointer-events: none;
-}
-
-.plyr-center-indicator svg {
-  width: 60px;
-  height: 60px;
-}
-
-.plyr-center-indicator .play-icon {
-  display: block;
-}
-
-.plyr-center-indicator .pause-icon {
-  display: none;
-}
-
-.plyr-center-indicator.playing .play-icon {
-  display: none;
-}
-
-.plyr-center-indicator.playing .pause-icon {
-  display: block;
-}
-
-.plyr-center-indicator.show {
-  opacity: 1;
-  animation: bubble-pop 0.3s ease-out;
-}
-
-@keyframes bubble-pop {
-  0% {
-    transform: translate(-50%, -50%) scale(0.8);
-    opacity: 0;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.1);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-}
-
-/* Exit fullscreen button */
-.plyr-exit-fullscreen-btn {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 120px;
-  min-width: 120px;
-  min-height: 120px;
-  max-width: 120px;
-  max-height: 120px;
-  padding: 0;
-  border: none;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 50%;
-  color: white;
-  opacity: 0;
-  transition: opacity 0.2s ease-out;
-  pointer-events: none;
-  cursor: pointer;
-  z-index: 200;
-  flex-shrink: 0;
-  aspect-ratio: 1 / 1;
-}
-
-.plyr-exit-fullscreen-btn svg {
-  width: 60px;
-  height: 60px;
-}
-
-.plyr-exit-fullscreen-btn.visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.plyr-exit-fullscreen-btn:hover {
-  background: rgba(0, 0, 0, 0.9);
-  border-color: rgba(255, 255, 255, 0.5);
-}
-
-.plyr-exit-fullscreen-btn:active {
-  transform: translateX(-50%) scale(0.95);
-}
+/* Old touch overlay CSS removed - using new mobile controls instead */
 
 /* Note: Removed the rule that hid big play button in fullscreen to debug control bar issue */
 /* .plyr--fullscreen .plyr__control--overlaid {
