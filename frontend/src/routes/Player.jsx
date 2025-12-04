@@ -168,199 +168,221 @@ export default function Player() {
             bottom: 100px;
             display: none;
             z-index: 150;
-            pointer-events: auto;
           `;
 
-          // Buttons container (will fade in/out)
-          const buttonsContainer = document.createElement('div');
-          buttonsContainer.className = 'plyr-mobile-buttons';
-          buttonsContainer.style.cssText = `
+          // Create touch zones (invisible clickable areas)
+          const leftZone = document.createElement('div');
+          leftZone.style.cssText = `
             position: absolute;
-            top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-            pointer-events: none;
+            top: 0;
+            width: 33.33%;
+            height: 100%;
+            cursor: pointer;
           `;
 
-          // Rewind button (closer to center)
-          const rewindBtn = document.createElement('button');
-          rewindBtn.className = 'plyr-mobile-btn plyr-mobile-btn--rewind';
-          rewindBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="currentColor">
-              <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
-            </svg>
-            <span>10s</span>
-          `;
-          rewindBtn.style.cssText = `
+          const centerZone = document.createElement('div');
+          centerZone.style.cssText = `
             position: absolute;
-            left: 15%;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            left: 33.33%;
+            top: 0;
+            width: 33.33%;
+            height: 100%;
+            cursor: pointer;
+          `;
+
+          const rightZone = document.createElement('div');
+          rightZone.style.cssText = `
+            position: absolute;
+            right: 0;
+            top: 0;
+            width: 33.33%;
+            height: 100%;
+            cursor: pointer;
+          `;
+
+          // Modern glass-morphism button style
+          const modernButtonStyle = `
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50%;
-            width: 80px;
-            height: 80px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            width: 100px;
+            height: 100px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 12px;
-            font-weight: bold;
-            pointer-events: auto;
-            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0;
+            transition: all 0.3s ease;
+            pointer-events: none;
           `;
 
-          // Play/Pause button (center)
-          const playPauseBtn = document.createElement('button');
-          playPauseBtn.className = 'plyr-mobile-btn plyr-mobile-btn--play';
-          playPauseBtn.innerHTML = `
-            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
-              <polygon points="5 3 19 12 5 21 5 3"/>
+          // Rewind button
+          const rewindBtn = document.createElement('button');
+          rewindBtn.className = 'plyr-mobile-btn plyr-mobile-btn--rewind';
+          rewindBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 36px; height: 36px;">
+              <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
             </svg>
-            <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px; display: none;">
-              <rect x="6" y="4" width="4" height="16"/>
-              <rect x="14" y="4" width="4" height="16"/>
-            </svg>
+            <span style="margin-top: 4px;">10s</span>
           `;
-          playPauseBtn.style.cssText = `
+          rewindBtn.style.cssText = `${modernButtonStyle}
             position: absolute;
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            width: 90px;
-            height: 90px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            pointer-events: auto;
-            cursor: pointer;
           `;
 
-          // Fast forward button (closer to center)
+          // Play/Pause button
+          const playPauseBtn = document.createElement('button');
+          playPauseBtn.className = 'plyr-mobile-btn plyr-mobile-btn--play';
+          playPauseBtn.innerHTML = `
+            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 48px; height: 48px;">
+              <polygon points="8 5 19 12 8 19 8 5"/>
+            </svg>
+            <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 48px; height: 48px; display: none;">
+              <rect x="7" y="4" width="3" height="16" rx="1.5"/>
+              <rect x="14" y="4" width="3" height="16" rx="1.5"/>
+            </svg>
+          `;
+          playPauseBtn.style.cssText = `${modernButtonStyle}
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 110px;
+            height: 110px;
+          `;
+
+          // Fast forward button
           const fastForwardBtn = document.createElement('button');
           fastForwardBtn.className = 'plyr-mobile-btn plyr-mobile-btn--forward';
           fastForwardBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="currentColor">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 36px; height: 36px;">
               <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
             </svg>
-            <span>10s</span>
+            <span style="margin-top: 4px;">10s</span>
           `;
-          fastForwardBtn.style.cssText = `
+          fastForwardBtn.style.cssText = `${modernButtonStyle}
             position: absolute;
-            right: 15%;
+            left: 50%;
             top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            pointer-events: auto;
-            cursor: pointer;
+            transform: translate(-50%, -50%);
           `;
 
-          // Exit fullscreen button (lower and same size as other buttons)
+          // Exit fullscreen button (shows in all zones)
           const exitFsBtn = document.createElement('button');
           exitFsBtn.className = 'plyr-mobile-btn plyr-mobile-btn--exit';
           exitFsBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="currentColor">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px;">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
             </svg>
-            <span style="font-size: 10px; margin-top: 2px;">Exit</span>
+            <span style="margin-top: 2px; font-size: 11px;">Exit</span>
           `;
-          exitFsBtn.style.cssText = `
+          exitFsBtn.style.cssText = `${modernButtonStyle}
             position: absolute;
-            top: 80px;
+            top: 60px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            width: 80px;
-            height: 80px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 12px;
-            font-weight: bold;
-            pointer-events: auto;
-            cursor: pointer;
           `;
 
-          // Auto-hide timeout
+          // Add buttons to zones
+          leftZone.appendChild(rewindBtn.cloneNode(true));
+          leftZone.appendChild(exitFsBtn.cloneNode(true));
+          centerZone.appendChild(playPauseBtn);
+          centerZone.appendChild(exitFsBtn.cloneNode(true));
+          rightZone.appendChild(fastForwardBtn.cloneNode(true));
+          rightZone.appendChild(exitFsBtn);
+
+          // Get references to the cloned buttons
+          const leftRewindBtn = leftZone.querySelector('.plyr-mobile-btn--rewind');
+          const leftExitBtn = leftZone.querySelector('.plyr-mobile-btn--exit');
+          const centerExitBtn = centerZone.querySelector('.plyr-mobile-btn--exit');
+          const rightForwardBtn = rightZone.querySelector('.plyr-mobile-btn--forward');
+
           let hideTimeout;
 
-          const showButtons = () => {
-            buttonsContainer.style.opacity = '1';
-            buttonsContainer.style.pointerEvents = 'auto';
+          const showZoneButtons = (zone) => {
+            const buttons = zone.querySelectorAll('.plyr-mobile-btn');
+            buttons.forEach(btn => {
+              btn.style.opacity = '1';
+              btn.style.pointerEvents = 'auto';
+            });
 
-            // Clear existing timeout
             if (hideTimeout) clearTimeout(hideTimeout);
-
-            // Hide after 2 seconds
             hideTimeout = setTimeout(() => {
-              buttonsContainer.style.opacity = '0';
-              buttonsContainer.style.pointerEvents = 'none';
+              buttons.forEach(btn => {
+                btn.style.opacity = '0';
+                btn.style.pointerEvents = 'none';
+              });
             }, 2000);
           };
 
-          const hideButtons = () => {
+          const hideAllButtons = () => {
             if (hideTimeout) clearTimeout(hideTimeout);
-            buttonsContainer.style.opacity = '0';
-            buttonsContainer.style.pointerEvents = 'none';
+            document.querySelectorAll('.plyr-mobile-btn').forEach(btn => {
+              btn.style.opacity = '0';
+              btn.style.pointerEvents = 'none';
+            });
           };
 
-          // Show buttons on tap anywhere in the touch controls area
-          touchControls.addEventListener('click', (e) => {
-            // Only show if clicking on the container itself, not buttons
-            if (e.target === touchControls) {
-              showButtons();
+          // Zone click handlers
+          leftZone.addEventListener('click', (e) => {
+            if (!e.target.closest('.plyr-mobile-btn')) {
+              showZoneButtons(leftZone);
             }
           });
 
-          // Add event listeners
-          rewindBtn.addEventListener('click', (e) => {
+          centerZone.addEventListener('click', (e) => {
+            if (!e.target.closest('.plyr-mobile-btn')) {
+              showZoneButtons(centerZone);
+            }
+          });
+
+          rightZone.addEventListener('click', (e) => {
+            if (!e.target.closest('.plyr-mobile-btn')) {
+              showZoneButtons(rightZone);
+            }
+          });
+
+          // Button click handlers
+          const handleRewind = (e) => {
             e.stopPropagation();
             player.rewind(10);
-            showButtons(); // Reset timer
-          });
+            showZoneButtons(leftZone);
+          };
 
-          playPauseBtn.addEventListener('click', (e) => {
+          const handlePlayPause = (e) => {
             e.stopPropagation();
             player.togglePlay();
-            showButtons(); // Reset timer
-          });
+            showZoneButtons(centerZone);
+          };
 
-          fastForwardBtn.addEventListener('click', (e) => {
+          const handleForward = (e) => {
             e.stopPropagation();
             player.forward(10);
-            showButtons(); // Reset timer
-          });
+            showZoneButtons(rightZone);
+          };
 
-          exitFsBtn.addEventListener('click', (e) => {
+          const handleExit = (e) => {
             e.stopPropagation();
             player.fullscreen.exit();
-          });
+          };
 
-          // Update play/pause icon based on player state
+          leftRewindBtn.addEventListener('click', handleRewind);
+          leftExitBtn.addEventListener('click', handleExit);
+          playPauseBtn.addEventListener('click', handlePlayPause);
+          centerExitBtn.addEventListener('click', handleExit);
+          rightForwardBtn.addEventListener('click', handleForward);
+          exitFsBtn.addEventListener('click', handleExit);
+
+          // Update play/pause icon
           const updatePlayPauseIcon = () => {
             const playIcon = playPauseBtn.querySelector('.play-icon');
             const pauseIcon = playPauseBtn.querySelector('.pause-icon');
@@ -377,27 +399,21 @@ export default function Player() {
           player.on('pause', updatePlayPauseIcon);
           player.on('playing', updatePlayPauseIcon);
 
-          // Assemble controls
-          buttonsContainer.appendChild(rewindBtn);
-          buttonsContainer.appendChild(playPauseBtn);
-          buttonsContainer.appendChild(fastForwardBtn);
-          buttonsContainer.appendChild(exitFsBtn);
-          touchControls.appendChild(buttonsContainer);
-
-          // Add to player container
+          // Assemble touch controls
+          touchControls.appendChild(leftZone);
+          touchControls.appendChild(centerZone);
+          touchControls.appendChild(rightZone);
           player.elements.container.appendChild(touchControls);
 
-          // Show/hide controls based on fullscreen state
+          // Show/hide based on fullscreen
           player.on('enterfullscreen', () => {
             touchControls.style.display = 'block';
             updatePlayPauseIcon();
-            // Show buttons initially when entering fullscreen
-            showButtons();
           });
 
           player.on('exitfullscreen', () => {
             touchControls.style.display = 'none';
-            hideButtons();
+            hideAllButtons();
           });
         }
 
