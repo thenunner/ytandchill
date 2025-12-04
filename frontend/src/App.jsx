@@ -120,6 +120,32 @@ function App() {
   // Get the first queue item with a log message (e.g., rate limit warnings)
   const queueLog = queue?.find(item => item.log)?.log || null;
 
+  // Remember last page on mobile (localStorage persistence)
+  useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+    if (isMobile) {
+      // Save current path to localStorage whenever it changes
+      if (location.pathname !== '/login' && location.pathname !== '/setup') {
+        localStorage.setItem('last-mobile-path', location.pathname + location.search);
+      }
+    }
+  }, [location.pathname, location.search]);
+
+  // Restore last page on mobile app load
+  useEffect(() => {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const hasRestoredPath = sessionStorage.getItem('path-restored');
+
+    if (isMobile && !hasRestoredPath && isAuthenticated) {
+      const lastPath = localStorage.getItem('last-mobile-path');
+      if (lastPath && lastPath !== location.pathname + location.search) {
+        navigate(lastPath, { replace: true });
+        sessionStorage.setItem('path-restored', 'true');
+      }
+    }
+  }, [isAuthenticated, navigate, location.pathname, location.search]);
+
   // Auto-navigate to queue tab on initial app load if there are queue items
   useEffect(() => {
     // Only auto-navigate once per browser session (on first load)

@@ -576,6 +576,17 @@ select {
   transform: translateX(-50%) scale(0.9) !important;
 }
 
+/* YouTube-style touch overlay - ensure it works in fullscreen */
+.plyr-touch-overlay {
+  pointer-events: auto !important;
+  z-index: 150 !important;
+}
+
+.plyr-touch-overlay > div {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
 /* Old touch overlay CSS removed - using new mobile controls instead */
 
 /* Note: Removed the rule that hid big play button in fullscreen to debug control bar issue */
