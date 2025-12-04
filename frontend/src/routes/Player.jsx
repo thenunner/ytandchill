@@ -143,6 +143,15 @@ export default function Player() {
         updateButtonState();
 
         // ===== FULLSCREEN TOUCH CONTROLS =====
+        // Detect if device has touch capability
+        const isTouchDevice = () => {
+          return (
+            'ontouchstart' in window ||
+            navigator.maxTouchPoints > 0 ||
+            navigator.msMaxTouchPoints > 0
+          );
+        };
+
         // Create touch overlay that lives inside Plyr's container (visible in fullscreen)
         const touchOverlay = document.createElement('div');
         touchOverlay.className = 'plyr-touch-overlay';
@@ -316,8 +325,12 @@ export default function Player() {
         // Inject into Plyr's container
         player.elements.container.appendChild(touchOverlay);
 
-        // Show overlay only in fullscreen (use both Plyr events and native API)
-        const showOverlay = () => { touchOverlay.classList.add('active'); };
+        // Show overlay only in fullscreen AND on touch devices
+        const showOverlay = () => {
+          if (isTouchDevice()) {
+            touchOverlay.classList.add('active');
+          }
+        };
         const hideOverlay = () => { touchOverlay.classList.remove('active'); };
 
         player.on('enterfullscreen', showOverlay);
