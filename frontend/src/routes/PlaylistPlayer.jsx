@@ -410,10 +410,24 @@ export default function PlaylistPlayer() {
         bottom: 100px;
         display: none;
         z-index: 150;
+        pointer-events: auto;
+      `;
+
+      // Buttons container (will fade in/out)
+      const buttonsContainer = document.createElement('div');
+      buttonsContainer.className = 'plyr-mobile-buttons';
+      buttonsContainer.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        opacity: 0;
+        transition: opacity 0.3s ease;
         pointer-events: none;
       `;
 
-      // Rewind button (left)
+      // Rewind button (closer to center)
       const rewindBtn = document.createElement('button');
       rewindBtn.className = 'plyr-mobile-btn plyr-mobile-btn--rewind';
       rewindBtn.innerHTML = `
@@ -424,7 +438,7 @@ export default function PlaylistPlayer() {
       `;
       rewindBtn.style.cssText = `
         position: absolute;
-        left: 20px;
+        left: 15%;
         top: 50%;
         transform: translateY(-50%);
         background: rgba(0, 0, 0, 0.7);
@@ -473,7 +487,7 @@ export default function PlaylistPlayer() {
         cursor: pointer;
       `;
 
-      // Fast forward button (right)
+      // Fast forward button (closer to center)
       const fastForwardBtn = document.createElement('button');
       fastForwardBtn.className = 'plyr-mobile-btn plyr-mobile-btn--forward';
       fastForwardBtn.innerHTML = `
@@ -484,7 +498,7 @@ export default function PlaylistPlayer() {
       `;
       fastForwardBtn.style.cssText = `
         position: absolute;
-        right: 20px;
+        right: 15%;
         top: 50%;
         transform: translateY(-50%);
         background: rgba(0, 0, 0, 0.7);
@@ -503,46 +517,84 @@ export default function PlaylistPlayer() {
         cursor: pointer;
       `;
 
-      // Exit fullscreen button (top center)
+      // Exit fullscreen button (lower and same size as other buttons)
       const exitFsBtn = document.createElement('button');
       exitFsBtn.className = 'plyr-mobile-btn plyr-mobile-btn--exit';
       exitFsBtn.innerHTML = `
-        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 30px; height: 30px;">
+        <svg viewBox="0 0 24 24" fill="currentColor">
           <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
         </svg>
+        <span style="font-size: 10px; margin-top: 2px;">Exit</span>
       `;
       exitFsBtn.style.cssText = `
         position: absolute;
-        top: 20px;
+        top: 80px;
         left: 50%;
         transform: translateX(-50%);
         background: rgba(0, 0, 0, 0.7);
         border: 2px solid rgba(255, 255, 255, 0.3);
         border-radius: 50%;
-        width: 60px;
-        height: 60px;
+        width: 80px;
+        height: 80px;
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
         color: white;
+        font-size: 12px;
+        font-weight: bold;
         pointer-events: auto;
         cursor: pointer;
       `;
+
+      // Auto-hide timeout
+      let hideTimeout;
+
+      const showButtons = () => {
+        buttonsContainer.style.opacity = '1';
+        buttonsContainer.style.pointerEvents = 'auto';
+
+        // Clear existing timeout
+        if (hideTimeout) clearTimeout(hideTimeout);
+
+        // Hide after 2 seconds
+        hideTimeout = setTimeout(() => {
+          buttonsContainer.style.opacity = '0';
+          buttonsContainer.style.pointerEvents = 'none';
+        }, 2000);
+      };
+
+      const hideButtons = () => {
+        if (hideTimeout) clearTimeout(hideTimeout);
+        buttonsContainer.style.opacity = '0';
+        buttonsContainer.style.pointerEvents = 'none';
+      };
+
+      // Show buttons on tap anywhere in the touch controls area
+      touchControls.addEventListener('click', (e) => {
+        // Only show if clicking on the container itself, not buttons
+        if (e.target === touchControls) {
+          showButtons();
+        }
+      });
 
       // Add event listeners
       rewindBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         player.rewind(10);
+        showButtons(); // Reset timer
       });
 
       playPauseBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         player.togglePlay();
+        showButtons(); // Reset timer
       });
 
       fastForwardBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         player.forward(10);
+        showButtons(); // Reset timer
       });
 
       exitFsBtn.addEventListener('click', (e) => {
@@ -568,10 +620,11 @@ export default function PlaylistPlayer() {
       player.on('playing', updatePlayPauseIcon);
 
       // Assemble controls
-      touchControls.appendChild(rewindBtn);
-      touchControls.appendChild(playPauseBtn);
-      touchControls.appendChild(fastForwardBtn);
-      touchControls.appendChild(exitFsBtn);
+      buttonsContainer.appendChild(rewindBtn);
+      buttonsContainer.appendChild(playPauseBtn);
+      buttonsContainer.appendChild(fastForwardBtn);
+      buttonsContainer.appendChild(exitFsBtn);
+      touchControls.appendChild(buttonsContainer);
 
       // Add to player container
       player.elements.container.appendChild(touchControls);
@@ -580,10 +633,13 @@ export default function PlaylistPlayer() {
       player.on('enterfullscreen', () => {
         touchControls.style.display = 'block';
         updatePlayPauseIcon();
+        // Show buttons initially when entering fullscreen
+        showButtons();
       });
 
       player.on('exitfullscreen', () => {
         touchControls.style.display = 'none';
+        hideButtons();
       });
     }
 
