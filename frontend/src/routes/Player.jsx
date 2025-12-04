@@ -253,19 +253,64 @@ export default function Player() {
             </svg>
           `;
 
+          // Exit fullscreen button (shows at top center)
+          const exitFsButton = document.createElement('div');
+          exitFsButton.style.cssText = `
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            cursor: pointer;
+            z-index: 200;
+          `;
+          exitFsButton.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="white" style="width: 24px; height: 24px;">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+            <span>Exit Fullscreen</span>
+          `;
+
           leftZone.appendChild(leftFeedback);
           centerZone.appendChild(centerFeedback);
           rightZone.appendChild(rightFeedback);
+          touchOverlay.appendChild(exitFsButton);
 
           // Double-tap detection
           let lastTapTime = 0;
           let lastTapZone = null;
+          let exitButtonTimeout = null;
 
           const showFeedback = (feedbackElement, duration = 500) => {
             feedbackElement.style.opacity = '1';
             setTimeout(() => {
               feedbackElement.style.opacity = '0';
             }, duration);
+          };
+
+          const showExitButton = () => {
+            exitFsButton.style.opacity = '1';
+            exitFsButton.style.pointerEvents = 'auto';
+
+            if (exitButtonTimeout) clearTimeout(exitButtonTimeout);
+            exitButtonTimeout = setTimeout(() => {
+              exitFsButton.style.opacity = '0';
+              exitFsButton.style.pointerEvents = 'none';
+            }, 1500); // Show for 1.5 seconds (1 second longer than feedback)
           };
 
           const updateCenterIcon = () => {
@@ -279,6 +324,12 @@ export default function Player() {
               pauseIcon.style.display = 'none';
             }
           };
+
+          // Exit button click handler
+          exitFsButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            player.fullscreen.exit();
+          });
 
           // Handle left zone double-tap (rewind)
           leftZone.addEventListener('click', (e) => {
@@ -314,12 +365,14 @@ export default function Player() {
               player.togglePlay();
               updateCenterIcon();
               showFeedback(centerFeedback);
+              showExitButton(); // Show exit button on double tap
               lastTapTime = 0;
               lastTapZone = null;
             } else {
-              // Single tap - toggle controls
+              // Single tap - toggle controls and show exit button
               lastTapTime = now;
               lastTapZone = 'center';
+              showExitButton(); // Show exit button on single tap
               if (player.elements.controls) {
                 const isHidden = player.elements.controls.style.opacity === '0';
                 player.elements.controls.style.opacity = isHidden ? '1' : '0';
