@@ -353,6 +353,13 @@ export default function PlaylistPlayer() {
     // First time: Initialize Plyr
     console.log('Initializing Plyr with source:', videoSrc);
 
+    // Detect mobile devices first for clickToPlay config
+    const isMobileDevice = () => {
+      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return hasCoarsePointer && isMobileUA;
+    };
+
     const player = new Plyr(videoRef.current, {
       controls: [
         'play-large',
@@ -372,7 +379,7 @@ export default function PlaylistPlayer() {
       speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
       seekTime: 10,
       autoplay: true,
-      clickToPlay: false, // Disable click-to-play to prevent interfering with controls
+      clickToPlay: !isMobileDevice(), // Enable click-to-play on desktop, disable on mobile
       hideControls: false, // Force controls to stay visible
       keyboard: { focused: true, global: false },
       fullscreen: { enabled: true, fallback: true, iosNative: true, container: null },
@@ -388,276 +395,226 @@ export default function PlaylistPlayer() {
     };
 
     // ===== MOBILE TOUCH CONTROLS =====
-    // Add visible touch controls for mobile devices only
-    const isMobileDevice = () => {
-      // Must have coarse pointer (touch) AND be a mobile device
-      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const isMobile = hasCoarsePointer && isMobileUA;
-      console.log('Mobile touch detection:', isMobile ? 'Mobile device' : 'Desktop/laptop');
-      return isMobile;
-    };
+    // Add simple tap-to-show touch controls for mobile devices only
+    if (isMobileDevice()) {
+      console.log('Initializing mobile touch controls');
 
-        if (isMobileDevice()) {
-          // Create touch controls container
-          const touchControls = document.createElement('div');
-          touchControls.className = 'plyr-mobile-controls';
-          touchControls.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 100px;
-            display: none;
-            z-index: 150;
-          `;
+      // Create touch overlay container
+      const touchOverlay = document.createElement('div');
+      touchOverlay.className = 'plyr-touch-overlay';
+      touchOverlay.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 100px;
+        display: none;
+        z-index: 150;
+        -webkit-tap-highlight-color: transparent;
+      `;
 
-          // Create touch zones (invisible clickable areas)
-          const leftZone = document.createElement('div');
-          leftZone.style.cssText = `
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 33.33%;
-            height: 100%;
-            cursor: pointer;
-          `;
+      // Container for floating buttons
+      const buttonContainer = document.createElement('div');
+      buttonContainer.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        pointer-events: none;
+      `;
 
-          const centerZone = document.createElement('div');
-          centerZone.style.cssText = `
-            position: absolute;
-            left: 33.33%;
-            top: 0;
-            width: 33.33%;
-            height: 100%;
-            cursor: pointer;
-          `;
+      // Modern glass-morphism button base style
+      const getButtonStyle = (size = 120) => `
+        position: absolute;
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1.5px solid rgba(255, 255, 255, 0.25);
+        border-radius: 50%;
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+        width: ${size}px;
+        height: ${size}px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 13px;
+        font-weight: 600;
+        opacity: 0;
+        transform: scale(0.8);
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        pointer-events: auto;
+        cursor: pointer;
+      `;
 
-          const rightZone = document.createElement('div');
-          rightZone.style.cssText = `
-            position: absolute;
-            right: 0;
-            top: 0;
-            width: 33.33%;
-            height: 100%;
-            cursor: pointer;
-          `;
+      let activeTimeout = null;
 
-          // Modern glass-morphism button style
-          const modernButtonStyle = `
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            width: 100px;
-            height: 100px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 13px;
-            font-weight: 600;
-            opacity: 0;
-            transition: all 0.3s ease;
-            pointer-events: none;
-          `;
+      // Create buttons
+      const createButton = (type, html, size = 120) => {
+        const btn = document.createElement('button');
+        btn.className = `plyr-touch-btn plyr-touch-btn--${type}`;
+        btn.innerHTML = html;
+        btn.style.cssText = getButtonStyle(size);
+        return btn;
+      };
 
-          // Rewind button
-          const rewindBtn = document.createElement('button');
-          rewindBtn.className = 'plyr-mobile-btn plyr-mobile-btn--rewind';
-          rewindBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 36px; height: 36px;">
-              <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
-            </svg>
-            <span style="margin-top: 4px;">10s</span>
-          `;
-          rewindBtn.style.cssText = `${modernButtonStyle}
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-          `;
+      const playPauseBtn = createButton('play', `
+        <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 50px; height: 50px;">
+          <polygon points="8 5 19 12 8 19 8 5"/>
+        </svg>
+        <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 50px; height: 50px; display: none;">
+          <rect x="7" y="4" width="3" height="16" rx="1.5"/>
+          <rect x="14" y="4" width="3" height="16" rx="1.5"/>
+        </svg>
+      `, 130);
 
-          // Play/Pause button
-          const playPauseBtn = document.createElement('button');
-          playPauseBtn.className = 'plyr-mobile-btn plyr-mobile-btn--play';
-          playPauseBtn.innerHTML = `
-            <svg class="play-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 48px; height: 48px;">
-              <polygon points="8 5 19 12 8 19 8 5"/>
-            </svg>
-            <svg class="pause-icon" viewBox="0 0 24 24" fill="currentColor" style="width: 48px; height: 48px; display: none;">
-              <rect x="7" y="4" width="3" height="16" rx="1.5"/>
-              <rect x="14" y="4" width="3" height="16" rx="1.5"/>
-            </svg>
-          `;
-          playPauseBtn.style.cssText = `${modernButtonStyle}
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-            width: 110px;
-            height: 110px;
-          `;
+      const rewindBtn = createButton('rewind', `
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
+          <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
+        </svg>
+        <span style="margin-top: 4px;">10s</span>
+      `);
 
-          // Fast forward button
-          const fastForwardBtn = document.createElement('button');
-          fastForwardBtn.className = 'plyr-mobile-btn plyr-mobile-btn--forward';
-          fastForwardBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 36px; height: 36px;">
-              <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
-            </svg>
-            <span style="margin-top: 4px;">10s</span>
-          `;
-          fastForwardBtn.style.cssText = `${modernButtonStyle}
-            position: absolute;
-            left: 50%;
-            top: 50%;
-            transform: translate(-50%, -50%);
-          `;
+      const forwardBtn = createButton('forward', `
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 40px; height: 40px;">
+          <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+        </svg>
+        <span style="margin-top: 4px;">10s</span>
+      `);
 
-          // Exit fullscreen button (shows in all zones)
-          const exitFsBtn = document.createElement('button');
-          exitFsBtn.className = 'plyr-mobile-btn plyr-mobile-btn--exit';
-          exitFsBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 32px; height: 32px;">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-            <span style="margin-top: 2px; font-size: 11px;">Exit</span>
-          `;
-          exitFsBtn.style.cssText = `${modernButtonStyle}
-            position: absolute;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-          `;
+      const exitBtn = createButton('exit', `
+        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 36px; height: 36px;">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+        <span style="margin-top: 2px; font-size: 11px;">Exit</span>
+      `, 110);
 
-          // Add buttons to zones
-          leftZone.appendChild(rewindBtn.cloneNode(true));
-          leftZone.appendChild(exitFsBtn.cloneNode(true));
-          centerZone.appendChild(playPauseBtn);
-          centerZone.appendChild(exitFsBtn.cloneNode(true));
-          rightZone.appendChild(fastForwardBtn.cloneNode(true));
-          rightZone.appendChild(exitFsBtn);
+      buttonContainer.appendChild(playPauseBtn);
+      buttonContainer.appendChild(rewindBtn);
+      buttonContainer.appendChild(forwardBtn);
+      buttonContainer.appendChild(exitBtn);
 
-          // Get references to the cloned buttons
-          const leftRewindBtn = leftZone.querySelector('.plyr-mobile-btn--rewind');
-          const leftExitBtn = leftZone.querySelector('.plyr-mobile-btn--exit');
-          const centerExitBtn = centerZone.querySelector('.plyr-mobile-btn--exit');
-          const rightForwardBtn = rightZone.querySelector('.plyr-mobile-btn--forward');
+      // Function to show button(s) at location
+      const showButton = (button, x, y) => {
+        button.style.left = `${x}px`;
+        button.style.top = `${y}px`;
+        button.style.transform = 'translate(-50%, -50%) scale(1)';
+        button.style.opacity = '1';
+        button.style.pointerEvents = 'auto';
+      };
 
-          let hideTimeout;
+      const hideAllButtons = () => {
+        [playPauseBtn, rewindBtn, forwardBtn, exitBtn].forEach(btn => {
+          btn.style.opacity = '0';
+          btn.style.transform = 'translate(-50%, -50%) scale(0.8)';
+          btn.style.pointerEvents = 'none';
+        });
+      };
 
-          const showZoneButtons = (zone) => {
-            const buttons = zone.querySelectorAll('.plyr-mobile-btn');
-            buttons.forEach(btn => {
-              btn.style.opacity = '1';
-              btn.style.pointerEvents = 'auto';
-            });
+      const scheduleHide = () => {
+        if (activeTimeout) clearTimeout(activeTimeout);
+        activeTimeout = setTimeout(hideAllButtons, 1000);
+      };
 
-            if (hideTimeout) clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(() => {
-              buttons.forEach(btn => {
-                btn.style.opacity = '0';
-                btn.style.pointerEvents = 'none';
-              });
-            }, 2000);
-          };
-
-          const hideAllButtons = () => {
-            if (hideTimeout) clearTimeout(hideTimeout);
-            document.querySelectorAll('.plyr-mobile-btn').forEach(btn => {
-              btn.style.opacity = '0';
-              btn.style.pointerEvents = 'none';
-            });
-          };
-
-          // Zone click handlers
-          leftZone.addEventListener('click', (e) => {
-            if (!e.target.closest('.plyr-mobile-btn')) {
-              showZoneButtons(leftZone);
-            }
-          });
-
-          centerZone.addEventListener('click', (e) => {
-            if (!e.target.closest('.plyr-mobile-btn')) {
-              showZoneButtons(centerZone);
-            }
-          });
-
-          rightZone.addEventListener('click', (e) => {
-            if (!e.target.closest('.plyr-mobile-btn')) {
-              showZoneButtons(rightZone);
-            }
-          });
-
-          // Button click handlers
-          const handleRewind = (e) => {
-            e.stopPropagation();
-            player.rewind(10);
-            showZoneButtons(leftZone);
-          };
-
-          const handlePlayPause = (e) => {
-            e.stopPropagation();
-            player.togglePlay();
-            showZoneButtons(centerZone);
-          };
-
-          const handleForward = (e) => {
-            e.stopPropagation();
-            player.forward(10);
-            showZoneButtons(rightZone);
-          };
-
-          const handleExit = (e) => {
-            e.stopPropagation();
-            player.fullscreen.exit();
-          };
-
-          leftRewindBtn.addEventListener('click', handleRewind);
-          leftExitBtn.addEventListener('click', handleExit);
-          playPauseBtn.addEventListener('click', handlePlayPause);
-          centerExitBtn.addEventListener('click', handleExit);
-          rightForwardBtn.addEventListener('click', handleForward);
-          exitFsBtn.addEventListener('click', handleExit);
-
-          // Update play/pause icon
-          const updatePlayPauseIcon = () => {
-            const playIcon = playPauseBtn.querySelector('.play-icon');
-            const pauseIcon = playPauseBtn.querySelector('.pause-icon');
-            if (player.playing) {
-              playIcon.style.display = 'none';
-              pauseIcon.style.display = 'block';
-            } else {
-              playIcon.style.display = 'block';
-              pauseIcon.style.display = 'none';
-            }
-          };
-
-          player.on('play', updatePlayPauseIcon);
-          player.on('pause', updatePlayPauseIcon);
-          player.on('playing', updatePlayPauseIcon);
-
-          // Assemble touch controls
-          touchControls.appendChild(leftZone);
-          touchControls.appendChild(centerZone);
-          touchControls.appendChild(rightZone);
-          player.elements.container.appendChild(touchControls);
-
-          // Show/hide based on fullscreen
-          player.on('enterfullscreen', () => {
-            touchControls.style.display = 'block';
-            updatePlayPauseIcon();
-          });
-
-          player.on('exitfullscreen', () => {
-            touchControls.style.display = 'none';
-            hideAllButtons();
-          });
+      // Update play/pause icon
+      const updatePlayPauseIcon = () => {
+        const playIcon = playPauseBtn.querySelector('.play-icon');
+        const pauseIcon = playPauseBtn.querySelector('.pause-icon');
+        if (player.playing) {
+          playIcon.style.display = 'none';
+          pauseIcon.style.display = 'block';
+        } else {
+          playIcon.style.display = 'block';
+          pauseIcon.style.display = 'none';
         }
+      };
+
+      // Touch overlay click handler
+      touchOverlay.addEventListener('click', (e) => {
+        const rect = touchOverlay.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const width = rect.width;
+        const height = rect.height;
+
+        hideAllButtons();
+
+        // Top area (top 20% of screen) - show exit button only
+        if (y < height * 0.2) {
+          showButton(exitBtn, x, y);
+          scheduleHide();
+          return;
+        }
+
+        // Left area (left 30% excluding top)
+        if (x < width * 0.3) {
+          showButton(rewindBtn, x, y);
+          scheduleHide();
+          return;
+        }
+
+        // Right area (right 30% excluding top)
+        if (x > width * 0.7) {
+          showButton(forwardBtn, x, y);
+          scheduleHide();
+          return;
+        }
+
+        // Center area - show play/pause + exit above it
+        updatePlayPauseIcon();
+        showButton(playPauseBtn, x, y);
+        showButton(exitBtn, x, y - 130); // Show exit 130px above play/pause
+        scheduleHide();
+      });
+
+      // Button actions
+      playPauseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        player.togglePlay();
+        updatePlayPauseIcon();
+        scheduleHide();
+      });
+
+      rewindBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        player.rewind(10);
+        scheduleHide();
+      });
+
+      forwardBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        player.forward(10);
+        scheduleHide();
+      });
+
+      exitBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        player.fullscreen.exit();
+      });
+
+      // Listen to player events
+      player.on('play', updatePlayPauseIcon);
+      player.on('pause', updatePlayPauseIcon);
+      player.on('playing', updatePlayPauseIcon);
+
+      // Assemble and attach
+      touchOverlay.appendChild(buttonContainer);
+      player.elements.container.appendChild(touchOverlay);
+
+      // Show/hide overlay in fullscreen
+      player.on('enterfullscreen', () => {
+        touchOverlay.style.display = 'block';
+        updatePlayPauseIcon();
+      });
+
+      player.on('exitfullscreen', () => {
+        touchOverlay.style.display = 'none';
+        hideAllButtons();
+        if (activeTimeout) clearTimeout(activeTimeout);
+      });
+    }
 
     // ===== FORCE CONTROLS TO STAY VISIBLE IN FULLSCREEN =====
     // Ensure Plyr controls remain visible and clickable in fullscreen on desktop
