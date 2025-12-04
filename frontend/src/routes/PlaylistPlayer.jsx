@@ -615,8 +615,26 @@ export default function PlaylistPlayer() {
           player.elements.controls.style.opacity = '1';
           player.elements.controls.style.pointerEvents = 'auto';
           player.elements.controls.style.display = 'flex';
-          player.elements.controls.style.zIndex = '999';
-          console.log('Forced controls visible:', player.elements.controls);
+          player.elements.controls.style.zIndex = '9999';
+
+          // Force pointer-events on ALL control elements
+          const allControls = player.elements.controls.querySelectorAll('button, input, [role="slider"]');
+          allControls.forEach(control => {
+            control.style.pointerEvents = 'auto';
+            control.style.cursor = 'pointer';
+          });
+
+          // Disable pointer events on video wrapper to prevent blocking
+          if (player.elements.wrapper) {
+            player.elements.wrapper.style.pointerEvents = 'none';
+          }
+
+          // Keep video element itself interactive
+          if (player.media) {
+            player.media.style.pointerEvents = 'auto';
+          }
+
+          console.log('Forced controls visible and clickable:', player.elements.controls);
         }
       }, 100);
     });

@@ -786,6 +786,16 @@ select {
   cursor: pointer !important;
 }
 
+.plyr--fullscreen .plyr__progress input[type="range"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+.plyr--fullscreen .plyr__volume input[type="range"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
 /* Ensure video doesn't capture clicks over controls in fullscreen */
 .plyr--fullscreen .plyr__video-wrapper {
   pointer-events: none !important;
@@ -793,6 +803,32 @@ select {
 
 /* But keep the actual video element interactive for native controls fallback */
 .plyr--fullscreen .plyr__video-wrapper video {
+  pointer-events: auto !important;
+}
+
+/* Disable pointer events on poster in fullscreen so it doesn't block controls */
+.plyr--fullscreen .plyr__poster {
+  pointer-events: none !important;
+}
+
+/* Disable pointer events on captions wrapper in fullscreen */
+.plyr--fullscreen .plyr__captions {
+  pointer-events: none !important;
+}
+
+/* Ensure the entire plyr container allows clicks to pass through to controls */
+.plyr--fullscreen {
+  pointer-events: auto !important;
+}
+
+/* But disable on all children EXCEPT controls */
+.plyr--fullscreen > *:not(.plyr__controls) {
+  pointer-events: none !important;
+}
+
+/* Re-enable on the controls */
+.plyr--fullscreen .plyr__controls,
+.plyr--fullscreen .plyr__controls * {
   pointer-events: auto !important;
 }
 
