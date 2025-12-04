@@ -816,19 +816,17 @@ select {
   pointer-events: none !important;
 }
 
-/* Ensure the entire plyr container allows clicks to pass through to controls */
-.plyr--fullscreen {
-  pointer-events: auto !important;
-}
-
-/* But disable on all children EXCEPT controls */
-.plyr--fullscreen > *:not(.plyr__controls) {
+/* CRITICAL FIX: Disable pointer events on everything in fullscreen except controls */
+/* This is the nuclear option to ensure ONLY controls receive clicks */
+.plyr--fullscreen * {
   pointer-events: none !important;
 }
 
-/* Re-enable on the controls */
+/* Re-enable ONLY on controls and their children */
 .plyr--fullscreen .plyr__controls,
-.plyr--fullscreen .plyr__controls * {
+.plyr--fullscreen .plyr__controls *,
+.plyr--fullscreen .plyr__menu,
+.plyr--fullscreen .plyr__menu * {
   pointer-events: auto !important;
 }
 
