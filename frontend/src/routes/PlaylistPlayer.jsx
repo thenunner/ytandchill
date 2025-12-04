@@ -483,6 +483,9 @@ export default function PlaylistPlayer() {
           touchOverlay.appendChild(exitBtn);
 
           let hideTimeout;
+          let currentVisibleButton = null;
+          let lastTapTime = 0;
+          let lastTapZone = null;
 
           const showButton = (button) => {
             // Hide all buttons first
@@ -501,6 +504,8 @@ export default function PlaylistPlayer() {
             else if (button === exitBtn) button.style.transform = 'translate(-50%, 0) scale(1)';
             else button.style.transform = 'translate(-50%, -50%) scale(1)';
 
+            currentVisibleButton = button;
+
             if (hideTimeout) clearTimeout(hideTimeout);
             hideTimeout = setTimeout(() => {
               button.style.opacity = '0';
@@ -508,6 +513,7 @@ export default function PlaylistPlayer() {
               else if (button === forwardBtn) button.style.transform = 'translate(50%, -50%) scale(0.9)';
               else if (button === exitBtn) button.style.transform = 'translate(-50%, 0) scale(0.9)';
               else button.style.transform = 'translate(-50%, -50%) scale(0.9)';
+              currentVisibleButton = null;
             }, 1500);
           };
 
@@ -525,56 +531,64 @@ export default function PlaylistPlayer() {
 
           // Detect which zone was tapped
           touchOverlay.addEventListener('click', (e) => {
-            if (e.target.closest('.plyr-mobile-btn')) return; // Clicked a button, not the overlay
-
             const rect = touchOverlay.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
             const width = rect.width;
             const height = rect.height;
 
-            // Top zone (upper 20%) - show exit button
+            const currentTime = Date.now();
+            const isDoubleTap = (currentTime - lastTapTime) < 300;
+
+            let zone = null;
+            let button = null;
+            let action = null;
+
+            // Determine zone
             if (y < height * 0.2) {
-              showButton(exitBtn);
+              zone = 'exit';
+              button = exitBtn;
+              action = () => player.fullscreen.exit();
+            } else if (x < width * 0.3) {
+              zone = 'rewind';
+              button = rewindBtn;
+              action = () => player.rewind(10);
+            } else if (x > width * 0.7) {
+              zone = 'forward';
+              button = forwardBtn;
+              action = () => player.forward(10);
+            } else {
+              zone = 'center';
+              button = playPauseBtn;
+              action = () => player.togglePlay();
             }
-            // Left zone (30%)
-            else if (x < width * 0.3) {
-              showButton(rewindBtn);
-            }
-            // Right zone (30%)
-            else if (x > width * 0.7) {
-              showButton(forwardBtn);
-            }
-            // Center zone
-            else {
+
+            // Center zone = instant action
+            if (zone === 'center') {
+              action();
               updatePlayPauseIcon();
-              showButton(playPauseBtn);
+              showButton(button);
             }
-          });
+            // Other zones: show on first tap, action on second tap or double-tap
+            else {
+              const isSameZone = lastTapZone === zone;
 
-          // Button actions
-          rewindBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            player.rewind(10);
-            showButton(rewindBtn);
-          });
+              if (isDoubleTap && isSameZone) {
+                // Double tap = instant action
+                action();
+                showButton(button);
+              } else if (currentVisibleButton === button) {
+                // Button already visible, second tap = action
+                action();
+                showButton(button);
+              } else {
+                // First tap = show button only
+                showButton(button);
+              }
+            }
 
-          playPauseBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            player.togglePlay();
-            updatePlayPauseIcon();
-            showButton(playPauseBtn);
-          });
-
-          forwardBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            player.forward(10);
-            showButton(forwardBtn);
-          });
-
-          exitBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            player.fullscreen.exit();
+            lastTapTime = currentTime;
+            lastTapZone = zone;
           });
 
           player.on('play', updatePlayPauseIcon);
@@ -586,7 +600,7 @@ export default function PlaylistPlayer() {
           // Show/hide overlay in fullscreen
           player.on('enterfullscreen', () => {
             touchOverlay.style.display = 'block';
-            updateCenterIcon();
+            updatePlayPauseIcon();
           });
 
           player.on('exitfullscreen', () => {

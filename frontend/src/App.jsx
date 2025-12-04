@@ -126,25 +126,23 @@ function App() {
 
     if (isMobile) {
       // Save current path to localStorage whenever it changes
-      if (location.pathname !== '/login' && location.pathname !== '/setup') {
+      if (location.pathname !== '/login' && location.pathname !== '/setup' && location.pathname !== '/') {
         localStorage.setItem('last-mobile-path', location.pathname + location.search);
       }
     }
   }, [location.pathname, location.search]);
 
-  // Restore last page on mobile app load
+  // Restore last page on mobile when on root path
   useEffect(() => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const hasRestoredPath = sessionStorage.getItem('path-restored');
 
-    if (isMobile && !hasRestoredPath && isAuthenticated) {
+    if (isMobile && isAuthenticated && location.pathname === '/') {
       const lastPath = localStorage.getItem('last-mobile-path');
-      if (lastPath && lastPath !== location.pathname + location.search) {
+      if (lastPath && lastPath !== '/') {
         navigate(lastPath, { replace: true });
-        sessionStorage.setItem('path-restored', 'true');
       }
     }
-  }, [isAuthenticated, navigate, location.pathname, location.search]);
+  }, [isAuthenticated, location.pathname, navigate]);
 
   // Auto-navigate to queue tab on initial app load if there are queue items
   useEffect(() => {
