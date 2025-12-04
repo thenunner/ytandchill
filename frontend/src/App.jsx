@@ -132,14 +132,16 @@ function App() {
     }
   }, [location.pathname, location.search]);
 
-  // Restore last page on mobile when on root path
+  // Restore last page on mobile when on root path (only on initial load)
   useEffect(() => {
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const hasRestoredPath = sessionStorage.getItem('mobile-path-restored');
 
-    if (isMobile && isAuthenticated && location.pathname === '/') {
+    if (isMobile && isAuthenticated && location.pathname === '/' && !hasRestoredPath) {
       const lastPath = localStorage.getItem('last-mobile-path');
       if (lastPath && lastPath !== '/') {
         navigate(lastPath, { replace: true });
+        sessionStorage.setItem('mobile-path-restored', 'true');
       }
     }
   }, [isAuthenticated, location.pathname, navigate]);
