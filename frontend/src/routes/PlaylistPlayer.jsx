@@ -388,9 +388,23 @@ export default function PlaylistPlayer() {
     };
 
     // ===== FULLSCREEN TOUCH CONTROLS =====
-    // TEMPORARILY DISABLED - Testing if overlay is causing control bar issues
+    // Detect if device's PRIMARY input is touch (not mouse)
     const isTouchDevice = () => {
-      return false; // Disable touch overlay entirely for now
+      // Desktop/laptop with mouse reports 'pointer: fine'
+      const hasFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+      // If device has fine pointer (mouse), it's NOT a touch device
+      if (hasFinePointer) {
+        return false;
+      }
+
+      // Check if primary pointer is coarse (touch)
+      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+
+      // Also check for mobile user agent as fallback
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+      return hasCoarsePointer || isMobileUA;
     };
 
     // Only create touch overlay on touch devices
