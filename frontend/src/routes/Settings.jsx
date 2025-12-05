@@ -852,7 +852,7 @@ export default function Settings() {
                   return (
                     <>
                       {/* Desktop (lg+): Single row with grouped boxes [1,2] [spacer] [3,4] [Save] */}
-                      <div className="hidden lg:flex lg:items-center gap-6">
+                      <div className="hidden lg:flex lg:items-center lg:justify-center gap-6">
                         {/* Group 1: Boxes 1-2 */}
                         <div className="flex items-center gap-6">
                           {renderTimeBox(displayTimes[0], 0)}
@@ -878,7 +878,7 @@ export default function Settings() {
                       </div>
 
                       {/* Tablet (sm to lg): 2x2 grid with proper grouping [1,2] / [3,4] [Save] */}
-                      <div className="hidden sm:flex lg:hidden items-center gap-6">
+                      <div className="hidden sm:flex lg:hidden items-center justify-center gap-6">
                         <div className="flex flex-col gap-4">
                           <div className="flex items-center justify-center gap-6">
                             {renderTimeBox(displayTimes[0], 0)}
