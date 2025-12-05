@@ -510,7 +510,7 @@ export default function Library() {
     <div className="space-y-4 animate-fade-in">
 
       {/* Header */}
-      <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg -mx-4 px-4 pb-4 mb-4">
+      <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg pb-4 mb-4">
         {activeTab === 'channels' ? (
           /* Channels: Responsive layout - wraps on mobile */
           <div className="flex flex-wrap items-center gap-3 md:gap-4">

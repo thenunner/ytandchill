@@ -218,7 +218,7 @@ export default function Videos() {
   };
 
   return (
-    <div className="px-4 pb-4 space-y-4">
+    <div className="pb-4 space-y-4">
       {/* Scan Form */}
       <form onSubmit={handleScan} className="bg-dark-secondary rounded-lg p-4">
         <div className="flex flex-col sm:flex-row gap-3">

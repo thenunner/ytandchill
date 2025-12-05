@@ -2,8 +2,9 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
-import { usePlaylist, useUpdateVideo, usePlaylists } from '../api/queries';
+import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 
 export default function PlaylistPlayer() {
   const { playlistId, categoryId } = useParams();
@@ -32,6 +33,10 @@ export default function PlaylistPlayer() {
   const preloadVideoRef = useRef(null); // Hidden video for preloading next
 
   const updateVideo = useUpdateVideo();
+  const deleteVideo = useDeleteVideo();
+
+  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch single playlist videos
   const { data: singlePlaylistData } = usePlaylist(
@@ -241,6 +246,40 @@ export default function PlaylistPlayer() {
     setCurrentIndex(index);
     setShowMobileQueue(false);
   }, []);
+
+  const toggleCurrentVideoWatched = useCallback(async () => {
+    if (!currentVideo) return;
+    try {
+      await updateVideo.mutateAsync({
+        id: currentVideo.id,
+        data: { watched: !currentVideo.watched }
+      });
+      showNotification(
+        !currentVideo.watched ? 'Marked as watched' : 'Marked as unwatched',
+        'success'
+      );
+    } catch (error) {
+      showNotification(error.message, 'error');
+    }
+  }, [currentVideo, updateVideo, showNotification]);
+
+  const handleDeleteCurrentVideo = useCallback(async () => {
+    if (!currentVideo) return;
+    try {
+      showNotification('Deleting video...', 'info', { persistent: true });
+      await deleteVideo.mutateAsync(currentVideo.id);
+      showNotification('Video deleted', 'success');
+      setShowDeleteConfirm(false);
+      // Auto-advance to next video or go back if last video
+      if (finalVideos.length > 1) {
+        goToNext();
+      } else {
+        navigate(-1);
+      }
+    } catch (error) {
+      showNotification(error.message || 'Failed to delete video', 'error');
+    }
+  }, [currentVideo, deleteVideo, showNotification, finalVideos.length, goToNext, navigate]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -927,47 +966,6 @@ export default function PlaylistPlayer() {
               <line x1="3" y1="18" x2="3.01" y2="18"></line>
             </svg>
           </button>
-
-          {/* Shuffle Toggle */}
-          <button
-            onClick={toggleShuffle}
-            className={`p-3 rounded-lg border transition-all ${
-              isShuffled
-                ? 'bg-accent/20 border-accent text-accent-text'
-                : 'bg-dark-secondary border-dark-border text-text-secondary hover:text-text-primary hover:border-dark-border-light'
-            }`}
-            aria-label={`Shuffle ${isShuffled ? 'on' : 'off'}`}
-            aria-pressed={isShuffled}
-            title="Shuffle (S)"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <polyline points="16 3 21 3 21 8"></polyline>
-              <line x1="4" y1="20" x2="21" y2="3"></line>
-              <polyline points="21 16 21 21 16 21"></polyline>
-              <line x1="15" y1="15" x2="21" y2="21"></line>
-              <line x1="4" y1="4" x2="9" y2="9"></line>
-            </svg>
-          </button>
-
-          {/* Loop Toggle */}
-          <button
-            onClick={toggleLoop}
-            className={`p-3 rounded-lg border transition-all ${
-              isLooping
-                ? 'bg-accent/20 border-accent text-accent-text'
-                : 'bg-dark-secondary border-dark-border text-text-secondary hover:text-text-primary hover:border-dark-border-light'
-            }`}
-            aria-label={`Loop ${isLooping ? 'on' : 'off'}`}
-            aria-pressed={isLooping}
-            title="Loop (L)"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <polyline points="17 1 21 5 17 9"></polyline>
-              <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-              <polyline points="7 23 3 19 7 15"></polyline>
-              <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-            </svg>
-          </button>
         </div>
       </div>
 
@@ -1003,6 +1001,78 @@ export default function PlaylistPlayer() {
 
         {/* Player Area */}
         <div className="flex-1 flex flex-col min-w-0">
+          {/* Centered Control Buttons */}
+          <div className="flex justify-center gap-3 mb-4">
+            <button
+              onClick={() => navigate(-1)}
+              className="icon-btn hover:bg-accent hover:border-accent"
+              title="Back"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+
+            <button
+              onClick={() => setShowPlaylistMenu(true)}
+              className="icon-btn hover:bg-accent hover:border-accent"
+              title="Add to playlist"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 5v14m-7-7h14"></path>
+              </svg>
+            </button>
+
+            <button
+              onClick={toggleCurrentVideoWatched}
+              className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo?.watched ? 'bg-accent' : ''}`}
+              title={currentVideo?.watched ? 'Mark as unwatched' : 'Mark as watched'}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="icon-btn hover:bg-red-600 hover:border-red-700"
+              title="Delete current video"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+
+            <button
+              onClick={toggleShuffle}
+              className={`icon-btn hover:bg-accent hover:border-accent ${isShuffled ? 'bg-accent' : ''}`}
+              title="Toggle shuffle (S)"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+            </button>
+
+            <button
+              onClick={toggleLoop}
+              className={`icon-btn hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent' : ''}`}
+              title="Toggle loop (L)"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="17 1 21 5 17 9"></polyline>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <polyline points="7 23 3 19 7 15"></polyline>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+              </svg>
+            </button>
+          </div>
+
           {/* Video Player */}
           <div className="bg-black rounded-xl overflow-hidden min-h-[300px] md:min-h-[400px]">
             <video
@@ -1122,6 +1192,43 @@ export default function PlaylistPlayer() {
                   />
                 );
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add to Playlist Menu */}
+      {showPlaylistMenu && currentVideo && (
+        <AddToPlaylistMenu
+          videoIds={[currentVideo.id]}
+          onClose={() => setShowPlaylistMenu(false)}
+        />
+      )}
+
+      {/* Delete Confirmation Dialog */}
+      {showDeleteConfirm && currentVideo && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
+            <h3 className="text-xl font-bold text-text-primary mb-3">Delete Video?</h3>
+            <p className="text-text-secondary mb-4">
+              Are you sure you want to delete "<span className="text-text-primary font-semibold">{currentVideo.title}</span>"?
+            </p>
+            <p className="text-sm text-yellow-400 mb-6">
+              ⚠️ This will permanently delete the video file from disk. This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="btn btn-secondary flex-1"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteCurrentVideo}
+                className="btn btn-danger flex-1"
+              >
+                Delete
+              </button>
             </div>
           </div>
         </div>

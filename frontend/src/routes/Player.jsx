@@ -614,110 +614,54 @@ export default function Player() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Player Layout - Responsive: vertical on mobile, horizontal on desktop */}
-      <div className="flex flex-col md:flex-row gap-4">
-        {/* Left Action Buttons - Hidden on mobile */}
-        <div className="hidden md:flex flex-col gap-3 flex-shrink-0">
-          {/* Back Arrow */}
-          <button
-            onClick={handleBack}
-            className="icon-btn hover:bg-accent hover:border-accent"
-            title="Back"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
+      {/* Centered Control Buttons */}
+      <div className="flex justify-center gap-3 mb-4">
+        <button
+          onClick={handleBack}
+          className="icon-btn hover:bg-accent hover:border-accent"
+          title="Back"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+        </button>
 
-          <button
-            onClick={toggleWatched}
-            className={`icon-btn hover:bg-accent hover:border-accent ${video.watched ? 'bg-accent hover:bg-accent' : ''}`}
-            title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </button>
+        <button
+          ref={addToPlaylistButtonRef}
+          onClick={() => setShowPlaylistMenu(true)}
+          className="icon-btn hover:bg-accent hover:border-accent"
+          title="Add to playlist"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 5v14m-7-7h14"></path>
+          </svg>
+        </button>
 
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="icon-btn hover:bg-red-600 hover:border-red-700"
-            title="Delete video"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-            </svg>
-          </button>
+        <button
+          onClick={toggleWatched}
+          className={`icon-btn hover:bg-accent hover:border-accent ${video.watched ? 'bg-accent' : ''}`}
+          title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+            <circle cx="12" cy="12" r="3"></circle>
+          </svg>
+        </button>
 
-          <button
-            ref={addToPlaylistButtonRef}
-            className="icon-btn hover:bg-accent hover:border-accent"
-            title="Add to playlist"
-            onClick={() => setShowPlaylistMenu(true)}
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 5v14m-7-7h14"></path>
-            </svg>
-          </button>
-        </div>
+        <button
+          onClick={() => setShowDeleteConfirm(true)}
+          className="icon-btn hover:bg-red-600 hover:border-red-700"
+          title="Delete video"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+      </div>
 
-        {/* Mobile Action Buttons - Above video on mobile only */}
-        <div className="md:hidden flex justify-center gap-3 mb-4 flex-shrink-0">
-          {/* Back Arrow */}
-          <button
-            onClick={handleBack}
-            className="icon-btn hover:bg-accent hover:border-accent"
-            title="Back"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </button>
-
-          {/* Mark Watched/Unwatched */}
-          <button
-            onClick={toggleWatched}
-            className={`icon-btn hover:bg-accent hover:border-accent ${
-              video.watched ? 'bg-accent/20 border-accent/40 text-accent-text' : ''
-            }`}
-            title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-          </button>
-
-          {/* Delete Video */}
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="icon-btn hover:bg-red-600 hover:border-red-700"
-            title="Delete video"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6"></polyline>
-              <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"></path>
-            </svg>
-          </button>
-
-          {/* Add to Playlist */}
-          <button
-            ref={addToPlaylistButtonRef}
-            onClick={() => setShowPlaylistMenu(true)}
-            className="icon-btn hover:bg-accent hover:border-accent"
-            title="Add to playlist"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </button>
-        </div>
-
-        {/* Player Container */}
-        <div className={`flex-1 w-full ${isTheaterMode ? '' : 'md:max-w-[960px]'} transition-all duration-300`}>
+      {/* Player Container */}
+      <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
           <div className="bg-black rounded-xl overflow-hidden shadow-card-hover min-h-[300px] md:min-h-[540px]">
             <video
               ref={videoRef}
@@ -797,29 +741,28 @@ export default function Player() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title="Delete Video"
-        message={`Are you sure you want to delete "${video.title}"? This will permanently remove the video file from your system.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDanger={true}
-      />
-
-      {/* Add to Playlist Menu */}
-      {showPlaylistMenu && (
-        <AddToPlaylistMenu
-          videoId={video.id}
-          video={video}
-          triggerRef={addToPlaylistButtonRef}
-          onClose={() => setShowPlaylistMenu(false)}
+        {/* Delete Confirmation Dialog */}
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+          title="Delete Video"
+          message={`Are you sure you want to delete "${video.title}"? This will permanently remove the video file from your system.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDanger={true}
         />
-      )}
+
+        {/* Add to Playlist Menu */}
+        {showPlaylistMenu && (
+          <AddToPlaylistMenu
+            videoId={video.id}
+            video={video}
+            triggerRef={addToPlaylistButtonRef}
+            onClose={() => setShowPlaylistMenu(false)}
+          />
+        )}
     </div>
   );
 }

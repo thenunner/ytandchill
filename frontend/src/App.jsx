@@ -253,8 +253,9 @@ function App() {
       {/* Top Navigation Bar - Hidden on setup/login pages */}
       {!isAuthPage && (
         <header className="bg-dark-primary sticky top-0 z-50">
+          <div className="max-w-7xl mx-auto px-6 lg:px-12 xl:px-16">
         {/* Main Nav Row */}
-        <div className="flex items-center gap-2 md:gap-8 px-4 h-[60px]">
+        <div className="flex items-center gap-2 md:gap-8 h-[60px]">
           {/* Nav Tabs - Compact on mobile (text only), icons on desktop */}
           <nav className="flex gap-1 md:gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory flex-1 md:flex-initial -mx-2 px-2">
             {navLinks.map(link => (
@@ -296,11 +297,12 @@ function App() {
         </div>
 
         {/* Navigation tabs only - status bar moved to footer */}
+          </div>
       </header>
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 w-full ${isAuthPage ? '' : 'px-4 pb-2 max-w-[1600px]'}`}>
+      <main className={`flex-1 w-full ${isAuthPage ? '' : 'max-w-7xl mx-auto px-6 lg:px-12 xl:px-16 pb-2'}`}>
         <Routes>
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
