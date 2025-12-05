@@ -229,10 +229,30 @@ function App() {
     return <Navigate to="/setup" replace />;
   }
 
+  // Hide navigation on setup/login pages
+  const isAuthPage = location.pathname === '/setup' || location.pathname === '/login';
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      // Redirect to login page
+      window.location.replace('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Still redirect even if request fails
+      window.location.replace('/login');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-dark-primary">
-      {/* Top Navigation Bar */}
-      <header className="bg-dark-primary sticky top-0 z-50">
+      {/* Top Navigation Bar - Hidden on setup/login pages */}
+      {!isAuthPage && (
+        <header className="bg-dark-primary sticky top-0 z-50">
         {/* Main Nav Row */}
         <div className="flex items-center gap-2 md:gap-8 px-4 h-[60px]">
           {/* Nav Tabs - Compact on mobile (text only), icons on desktop */}
@@ -259,6 +279,20 @@ function App() {
               </Link>
             ))}
           </nav>
+
+          {/* Logout Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-tertiary hover:bg-accent hover:text-accent-text transition-colors text-text-secondary text-sm flex-shrink-0"
+            title="Logout"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+            <span className="hidden md:inline">Logout</span>
+          </button>
         </div>
 
         {/* Status Bar Row (always visible if there's activity or notifications) */}
@@ -498,6 +532,7 @@ function App() {
           </div>
         </div>
       </header>
+      )}
 
       {/* Main Content */}
       <main className="flex-1 w-full px-4 py-6 max-w-[1600px]">

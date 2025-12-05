@@ -508,6 +508,17 @@ export default function Player() {
 
       // Cleanup
       return () => {
+        // Save current position immediately before cleanup
+        if (plyrInstanceRef.current && video.id) {
+          const currentTime = Math.floor(plyrInstanceRef.current.currentTime);
+          if (currentTime > 0) {
+            updateVideo.mutate({
+              id: video.id,
+              data: { playback_seconds: currentTime },
+            });
+          }
+        }
+
         if (saveProgressTimeout.current) {
           clearTimeout(saveProgressTimeout.current);
         }

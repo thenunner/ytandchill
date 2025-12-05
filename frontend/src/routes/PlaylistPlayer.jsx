@@ -304,6 +304,17 @@ export default function PlaylistPlayer() {
   // Cleanup on unmount only (empty deps = runs once)
   useEffect(() => {
     return () => {
+      // Save current position immediately before cleanup
+      if (plyrInstanceRef.current && currentVideoIdRef.current) {
+        const currentTime = Math.floor(plyrInstanceRef.current.currentTime);
+        if (currentTime > 0) {
+          updateVideo.mutate({
+            id: currentVideoIdRef.current,
+            data: { playback_seconds: currentTime },
+          });
+        }
+      }
+
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
       }

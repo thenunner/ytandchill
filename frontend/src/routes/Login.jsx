@@ -49,20 +49,20 @@ function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-dark-primary">
-      <div className="card p-8 max-w-md w-full">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-text-primary mb-2">
+    <div className="h-screen flex items-center justify-center p-4 bg-dark-primary overflow-hidden">
+      <div className="card p-6 sm:p-8 max-w-md w-full">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-text-primary mb-1 sm:mb-2">
             Login
           </h1>
-          <p className="text-text-secondary text-sm">
+          <p className="text-text-secondary text-xs sm:text-sm">
             Enter your credentials to continue
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1.5 sm:mb-2">
               Username
             </label>
             <input
@@ -70,14 +70,14 @@ function Login() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Enter your username"
-              className="input w-full py-2 px-3"
+              className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1.5 sm:mb-2">
               Password
             </label>
             <input
@@ -85,13 +85,13 @@ function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
-              className="input w-full py-2 px-3"
+              className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
             />
           </div>
 
           {error && (
-            <div className="bg-red-900/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 sm:px-4 sm:py-3 rounded-lg text-xs sm:text-sm">
               {error}
             </div>
           )}
@@ -102,9 +102,9 @@ function Login() {
               id="rememberMe"
               checked={rememberMe}
               onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-accent focus:ring-offset-0"
+              className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-accent focus:ring-offset-0 flex-shrink-0"
             />
-            <label htmlFor="rememberMe" className="text-sm text-text-secondary cursor-pointer">
+            <label htmlFor="rememberMe" className="text-xs sm:text-sm text-text-secondary cursor-pointer">
               Remember me for 1 year (otherwise 90 days)
             </label>
           </div>
@@ -112,7 +112,7 @@ function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn bg-gray-700 hover:bg-gray-600 text-text-primary font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn bg-gray-700 hover:bg-gray-600 text-text-primary font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
             {isLoading ? 'Logging in...' : 'Login'}
           </button>

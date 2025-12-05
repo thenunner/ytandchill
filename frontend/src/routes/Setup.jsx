@@ -68,20 +68,20 @@ function Setup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-dark-primary">
-      <div className="card p-8 max-w-md w-full">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-text-primary mb-2">
+    <div className="h-screen flex items-center justify-center p-4 bg-dark-primary overflow-hidden">
+      <div className="card p-6 sm:p-8 max-w-md w-full">
+        <div className="mb-4 sm:mb-6">
+          <h1 className="text-xl sm:text-2xl font-bold text-text-primary mb-1 sm:mb-2">
             Setup Login Credentials
           </h1>
-          <p className="text-text-secondary text-sm">
+          <p className="text-text-secondary text-xs sm:text-sm">
             Create your username and password
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1.5 sm:mb-2">
               Username
             </label>
             <input
@@ -89,14 +89,14 @@ function Setup() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="Choose a username"
-              className="input w-full py-2 px-3"
+              className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1.5 sm:mb-2">
               Password
             </label>
             <input
@@ -104,13 +104,13 @@ function Setup() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Choose a password"
-              className="input w-full py-2 px-3"
+              className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-text-secondary mb-2">
+            <label className="block text-xs sm:text-sm font-medium text-text-secondary mb-1.5 sm:mb-2">
               Confirm Password
             </label>
             <input
@@ -118,13 +118,13 @@ function Setup() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm your password"
-              className="input w-full py-2 px-3"
+              className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
             />
           </div>
 
           {error && (
-            <div className="bg-red-900/20 border border-red-500 text-red-400 px-4 py-3 rounded-lg text-sm">
+            <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 sm:px-4 sm:py-3 rounded-lg text-xs sm:text-sm">
               {error}
             </div>
           )}
@@ -132,7 +132,7 @@ function Setup() {
           <button
             type="submit"
             disabled={isLoading}
-            className="btn bg-red-700 hover:bg-red-800 text-text-primary font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn bg-red-700 hover:bg-red-800 text-text-primary font-bold w-full disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
             {isLoading ? 'Saving...' : 'Complete Setup'}
           </button>
