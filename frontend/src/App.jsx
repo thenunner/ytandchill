@@ -253,7 +253,7 @@ function App() {
       {/* Top Navigation Bar - Hidden on setup/login pages */}
       {!isAuthPage && (
         <header className="bg-dark-primary sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-6 lg:px-12 xl:px-16">
+          <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
         {/* Main Nav Row */}
         <div className="flex items-center gap-2 md:gap-8 h-[60px]">
           {/* Nav Tabs - Compact on mobile (text only), icons on desktop */}
@@ -302,7 +302,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 w-full ${isAuthPage ? '' : 'max-w-7xl mx-auto px-6 lg:px-12 xl:px-16 pb-2'}`}>
+      <main className={`flex-1 w-full ${isAuthPage ? '' : 'max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16 pb-2'}`}>
         <Routes>
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />

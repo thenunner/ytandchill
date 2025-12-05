@@ -557,12 +557,12 @@ export default function Settings() {
               onClick={() => { setTheme('catppuccin'); showNotification('Theme changed to Catppuccin', 'success'); }}
               className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'catppuccin'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-sky-400 after:to-cyan-300'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-purple-300'
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
             >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#74c7ec' }}></div>
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#89b4fa' }}></div>
               Catppuccin
             </button>
           </div>
@@ -658,7 +658,7 @@ export default function Settings() {
                     ?
                   </button>
                 </h3>
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2 items-center">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -756,9 +756,9 @@ export default function Settings() {
             {autoRefresh && (
               <>
                 {/* Row 1: Mode Selector + Interval Dropdown */}
-                <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-3">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-2 md:gap-3 mb-3">
                   {/* Mode Selector Buttons */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 justify-center">
                     <button
                       onClick={() => handleModeSwitch('times')}
                       className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
@@ -848,7 +848,7 @@ export default function Settings() {
                   return (
                     <>
                       {/* Desktop: Two rows - Row 1: 1 & 3, Row 2: 2 & 4 + Save */}
-                      <div className="hidden md:flex md:flex-col gap-2">
+                      <div className="hidden md:flex md:flex-col gap-2 items-center">
                         {/* Row 1: Time boxes 1 and 3 */}
                         <div className="flex items-center gap-8">
                           {renderTimeBox(displayTimes[0], 0)}
@@ -883,13 +883,15 @@ export default function Settings() {
                         </div>
 
                         {/* Save Button */}
-                        <button
-                          onClick={handleSaveAutoRefresh}
-                          className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3"
-                          style={{ width: 'fit-content' }}
-                        >
-                          Save
-                        </button>
+                        <div className="flex justify-center">
+                          <button
+                            onClick={handleSaveAutoRefresh}
+                            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3"
+                            style={{ width: 'fit-content' }}
+                          >
+                            Save
+                          </button>
+                        </div>
                       </div>
                     </>
                   );

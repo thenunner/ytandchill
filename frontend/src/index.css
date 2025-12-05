@@ -207,10 +207,10 @@
   --text-secondary: 228 24% 79%;   /* Subtext0 #a6adc8 */
   --text-muted: 233 12% 56%;       /* Overlay1 #7f849c */
 
-  /* Accent (Sapphire Blue) */
-  --accent: 199 76% 69%;           /* Sapphire #74c7ec */
-  --accent-hover: 187 67% 73%;     /* Sky #89dceb */
-  --accent-text: 240 21% 6%;       /* Crust #11111b */
+  /* Accent (Blue) */
+  --accent: 217 92% 76%;           /* Blue #89b4fa */
+  --accent-hover: 187 67% 73%;     /* Sky #89dceb - lighter blue for hover */
+  --accent-text: 217 92% 76%;      /* Blue #89b4fa - same as accent for links */
 
   /* Scrollbar */
   --scrollbar-track: 240 21% 15%;  /* Base #1e1e2e */
@@ -218,7 +218,7 @@
   --scrollbar-thumb-hover: 235 16% 30%; /* Surface1 #45475a */
 
   /* Plyr player */
-  --plyr-main: 199 76% 69%;        /* Sapphire #74c7ec */
+  --plyr-main: 217 92% 76%;        /* Blue #89b4fa */
 }
 
 /* Online Light Green Theme */
