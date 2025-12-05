@@ -1164,8 +1164,10 @@ export default function Channels() {
                 }}
               >
                 {/* Channel Thumbnail - YouTube style */}
-                <div className={`relative w-full aspect-video bg-dark-tertiary overflow-hidden ${
-                  editMode && selectedChannels.includes(channel.id) ? 'rounded-t-xl' : 'rounded-xl group-hover:rounded-t-xl'
+                <div className={`relative w-full aspect-video bg-dark-tertiary overflow-hidden transition-all ${
+                  editMode && selectedChannels.includes(channel.id)
+                    ? 'rounded-t-xl'
+                    : 'rounded-t-xl rounded-b-xl group-hover:rounded-b-none'
                 }`}>
                   {channel.thumbnail ? (
                     <img

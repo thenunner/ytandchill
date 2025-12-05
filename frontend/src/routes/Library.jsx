@@ -934,7 +934,7 @@ export default function Library() {
               className="group transition-colors rounded overflow-hidden"
             >
               {/* Thumbnail */}
-              <div className="relative aspect-video bg-dark-tertiary rounded-xl group-hover:rounded-t-xl overflow-hidden">
+              <div className="relative aspect-video bg-dark-tertiary rounded-t-xl rounded-b-xl group-hover:rounded-b-none overflow-hidden transition-all">
                 {channel.thumbnail ? (
                   <img
                     src={channel.thumbnail}
@@ -1176,8 +1176,10 @@ export default function Library() {
                                 }}
                               >
                                 {/* Playlist thumbnail */}
-                                <div className={`relative aspect-video bg-dark-tertiary overflow-hidden ${
-                                  editMode && isSelected ? 'rounded-t-xl' : 'rounded-xl group-hover:rounded-t-xl'
+                                <div className={`relative aspect-video bg-dark-tertiary overflow-hidden transition-all ${
+                                  editMode && isSelected
+                                    ? 'rounded-t-xl'
+                                    : 'rounded-t-xl rounded-b-xl group-hover:rounded-b-none'
                                 }`}>
                                   {playlist.thumbnail ? (
                                     <img
