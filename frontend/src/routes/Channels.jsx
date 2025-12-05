@@ -804,7 +804,9 @@ export default function Channels() {
           <button
             onClick={() => handleScanAllChannels(false)}
             disabled={!channels || channels.length === 0 || isScanRunning}
-            className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`filter-btn disabled:cursor-not-allowed ${
+              isScanRunning ? 'animate-pulse-border' : ''
+            } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
             title={isScanRunning
               ? "Scan in progress..."
               : selectedChannels.length > 0
@@ -822,7 +824,9 @@ export default function Channels() {
           <button
             onClick={() => handleScanAllChannels(true)}
             disabled={!channels || channels.length === 0 || isScanRunning}
-            className="filter-btn disabled:opacity-50 disabled:cursor-not-allowed"
+            className={`filter-btn disabled:cursor-not-allowed ${
+              isScanRunning ? 'animate-pulse-border' : ''
+            } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
             title={isScanRunning
               ? "Scan in progress..."
               : selectedChannels.length > 0

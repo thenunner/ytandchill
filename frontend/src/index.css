@@ -450,6 +450,22 @@
   background: hsl(var(--scrollbar-thumb-hover));
 }
 
+/* Pulse border animation for scan buttons */
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: hsl(var(--accent));
+    box-shadow: 0 0 0 0 hsla(var(--accent) / 0.4);
+  }
+  50% {
+    border-color: hsl(var(--accent-hover));
+    box-shadow: 0 0 0 4px hsla(var(--accent) / 0);
+  }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
 /* Plyr customizations */
 .plyr {
   @apply rounded-xl overflow-hidden;

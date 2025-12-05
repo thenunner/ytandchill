@@ -397,7 +397,7 @@ function App() {
               <div className="px-4 py-3 max-h-48 md:max-h-64 overflow-auto font-mono text-xs">
                 {logsData?.logs && logsData.logs.length > 0 ? (
                   <div className="space-y-0.5">
-                    {logsData.logs.slice(-5).map((line, index) => {
+                    {logsData.logs.slice(-10).map((line, index) => {
                       // Parse log line to color only the [LEVEL] part
                       const baseTextColor = 'text-white';
                       const levelMatch = line.match(/^(.* - )(\[(?:ERROR|WARNING|INFO|API|DEBUG)\])( - .*)$/);
