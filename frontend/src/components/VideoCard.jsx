@@ -195,7 +195,9 @@ export default function VideoCard({
     >
       {/* Thumbnail with video preview */}
       <div
-        className="relative aspect-video bg-dark-tertiary overflow-hidden rounded-xl"
+        className={`relative aspect-video bg-dark-tertiary overflow-hidden ${
+          isSelected ? 'rounded-t-xl' : 'rounded-xl group-hover:rounded-t-xl'
+        }`}
         onMouseEnter={handlePreviewStart}
         onMouseLeave={handlePreviewStop}
       >

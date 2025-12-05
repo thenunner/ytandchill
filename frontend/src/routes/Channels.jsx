@@ -1164,7 +1164,9 @@ export default function Channels() {
                 }}
               >
                 {/* Channel Thumbnail - YouTube style */}
-                <div className="relative w-full aspect-video bg-dark-tertiary rounded-xl overflow-hidden">
+                <div className={`relative w-full aspect-video bg-dark-tertiary overflow-hidden ${
+                  editMode && selectedChannels.includes(channel.id) ? 'rounded-t-xl' : 'rounded-xl group-hover:rounded-t-xl'
+                }`}>
                   {channel.thumbnail ? (
                     <img
                       src={channel.thumbnail}
