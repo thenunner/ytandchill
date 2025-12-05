@@ -444,7 +444,8 @@ export default function Channels() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg pb-4">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+        <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             className={`w-8 h-8 p-0 flex items-center justify-center border rounded transition-all ${
@@ -874,6 +875,7 @@ export default function Channels() {
               </svg>
             </button>
           </div>
+        </div>
         </div>
       </div>
 

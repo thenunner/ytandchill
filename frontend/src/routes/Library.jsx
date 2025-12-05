@@ -511,6 +511,7 @@ export default function Library() {
 
       {/* Header */}
       <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg pb-4 mb-4">
+        <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
         {activeTab === 'channels' ? (
           /* Channels: Responsive layout - wraps on mobile */
           <div className="flex flex-wrap items-center gap-3 md:gap-4">
@@ -731,7 +732,7 @@ export default function Library() {
               {/* + Category Button */}
               <button
                 onClick={() => setShowCreateCategoryModal(true)}
-                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-accent-text border border-accent/30 hover:border-accent/50 flex items-center gap-2 whitespace-nowrap"
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-text-primary border border-dark-border hover:border-dark-border-light flex items-center gap-2 whitespace-nowrap"
                 title="Create new category"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -902,6 +903,7 @@ export default function Library() {
               )}
             </div>
         )}
+        </div>
       </div>
 
       {/* Channels Tab */}

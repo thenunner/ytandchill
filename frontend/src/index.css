@@ -367,7 +367,7 @@
 
   /* Nav Tab */
   .nav-tab {
-    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-t-lg;
+    @apply inline-flex items-center gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-t-lg;
     @apply bg-dark-secondary border border-dark-border-light border-b-2 border-b-transparent;
     @apply text-text-primary font-medium text-sm relative;
     @apply transition-all duration-300 ease-out cursor-pointer;

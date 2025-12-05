@@ -289,7 +289,7 @@ function App() {
           {/* Settings Tab - Hidden on mobile, shown on desktop/tablet */}
           <Link
             to="/settings"
-            className={`nav-tab hidden md:flex px-3 ${location.pathname === '/settings' ? 'active' : ''}`}
+            className={`nav-tab hidden md:flex ${location.pathname === '/settings' ? 'active' : ''}`}
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
@@ -316,7 +316,11 @@ function App() {
           <div className="relative flex-shrink-0 md:hidden" ref={kebabMenuRef}>
             <button
               onClick={() => setShowKebabMenu(!showKebabMenu)}
-              className="flex items-center justify-center p-2 rounded-lg bg-dark-tertiary hover:bg-accent hover:text-accent-text transition-colors text-text-secondary"
+              className={`flex items-center justify-center p-2 rounded-lg transition-colors ${
+                showKebabMenu
+                  ? 'bg-dark-tertiary text-text-primary'
+                  : 'bg-dark-secondary text-text-secondary hover:bg-dark-tertiary'
+              }`}
               title="More options"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
