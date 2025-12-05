@@ -957,8 +957,8 @@ export default function Library() {
               </div>
 
               {/* Channel Info */}
-              <div className="p-3">
-                <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors truncate mb-1" title={channel.title}>
+              <div className="p-3 transition-colors group-hover:bg-dark-tertiary">
+                <h3 className="text-base font-semibold text-text-primary truncate mb-1" title={channel.title}>
                   {channel.title}
                 </h3>
                 <div className="text-sm text-text-secondary font-medium">
@@ -1204,10 +1204,10 @@ export default function Library() {
                                 </div>
 
                                 {/* Playlist info */}
-                                <div className="p-3 space-y-2">
+                                <div className="p-3 space-y-2 transition-colors group-hover:bg-dark-tertiary">
                                   {/* Title + 3-Dot Menu (inline, YouTube style) */}
                                   <div className="flex items-start justify-between gap-2">
-                                    <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2 leading-tight flex-1" title={playlist.title || playlist.name}>
+                                    <h3 className="text-base font-semibold text-text-primary line-clamp-2 leading-tight flex-1" title={playlist.title || playlist.name}>
                                       {playlist.title || playlist.name}
                                     </h3>
 

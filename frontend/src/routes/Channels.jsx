@@ -1183,7 +1183,7 @@ export default function Channels() {
                 </div>
 
                 {/* Content Section */}
-                <div className="p-3 space-y-2">
+                <div className="p-3 space-y-2 transition-colors group-hover:bg-dark-tertiary">
                   {/* Title + AUTO badge + 3-dot menu */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -1192,7 +1192,7 @@ export default function Channels() {
                         <span className="text-green-500 text-[10px] font-bold tracking-wide flex-shrink-0">AUTO</span>
                       )}
                       {/* Title */}
-                      <h3 className="text-base font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent-text transition-colors flex-1 min-w-0" title={channel.title}>
+                      <h3 className="text-base font-semibold text-text-primary line-clamp-1 leading-tight flex-1 min-w-0" title={channel.title}>
                         {channel.title}
                       </h3>
                     </div>
@@ -1221,7 +1221,7 @@ export default function Channels() {
 
                   {/* Scan and Video Dates - YouTube style */}
                   <div className="text-sm text-text-secondary font-medium">
-                    <span className="text-accent-text">Scan</span> • {formatScanTime(channel.last_scan_time) || 'None'} - Last video • {formatVideoDate(channel.last_video_date) || 'None'}
+                    Scan • {formatScanTime(channel.last_scan_time) || 'None'} - Last video • {formatVideoDate(channel.last_video_date) || 'None'}
                   </div>
 
                   {/* Stats - To Review, Downloaded, Ignored (closer together with dots) */}
