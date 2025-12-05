@@ -45,6 +45,15 @@ export default function VideoCard({
     return `${month}/${day}/${year}`;
   };
 
+  const formatDateTime = (dateTimeStr) => {
+    if (!dateTimeStr) return '';
+    const date = new Date(dateTimeStr);
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${month}/${day}/${year}`;
+  };
+
   const formatFileSize = (bytes) => {
     if (!bytes || bytes === 0) return '';
     const gb = bytes / (1024 * 1024 * 1024);
@@ -364,12 +373,12 @@ export default function VideoCard({
 
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
-          // Library view: YouTube style - date • size
+          // Library view: downloaded date • size
           <div className="text-sm text-text-secondary font-medium">
-            <span>{formatDate(video.upload_date)} • {formatFileSize(video.file_size_bytes)}</span>
+            <span>{formatDateTime(video.downloaded_at)} • {formatFileSize(video.file_size_bytes)}</span>
           </div>
         ) : (
-          // Channel view: date only - duration now on thumbnail
+          // Channel view: upload date only - duration now on thumbnail
           <div className="text-sm text-text-secondary font-medium">
             <span>{formatDate(video.upload_date)}</span>
           </div>

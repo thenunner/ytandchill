@@ -260,9 +260,9 @@ function App() {
         <header className="bg-dark-primary sticky top-0 z-50">
           <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
         {/* Main Nav Row */}
-        <div className="flex items-center gap-1 md:gap-2 h-[60px]">
+        <div className="flex items-center justify-center gap-1 md:gap-2 h-[60px]">
           {/* Nav Tabs - Compact on mobile (text only), icons on desktop */}
-          <nav className="flex gap-1 md:gap-2 overflow-x-auto scrollbar-hide scroll-smooth snap-x snap-mandatory flex-1 md:flex-initial">
+          <nav className="flex gap-1 md:gap-2">
             {navLinks.map(link => (
               <Link
                 key={link.path}
