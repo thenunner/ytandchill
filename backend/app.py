@@ -349,6 +349,18 @@ def _scan_worker():
             # Increment current channel counter
             scan_current_channel += 1
 
+            # Update status bar at percentage milestones
+            if scan_total_channels > 0:
+                progress_pct = (scan_current_channel / scan_total_channels) * 100
+
+                # Update at specific milestones: 25%, 50%, 75%
+                if progress_pct >= 75 and scan_current_channel == int(scan_total_channels * 0.75):
+                    set_operation('scanning', f"Scanning: {scan_batch_label} (75%)")
+                elif progress_pct >= 50 and scan_current_channel == int(scan_total_channels * 0.50):
+                    set_operation('scanning', f"Scanning: {scan_batch_label} (50%)")
+                elif progress_pct >= 25 and scan_current_channel == int(scan_total_channels * 0.25):
+                    set_operation('scanning', f"Scanning: {scan_batch_label} (25%)")
+
             # Log batch start on first channel
             if scan_current_channel == 1:
                 logger.info(f"Starting {scan_batch_label}")

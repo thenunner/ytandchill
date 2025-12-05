@@ -373,6 +373,8 @@ function App() {
                     <span className="text-accent-text">
                       {currentOperation.message}
                     </span>
+                    {/* Loading spinner after scan message */}
+                    <div className="animate-spin h-4 w-4 border-2 border-accent-text border-t-transparent rounded-full"></div>
                   </div>
                 )}
 
