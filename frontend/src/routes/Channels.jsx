@@ -1134,7 +1134,9 @@ export default function Channels() {
             )}
 
             <div
-              className="overflow-hidden cursor-pointer transition-all rounded group"
+              className={`overflow-hidden cursor-pointer transition-all rounded group ${
+                (channel.video_count || 0) > 0 ? 'border-2 border-red-400' : ''
+              }`}
               onClick={() => {
                 if (editMode) {
                   setSelectedChannels(prev =>
