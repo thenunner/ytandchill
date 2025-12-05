@@ -1038,6 +1038,7 @@ export default function ChannelLibrary() {
                       });
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    title="If checked, will automatically download any new video that is found via scan (manual or automated)"
                   >
                     <input
                       type="checkbox"
@@ -1082,6 +1083,7 @@ export default function ChannelLibrary() {
                       })}
                       className="input text-sm py-1.5 w-full"
                       min="0"
+                      title="Minimum video duration in minutes. Only videos longer than this will be found. Use 0 for no minimum."
                     />
                   </div>
                   <div>
@@ -1097,6 +1099,7 @@ export default function ChannelLibrary() {
                       })}
                       className="input text-sm py-1.5 w-full"
                       min="0"
+                      title="Maximum video duration in minutes. Only videos shorter than this will be found. Use 0 for no maximum."
                     />
                   </div>
                   <div className="flex gap-2 pt-2">

@@ -611,13 +611,13 @@ export default function Settings() {
               {/* YouTube API Key Section */}
               <div className="flex-1 flex flex-col items-center">
                 <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">YouTube Data API Key</h3>
-                <div className="flex gap-2 mb-2 w-full">
+                <div className="flex gap-2 mb-2 w-full md:w-auto">
                   <input
                     type="text"
                     value={youtubeApiKey}
                     onChange={(e) => setYoutubeApiKey(e.target.value)}
                     placeholder="Enter your YouTube Data API v3 key..."
-                    className="input text-sm py-1.5 px-3 w-full font-mono"
+                    className="input text-sm py-1.5 px-3 font-mono w-full md:w-[320px]"
                   />
                   <button
                     onClick={handleSave}
@@ -851,38 +851,34 @@ export default function Settings() {
 
                   return (
                     <>
-                      {/* Desktop (lg+): Single row with grouped boxes [1,2] [spacer] [3,4] */}
-                      <div className="hidden lg:flex lg:flex-col gap-3 items-center">
+                      {/* Desktop (lg+): Single row with grouped boxes [1,2] [spacer] [3,4] [Save] */}
+                      <div className="hidden lg:flex lg:items-center gap-6">
+                        {/* Group 1: Boxes 1-2 */}
                         <div className="flex items-center gap-6">
-                          {/* Group 1: Boxes 1-2 */}
-                          <div className="flex items-center gap-6">
-                            {renderTimeBox(displayTimes[0], 0)}
-                            {renderTimeBox(displayTimes[1], 1)}
-                          </div>
-
-                          {/* Visual separator between groups */}
-                          <div className="w-12"></div>
-
-                          {/* Group 2: Boxes 3-4 */}
-                          <div className="flex items-center gap-6">
-                            {renderTimeBox(displayTimes[2], 2)}
-                            {renderTimeBox(displayTimes[3], 3)}
-                          </div>
+                          {renderTimeBox(displayTimes[0], 0)}
+                          {renderTimeBox(displayTimes[1], 1)}
                         </div>
 
-                        {/* Save button row */}
-                        <div className="flex justify-center w-full mt-2">
-                          <button
-                            onClick={handleSaveAutoRefresh}
-                            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                          >
-                            Save
-                          </button>
+                        {/* Visual separator between groups */}
+                        <div className="w-12"></div>
+
+                        {/* Group 2: Boxes 3-4 */}
+                        <div className="flex items-center gap-6">
+                          {renderTimeBox(displayTimes[2], 2)}
+                          {renderTimeBox(displayTimes[3], 3)}
                         </div>
+
+                        {/* Save button inline after time boxes */}
+                        <button
+                          onClick={handleSaveAutoRefresh}
+                          className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 ml-6"
+                        >
+                          Save
+                        </button>
                       </div>
 
-                      {/* Tablet (sm to lg): 2x2 grid with proper grouping [1,2] / [3,4] */}
-                      <div className="hidden sm:flex lg:hidden flex-col gap-3 items-center">
+                      {/* Tablet (sm to lg): 2x2 grid with proper grouping [1,2] / [3,4] [Save] */}
+                      <div className="hidden sm:flex lg:hidden items-center gap-6">
                         <div className="flex flex-col gap-4">
                           <div className="flex items-center justify-center gap-6">
                             {renderTimeBox(displayTimes[0], 0)}
@@ -893,14 +889,13 @@ export default function Settings() {
                             {renderTimeBox(displayTimes[3], 3)}
                           </div>
                         </div>
-                        <div className="flex justify-center w-full">
-                          <button
-                            onClick={handleSaveAutoRefresh}
-                            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                          >
-                            Save
-                          </button>
-                        </div>
+                        {/* Save button inline after time boxes */}
+                        <button
+                          onClick={handleSaveAutoRefresh}
+                          className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+                        >
+                          Save
+                        </button>
                       </div>
 
                       {/* Mobile (<sm): Two columns - Column 1: 1 & 2, Column 2: 3 & 4 */}

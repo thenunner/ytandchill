@@ -185,6 +185,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             onClick={(e) => e.stopPropagation()}
             className="w-16 px-2 py-1 text-sm bg-dark-tertiary border border-dark-border rounded text-text-primary"
             min="0"
+            title="Minimum video duration in minutes. Only videos longer than this will be found. Use 0 for no minimum."
           />
           <span className="text-xs text-text-secondary">Max</span>
           <input
@@ -194,6 +195,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
             onClick={(e) => e.stopPropagation()}
             className="w-16 px-2 py-1 text-sm bg-dark-tertiary border border-dark-border rounded text-text-primary"
             min="0"
+            title="Maximum video duration in minutes. Only videos shorter than this will be found. Use 0 for no maximum."
           />
         </div>
         {/* Row 2: Auto-Download checkbox + Save button */}
@@ -201,6 +203,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
           <button
             onClick={handleToggleAutoDownload}
             className="px-2 py-1 text-sm text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors flex items-center gap-1"
+            title="If checked, will automatically download any new video that is found via scan (manual or automated)"
           >
             <input
               type="checkbox"

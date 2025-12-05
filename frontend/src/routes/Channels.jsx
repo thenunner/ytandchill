@@ -1025,6 +1025,7 @@ export default function Channels() {
                             onClick={(e) => e.stopPropagation()}
                             className="input text-sm py-1 w-full"
                             min="0"
+                            title="Minimum video duration in minutes. Only videos longer than this will be found. Use 0 for no minimum."
                           />
                         </div>
                         <div className="flex-1">
@@ -1040,6 +1041,7 @@ export default function Channels() {
                             onClick={(e) => e.stopPropagation()}
                             className="input text-sm py-1 w-full"
                             min="0"
+                            title="Maximum video duration in minutes. Only videos shorter than this will be found. Use 0 for no maximum."
                           />
                         </div>
                       </div>
