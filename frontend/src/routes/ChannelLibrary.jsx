@@ -1183,7 +1183,8 @@ export default function ChannelLibrary() {
             )}
           </div>
         ) : viewMode === 'grid' ? (
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3">
+          <div className="px-6 lg:px-12 xl:px-16">
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
             {paginatedVideos.map(video => (
               <VideoCard
                 key={video.id}
@@ -1195,6 +1196,7 @@ export default function ChannelLibrary() {
                 isLibraryView={isLibraryMode}
               />
             ))}
+            </div>
           </div>
         ) : (
           <div className="flex flex-col gap-2 items-start">

@@ -925,7 +925,8 @@ export default function Library() {
               )}
             </div>
           ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
+            <div className="px-6 lg:px-12 xl:px-16">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
           {paginatedChannelsList.map(channel => (
             <Link
               key={channel.id}
@@ -968,6 +969,7 @@ export default function Library() {
             </Link>
           ))}
             </div>
+          </div>
           ) : (
             <div className="flex flex-col gap-2">
           {paginatedChannelsList.map(channel => (
@@ -1156,7 +1158,8 @@ export default function Library() {
                     {/* Category Playlists - Only show when expanded */}
                     {isExpanded && (
                       playlistViewMode === 'grid' ? (
-                        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
+                        <div className="px-6 lg:px-12 xl:px-16">
+                          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
                           {categoryPlaylists.map(playlist => {
                             const isSelected = selectedPlaylists.includes(playlist.id);
                             return (
@@ -1314,6 +1317,7 @@ export default function Library() {
                               </div>
                             );
                           })}
+                          </div>
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2 pr-2">
@@ -1490,7 +1494,8 @@ export default function Library() {
 
                   {/* Uncategorized Playlists */}
                   {playlistViewMode === 'grid' ? (
-                    <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3 pr-2">
+                    <div className="px-6 lg:px-12 xl:px-16">
+                      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
                       {groupedPlaylists.uncategorized.map(playlist => {
                         const isSelected = selectedPlaylists.includes(playlist.id);
                         return (
@@ -1652,6 +1657,7 @@ export default function Library() {
                           </div>
                         );
                       })}
+                      </div>
                     </div>
                   ) : (
                     <div className="flex flex-col gap-2 pr-2">
@@ -1804,8 +1810,8 @@ export default function Library() {
                           </div>
                         );
                   })}
-                </div>
-              )}
+                    </div>
+                  )}
             </div>
           )}
         </div>
