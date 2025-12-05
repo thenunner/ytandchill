@@ -52,7 +52,7 @@ export default function PlaylistPlayer() {
       return {
         videos: vids,
         sourceTitle: singlePlaylistData.name || 'Playlist',
-        backUrl: `/playlist/${playlistId}`
+        backUrl: '/library?tab=playlists'
       };
     }
 
@@ -258,12 +258,12 @@ export default function PlaylistPlayer() {
       if (finalVideos.length > 1) {
         goToNext();
       } else {
-        navigate(-1);
+        navigate(finalBackUrl);
       }
     } catch (error) {
       showNotification(error.message || 'Failed to delete video', 'error');
     }
-  }, [currentVideo, deleteVideo, showNotification, finalVideos.length, goToNext, navigate]);
+  }, [currentVideo, deleteVideo, showNotification, finalVideos.length, goToNext, navigate, finalBackUrl]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -902,7 +902,7 @@ export default function PlaylistPlayer() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-400 text-lg">No video selected</p>
-        <button onClick={() => navigate(-1)} className="btn btn-primary mt-4">
+        <button onClick={() => navigate(finalBackUrl)} className="btn btn-primary mt-4">
           Go Back
         </button>
       </div>
@@ -975,7 +975,7 @@ export default function PlaylistPlayer() {
           {/* Centered Control Buttons */}
           <div className="flex justify-center gap-3 mb-4">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate(finalBackUrl)}
               className="icon-btn hover:bg-accent hover:border-accent"
               title="Back"
             >
