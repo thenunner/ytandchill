@@ -295,14 +295,89 @@ function App() {
           </button>
         </div>
 
-        {/* Status Bar Row (always visible if there's activity or notifications) */}
-        {(downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || health) && (
-          <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm animate-slide-down relative">
+        {/* Navigation tabs only - status bar moved to footer */}
+        </div>
+      </header>
+      )}
+
+      {/* Main Content */}
+      <main className={`flex-1 w-full ${isAuthPage ? '' : 'px-4 py-6 max-w-[1600px]'}`}>
+        <Routes>
+          <Route path="/setup" element={<Setup />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
+          <Route path="/videos" element={isAuthenticated ? <Videos /> : <Navigate to="/login" replace />} />
+          <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
+          <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+          <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+          <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
+          <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
+          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
+          <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
+          <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
+          <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
+        </Routes>
+      </main>
+
+      {/* Footer Status Bar - Hidden on auth pages */}
+      {!isAuthPage && (downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || health) && (
+        <footer className="bg-dark-primary sticky bottom-0 z-50">
+          {/* Quick Logs Slide-UP Panel - Hidden on mobile */}
+          <div
+            className={`overflow-hidden transition-all duration-300 ease-in-out hidden md:block ${
+              showQuickLogs ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <div className={`${isLightTheme ? 'bg-gray-800' : 'bg-dark-primary'} shadow-lg`}>
+              <div className="px-4 py-3 max-h-48 md:max-h-64 overflow-auto font-mono text-xs">
+                {logsData?.logs && logsData.logs.length > 0 ? (
+                  <div className="space-y-0.5">
+                    {logsData.logs.slice(-5).map((line, index) => {
+                      // Parse log line to color only the [LEVEL] part
+                      const baseTextColor = 'text-white';
+                      const levelMatch = line.match(/^(.* - )(\[(?:ERROR|WARNING|INFO|API|DEBUG)\])( - .*)$/);
+
+                      if (levelMatch) {
+                        const [, before, level, after] = levelMatch;
+                        const levelColor =
+                          level.includes('ERROR') ? 'text-red-400' :
+                          level.includes('WARNING') ? 'text-yellow-400' :
+                          level.includes('INFO') ? 'text-blue-400' :
+                          level.includes('API') ? 'text-purple-400' :
+                          level.includes('DEBUG') ? 'text-gray-400' :
+                          baseTextColor;
+
+                        return (
+                          <div key={index} className={baseTextColor}>
+                            {before}<span className={levelColor}>{level}</span>{after}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div key={index} className={baseTextColor}>
+                          {line}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-text-muted text-center py-4">
+                    No logs available
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Status Bar Row */}
+          <div className="px-4 py-2 bg-dark-secondary/50 backdrop-blur-sm relative">
             <div className="flex items-center justify-between text-sm font-mono">
               <div className="flex items-center gap-2 text-text-secondary overflow-x-auto scrollbar-hide scroll-smooth whitespace-nowrap flex-1">
+                {/* Log button - Hidden on mobile, visible on tablet+ */}
                 <button
                   onClick={() => setShowQuickLogs(!showQuickLogs)}
-                  className="font-semibold text-text-primary hover:text-accent-text transition-colors cursor-pointer flex items-center gap-1"
+                  className="font-semibold text-text-primary hover:text-accent-text transition-colors cursor-pointer hidden md:flex items-center gap-1"
                   title="Click to view recent logs"
                 >
                   Status:
@@ -478,82 +553,9 @@ function App() {
                 )}
               </div>
             </div>
-
           </div>
-        )}
-
-        {/* Quick Logs Slide-Down Panel - Part of sticky header */}
-        <div
-          className={`overflow-hidden transition-all duration-300 ease-in-out ${
-            showQuickLogs ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
-          }`}
-        >
-          <div className={`${isLightTheme ? 'bg-gray-800' : 'bg-dark-primary'} shadow-lg`}>
-            <div className="px-4 py-3 max-h-64 overflow-auto font-mono text-xs">
-              {logsData?.logs && logsData.logs.length > 0 ? (
-                <div className="space-y-0.5">
-                  {logsData.logs.slice(-5).map((line, index) => {
-                    // Parse log line to color only the [LEVEL] part
-                    // Background is always dark, so text is white
-                    const baseTextColor = 'text-white';
-
-                    // Match pattern: "timestamp - [LEVEL] - message"
-                    const levelMatch = line.match(/^(.* - )(\[(?:ERROR|WARNING|INFO|API|DEBUG)\])( - .*)$/);
-
-                    if (levelMatch) {
-                      const [, before, level, after] = levelMatch;
-                      const levelColor =
-                        level.includes('ERROR') ? 'text-red-400' :
-                        level.includes('WARNING') ? 'text-yellow-400' :
-                        level.includes('INFO') ? 'text-blue-400' :
-                        level.includes('API') ? 'text-purple-400' :
-                        level.includes('DEBUG') ? 'text-gray-400' :
-                        baseTextColor;
-
-                      return (
-                        <div key={index} className={baseTextColor}>
-                          {before}<span className={levelColor}>{level}</span>{after}
-                        </div>
-                      );
-                    }
-
-                    // Fallback for non-matching lines
-                    return (
-                      <div key={index} className={baseTextColor}>
-                        {line}
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="text-text-muted text-center py-4">
-                  No logs available
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+        </footer>
       )}
-
-      {/* Main Content */}
-      <main className={`flex-1 w-full ${isAuthPage ? '' : 'px-4 py-6 max-w-[1600px]'}`}>
-        <Routes>
-          <Route path="/setup" element={<Setup />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
-          <Route path="/videos" element={isAuthenticated ? <Videos /> : <Navigate to="/login" replace />} />
-          <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
-          <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
-          <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
-          <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
-          <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
-          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
-          <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
-          <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
-          <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
-        </Routes>
-      </main>
     </div>
   );
 }
