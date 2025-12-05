@@ -1164,7 +1164,7 @@ export default function Channels() {
                 }}
               >
                 {/* Channel Thumbnail - YouTube style */}
-                <div className="relative w-full aspect-video bg-dark-tertiary rounded-lg overflow-hidden">
+                <div className="relative w-full aspect-video bg-dark-tertiary rounded-xl overflow-hidden">
                   {channel.thumbnail ? (
                     <img
                       src={channel.thumbnail}
@@ -1181,7 +1181,7 @@ export default function Channels() {
                 </div>
 
                 {/* Content Section */}
-                <div className={`p-3 space-y-2 rounded-b-lg transition-colors ${editMode && selectedChannels.includes(channel.id) ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
+                <div className={`p-3 space-y-2 rounded-b-xl transition-colors ${editMode && selectedChannels.includes(channel.id) ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
                   {/* Title + AUTO badge + 3-dot menu */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
