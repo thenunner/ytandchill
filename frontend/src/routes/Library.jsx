@@ -934,7 +934,7 @@ export default function Library() {
               className="group transition-colors rounded overflow-hidden"
             >
               {/* Thumbnail */}
-              <div className="relative aspect-video bg-dark-tertiary rounded-t-lg overflow-hidden">
+              <div className="relative aspect-video bg-dark-tertiary rounded-lg overflow-hidden">
                 {channel.thumbnail ? (
                   <img
                     src={channel.thumbnail}
@@ -957,7 +957,7 @@ export default function Library() {
               </div>
 
               {/* Channel Info */}
-              <div className="p-3 transition-colors group-hover:bg-dark-tertiary">
+              <div className="p-3 rounded-b-lg transition-colors group-hover:bg-dark-tertiary">
                 <h3 className="text-base font-semibold text-text-primary truncate mb-1" title={channel.title}>
                   {channel.title}
                 </h3>
@@ -1176,7 +1176,7 @@ export default function Library() {
                                 }}
                               >
                                 {/* Playlist thumbnail */}
-                                <div className="relative aspect-video bg-dark-tertiary rounded-t-lg overflow-hidden">
+                                <div className="relative aspect-video bg-dark-tertiary rounded-lg overflow-hidden">
                                   {playlist.thumbnail ? (
                                     <img
                                       src={playlist.thumbnail}
@@ -1202,7 +1202,7 @@ export default function Library() {
                                 </div>
 
                                 {/* Playlist info */}
-                                <div className={`p-3 space-y-2 transition-colors ${editMode && isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
+                                <div className={`p-3 space-y-2 rounded-b-lg transition-colors ${editMode && isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
                                   {/* Title + 3-Dot Menu (inline, YouTube style) */}
                                   <div className="flex items-start justify-between gap-2">
                                     <h3 className="text-base font-semibold text-text-primary line-clamp-2 leading-tight flex-1" title={playlist.title || playlist.name}>

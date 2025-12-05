@@ -195,7 +195,7 @@ export default function VideoCard({
     >
       {/* Thumbnail with video preview */}
       <div
-        className="relative aspect-video bg-dark-tertiary overflow-hidden rounded-t-lg"
+        className="relative aspect-video bg-dark-tertiary overflow-hidden rounded-lg"
         onMouseEnter={handlePreviewStart}
         onMouseLeave={handlePreviewStop}
       >
@@ -273,7 +273,7 @@ export default function VideoCard({
       </div>
 
       {/* Content */}
-      <div className={`p-3 space-y-2 transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
+      <div className={`p-3 space-y-2 rounded-b-lg transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
         {/* Title + 3-dot menu (library videos only) */}
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-base font-medium text-text-primary line-clamp-2 leading-tight flex-1 min-w-0" title={video.title}>
