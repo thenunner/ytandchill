@@ -494,6 +494,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Dark theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
               Kernel
@@ -506,6 +507,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Dark theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
               Fatal
@@ -518,6 +520,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Dark theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
               Subnet
@@ -530,6 +533,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Dark theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
               Archive
@@ -542,6 +546,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Dark theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
               Buffer
@@ -554,6 +559,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Dark theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#89b4fa' }}></div>
               Catppuccin
@@ -563,8 +569,8 @@ export default function Settings() {
           {/* Separator between dark and light themes */}
           <div className="border-t border-dark-border"></div>
 
-          {/* Light themes - Mobile: 4 cols (1 row), Desktop: 7 cols (1 row) */}
-          <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
+          {/* Light themes - Centered flex layout */}
+          <div className="flex flex-wrap justify-center gap-3">
             <button
               onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
               className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -573,6 +579,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Light theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
               Online
@@ -585,6 +592,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Light theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
               Pixel
@@ -597,6 +605,7 @@ export default function Settings() {
                   : ''
               }`}
               style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+              title="Light theme"
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
               Debug

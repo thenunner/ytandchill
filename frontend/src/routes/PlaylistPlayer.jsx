@@ -12,16 +12,14 @@ export default function PlaylistPlayer() {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
 
-  // Get starting video and shuffle param from URL if provided
+  // Get starting video from URL if provided
   const startVideoId = searchParams.get('v');
-  const startShuffled = searchParams.get('shuffle') === 'true';
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLooping, setIsLooping] = useState(() => {
     const saved = localStorage.getItem('playlistLoop');
     return saved === 'true';
   });
-  const [isShuffled, setIsShuffled] = useState(startShuffled);
   const [shuffledOrder, setShuffledOrder] = useState([]);
   const [showMobileQueue, setShowMobileQueue] = useState(false);
 
@@ -137,11 +135,11 @@ export default function PlaylistPlayer() {
 
   // Get display order (original or shuffled)
   const displayOrder = useMemo(() => {
-    if (isShuffled && shuffledOrder.length === finalVideos.length && finalVideos.length > 0) {
+    if (shuffledOrder.length === finalVideos.length && finalVideos.length > 0) {
       return shuffledOrder;
     }
     return finalVideos.map((_, i) => i);
-  }, [isShuffled, shuffledOrder, finalVideos.length]);
+  }, [shuffledOrder, finalVideos.length]);
 
   // Current video based on index
   const currentVideo = useMemo(() => {
@@ -164,7 +162,7 @@ export default function PlaylistPlayer() {
 
   // Set initial index based on startVideoId
   useEffect(() => {
-    if (startVideoId && finalVideos.length > 0 && !isShuffled) {
+    if (startVideoId && finalVideos.length > 0) {
       const videoId = parseInt(startVideoId, 10);
       if (!isNaN(videoId)) {
         const idx = finalVideos.findIndex(v => v.id === videoId);
@@ -173,20 +171,7 @@ export default function PlaylistPlayer() {
         }
       }
     }
-  }, [startVideoId, finalVideos, isShuffled]);
-
-  // Initialize shuffle order when starting shuffled
-  useEffect(() => {
-    if (startShuffled && finalVideos.length > 0 && shuffledOrder.length === 0) {
-      const indices = finalVideos.map((_, i) => i);
-      // Fisher-Yates shuffle
-      for (let i = indices.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [indices[i], indices[j]] = [indices[j], indices[i]];
-      }
-      setShuffledOrder(indices);
-    }
-  }, [startShuffled, finalVideos.length, shuffledOrder.length]);
+  }, [startVideoId, finalVideos]);
 
   // Shuffle function
   const shuffleArray = useCallback((arr) => {
@@ -198,9 +183,9 @@ export default function PlaylistPlayer() {
     return shuffled;
   }, []);
 
-  // Toggle shuffle
-  const toggleShuffle = useCallback(() => {
-    if (!isShuffled && finalVideos.length > 0) {
+  // Shuffle playlist
+  const shufflePlaylist = useCallback(() => {
+    if (finalVideos.length > 0) {
       const indices = finalVideos.map((_, i) => i);
       const currentActualIndex = displayOrder[currentIndex] ?? 0;
       const otherIndices = indices.filter(i => i !== currentActualIndex);
@@ -208,8 +193,7 @@ export default function PlaylistPlayer() {
       setShuffledOrder(shuffled);
       setCurrentIndex(0);
     }
-    setIsShuffled(!isShuffled);
-  }, [isShuffled, finalVideos, displayOrder, currentIndex, shuffleArray]);
+  }, [finalVideos, displayOrder, currentIndex, shuffleArray]);
 
   // Toggle loop
   const toggleLoop = useCallback(() => {
@@ -304,7 +288,7 @@ export default function PlaylistPlayer() {
         case 's':
           if (!e.ctrlKey && !e.metaKey) {
             e.preventDefault();
-            toggleShuffle();
+            shufflePlaylist();
           }
           break;
         case 'escape':
@@ -317,7 +301,7 @@ export default function PlaylistPlayer() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [goToNext, goToPrevious, toggleLoop, toggleShuffle, showMobileQueue]);
+  }, [goToNext, goToPrevious, toggleLoop, shufflePlaylist, showMobileQueue]);
 
   // Track current video ID for event handlers
   const currentVideoIdRef = useRef(null);
@@ -1033,9 +1017,9 @@ export default function PlaylistPlayer() {
             </button>
 
             <button
-              onClick={toggleShuffle}
-              className={`icon-btn hover:bg-accent hover:border-accent ${isShuffled ? 'bg-accent' : ''}`}
-              title="Toggle shuffle (S)"
+              onClick={shufflePlaylist}
+              className="icon-btn hover:bg-accent hover:border-accent"
+              title="Shuffle playlist (S)"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="16 3 21 3 21 8"></polyline>
