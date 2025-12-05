@@ -12,10 +12,11 @@ Handles:
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
+from sqlalchemy import or_, and_
 import logging
 import os
 
-from database import Video, QueueItem, PlaylistVideo, get_session
+from database import Video, QueueItem, PlaylistVideo, Channel, get_session
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,15 @@ def get_videos():
         query = session.query(Video).options(
             joinedload(Video.channel),
             joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
+        )
+
+        # Exclude videos from deleted channels (except for library videos which are downloaded)
+        query = query.join(Channel, Video.channel_id == Channel.id)
+        query = query.filter(
+            or_(
+                Channel.deleted_at.is_(None),  # Channel not deleted
+                and_(Channel.deleted_at.isnot(None), Video.status == 'library')  # Deleted channel but video is downloaded
+            )
         )
 
         # Get video IDs that are currently in the queue (exclude them from results)
