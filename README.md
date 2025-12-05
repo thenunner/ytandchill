@@ -1,35 +1,54 @@
 # YT and Chill
 
-YouTube channel downloader and video library manager. Monitor channels, queue downloads, and manage your local YouTube video library with a modern web interface.
+YT channel downloader and video library manager. Monitor channels, queue downloads, and manage your local YT video library with a modern web interface.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Unraid-lightgrey.svg)
 
-## FAQ
-
-For common issues, error messages, and troubleshooting help, see the **[FAQ (Frequently Asked Questions)](FAQ.md)**.
-
-Common topics covered:
-- YouTube cookies and authentication (including detailed export instructions)
-- Common yt-dlp errors (geo-blocking, bot detection, etc.)
-- Download failures and performance issues
-- Account safety and recommendations
-- Storage and backup
+## Table of Contents
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Quick Start](#quick-start)
+  - [Windows](#windows)
+  - [Linux / macOS](#linux--macos)
+  - [Unraid](#unraid)
+- [Basic Configuration](#basic-configuration)
+- [Usage](#usage)
+- [Advanced Configuration](#advanced-configuration)
+- [Troubleshooting](#troubleshooting)
+- [Building from Source](#building-from-source)
+- [Architecture](#architecture)
+- [File Organization](#file-organization)
+- [Additional Documentation](#additional-documentation)
 
 ## Features
 
-- **Fully Responsive Mobile UI**: Complete mobile-friendly interface with touch-optimized controls, responsive layouts, and mobile-specific features for managing your library on any device
+- **Mobile & Tablet Touchscreen Support**: Full touch-optimized experience
+  - Touch gestures: Swipe, tap, long-press for all interactions
+  - Fullscreen video player with YouTube-style touch controls
+  - Double-tap left/right to skip backward/forward 10 seconds
+  - Volume and progress bar touch controls
+  - Auto-hide controls in fullscreen mode
+  - Responsive layouts optimized for phone and tablet screens
+  - Touch-friendly buttons and spacing
+  - Mobile-specific navigation and menus
+  - Page state persistence across mobile browsing
+- **Real-Time Progress Tracking**: Live download progress with speed, ETA, and percentage indicators
+- **Scan Progress Indicators**: Real-time channel scanning progress with percentage completion
 - **8 Custom Themes**: Choose from ash, chalk, rust, drift, bruise, ember, stain, and decay themes to personalize your interface
-- **Auto-Refresh Scheduler**: Set daily scan times to automatically check for new videos from your subscribed channels, keeping your library up-to-date without manual intervention (see [Auto-Scan Daily](#auto-scan-daily) in Settings)
+- **Auto-Refresh Scheduler**: Set daily scan times to automatically check for new videos from your subscribed channels, keeping your library up-to-date without manual intervention
 - **Smart Duration Filters**: Set minimum and maximum video length preferences per channel to automatically filter out shorts, long streams, or any videos outside your preferred range
-- **Channel Management**: Subscribe to YouTube channels and automatically track new uploads
+- **Channel Management**: Subscribe to YT channels and automatically track new uploads
 - **Advanced Video Player**: Built-in player with automatic resume from last position, playback speed controls, and picture-in-picture support
 - **Smart Downloads**: Queue-based download system with drag-and-drop reordering, pause/resume controls, and progress tracking
 - **Playlist Support**: Create and organize custom playlists from your downloaded videos
 - **Video Library**: Browse, search, and manage your downloaded videos with flexible filtering and sorting options
-- **Cookie Authentication**: Support for YouTube cookies (strongly recommended for reliable downloads - see [Cookies.txt](#cookiestxt-strongly-recommended) in Settings)
-- **User Management**: Change your login credentials anytime with the Reset User feature (see [Reset User](#reset-user-password-management) in Settings)
+- **Cookie Authentication**: Support for YouTube cookies (strongly recommended for reliable downloads)
+- **Session Persistence**: Remember login for 90 days (or 1 year with "Remember Me")
+- **Sticky Status Bar**: Always-visible status bar at bottom with log panel (hidden on mobile phones)
+- **Color-Coded Logs**: Real-time log messages with color-coded severity levels
+- **First-Run Setup Wizard**: Easy initial username and password configuration
 
 ## Screenshots
 
@@ -47,13 +66,6 @@ Common topics covered:
 
 ### Video Player
 ![Video Player](images/video.png)
-
-## Platform Support
-
-YT and Chill works on:
-- **Windows** (Native Python - no Docker required)
-- **Linux / macOS** (Native Python - no Docker required)
-- **Unraid** (Docker template or docker-compose)
 
 ## Quick Start
 
@@ -84,6 +96,7 @@ YT and Chill works on:
    start-native-windows.bat
    ```
 5. Open http://localhost:4099 in your browser
+6. Complete the first-run setup to create your username and password
 
 ### Linux / macOS
 
@@ -120,6 +133,7 @@ brew install python node ffmpeg
    ./start-native-linux.sh
    ```
 4. Open http://localhost:4099 in your browser
+5. Complete the first-run setup to create your username and password
 
 ### Unraid
 
@@ -130,6 +144,8 @@ brew install python node ffmpeg
 3. Click "Add Container" and select "ytandchill"
 4. Configure paths and port as needed
 5. Click "Apply"
+6. Access web interface at `http://YOUR-SERVER-IP:4099`
+7. Complete the first-run setup to create your username and password
 
 #### Option 2: Using Docker Compose
 
@@ -141,76 +157,38 @@ brew install python node ffmpeg
 
 See [UNRAID-SETUP.md](UNRAID-SETUP.md) for detailed Unraid installation instructions.
 
-## Configuration
+## Basic Configuration
 
 ### Directory Structure
+
+The application uses the following directories (created automatically on first run):
 
 ```
 ytandchill/
 ├── data/              # Database and configuration
 ├── downloads/         # Downloaded videos and thumbnails
 ├── logs/              # Application logs
-└── cookies.txt        # YouTube cookies (strongly recommended)
+└── cookies.txt        # YouTube cookies (optional but strongly recommended)
 ```
 
 ### Environment Variables
 
 - `PORT`: Web interface port (default: 4099)
+- `DATA_PATH`: Optional custom data directory location
 
-### YouTube API Setup (Required)
+### Optional: YouTube API and Cookies
 
-YT and Chill requires a YouTube Data API v3 key to scan channels and fetch video information:
+For full functionality, you'll want to configure:
+- **YouTube Data API v3 key** (required for channel scanning)
+- **YouTube cookies** (strongly recommended for reliable downloads)
 
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project (or select existing)
-3. Enable the **YouTube Data API v3**:
-   - Go to "APIs & Services" → "Library"
-   - Search for "YouTube Data API v3"
-   - Click "Enable"
-4. Create credentials:
-   - Go to "APIs & Services" → "Credentials"
-   - Click "Create Credentials" → "API Key"
-   - Copy your API key
-5. In YT and Chill web interface:
-   - Navigate to **Settings**
-   - Paste your API key in the "YouTube API Key" field
-   - Click "Save"
-
-**Note**: The free tier provides 10,000 quota units per day, which is sufficient for personal use (scanning ~100-300 channels daily).
-
-### YouTube Cookies (Strongly Recommended)
-
-**As of 2024, YouTube cookies are essentially required for reliable downloads.** According to [yt-dlp's FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp), YouTube has implemented increasingly aggressive bot detection, making downloads fail without authentication cookies. While technically optional, you'll likely encounter frequent download failures without them.
-
-To provide YouTube authentication cookies:
-
-**Method 1: Browser Extension (Recommended)**
-1. Install a cookie export extension:
-   - Chrome/Edge: "Get cookies.txt LOCALLY"
-   - Firefox: "cookies.txt"
-2. Go to youtube.com and ensure you're logged in
-3. Click the extension icon and export cookies for youtube.com
-4. Save the exported file as `cookies.txt` in the project directory
-5. Restart the container
-
-**Method 2: Manual Export**
-1. Open browser DevTools (F12)
-2. Go to youtube.com (logged in)
-3. Navigate to Application → Cookies → youtube.com
-4. Export cookies in Netscape format
-5. Save as `cookies.txt`
-
-**Important**:
-- The cookies.txt file must be in Netscape HTTP Cookie File format
-- Cookies expire periodically - if downloads start failing, re-export your cookies
-- Never share your cookies.txt file (it contains your authentication)
-- **Without cookies, you may experience**: bot detection errors, rate limiting, and failed downloads even for public videos
+These can be configured through the Settings page after initial setup. See [Advanced Configuration](#advanced-configuration) for detailed instructions.
 
 ## Usage
 
 ### Getting Started
 
-1. **Add Channels**: Navigate to the Channels page and add YouTube channel URLs
+1. **Add Channels**: Navigate to the Channels page and add YT channel URLs
 2. **Browse Library**: View all tracked channels and playlists
 3. **Queue Downloads**: Select videos to download from channel pages
 4. **Watch Videos**: Access your downloaded library through the Library tab
@@ -219,17 +197,9 @@ To provide YouTube authentication cookies:
 
 Navigate to **Settings** to configure the following:
 
-#### YouTube Data API Key (Required)
+#### YouTube Data API Key
 
-The YouTube Data API v3 key is **required** for channel scanning and fetching video metadata. See the [YouTube API Setup](#youtube-api-setup-required) section above for detailed instructions on obtaining your free API key.
-
-**Quick Setup:**
-1. Get your API key from [Google Cloud Console](https://console.cloud.google.com/)
-2. Go to **Settings** in YT and Chill
-3. Paste your API key in the "YouTube Data API Key" field
-4. Click "Save API Key"
-
-For more details, see [Do I need a YouTube API key?](FAQ.md#do-i-need-a-youtube-api-key) in the FAQ.
+The YouTube Data API v3 key is required for channel scanning and fetching video metadata. See the [Advanced Configuration](#advanced-configuration) section for setup instructions.
 
 #### Auto-Scan Daily
 
@@ -252,19 +222,9 @@ Enable automatic channel scanning to keep your library up-to-date without manual
 - With the free API tier (10,000 quota units/day), you can scan ~100-300 channels daily
 - Monitor your API usage if you have many channels
 
-#### Cookies.txt (Strongly Recommended)
+#### Cookies.txt
 
-As of 2024, YouTube cookies are **essential** for reliable downloads. Without them, you'll likely encounter bot detection errors and download failures.
-
-**Quick Setup:**
-1. Export cookies from your browser using a cookie extension (see detailed instructions in the FAQ)
-2. Save the file as `cookies.txt` in your YT and Chill directory
-3. Restart the application
-
-**Important Notes:**
-- Use a **disposable YouTube account**, NOT your personal account (see [Which YouTube account should I use?](FAQ.md#which-youtube-account-should-i-use-for-cookies) in the FAQ)
-- Cookies expire every few weeks - re-export when downloads start failing
-- For detailed export instructions, see [How do I properly export cookies?](FAQ.md#how-do-i-properly-export-cookies-from-youtube) in the FAQ
+As of 2024, YouTube cookies are essential for reliable downloads. See the [Advanced Configuration](#advanced-configuration) section for setup instructions.
 
 #### Reset User (Password Management)
 
@@ -291,6 +251,98 @@ Choose from 8 different color themes to customize your interface:
 **Row 2:** bruise (purple), ember (orange), stain (yellow), decay (green)
 
 Simply click on any theme button to apply it immediately. Your theme preference is saved automatically.
+
+## Advanced Configuration
+
+### YouTube API Setup (Required for Channel Scanning)
+
+YT and Chill requires a YouTube Data API v3 key to scan channels and fetch video information:
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or select existing)
+3. Enable the **YouTube Data API v3**:
+   - Go to "APIs & Services" → "Library"
+   - Search for "YouTube Data API v3"
+   - Click "Enable"
+4. Create credentials:
+   - Go to "APIs & Services" → "Credentials"
+   - Click "Create Credentials" → "API Key"
+   - Copy your API key
+5. In YT and Chill web interface:
+   - Navigate to **Settings**
+   - Paste your API key in the "YouTube API Key" field
+   - Click "Save"
+
+**Note**: The free tier provides 10,000 quota units per day, which is sufficient for personal use (scanning ~100-300 channels daily).
+
+### YouTube Cookies (Strongly Recommended for Downloads)
+
+**As of 2024, YouTube cookies are essentially required for reliable downloads.** According to [yt-dlp's FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp), YouTube has implemented increasingly aggressive bot detection, making downloads fail without authentication cookies. While technically optional, you'll likely encounter frequent download failures without them.
+
+To provide YouTube authentication cookies:
+
+**Method 1: Browser Extension (Recommended)**
+1. Install a cookie export extension:
+   - Chrome/Edge: "Get cookies.txt LOCALLY"
+   - Firefox: "cookies.txt"
+2. Go to youtube.com and ensure you're logged in
+3. Click the extension icon and export cookies for youtube.com
+4. Save the exported file as `cookies.txt` in the project directory
+5. Restart the container
+
+**Method 2: Manual Export**
+1. Open browser DevTools (F12)
+2. Go to youtube.com (logged in)
+3. Navigate to Application → Cookies → youtube.com
+4. Export cookies in Netscape format
+5. Save as `cookies.txt`
+
+**Important**:
+- The cookies.txt file must be in Netscape HTTP Cookie File format
+- Cookies expire periodically - if downloads start failing, re-export your cookies
+- Never share your cookies.txt file (it contains your authentication)
+- **Use a disposable YouTube account**, NOT your personal account (see [FAQ.md](FAQ.md) for account safety recommendations)
+- **Without cookies, you may experience**: bot detection errors, rate limiting, and failed downloads even for public videos
+
+**For detailed export instructions and troubleshooting**, see the [FAQ (Frequently Asked Questions)](FAQ.md).
+
+## Troubleshooting
+
+### Windows/Linux/macOS (Native)
+
+**Application won't start:**
+- Check Python version: `python --version` (need 3.11+)
+- Check Node version: `node --version` (need 18+)
+- Ensure ffmpeg is installed: `ffmpeg -version`
+- Check logs in `logs/app.log`
+
+**Port already in use:**
+- Another service is using port 4099
+- Change port in `backend/app.py` (line with `port = int(os.environ.get('PORT', 4099))`)
+
+**Downloads failing:**
+- Update yt-dlp: `pip install --upgrade yt-dlp`
+- Check internet connection
+- Check logs for specific errors
+- See [FAQ.md](FAQ.md) for common yt-dlp errors
+
+**Can't access age-restricted videos:**
+- Ensure cookies.txt is properly formatted (Netscape format)
+- Re-export cookies if they've expired
+- Restart application after adding cookies
+
+### Unraid (Docker)
+
+**Container won't start:**
+- Check logs: `docker logs ytandchill`
+- Verify volume paths exist and have correct permissions (99:100)
+- Ensure port 4099 is not in use
+
+**Force update not working:**
+- Manually pull: `docker pull ghcr.io/thenunner/ytandchill:latest`
+- Restart container from Unraid Docker tab
+
+**For more troubleshooting help**, see [FAQ.md](FAQ.md) and [PLATFORM-GUIDE.md](PLATFORM-GUIDE.md).
 
 ## Building from Source
 
@@ -344,46 +396,20 @@ docker-compose build
 - `ytandchill-template.xml` - Unraid Docker template
 - `build-for-unraid.sh` - Build script for Unraid
 
-### Documentation
-- `README.md` - This file (quick start guide)
-- `PLATFORM-GUIDE.md` - Detailed platform-specific instructions
-- `UNRAID-SETUP.md` - Detailed Unraid Docker instructions
-- `FAQ.md` - Frequently asked questions and common issues
+## Additional Documentation
 
-## Troubleshooting
-
-### Windows/Linux/macOS (Native)
-
-**Application won't start:**
-- Check Python version: `python --version` (need 3.11+)
-- Check Node version: `node --version` (need 18+)
-- Ensure ffmpeg is installed: `ffmpeg -version`
-- Check logs in `logs/app.log`
-
-**Port already in use:**
-- Another service is using port 4099
-- Change port in `backend/app.py` (line with `port = int(os.environ.get('PORT', 4099))`)
-
-**Downloads failing:**
-- Update yt-dlp: `pip install --upgrade yt-dlp`
-- Check internet connection
-- Check logs for specific errors
-
-**Can't access age-restricted videos:**
-- Ensure cookies.txt is properly formatted (Netscape format)
-- Re-export cookies if they've expired
-- Restart application after adding cookies
-
-### Unraid (Docker)
-
-**Container won't start:**
-- Check logs: `docker logs ytandchill`
-- Verify volume paths exist and have correct permissions (99:100)
-- Ensure port 4099 is not in use
-
-**Force update not working:**
-- Manually pull: `docker pull ghcr.io/thenunner/ytandchill:latest`
-- Restart container from Unraid Docker tab
+- **[FAQ (Frequently Asked Questions)](FAQ.md)** - Common issues, errors, and troubleshooting
+  - YouTube cookies and authentication (detailed export instructions)
+  - Common yt-dlp errors (geo-blocking, bot detection, etc.)
+  - Download failures and performance issues
+  - Account safety recommendations
+  - Storage and backup questions
+- **[Platform Guide](PLATFORM-GUIDE.md)** - Detailed platform-specific instructions
+  - Windows, Linux, macOS, and Unraid setup
+  - Auto-start configuration for each platform
+  - Platform-specific troubleshooting
+  - Common maintenance tasks
+- **[Unraid Setup Guide](UNRAID-SETUP.md)** - Detailed Unraid Docker instructions
 
 ## License
 
