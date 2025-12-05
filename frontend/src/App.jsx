@@ -298,10 +298,10 @@ function App() {
             <span>Settings</span>
           </Link>
 
-          {/* Logout Button - Hidden on mobile, shown on desktop/tablet */}
+          {/* Logout Tab - Hidden on mobile, shown on desktop/tablet */}
           <button
             onClick={handleLogout}
-            className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-tertiary hover:bg-accent hover:text-accent-text transition-colors text-text-secondary text-sm flex-shrink-0"
+            className="nav-tab hidden md:flex"
             title="Logout"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

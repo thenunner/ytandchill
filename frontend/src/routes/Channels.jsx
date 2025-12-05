@@ -878,7 +878,7 @@ export default function Channels() {
       </div>
 
       {showAddForm && (
-        <div className="card p-4 animate-slide-down max-w-2xl">
+        <div className="card p-4 animate-slide-down max-w-2xl mx-auto">
           <form onSubmit={handleAddChannel} className="space-y-3">
             <div>
               <label className="text-xs font-semibold text-text-secondary mb-1 block">Channel URL or ID</label>
@@ -893,7 +893,18 @@ export default function Channels() {
             </div>
             <div className="flex items-end gap-3">
               <div className="w-32">
-                <label className="text-xs font-semibold text-text-secondary mb-1 block">Min (min)</label>
+                <div className="flex items-center gap-1 mb-1">
+                  <label className="text-xs font-semibold text-text-secondary">Min (min)</label>
+                  <button
+                    type="button"
+                    className="text-text-secondary hover:text-text-primary transition-colors"
+                    title="Minimum video duration in minutes. Only videos longer than this will be found. Use 0 for no minimum."
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
                 <input
                   type="number"
                   value={minMinutes}
@@ -904,7 +915,18 @@ export default function Channels() {
                 />
               </div>
               <div className="w-32">
-                <label className="text-xs font-semibold text-text-secondary mb-1 block">Max (min)</label>
+                <div className="flex items-center gap-1 mb-1">
+                  <label className="text-xs font-semibold text-text-secondary">Max (min)</label>
+                  <button
+                    type="button"
+                    className="text-text-secondary hover:text-text-primary transition-colors"
+                    title="Maximum video duration in minutes. Only videos shorter than this will be found. Use 0 for no maximum."
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </div>
                 <input
                   type="number"
                   value={maxMinutes}
@@ -957,6 +979,7 @@ export default function Channels() {
                       });
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    title="If checked, will automatically download any new video that is found via scan (manual or automated)"
                   >
                     <input
                       type="checkbox"

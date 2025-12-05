@@ -1,5 +1,5 @@
 # Stage 1: Build Frontend
-FROM node:18 AS frontend-builder
+FROM node:20 AS frontend-builder
 
 WORKDIR /frontend
 
@@ -16,7 +16,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Production Runtime
-FROM python:3.11-slim
+FROM python:3.12-slim
 
 # Install system dependencies (ffmpeg for video processing, curl/unzip for Deno)
 RUN apt-get update && \

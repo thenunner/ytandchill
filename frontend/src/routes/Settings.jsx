@@ -339,7 +339,7 @@ export default function Settings() {
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
               <div className="flex items-center justify-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.3.2</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.3.3</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center justify-center gap-3 order-3 md:order-4">
@@ -483,7 +483,7 @@ export default function Settings() {
           {/* Card 2: Theme */}
           <div className="card p-4 w-full">
             <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Theme</h3>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col items-center gap-3">
           {/* Dark themes - Mobile: 4 cols (wraps to 2 rows), Desktop: 7 cols (1 row) */}
           <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
             <button
@@ -609,9 +609,9 @@ export default function Settings() {
           <div className="card p-4 w-full">
             <div className="flex flex-col md:flex-row gap-6">
               {/* YouTube API Key Section */}
-              <div className="flex-1">
+              <div className="flex-1 flex flex-col items-center">
                 <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">YouTube Data API Key</h3>
-                <div className="flex gap-2 mb-2">
+                <div className="flex gap-2 mb-2 w-full">
                   <input
                     type="text"
                     value={youtubeApiKey}
@@ -686,9 +686,19 @@ export default function Settings() {
 
           {/* Card 4: Auto-Scan Daily */}
           <div className="card p-4 w-full">
-            {/* Header: Title with ON/OFF Toggle */}
+            {/* Header: Title with Help Icon and ON/OFF Toggle */}
             <div className={`flex items-center justify-center gap-4 ${autoRefresh ? 'mb-3' : ''}`}>
-              <h3 className="text-sm font-semibold text-text-primary">Auto-Scan Daily</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-text-primary">Auto-Scan Daily</h3>
+                <button
+                  className="text-text-secondary hover:text-text-primary transition-colors"
+                  title="Automatically scan your channels daily to discover new videos. Choose specific times or interval-based scanning."
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
               <div className="flex border border-dark-border rounded-md overflow-hidden">
                 <button
                   onClick={async () => {
@@ -929,10 +939,18 @@ export default function Settings() {
 
           {/* Card 5: Logging */}
           <div className="card p-4 w-full">
-            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Logging</h3>
-            <div
-              title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
-            >
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <h3 className="text-sm font-semibold text-text-primary">Logging</h3>
+              <button
+                className="text-text-secondary hover:text-text-primary transition-colors"
+                title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+            <div>
               <input
                 type="range"
                 min="0"
