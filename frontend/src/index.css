@@ -190,6 +190,37 @@
   --plyr-main: 182 100% 38%;       /* Same as accent */
 }
 
+/* Catppuccin Mocha Theme */
+.theme-catppuccin {
+  /* Backgrounds */
+  --bg-primary: 240 21% 6%;        /* Crust #11111b */
+  --bg-secondary: 240 21% 15%;     /* Base #1e1e2e */
+  --bg-tertiary: 237 16% 23%;      /* Surface0 #313244 */
+  --bg-hover: 235 16% 30%;         /* Surface1 #45475a */
+
+  /* Borders */
+  --border: 237 16% 23%;           /* Surface0 #313244 */
+  --border-light: 235 16% 30%;     /* Surface1 #45475a */
+
+  /* Text */
+  --text-primary: 226 64% 88%;     /* Text #cdd6f4 */
+  --text-secondary: 228 24% 79%;   /* Subtext0 #a6adc8 */
+  --text-muted: 233 12% 56%;       /* Overlay1 #7f849c */
+
+  /* Accent (Sapphire Blue) */
+  --accent: 199 76% 69%;           /* Sapphire #74c7ec */
+  --accent-hover: 187 67% 73%;     /* Sky #89dceb */
+  --accent-text: 240 21% 6%;       /* Crust #11111b */
+
+  /* Scrollbar */
+  --scrollbar-track: 240 21% 15%;  /* Base #1e1e2e */
+  --scrollbar-thumb: 237 16% 23%;  /* Surface0 #313244 */
+  --scrollbar-thumb-hover: 235 16% 30%; /* Surface1 #45475a */
+
+  /* Plyr player */
+  --plyr-main: 199 76% 69%;        /* Sapphire #74c7ec */
+}
+
 /* Online Light Green Theme */
 .theme-online {
   /* Backgrounds */

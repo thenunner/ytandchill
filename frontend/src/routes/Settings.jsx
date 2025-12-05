@@ -315,41 +315,41 @@ export default function Settings() {
           {/* Card 1: System Status + Stats + Reset User */}
           <div className="card p-4 w-full">
             {/* System Status */}
-            <h3 className="text-sm font-semibold text-text-primary mb-3">System Status</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">System Status</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
               {/* FFmpeg - Mobile: (1,1), Desktop: (1,1) */}
-              <div className="flex items-center gap-3 order-1 md:order-1">
+              <div className="flex items-center justify-center gap-3 order-1 md:order-1">
                 <span className="text-text-secondary w-16">FFmpeg</span>
                 <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
                   {health?.ffmpeg_available ? 'Active' : 'Inactive'}
                 </span>
               </div>
               {/* Cookies - Mobile: (3,1), Desktop: (1,2) */}
-              <div className="flex items-center gap-3 order-5 md:order-2">
+              <div className="flex items-center justify-center gap-3 order-5 md:order-2">
                 <span className="text-text-secondary w-16">Cookies</span>
                 <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
                   {health?.cookies_available ? 'Active' : 'Inactive'}
                 </span>
               </div>
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
-              <div className="flex items-center gap-3 order-4 md:order-3">
+              <div className="flex items-center justify-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.2.0</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.2.1</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
-              <div className="flex items-center gap-3 order-3 md:order-4">
+              <div className="flex items-center justify-center gap-3 order-3 md:order-4">
                 <span className="text-text-secondary w-16">Worker</span>
                 <span className={`font-medium text-xs ${health?.download_worker_running ? 'text-text-primary' : 'text-red-400'}`}>
                   {health?.download_worker_running ? 'Active' : 'Inactive'}
                 </span>
               </div>
               {/* yt-dlp - Mobile: (1,2), Desktop: (2,2) */}
-              <div className="flex items-center gap-3 order-2 md:order-5">
+              <div className="flex items-center justify-center gap-3 order-2 md:order-5">
                 <span className="text-text-secondary w-16">yt-dlp</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
               {/* Google API */}
-              <div className="flex items-center gap-3 order-5 md:order-6">
+              <div className="flex items-center justify-center gap-3 order-5 md:order-6">
                 <span className="text-text-secondary w-24">Google API</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.google_api_version || 'Unknown'}</span>
               </div>
@@ -359,35 +359,35 @@ export default function Settings() {
             <div className="border-t border-dark-border my-4"></div>
 
             {/* Stats */}
-            <h3 className="text-sm font-semibold text-text-primary mb-3">Stats</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Stats</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
               {/* Videos to Review - Mobile: (1,1), Desktop: (1,1) */}
-              <div className="flex items-center gap-3 order-1">
+              <div className="flex items-center justify-center gap-3 order-1">
                 <span className="text-text-secondary">Videos to Review</span>
                 <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
               </div>
               {/* Videos Ignored - Mobile: (3,1), Desktop: (1,2) */}
-              <div className="flex items-center gap-3 order-5 md:order-2">
+              <div className="flex items-center justify-center gap-3 order-5 md:order-2">
                 <span className="text-text-secondary">Videos Ignored</span>
                 <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
               </div>
               {/* Total Playlists - Mobile: (2,2), Desktop: (1,3) */}
-              <div className="flex items-center gap-3 order-4 md:order-3">
+              <div className="flex items-center justify-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary">Total Playlists</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
               {/* Videos in Library - Mobile: (2,1), Desktop: (2,1) */}
-              <div className="flex items-center gap-3 order-3 md:order-4">
+              <div className="flex items-center justify-center gap-3 order-3 md:order-4">
                 <span className="text-text-secondary">Videos in Library</span>
                 <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
               </div>
               {/* Total Channels - Mobile: (1,2), Desktop: (2,2) */}
-              <div className="flex items-center gap-3 order-2 md:order-5">
+              <div className="flex items-center justify-center gap-3 order-2 md:order-5">
                 <span className="text-text-secondary">Total Channels</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
               {/* Total Storage - Mobile: (3,2), Desktop: (2,3) */}
-              <div className="flex items-center gap-3 order-6">
+              <div className="flex items-center justify-center gap-3 order-6">
                 <span className="text-text-secondary">Total Storage</span>
                 <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
               </div>
@@ -397,7 +397,7 @@ export default function Settings() {
             <div className="border-t border-dark-border my-4"></div>
 
             {/* Reset User Section */}
-            <div>
+            <div className="flex justify-center">
               <button
                 onClick={() => setShowPasswordChange(!showPasswordChange)}
                 className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
@@ -477,13 +477,13 @@ export default function Settings() {
 
           {/* Card 2: Theme */}
           <div className="card p-4 w-full">
-            <h3 className="text-sm font-semibold text-text-primary mb-3">Theme</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Theme</h3>
             <div className="flex flex-col gap-3">
           {/* Dark themes - Mobile: 4 cols (wraps to 2 rows), Desktop: 7 cols (1 row) */}
           <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
             <button
               onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'kernel'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
                   : ''
@@ -495,7 +495,7 @@ export default function Settings() {
             </button>
             <button
               onClick={() => { setTheme('fatal'); showNotification('Theme changed to Fatal', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'fatal'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
                   : ''
@@ -507,7 +507,7 @@ export default function Settings() {
             </button>
             <button
               onClick={() => { setTheme('subnet'); showNotification('Theme changed to Subnet', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'subnet'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
                   : ''
@@ -519,7 +519,7 @@ export default function Settings() {
             </button>
             <button
               onClick={() => { setTheme('archive'); showNotification('Theme changed to Archive', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'archive'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
                   : ''
@@ -531,7 +531,7 @@ export default function Settings() {
             </button>
             <button
               onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'buffer'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
                   : ''
@@ -543,7 +543,7 @@ export default function Settings() {
             </button>
             <button
               onClick={() => { setTheme('gateway'); showNotification('Theme changed to Gateway', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'gateway'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-cyan-400 after:to-cyan-200'
                   : ''
@@ -552,6 +552,18 @@ export default function Settings() {
             >
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(182, 100%, 35%)' }}></div>
               Gateway
+            </button>
+            <button
+              onClick={() => { setTheme('catppuccin'); showNotification('Theme changed to Catppuccin', 'success'); }}
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                theme === 'catppuccin'
+                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-sky-400 after:to-cyan-300'
+                  : ''
+              }`}
+              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+            >
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#74c7ec' }}></div>
+              Catppuccin
             </button>
           </div>
 
@@ -562,7 +574,7 @@ export default function Settings() {
           <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
             <button
               onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'online'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
                   : ''
@@ -574,7 +586,7 @@ export default function Settings() {
             </button>
             <button
               onClick={() => { setTheme('pixel'); showNotification('Theme changed to Pixel', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'pixel'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
                   : ''
@@ -586,7 +598,7 @@ export default function Settings() {
             </button>
             <button
               onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
-              className={`relative flex items-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
                 theme === 'debug'
                   ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
                   : ''
@@ -605,7 +617,7 @@ export default function Settings() {
             <div className="flex flex-col md:flex-row gap-6">
               {/* YouTube API Key Section */}
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-text-primary mb-3">YouTube Data API Key</h3>
+                <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">YouTube Data API Key</h3>
                 <div className="flex gap-2 mb-2">
                   <input
                     type="text"
@@ -636,7 +648,7 @@ export default function Settings() {
 
               {/* SponsorBlock Section */}
               <div className="flex-1">
-                <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center justify-center gap-2">
                   SponsorBlock
                   <button
                     onClick={() => setShowSponsorBlockHelp(true)}
@@ -682,7 +694,7 @@ export default function Settings() {
           {/* Card 4: Auto-Scan Daily */}
           <div className="card p-4 w-full">
             {/* Header: Title with ON/OFF Toggle */}
-            <div className={`flex items-center justify-between ${autoRefresh ? 'mb-3' : ''}`}>
+            <div className={`flex items-center justify-center gap-4 ${autoRefresh ? 'mb-3' : ''}`}>
               <h3 className="text-sm font-semibold text-text-primary">Auto-Scan Daily</h3>
               <div className="flex border border-dark-border rounded-md overflow-hidden">
                 <button
@@ -888,7 +900,7 @@ export default function Settings() {
 
           {/* Card 5: Logging */}
           <div className="card p-4 w-full">
-            <h3 className="text-sm font-semibold text-text-primary mb-3">Logging</h3>
+            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Logging</h3>
             <div
               title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
             >
@@ -941,7 +953,7 @@ export default function Settings() {
         }`}
       >
         <div className="card p-4">
-          <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center">
+          <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center justify-center">
             Application Logs
 
             {logsData?.total_lines && (
