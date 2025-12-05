@@ -931,20 +931,7 @@ export default function PlaylistPlayer() {
   return (
     <div className="h-[calc(100vh-120px)] sm:h-[calc(100vh-140px)] flex flex-col animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between gap-2 sm:gap-4 mb-3 sm:mb-4 flex-shrink-0">
-        <button
-          onClick={() => navigate(finalBackUrl)}
-          className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors min-w-0"
-          aria-label={`Back to ${finalTitle}`}
-        >
-          <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-          <span className="font-medium truncate">
-            <span className="hidden sm:inline">Back to </span>{finalTitle}
-          </span>
-        </button>
-
+      <div className="flex items-center justify-end gap-2 sm:gap-4 mb-3 sm:mb-4 flex-shrink-0">
         <div className="flex items-center gap-2">
           {/* Mobile Queue Progress */}
           <span className="md:hidden text-xs text-text-secondary bg-dark-secondary px-2 py-1 rounded">

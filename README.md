@@ -2,6 +2,8 @@
 
 YT channel downloader and video library manager. Monitor channels, queue downloads, and manage your local YT video library with a modern web interface.
 
+Coded mainly via countless sessions with AI.
+
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Unraid-lightgrey.svg)
