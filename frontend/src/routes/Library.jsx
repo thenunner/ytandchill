@@ -513,7 +513,7 @@ export default function Library() {
       <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg pb-4 mb-4">
         {activeTab === 'channels' ? (
           /* Channels: Responsive layout - wraps on mobile */
-          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
             {/* Tabs */}
             <div className="flex gap-2">
               <button
@@ -694,7 +694,7 @@ export default function Library() {
           </div>
         ) : (
           /* Playlists: Responsive layout - wraps on mobile */
-          <div className="flex flex-wrap items-center gap-3 md:gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
               {/* Tabs */}
               <div className="flex gap-2">
                 <button

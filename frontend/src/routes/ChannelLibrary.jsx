@@ -307,16 +307,13 @@ export default function ChannelLibrary() {
     setSearchParams(newParams);
   };
 
-  // Helper to parse upload_date (YYYYMMDD format) or discovered_at (ISO format)
+  // Helper to parse downloaded_at date
   const parseVideoDate = (video) => {
-    if (video.upload_date && video.upload_date.length === 8) {
-      // Parse YYYYMMDD format
-      const year = video.upload_date.substring(0, 4);
-      const month = video.upload_date.substring(4, 6);
-      const day = video.upload_date.substring(6, 8);
-      return new Date(`${year}-${month}-${day}`);
+    if (video.downloaded_at) {
+      return new Date(video.downloaded_at);
     }
-    return new Date(video.discovered_at);
+    // Fallback to discovered_at if downloaded_at is not set
+    return new Date(video.discovered_at || 0);
   };
 
   // Filter and sort videos (memoized for performance)
@@ -659,7 +656,7 @@ export default function ChannelLibrary() {
     <div className="space-y-4 animate-fade-in">
       {/* Sticky Header Row */}
       <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg md:-mx-8 md:px-8 pb-4 mb-4">
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center justify-center gap-3 flex-wrap">
           {/* Back Arrow - Library mode goes to /library, Discovery mode goes to / (main channels list) */}
           <Link
             to={isLibraryMode ? "/library" : "/"}

@@ -112,13 +112,16 @@ def get_videos():
         if max_duration is not None:
             query = query.filter(Video.duration_sec <= max_duration * 60)
         if upload_from:
-            # Convert YYYY-MM-DD to YYYYMMDD
-            upload_from_formatted = upload_from.replace('-', '')
-            query = query.filter(Video.upload_date.isnot(None), Video.upload_date >= upload_from_formatted)
+            # Filter by downloaded_at (when video was added to library)
+            # upload_from is YYYY-MM-DD format, convert to datetime for comparison
+            query = query.filter(Video.downloaded_at.isnot(None), Video.downloaded_at >= upload_from)
         if upload_to:
-            # Convert YYYY-MM-DD to YYYYMMDD
-            upload_to_formatted = upload_to.replace('-', '')
-            query = query.filter(Video.upload_date.isnot(None), Video.upload_date <= upload_to_formatted)
+            # Filter by downloaded_at (when video was added to library)
+            # Add one day to upload_to to include videos downloaded on that day
+            from datetime import datetime, timedelta
+            upload_to_date = datetime.strptime(upload_to, '%Y-%m-%d')
+            upload_to_inclusive = (upload_to_date + timedelta(days=1)).strftime('%Y-%m-%d')
+            query = query.filter(Video.downloaded_at.isnot(None), Video.downloaded_at < upload_to_inclusive)
 
         videos = query.order_by(Video.discovered_at.desc()).all()
         result = [_serialize_video(v) for v in videos]

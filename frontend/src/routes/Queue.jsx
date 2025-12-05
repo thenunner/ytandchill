@@ -335,7 +335,7 @@ export default function Queue() {
     <div className="space-y-4 animate-fade-in">
       {/* Button Bar */}
       <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg pb-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center justify-center gap-4">
           <div className="flex space-x-2">
           {/* Only show Resume when queue is paused AND has items */}
           {workerPaused && hasQueuedItems && (

@@ -129,15 +129,13 @@ export default function Playlist() {
     }
   };
 
-  // Helper to parse upload_date (YYYYMMDD format)
+  // Helper to parse downloaded_at date
   const parseVideoDate = (video) => {
-    if (video.upload_date && video.upload_date.length === 8) {
-      const year = video.upload_date.substring(0, 4);
-      const month = video.upload_date.substring(4, 6);
-      const day = video.upload_date.substring(6, 8);
-      return new Date(`${year}-${month}-${day}`);
+    if (video.downloaded_at) {
+      return new Date(video.downloaded_at);
     }
-    return new Date(video.discovered_at);
+    // Fallback to discovered_at if downloaded_at is not set
+    return new Date(video.discovered_at || 0);
   };
 
   // Filter and sort videos - must be before any early returns
@@ -237,7 +235,7 @@ export default function Playlist() {
         </div>
 
         {/* Controls Row */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-center gap-3">
           {/* Search */}
           <input
             type="text"

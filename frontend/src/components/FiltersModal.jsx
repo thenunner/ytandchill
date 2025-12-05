@@ -82,11 +82,11 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
           hideVideosFilter ? 'grid-cols-3' : // No visibility: upload, duration, sort
           'grid-cols-4' // No visibility: upload, videos, duration, sort
         } divide-x divide-dark-border`}>
-          {/* Upload Date Column - Hidden in playlist mode */}
+          {/* Added to Library Column - Hidden in playlist mode */}
           {!isPlaylistMode && (
           <div className="p-2 sm:p-4">
             <h4 className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2 sm:mb-3">
-              UPLOAD DATE
+              ADDED TO LIBRARY
             </h4>
             <div className="space-y-0.5 sm:space-y-1">
               {filterOptions.uploadDate.map((option) => (
