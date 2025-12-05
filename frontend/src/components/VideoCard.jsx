@@ -190,9 +190,7 @@ export default function VideoCard({
 
   return (
     <div
-      className={`group cursor-pointer transition-colors rounded ${
-        isSelected ? 'ring-2 ring-accent/60' : ''
-      } ${onToggleSelect ? 'hover:ring-2 hover:ring-accent/50' : ''}`}
+      className="group cursor-pointer transition-colors rounded"
       onClick={handleCardClick}
     >
       {/* Thumbnail with video preview */}
@@ -275,7 +273,7 @@ export default function VideoCard({
       </div>
 
       {/* Content */}
-      <div className="p-3 space-y-2 transition-colors group-hover:bg-dark-tertiary">
+      <div className={`p-3 space-y-2 transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
         {/* Title + 3-dot menu (library videos only) */}
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-base font-medium text-text-primary line-clamp-2 leading-tight flex-1 min-w-0" title={video.title}>

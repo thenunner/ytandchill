@@ -301,7 +301,7 @@
 @layer components {
   /* Modern Card Component */
   .card {
-    @apply bg-dark-secondary rounded-xl border border-dark-border shadow-card overflow-hidden;
+    @apply bg-dark-secondary rounded-xl border border-dark-border shadow-card;
   }
 
   /* Card active/focus states - make selection visible like tabs */

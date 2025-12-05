@@ -1164,9 +1164,7 @@ export default function Library() {
                             return (
                               <div
                                 key={playlist.id}
-                                className={`card relative cursor-pointer transition-colors ${
-                                  isSelected ? 'ring-2 ring-accent/60' : ''
-                                } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
+                                className="card relative cursor-pointer transition-colors group"
                                 onClick={(e) => {
                                   if (editMode) {
                                     togglePlaylistSelection(playlist.id);
@@ -1204,7 +1202,7 @@ export default function Library() {
                                 </div>
 
                                 {/* Playlist info */}
-                                <div className="p-3 space-y-2 transition-colors group-hover:bg-dark-tertiary">
+                                <div className={`p-3 space-y-2 transition-colors ${editMode && isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
                                   {/* Title + 3-Dot Menu (inline, YouTube style) */}
                                   <div className="flex items-start justify-between gap-2">
                                     <h3 className="text-base font-semibold text-text-primary line-clamp-2 leading-tight flex-1" title={playlist.title || playlist.name}>

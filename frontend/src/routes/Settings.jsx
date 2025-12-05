@@ -51,6 +51,11 @@ export default function Settings() {
     return saved !== null ? saved === 'true' : true; // Default: open
   });
 
+  // Scroll to top on component mount
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, []);
+
   // Auto-scroll to bottom of logs when they update (instant scroll)
   useEffect(() => {
     if (logEndRef.current && showLogs) {

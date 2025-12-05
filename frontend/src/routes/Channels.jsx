@@ -1134,9 +1134,7 @@ export default function Channels() {
             )}
 
             <div
-              className={`overflow-hidden cursor-pointer transition-all rounded ${
-                selectedChannels.includes(channel.id) ? 'ring-2 ring-accent/60' : ''
-              } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'hover:scale-100'}`}
+              className="overflow-hidden cursor-pointer transition-all rounded group"
               onClick={() => {
                 if (editMode) {
                   setSelectedChannels(prev =>
@@ -1183,7 +1181,7 @@ export default function Channels() {
                 </div>
 
                 {/* Content Section */}
-                <div className="p-3 space-y-2 transition-colors group-hover:bg-dark-tertiary">
+                <div className={`p-3 space-y-2 transition-colors ${editMode && selectedChannels.includes(channel.id) ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
                   {/* Title + AUTO badge + 3-dot menu */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
