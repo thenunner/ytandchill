@@ -61,9 +61,6 @@ YT channel downloader and video library manager. Monitor channels, queue downloa
 ### Playlist View
 ![Playlist](images/playlist.png)
 
-### Download Queue
-![Queue](images/queue.png)
-
 ### Video Player
 ![Video Player](images/video.png)
 

@@ -804,7 +804,8 @@ export default function Settings() {
                 </div>
 
                 {/* Row 2: Time Boxes + Save Button */}
-                <div className="px-0 sm:px-4 lg:px-8">
+                <div className="flex justify-center">
+                <div>
                 {(() => {
                   const displayTimes = getPreviewTimes();
                   while (displayTimes.length < 4) {
@@ -927,6 +928,7 @@ export default function Settings() {
                     </>
                   );
                 })()}
+                </div>
                 </div>
               </>
             )}
