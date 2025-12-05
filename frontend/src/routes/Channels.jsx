@@ -811,7 +811,7 @@ export default function Channels() {
                 ? "Scan selected channels for new videos since last scan"
                 : "Scan all channels for new videos since last scan"}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className={`w-4 h-4 ${isScanRunning ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
             </svg>
@@ -829,7 +829,7 @@ export default function Channels() {
                 ? "Rescan selected channels for all videos"
                 : "Rescan all channels for all videos"}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg className={`w-4 h-4 ${isScanRunning ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
