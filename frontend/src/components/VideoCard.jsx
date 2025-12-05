@@ -190,14 +190,14 @@ export default function VideoCard({
 
   return (
     <div
-      className={`cursor-pointer transition-colors rounded overflow-hidden ${
+      className={`cursor-pointer transition-colors rounded ${
         isSelected ? 'ring-2 ring-accent/60' : ''
       } ${onToggleSelect ? 'hover:ring-2 hover:ring-accent/50' : ''}`}
       onClick={handleCardClick}
     >
       {/* Thumbnail with video preview */}
       <div
-        className={`relative aspect-video bg-dark-tertiary overflow-hidden ${isDownloaded && !editMode ? '' : 'rounded-t-xl'}`}
+        className="relative aspect-video bg-dark-tertiary overflow-hidden rounded-t-lg"
         onMouseEnter={handlePreviewStart}
         onMouseLeave={handlePreviewStop}
       >
@@ -252,13 +252,6 @@ export default function VideoCard({
           </div>
         )}
 
-        {/* Playlist Badge for non-library videos (no header) */}
-        {!isDownloaded && !isSelected && video.playlist_ids && video.playlist_ids.length > 0 && (
-          <div className="absolute top-2 left-2 bg-green-600/95 text-white px-2 py-0.5 rounded text-xs font-bold tracking-wide backdrop-blur-sm z-10">
-            PLAYLIST
-          </div>
-        )}
-
         {/* Duration overlay - bottom right (YouTube style) */}
         {video.duration_sec && (
           <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs font-semibold px-1.5 py-0.5 rounded">
@@ -272,13 +265,20 @@ export default function VideoCard({
             WATCHED
           </div>
         )}
+
+        {/* PLAYLIST badge - bottom left overlay (when video is in playlists) */}
+        {video.playlist_ids && video.playlist_ids.length > 0 && (
+          <div className="absolute bottom-1 left-1 bg-green-600/90 text-white px-1.5 py-0.5 rounded text-xs font-semibold">
+            PLAYLIST
+          </div>
+        )}
       </div>
 
       {/* Content */}
       <div className="p-3 space-y-2">
         {/* Title + 3-dot menu (library videos only) */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-sm font-medium text-text-primary line-clamp-2 leading-tight flex-1 min-w-0" title={video.title}>
+          <h3 className="text-base font-medium text-text-primary line-clamp-2 leading-tight flex-1 min-w-0" title={video.title}>
             {video.title}
           </h3>
 
@@ -294,7 +294,7 @@ export default function VideoCard({
                 title="Video options"
                 className="p-1 rounded hover:bg-dark-hover transition-colors text-text-secondary hover:text-text-primary"
               >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="5" r="2"></circle>
                   <circle cx="12" cy="12" r="2"></circle>
                   <circle cx="12" cy="19" r="2"></circle>
@@ -362,14 +362,13 @@ export default function VideoCard({
 
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
-          // Library view: 2 columns - date (left), size (right) - duration now on thumbnail
-          <div className="flex justify-between text-sm text-text-secondary">
-            <span>{formatDate(video.upload_date)}</span>
-            <span>{formatFileSize(video.file_size_bytes)}</span>
+          // Library view: YouTube style - date • size
+          <div className="text-sm text-text-secondary font-medium">
+            <span>{formatDate(video.upload_date)} • {formatFileSize(video.file_size_bytes)}</span>
           </div>
         ) : (
           // Channel view: date only - duration now on thumbnail
-          <div className="text-sm text-text-secondary">
+          <div className="text-sm text-text-secondary font-medium">
             <span>{formatDate(video.upload_date)}</span>
           </div>
         )}

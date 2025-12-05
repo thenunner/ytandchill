@@ -662,10 +662,10 @@ export default function Player() {
 
       {/* Player Container */}
       <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
-          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover min-h-[300px] md:min-h-[540px]">
+          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
             <video
               ref={videoRef}
-              className="w-full h-auto"
+              className="w-full h-auto block"
               playsInline
               preload="auto"
             />
@@ -677,7 +677,7 @@ export default function Player() {
               {video.title}
             </h1>
 
-            <div className="flex items-center gap-4 text-sm text-text-secondary">
+            <div className="flex items-center gap-3 text-sm text-text-secondary">
               <Link
                 to={`/channel/${video.channel_id}/library`}
                 className="hover:text-text-primary transition-colors font-medium"
@@ -696,47 +696,16 @@ export default function Player() {
                     ).toLocaleDateString()
                   : 'Unknown date'}
               </span>
-              {video.playback_seconds > 0 && (
+              {video.watched && (
                 <>
                   <span>•</span>
-                  <span className="text-accent-text">
-                    Resume from {formatDuration(video.playback_seconds)}
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold">
+                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    Watched
                   </span>
                 </>
-              )}
-            </div>
-
-            {/* Stats Pills */}
-            <div className="flex items-center gap-2">
-              <span
-                className={`stat-pill ${
-                  video.watched
-                    ? 'bg-accent/20 border-accent/40 text-accent-text'
-                    : 'bg-yellow-600/20 border-yellow-600/40 text-yellow-400'
-                }`}
-              >
-                {video.watched ? (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
-                ) : (
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                  </svg>
-                )}
-                <span className="font-semibold">
-                  {video.watched ? 'Watched' : 'Not watched'}
-                </span>
-              </span>
-
-              {video.playback_seconds > 0 && (
-                <span className="stat-pill bg-blue-600/20 border-blue-600/40 text-blue-400">
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  <span className="font-semibold">In Progress</span>
-                </span>
               )}
             </div>
           </div>

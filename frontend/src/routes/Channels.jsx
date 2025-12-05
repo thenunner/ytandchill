@@ -1166,7 +1166,7 @@ export default function Channels() {
                 }}
               >
                 {/* Channel Thumbnail - YouTube style */}
-                <div className="relative w-full aspect-video bg-dark-tertiary">
+                <div className="relative w-full aspect-video bg-dark-tertiary rounded-t-lg overflow-hidden">
                   {channel.thumbnail ? (
                     <img
                       src={channel.thumbnail}
@@ -1192,7 +1192,7 @@ export default function Channels() {
                         <span className="text-green-500 text-[10px] font-bold tracking-wide flex-shrink-0">AUTO</span>
                       )}
                       {/* Title */}
-                      <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent-text transition-colors flex-1 min-w-0" title={channel.title}>
+                      <h3 className="text-base font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent-text transition-colors flex-1 min-w-0" title={channel.title}>
                         {channel.title}
                       </h3>
                     </div>
@@ -1209,7 +1209,7 @@ export default function Channels() {
                           }}
                           className="p-1 rounded hover:bg-dark-hover transition-colors"
                         >
-                          <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                          <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="12" cy="5" r="2"></circle>
                             <circle cx="12" cy="12" r="2"></circle>
                             <circle cx="12" cy="19" r="2"></circle>
@@ -1219,16 +1219,27 @@ export default function Channels() {
                     )}
                   </div>
 
-                  {/* Scan and Video Dates */}
-                  <div className="flex items-center justify-between text-xs text-text-secondary font-medium">
-                    <span>Scan: {formatScanTime(channel.last_scan_time) || 'None'}</span>
-                    <span>Video: {formatVideoDate(channel.last_video_date) || 'None'}</span>
+                  {/* Scan and Video Dates - YouTube style */}
+                  <div className="text-sm text-text-secondary font-medium">
+                    <span className="text-accent-text">Scan</span> • {formatScanTime(channel.last_scan_time) || 'None'} - Last video • {formatVideoDate(channel.last_video_date) || 'None'}
                   </div>
 
-                  {/* Stats - Downloaded (left), Discovered (middle), Ignored (right) */}
-                  <div className="flex items-center justify-between">
-                    {/* Downloaded - Far Left */}
-                    <div className="flex items-center gap-1 text-sm font-semibold text-accent-text" title="Downloaded videos">
+                  {/* Stats - To Review, Downloaded, Ignored (closer together with dots) */}
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    {/* To Review - First */}
+                    <div className={`flex items-center gap-1 font-semibold ${(channel.video_count || 0) > 0 ? 'text-red-500' : 'text-gray-400'}`} title="To Review">
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <circle cx="12" cy="12" r="1"></circle>
+                      </svg>
+                      <span className="font-mono">{channel.video_count || 0}</span>
+                    </div>
+
+                    {/* Separator dot */}
+                    <span className="text-text-secondary">•</span>
+
+                    {/* Downloaded - Second */}
+                    <div className="flex items-center gap-1 font-semibold text-accent-text" title="Downloaded videos">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -1237,17 +1248,11 @@ export default function Channels() {
                       <span className="font-mono">{channel.downloaded_count || 0}</span>
                     </div>
 
-                    {/* Discovered - Middle */}
-                    <div className={`flex items-center gap-1 text-sm font-semibold ${(channel.video_count || 0) > 0 ? 'text-red-500' : 'text-gray-400'}`} title="To Review">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <circle cx="12" cy="12" r="1"></circle>
-                      </svg>
-                      <span className="font-mono">{channel.video_count || 0}</span>
-                    </div>
+                    {/* Separator dot */}
+                    <span className="text-text-secondary">•</span>
 
-                    {/* Ignored - Far Right */}
-                    <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="Ignored videos">
+                    {/* Ignored - Third */}
+                    <div className="flex items-center gap-1 font-semibold text-gray-400" title="Ignored videos">
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10"></circle>
                         <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
