@@ -296,7 +296,6 @@ function App() {
         </div>
 
         {/* Navigation tabs only - status bar moved to footer */}
-        </div>
       </header>
       )}
 
