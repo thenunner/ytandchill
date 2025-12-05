@@ -322,7 +322,7 @@ function App() {
 
       {/* Footer Status Bar - Hidden on auth pages */}
       {!isAuthPage && (downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || health) && (
-        <footer className="bg-dark-primary sticky bottom-0 z-50">
+        <footer className="bg-dark-primary sticky bottom-0 z-50 pb-safe">
           {/* Quick Logs Slide-UP Panel - Hidden on mobile */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-in-out hidden md:block ${

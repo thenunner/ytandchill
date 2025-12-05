@@ -931,7 +931,7 @@ export default function Library() {
             <Link
               key={channel.id}
               to={`/channel/${channel.id}/library`}
-              className="card group transition-colors"
+              className="group transition-colors rounded overflow-hidden"
             >
               {/* Thumbnail */}
               <div className="relative aspect-video bg-dark-tertiary rounded-t-xl overflow-hidden">
@@ -950,7 +950,7 @@ export default function Library() {
                 )}
                 {/* Last Added Badge */}
                 {channel.lastAddedAt && (
-                  <div className="absolute bottom-2 left-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
+                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
                     Last: {formatLastAdded(channel.lastAddedAt)}
                   </div>
                 )}

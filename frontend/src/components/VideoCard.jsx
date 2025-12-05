@@ -190,109 +190,11 @@ export default function VideoCard({
 
   return (
     <div
-      className={`card cursor-pointer transition-colors ${
+      className={`cursor-pointer transition-colors rounded overflow-hidden ${
         isSelected ? 'ring-2 ring-accent/60' : ''
       } ${onToggleSelect ? 'hover:ring-2 hover:ring-accent/50' : ''}`}
       onClick={handleCardClick}
     >
-      {/* Header with badges and menu - Only show for library videos */}
-      {isDownloaded && !editMode && (
-        <div className="flex items-center justify-between px-3 py-2">
-          {/* Left side badges */}
-          <div className="flex items-center gap-2 text-sm">
-            {video.playlist_ids && video.playlist_ids.length > 0 && (
-              <span>
-                <span className="text-text-secondary">[</span>
-                <span className="text-text-primary font-medium">PLAYLIST</span>
-                <span className="text-text-secondary">]</span>
-              </span>
-            )}
-            {video.watched && (
-              <span>
-                <span className="text-text-secondary">[</span>
-                <span className="text-text-primary font-medium">WATCHED</span>
-                <span className="text-text-secondary">]</span>
-              </span>
-            )}
-          </div>
-
-          {/* Right side 3-dot menu */}
-          <div className="relative" ref={menuRef}>
-            <button
-              ref={threeDotButtonRef}
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              title="Video options"
-              className="text-text-secondary hover:text-text-primary transition-colors p-1"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <circle cx="12" cy="5" r="2"></circle>
-                <circle cx="12" cy="12" r="2"></circle>
-                <circle cx="12" cy="19" r="2"></circle>
-              </svg>
-            </button>
-
-            {/* Dropdown Menu */}
-            {showMenu && (
-              <div
-                className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50"
-                onMouseLeave={(e) => e.stopPropagation()}
-              >
-                {showRemoveFromPlaylist ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemoveFromPlaylist(video.id);
-                      setShowMenu(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                    Remove from playlist
-                  </button>
-                ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowMenu(false);
-                      setShowPlaylistMenu(true);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                    Add to playlist
-                  </button>
-                )}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowMenu(false);
-                    setShowDeleteConfirm(true);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
-                >
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                  </svg>
-                  Delete video
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Thumbnail with video preview */}
       <div
         className={`relative aspect-video bg-dark-tertiary overflow-hidden ${isDownloaded && !editMode ? '' : 'rounded-t-xl'}`}
@@ -356,27 +258,118 @@ export default function VideoCard({
             PLAYLIST
           </div>
         )}
+
+        {/* Duration overlay - bottom right (YouTube style) */}
+        {video.duration_sec && (
+          <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs font-semibold px-1.5 py-0.5 rounded">
+            {formatDuration(video.duration_sec)}
+          </div>
+        )}
+
+        {/* WATCHED badge - top left overlay (library videos only) */}
+        {isDownloaded && video.watched && (
+          <div className="absolute top-2 left-2 bg-black/80 text-white px-2 py-0.5 rounded text-xs font-semibold">
+            WATCHED
+          </div>
+        )}
       </div>
 
       {/* Content */}
       <div className="p-3 space-y-2">
-        {/* Title */}
-        <h3 className="text-sm font-medium text-text-primary line-clamp-2 leading-tight" title={video.title}>
-          {video.title}
-        </h3>
+        {/* Title + 3-dot menu (library videos only) */}
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="text-sm font-medium text-text-primary line-clamp-2 leading-tight flex-1 min-w-0" title={video.title}>
+            {video.title}
+          </h3>
+
+          {/* 3-dot menu - library videos only */}
+          {isDownloaded && !editMode && (
+            <div className="relative flex-shrink-0" ref={menuRef}>
+              <button
+                ref={threeDotButtonRef}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                title="Video options"
+                className="p-1 rounded hover:bg-dark-hover transition-colors text-text-secondary hover:text-text-primary"
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="5" r="2"></circle>
+                  <circle cx="12" cy="12" r="2"></circle>
+                  <circle cx="12" cy="19" r="2"></circle>
+                </svg>
+              </button>
+
+              {/* Dropdown Menu */}
+              {showMenu && (
+                <div
+                  className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50"
+                  onMouseLeave={(e) => e.stopPropagation()}
+                >
+                  {showRemoveFromPlaylist ? (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRemoveFromPlaylist(video.id);
+                        setShowMenu(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      </svg>
+                      Remove from playlist
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowPlaylistMenu(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                      </svg>
+                      Add to playlist
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenu(false);
+                      setShowDeleteConfirm(true);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    Delete video
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
-          // Library view: 3 columns - duration (left), date (center), size (right)
-          <div className="grid grid-cols-3 gap-1 text-sm text-text-secondary">
-            <span className="text-left">{formatDuration(video.duration_sec)}</span>
-            <span className="text-center">{formatDate(video.upload_date)}</span>
-            <span className="text-right">{formatFileSize(video.file_size_bytes)}</span>
+          // Library view: 2 columns - date (left), size (right) - duration now on thumbnail
+          <div className="flex justify-between text-sm text-text-secondary">
+            <span>{formatDate(video.upload_date)}</span>
+            <span>{formatFileSize(video.file_size_bytes)}</span>
           </div>
         ) : (
-          // Channel view: 2 columns - duration (left), date (right)
-          <div className="flex justify-between text-sm text-text-secondary">
-            <span>{formatDuration(video.duration_sec)}</span>
+          // Channel view: date only - duration now on thumbnail
+          <div className="text-sm text-text-secondary">
             <span>{formatDate(video.upload_date)}</span>
           </div>
         )}

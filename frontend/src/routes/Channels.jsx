@@ -1134,7 +1134,7 @@ export default function Channels() {
             )}
 
             <div
-              className={`card overflow-hidden cursor-pointer transition-all ${
+              className={`overflow-hidden cursor-pointer transition-all rounded ${
                 selectedChannels.includes(channel.id) ? 'ring-2 ring-accent/60' : ''
               } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'hover:scale-100'}`}
               onClick={() => {
@@ -1156,39 +1156,6 @@ export default function Channels() {
                 </div>
               )}
 
-              {/* Top Header Bar - AUTO badge and 3-dot menu */}
-              <div className="flex items-center justify-between px-3 py-2 bg-dark-tertiary/50">
-                {/* Left: AUTO badge */}
-                <div className="flex items-center gap-2">
-                  {channel.auto_download && (
-                    <span className="text-green-500 text-[10px] font-bold tracking-wide">AUTO</span>
-                  )}
-                </div>
-
-                {/* Right: 3-dot menu - hidden in edit mode */}
-                {!editMode && (
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setShowCategorySubmenu(null);
-                          setMenuOpen(menuOpen === channel.id ? null : channel.id);
-                        }}
-                        className="p-1 rounded hover:bg-dark-hover transition-colors"
-                      >
-                        <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
-                          <circle cx="12" cy="5" r="2"></circle>
-                          <circle cx="12" cy="12" r="2"></circle>
-                          <circle cx="12" cy="19" r="2"></circle>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-
               <Link
                 to={`/channel/${channel.id}`}
                 className="block"
@@ -1198,8 +1165,8 @@ export default function Channels() {
                   }
                 }}
               >
-                {/* Channel Logo Banner */}
-                <div className="relative w-full h-32 bg-dark-tertiary">
+                {/* Channel Thumbnail - YouTube style */}
+                <div className="relative w-full aspect-video bg-dark-tertiary">
                   {channel.thumbnail ? (
                     <img
                       src={channel.thumbnail}
@@ -1217,10 +1184,40 @@ export default function Channels() {
 
                 {/* Content Section */}
                 <div className="p-3 space-y-2">
-                  {/* Title */}
-                  <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent-text transition-colors" title={channel.title}>
-                    {channel.title}
-                  </h3>
+                  {/* Title + AUTO badge + 3-dot menu */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      {/* AUTO badge */}
+                      {channel.auto_download && (
+                        <span className="text-green-500 text-[10px] font-bold tracking-wide flex-shrink-0">AUTO</span>
+                      )}
+                      {/* Title */}
+                      <h3 className="text-sm font-semibold text-text-primary line-clamp-1 leading-tight group-hover:text-accent-text transition-colors flex-1 min-w-0" title={channel.title}>
+                        {channel.title}
+                      </h3>
+                    </div>
+
+                    {/* 3-dot menu - hidden in edit mode */}
+                    {!editMode && (
+                      <div className="relative flex-shrink-0">
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowCategorySubmenu(null);
+                            setMenuOpen(menuOpen === channel.id ? null : channel.id);
+                          }}
+                          className="p-1 rounded hover:bg-dark-hover transition-colors"
+                        >
+                          <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="5" r="2"></circle>
+                            <circle cx="12" cy="12" r="2"></circle>
+                            <circle cx="12" cy="19" r="2"></circle>
+                          </svg>
+                        </button>
+                      </div>
+                    )}
+                  </div>
 
                   {/* Scan and Video Dates */}
                   <div className="flex items-center justify-between text-xs text-text-secondary font-medium">

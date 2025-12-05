@@ -159,37 +159,6 @@
   --plyr-main: 35 55% 45%;         /* Same as accent */
 }
 
-/* Gateway Gray/Teal Theme */
-.theme-gateway {
-  /* Backgrounds */
-  --bg-primary: 215 15% 14%;       /* #222831 */
-  --bg-secondary: 215 12% 22%;     /* #393E46 */
-  --bg-tertiary: 182 35% 18%;      /* Darker muted teal for better accent contrast */
-  --bg-hover: 182 40% 28%;         /* Teal hover */
-
-  /* Borders */
-  --border: 215 10% 30%;           /* Improved visibility */
-  --border-light: 215 10% 38%;     /* Distinct borders */
-
-  /* Text */
-  --text-primary: 0 0% 95%;        /* from #EEEEEE */
-  --text-secondary: 0 0% 78%;      /* Improved contrast */
-  --text-muted: 0 0% 68%;          /* Improved muted text contrast */
-
-  /* Accent */
-  --accent: 182 100% 38%;          /* Teal - for buttons/backgrounds */
-  --accent-hover: 182 100% 48%;    /* Lighter on hover */
-  --accent-text: 182 100% 50%;     /* Brighter teal for text readability */
-
-  /* Scrollbar */
-  --scrollbar-track: 215 12% 22%;
-  --scrollbar-thumb: 182 45% 35%;
-  --scrollbar-thumb-hover: 182 50% 45%;
-
-  /* Plyr player */
-  --plyr-main: 182 100% 38%;       /* Same as accent */
-}
-
 /* Catppuccin Mocha Theme */
 .theme-catppuccin {
   /* Backgrounds */
