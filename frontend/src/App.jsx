@@ -537,7 +537,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className="flex-1 w-full px-4 py-6 max-w-[1600px]">
+      <main className={`flex-1 w-full ${isAuthPage ? '' : 'px-4 py-6 max-w-[1600px]'}`}>
         <Routes>
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
