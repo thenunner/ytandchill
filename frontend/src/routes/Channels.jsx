@@ -929,7 +929,7 @@ export default function Channels() {
       {/* Channels Grid/List */}
       {viewMode === 'grid' ? (
         <div className="px-6 lg:px-12 xl:px-16">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
           {filteredAndSortedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
             {/* Dropdown Menu - OUTSIDE card to avoid overflow:hidden clipping */}
@@ -1199,7 +1199,7 @@ export default function Channels() {
                 }}
               >
                 {/* Channel Logo Banner */}
-                <div className="relative w-full h-24 bg-dark-tertiary">
+                <div className="relative w-full h-32 bg-dark-tertiary">
                   {channel.thumbnail ? (
                     <img
                       src={channel.thumbnail}

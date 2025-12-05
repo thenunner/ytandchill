@@ -926,7 +926,7 @@ export default function Library() {
             </div>
           ) : viewMode === 'grid' ? (
             <div className="px-6 lg:px-12 xl:px-16">
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+              <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
           {paginatedChannelsList.map(channel => (
             <Link
               key={channel.id}
@@ -1159,7 +1159,7 @@ export default function Library() {
                     {isExpanded && (
                       playlistViewMode === 'grid' ? (
                         <div className="px-6 lg:px-12 xl:px-16">
-                          <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
                           {categoryPlaylists.map(playlist => {
                             const isSelected = selectedPlaylists.includes(playlist.id);
                             return (
@@ -1495,7 +1495,7 @@ export default function Library() {
                   {/* Uncategorized Playlists */}
                   {playlistViewMode === 'grid' ? (
                     <div className="px-6 lg:px-12 xl:px-16">
-                      <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
+                      <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
                       {groupedPlaylists.uncategorized.map(playlist => {
                         const isSelected = selectedPlaylists.includes(playlist.id);
                         return (
