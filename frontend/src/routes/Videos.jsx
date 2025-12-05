@@ -220,7 +220,6 @@ export default function Videos() {
   return (
     <div className="pb-4 space-y-4">
       {/* Scan Form */}
-      <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
       <form onSubmit={handleScan} className="bg-dark-secondary rounded-lg p-4">
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1 relative">
@@ -306,12 +305,10 @@ export default function Videos() {
           </div>
         </div>
       </form>
-      </div>
 
       {/* Results Summary */}
       {scanResults && (
-        <div className="sticky top-[68px] z-40 bg-dark-secondary/95 backdrop-blur-lg rounded-lg">
-          <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16 py-4">
+        <div className="sticky top-[68px] z-40 bg-dark-secondary/95 backdrop-blur-lg rounded-lg p-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               <div className="text-text-secondary">
@@ -417,7 +414,6 @@ export default function Videos() {
               </button>
             </div>
           )}
-        </div>
         </div>
       )}
 

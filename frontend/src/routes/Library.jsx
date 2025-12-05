@@ -511,7 +511,6 @@ export default function Library() {
 
       {/* Header */}
       <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg pb-4 mb-4">
-        <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
         {activeTab === 'channels' ? (
           /* Channels: Responsive layout - wraps on mobile */
           <div className="flex flex-wrap items-center gap-3 md:gap-4">
@@ -903,7 +902,6 @@ export default function Library() {
               )}
             </div>
         )}
-        </div>
       </div>
 
       {/* Channels Tab */}
