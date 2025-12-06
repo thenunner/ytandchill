@@ -349,7 +349,7 @@ export default function Library() {
       }
     });
 
-    // Sort categories based on playlistSortBy
+    // Sort categories based on playlistSortBy and return as array to preserve order
     const sortedCategorized = Object.entries(categorized)
       .sort(([, a], [, b]) => {
         switch (playlistSortBy) {
@@ -370,11 +370,7 @@ export default function Library() {
           default:
             return a.category.name.localeCompare(b.category.name);
         }
-      })
-      .reduce((acc, [key, value]) => {
-        acc[key] = value;
-        return acc;
-      }, {});
+      });
 
     return {
       categorized: sortedCategorized,
@@ -995,10 +991,10 @@ export default function Library() {
       {/* Playlists Tab */}
       {activeTab === 'playlists' && (
         <div>
-          {(Object.keys(groupedPlaylists.categorized).length > 0 || groupedPlaylists.uncategorized.length > 0) ? (
+          {(groupedPlaylists.categorized.length > 0 || groupedPlaylists.uncategorized.length > 0) ? (
             <div className="space-y-6">
               {/* Render Categories */}
-              {Object.entries(groupedPlaylists.categorized).map(([categoryId, { category, playlists: categoryPlaylists }]) => {
+              {groupedPlaylists.categorized.map(([categoryId, { category, playlists: categoryPlaylists }]) => {
                 const isExpanded = expandedCategories[categoryId] !== false; // Default to expanded
 
                 return (
