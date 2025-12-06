@@ -20,6 +20,8 @@ services:
       - /mnt/user/appdata/ytandchill/logs:/app/logs
       # Cookies file for age-restricted content
       - /mnt/user/appdata/ytandchill/cookies.txt:/app/cookies.txt
+      # Frontend build files
+      - /mnt/user/appdata/ytandchill/backend/dist:/app/dist
     restart: unless-stopped
     user: "99:100"
     labels:
