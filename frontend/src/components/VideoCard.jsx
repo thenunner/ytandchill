@@ -102,6 +102,11 @@ export default function VideoCard({
     }
   };
 
+  // Reset image error state when video changes
+  useEffect(() => {
+    setImageError(false);
+  }, [video.id, video.thumb_url]);
+
   // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
