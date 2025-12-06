@@ -358,9 +358,15 @@ export default function Library() {
           case 'z_a':
             return b.category.name.localeCompare(a.category.name);
           case 'most_videos':
-            return b.playlists.length - a.playlists.length;
+            // Count total videos across all playlists in each category
+            const aTotalVideos = a.playlists.reduce((sum, p) => sum + (p.video_count || 0), 0);
+            const bTotalVideos = b.playlists.reduce((sum, p) => sum + (p.video_count || 0), 0);
+            return bTotalVideos - aTotalVideos;
           case 'least_videos':
-            return a.playlists.length - b.playlists.length;
+            // Count total videos across all playlists in each category
+            const aLeastVideos = a.playlists.reduce((sum, p) => sum + (p.video_count || 0), 0);
+            const bLeastVideos = b.playlists.reduce((sum, p) => sum + (p.video_count || 0), 0);
+            return aLeastVideos - bLeastVideos;
           default:
             return a.category.name.localeCompare(b.category.name);
         }
