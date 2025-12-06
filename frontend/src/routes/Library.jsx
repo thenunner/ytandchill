@@ -5,14 +5,12 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { StickyBar, SearchInput, ViewToggle, CardSizeSlider } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize();
-  const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
-  const [playlistViewMode, setPlaylistViewMode] = useState(localStorage.getItem('playlistViewMode') || 'grid');
 
   // Calculate optimal columns based on screen width, card size, AND device type
   const getGridColumns = (cardSize) => {
@@ -155,15 +153,6 @@ export default function Library() {
     localStorage.setItem('expandedCategories', JSON.stringify(expandedCategories));
   }, [expandedCategories]);
 
-  // Persist view mode to localStorage
-  useEffect(() => {
-    localStorage.setItem('viewMode', viewMode);
-  }, [viewMode]);
-
-  // Persist playlist view mode to localStorage
-  useEffect(() => {
-    localStorage.setItem('playlistViewMode', playlistViewMode);
-  }, [playlistViewMode]);
 
   // Helper function to format file size
   const formatFileSize = (bytes) => {
@@ -703,11 +692,8 @@ export default function Library() {
               )}
             </div>
 
-            {/* View Toggle */}
-            <ViewToggle mode={viewMode} onChange={setViewMode} />
-
-            {/* Card Size Slider - Only show in grid view */}
-            <CardSizeSlider show={viewMode === 'grid'} />
+            {/* Card Size Slider */}
+            <CardSizeSlider />
 
             {/* Pagination */}
             <Pagination
@@ -770,11 +756,8 @@ export default function Library() {
                 <span className="hidden sm:inline">Category</span>
               </button>
 
-              {/* View Toggle */}
-              <ViewToggle mode={playlistViewMode} onChange={setPlaylistViewMode} />
-
-              {/* Card Size Slider - Only show in grid view */}
-              <CardSizeSlider show={playlistViewMode === 'grid'} />
+              {/* Card Size Slider */}
+              <CardSizeSlider />
 
               {/* Sort Button */}
               <div className="relative" ref={playlistSortMenuRef}>

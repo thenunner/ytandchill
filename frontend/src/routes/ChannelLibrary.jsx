@@ -5,13 +5,12 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridColumns, getGridClass } from '../utils/gridUtils';
 import VideoCard from '../components/VideoCard';
-import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import api from '../api/client';
-import { StickyBar, SearchInput, ViewToggle, CardSizeSlider } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 
 export default function ChannelLibrary() {
   const { channelId } = useParams();
@@ -55,7 +54,6 @@ export default function ChannelLibrary() {
   const currentOperation = queueData?.current_operation;
   const isScanRunning = currentOperation?.type === 'scanning';
 
-  const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -192,9 +190,6 @@ export default function ChannelLibrary() {
     upload_to: uploadDateTo,
   });
 
-  useEffect(() => {
-    localStorage.setItem('viewMode', viewMode);
-  }, [viewMode]);
 
   // Initialize URL params from localStorage on mount
   useEffect(() => {
@@ -752,11 +747,8 @@ export default function ChannelLibrary() {
             className="w-full sm:w-[180px]"
           />
 
-          {/* View Toggle */}
-          <ViewToggle mode={viewMode} onChange={setViewMode} />
-
           {/* Card Size Slider */}
-          <CardSizeSlider show={viewMode === 'grid'} />
+          <CardSizeSlider />
 
           {/* Pagination */}
           <Pagination
@@ -1142,53 +1134,41 @@ export default function ChannelLibrary() {
         </div>
       )}
 
-      {/* Videos Grid/List */}
+      {/* Videos Grid */}
       {sortedVideos.length === 0 ? (
-          <div className="text-center py-20 text-text-secondary">
-            <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-            </svg>
-            {videos && videos.length > 0 && (hideWatched || hidePlaylisted) ? (
-              <>
-                <p className="text-lg font-medium">All videos are {hideWatched && hidePlaylisted ? 'watched or in playlists' : hideWatched ? 'watched' : 'in playlists'}</p>
-                <p className="text-sm mt-2">Remove filter to see them</p>
-              </>
-            ) : (
-              <>
-                <p className="text-lg font-medium">No videos found</p>
-                <p className="text-sm mt-2">{isLibraryMode ? 'No downloaded videos yet' : 'Try adjusting your filters or scan for videos'}</p>
-              </>
-            )}
+        <div className="text-center py-20 text-text-secondary">
+          <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+          </svg>
+          {videos && videos.length > 0 && (hideWatched || hidePlaylisted) ? (
+            <>
+              <p className="text-lg font-medium">All videos are {hideWatched && hidePlaylisted ? 'watched or in playlists' : hideWatched ? 'watched' : 'in playlists'}</p>
+              <p className="text-sm mt-2">Remove filter to see them</p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg font-medium">No videos found</p>
+              <p className="text-sm mt-2">{isLibraryMode ? 'No downloaded videos yet' : 'Try adjusting your filters or scan for videos'}</p>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="px-6 lg:px-12 xl:px-16">
+          <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
+          {paginatedVideos.map(video => (
+            <VideoCard
+              key={video.id}
+              video={video}
+              isSelected={selectedVideos.includes(video.id)}
+              onToggleSelect={isLibraryMode && editMode ? toggleSelectVideo : !isLibraryMode ? toggleSelectVideo : undefined}
+              isQueued={queueVideoIds.has(video.id)}
+              editMode={isLibraryMode && editMode}
+              isLibraryView={isLibraryMode}
+            />
+          ))}
           </div>
-        ) : viewMode === 'grid' ? (
-          <div className="px-6 lg:px-12 xl:px-16">
-            <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
-            {paginatedVideos.map(video => (
-              <VideoCard
-                key={video.id}
-                video={video}
-                isSelected={selectedVideos.includes(video.id)}
-                onToggleSelect={isLibraryMode && editMode ? toggleSelectVideo : !isLibraryMode ? toggleSelectVideo : undefined}
-                isQueued={queueVideoIds.has(video.id)}
-                editMode={isLibraryMode && editMode}
-                isLibraryView={isLibraryMode}
-              />
-            ))}
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2 items-start">
-            {paginatedVideos.map(video => (
-              <VideoRow
-                key={video.id}
-                video={video}
-                isSelected={selectedVideos.includes(video.id)}
-                isQueued={queueVideoIds.has(video.id)}
-                onToggleSelect={isLibraryMode && editMode ? toggleSelectVideo : !isLibraryMode ? toggleSelectVideo : undefined}
-              />
-            ))}
-          </div>
-        )}
+        </div>
+      )}
 
       {/* Bottom Pagination */}
       {sortedVideos.length > 0 && (
@@ -1214,7 +1194,6 @@ export default function ChannelLibrary() {
         filters={{
           uploadDate: currentUploadDateFilter,
           duration: currentDurationFilter,
-          view: viewMode,
           sort,
           hideWatched,
           hidePlaylisted

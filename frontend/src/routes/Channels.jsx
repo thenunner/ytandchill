@@ -3,11 +3,10 @@ import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpd
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { Link, useNavigate } from 'react-router-dom';
-import ChannelRow from '../components/ChannelRow';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
-import { StickyBar, SearchInput, ViewToggle, CardSizeSlider, SortDropdown } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider, SortDropdown } from '../components/stickybar';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -101,7 +100,6 @@ export default function Channels() {
   const [searchInput, setSearchInput] = useState(''); // Search filter
   const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'needs_review_then_scan'); // Sort option
   const [showSortMenu, setShowSortMenu] = useState(false); // Sort menu visibility
-  const [viewMode, setViewMode] = useState(localStorage.getItem('channelsViewMode') || 'grid'); // Grid or list view
   const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
   const [editMode, setEditMode] = useState(false); // Edit mode for bulk selection
   const sortMenuRef = useRef(null);
@@ -123,6 +121,9 @@ export default function Channels() {
   // Category submenu for channel assignment
   const [showCategorySubmenu, setShowCategorySubmenu] = useState(null);
 
+  // Track which scan type was last initiated ('new' or 'all')
+  const [lastScanType, setLastScanType] = useState(null);
+
   // Watch for scan completion and refetch channels
   const currentOperation = queueData?.current_operation;
   const prevOperationTypeRef = useRef(null);
@@ -137,6 +138,9 @@ export default function Channels() {
 
       // Clear selected channels
       setSelectedChannels([]);
+
+      // Clear scan type tracking
+      setLastScanType(null);
     }
 
     prevOperationTypeRef.current = currentOperation?.type;
@@ -251,6 +255,9 @@ export default function Channels() {
       showNotification('No channels to scan', 'info');
       return;
     }
+
+    // Track which scan type was initiated
+    setLastScanType(forceFull ? 'all' : 'new');
 
     // Use selected channels if any, otherwise scan all (excluding Singles pseudo-channel)
     const channelsToScan = selectedChannels.length > 0
@@ -867,52 +874,64 @@ export default function Channels() {
             </>
           )}
 
-          {/* Scan New Button */}
-          <button
-            onClick={() => handleScanAllChannels(false)}
-            disabled={!channels || channels.length === 0 || isScanRunning}
-            className={`filter-btn disabled:cursor-not-allowed ${
-              isScanRunning ? 'animate-pulse-border' : ''
-            } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
-            title={isScanRunning
-              ? "Scan in progress..."
-              : selectedChannels.length > 0
-                ? "Scan selected channels for new videos since last scan"
-                : "Scan all channels for new videos since last scan"}
-          >
-            <svg className={`w-4 h-4 ${isScanRunning ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          {/* Unified Scan Button Group */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-dark-secondary border border-dark-border rounded-lg">
+            {/* Spinning Icon */}
+            <svg
+              className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                isScanRunning ? 'animate-spin text-accent' : 'text-text-secondary'
+              }`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
               <polyline points="23 4 23 10 17 10"></polyline>
               <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
             </svg>
-            <span>Scan New</span>
-          </button>
 
-          {/* Scan All Button */}
-          <button
-            onClick={() => handleScanAllChannels(true)}
-            disabled={!channels || channels.length === 0 || isScanRunning}
-            className={`filter-btn disabled:cursor-not-allowed ${
-              isScanRunning ? 'animate-pulse-border' : ''
-            } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
-            title={isScanRunning
-              ? "Scan in progress..."
-              : selectedChannels.length > 0
-                ? "Rescan selected channels for all videos"
-                : "Rescan all channels for all videos"}
-          >
-            <svg className={`w-4 h-4 ${isScanRunning ? 'animate-spin' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
-            </svg>
-            <span>Scan All</span>
-          </button>
+            {/* Scan Label */}
+            <span className="text-sm text-text-primary">Scan</span>
 
-          {/* View Toggle */}
-          <ViewToggle mode={viewMode} onChange={setViewMode} />
+            {/* New Button */}
+            <button
+              onClick={() => handleScanAllChannels(false)}
+              disabled={!channels || channels.length === 0 || isScanRunning}
+              className={`px-3 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
+                isScanRunning && lastScanType === 'new'
+                  ? 'bg-accent text-white'
+                  : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
+              } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
+              title={isScanRunning
+                ? "Scan in progress..."
+                : selectedChannels.length > 0
+                  ? "Scan selected channels for new videos since last scan"
+                  : "Scan all channels for new videos since last scan"}
+            >
+              New
+            </button>
 
-          {/* Card Size Slider - Only show in grid view */}
-          <CardSizeSlider show={viewMode === 'grid'} />
+            {/* All Button */}
+            <button
+              onClick={() => handleScanAllChannels(true)}
+              disabled={!channels || channels.length === 0 || isScanRunning}
+              className={`px-3 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
+                isScanRunning && lastScanType === 'all'
+                  ? 'bg-accent text-white'
+                  : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
+              } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
+              title={isScanRunning
+                ? "Scan in progress..."
+                : selectedChannels.length > 0
+                  ? "Rescan selected channels for all videos"
+                  : "Rescan all channels for all videos"}
+            >
+              All
+            </button>
+          </div>
+
+          {/* Card Size Slider */}
+          <CardSizeSlider />
         </div>
       </StickyBar>
 
@@ -987,10 +1006,9 @@ export default function Channels() {
         </div>
       )}
 
-      {/* Channels Grid/List */}
-      {viewMode === 'grid' ? (
-        <div className="px-6 lg:px-12 xl:px-16">
-          <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
+      {/* Channels Grid */}
+      <div className="px-6 lg:px-12 xl:px-16">
+        <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
           {filteredAndSortedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
             {/* Dropdown Menu - OUTSIDE card to avoid overflow:hidden clipping */}
@@ -1304,30 +1322,8 @@ export default function Channels() {
             </div>
           </div>
           ))}
-          </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-2 overflow-x-hidden">
-          {filteredAndSortedChannels.map(channel => (
-            <ChannelRow
-              key={channel.id}
-              channel={channel}
-              onScan={handleScanChannel}
-              onUpdateChannel={updateChannel.mutateAsync}
-              onDelete={setDeleteConfirm}
-              navigate={navigate}
-              showNotification={showNotification}
-              editMode={editMode}
-              isSelected={selectedChannels.includes(channel.id)}
-              onToggleSelect={(id) => {
-                setSelectedChannels(prev =>
-                  prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-                );
-              }}
-            />
-          ))}
-        </div>
-      )}
+      </div>
 
       {filteredAndSortedChannels.length === 0 && (
         <div className="text-center py-20 text-text-secondary">

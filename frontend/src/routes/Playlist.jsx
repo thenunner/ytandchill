@@ -5,11 +5,10 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridColumns, getGridClass } from '../utils/gridUtils';
 import VideoCard from '../components/VideoCard';
-import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { StickyBar, SearchInput, ViewToggle, CardSizeSlider } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 
 export default function Playlist() {
   const { id } = useParams();
@@ -31,7 +30,6 @@ export default function Playlist() {
     return () => window.removeEventListener('resize', updateColumns);
   }, [cardSize]);
 
-  const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
   const [searchInput, setSearchInput] = useState('');
   const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [sort, setSort] = useState(localStorage.getItem('playlist_sort') || 'date-desc');
@@ -45,9 +43,6 @@ export default function Playlist() {
   });
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete', count: number }
 
-  useEffect(() => {
-    localStorage.setItem('viewMode', viewMode);
-  }, [viewMode]);
 
   useEffect(() => {
     localStorage.setItem('playlist_sort', sort);
@@ -58,9 +53,7 @@ export default function Playlist() {
   }, [hideWatched]);
 
   const handleFilterChange = (key, value) => {
-    if (key === 'view') {
-      setViewMode(value);
-    } else if (key === 'sort') {
+    if (key === 'sort') {
       setSort(value);
     } else if (key === 'hide_watched') {
       setHideWatched(value === 'true');
@@ -257,11 +250,8 @@ export default function Playlist() {
             className="w-[180px]"
           />
 
-          {/* View Toggle */}
-          <ViewToggle mode={viewMode} onChange={setViewMode} />
-
-          {/* Card Size Slider - Only show in grid view */}
-          <CardSizeSlider show={viewMode === 'grid'} />
+          {/* Card Size Slider */}
+          <CardSizeSlider />
 
           {/* Pagination */}
           <Pagination
@@ -350,40 +340,24 @@ export default function Playlist() {
         </div>
       </StickyBar>
 
-      {/* Videos Grid/List */}
+      {/* Videos Grid */}
       {sortedVideos.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="px-6 lg:px-12 xl:px-16">
-            <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
-            {paginatedVideos.map((video) => (
-              <VideoCard
-                key={video.id}
-                video={video}
-                showRemoveFromPlaylist={!editMode}
-                onRemoveFromPlaylist={() => handleRemoveVideo(video.id)}
-                isLibraryView={true}
-                editMode={editMode}
-                isSelected={selectedVideos.includes(video.id)}
-                onToggleSelect={editMode ? toggleVideoSelection : undefined}
-              />
-            ))}
-            </div>
+        <div className="px-6 lg:px-12 xl:px-16">
+          <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
+          {paginatedVideos.map((video) => (
+            <VideoCard
+              key={video.id}
+              video={video}
+              showRemoveFromPlaylist={!editMode}
+              onRemoveFromPlaylist={() => handleRemoveVideo(video.id)}
+              isLibraryView={true}
+              editMode={editMode}
+              isSelected={selectedVideos.includes(video.id)}
+              onToggleSelect={editMode ? toggleVideoSelection : undefined}
+            />
+          ))}
           </div>
-        ) : (
-          <div className="flex flex-col gap-2 items-start">
-            {paginatedVideos.map((video) => (
-              <VideoRow
-                key={video.id}
-                video={video}
-                showRemoveFromPlaylist={!editMode}
-                onRemoveFromPlaylist={() => handleRemoveVideo(video.id)}
-                editMode={editMode}
-                isSelected={selectedVideos.includes(video.id)}
-                onToggleSelect={editMode ? toggleVideoSelection : undefined}
-              />
-            ))}
-          </div>
-        )
+        </div>
       ) : (
         <div className="text-center py-20 text-text-secondary">
           <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -416,7 +390,6 @@ export default function Playlist() {
         isOpen={showFiltersModal}
         onClose={() => setShowFiltersModal(false)}
         filters={{
-          view: viewMode,
           sort,
           hideWatched
         }}
