@@ -27,6 +27,7 @@ export default function VideoCard({
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [previewPlaying, setPreviewPlaying] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const menuRef = useRef(null);
   const threeDotButtonRef = useRef(null);
   const videoPreviewRef = useRef(null);
@@ -230,11 +231,12 @@ export default function VideoCard({
         {/* Thumbnail Image */}
         {!previewPlaying && (
           <>
-            {video.thumb_url ? (
+            {video.thumb_url && !imageError ? (
               <img
                 src={video.thumb_url}
                 alt={video.title}
                 className="w-full h-full object-cover"
+                onError={() => setImageError(true)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
