@@ -326,7 +326,14 @@ export default function ChannelLibrary() {
       const year = video.upload_date.slice(0, 4);
       const month = video.upload_date.slice(4, 6);
       const day = video.upload_date.slice(6, 8);
-      return new Date(`${year}-${month}-${day}`);
+      const parsed = new Date(`${year}-${month}-${day}`);
+
+      // Debug: log if date is invalid
+      if (isNaN(parsed.getTime())) {
+        console.log('Invalid date for video:', video.title, 'upload_date:', video.upload_date);
+      }
+
+      return parsed;
     }
     // Fallback to discovered_at if neither is available
     return new Date(video.discovered_at || 0);
@@ -358,7 +365,7 @@ export default function ChannelLibrary() {
       .sort((a, b) => {
     switch (sort) {
       case 'date-desc':
-        // Newest first - use upload_date, fall back to discovered_at
+        // Newest first
         return parseVideoDate(b) - parseVideoDate(a);
       case 'date-asc':
         // Oldest first
