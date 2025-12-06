@@ -536,6 +536,63 @@ export default function Channels() {
               </svg>
             )}
           </button>
+
+          {/* Unified Scan Button Group */}
+          <div className="flex items-center gap-2 px-3 py-2 bg-dark-secondary border border-dark-border rounded-lg">
+            {/* Spinning Icon */}
+            <svg
+              className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                isScanRunning ? 'animate-spin text-accent' : 'text-text-secondary'
+              }`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
+            </svg>
+
+            {/* Scan Label */}
+            <span className="text-sm text-text-primary">Scan</span>
+
+            {/* New Button */}
+            <button
+              onClick={() => handleScanAllChannels(false)}
+              disabled={!channels || channels.length === 0 || isScanRunning}
+              className={`px-3 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
+                isScanRunning && lastScanType === 'new'
+                  ? 'bg-accent text-white'
+                  : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
+              } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
+              title={isScanRunning
+                ? "Scan in progress..."
+                : selectedChannels.length > 0
+                  ? "Scan selected channels for new videos since last scan"
+                  : "Scan all channels for new videos since last scan"}
+            >
+              New
+            </button>
+
+            {/* All Button */}
+            <button
+              onClick={() => handleScanAllChannels(true)}
+              disabled={!channels || channels.length === 0 || isScanRunning}
+              className={`px-3 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
+                isScanRunning && lastScanType === 'all'
+                  ? 'bg-accent text-white'
+                  : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
+              } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
+              title={isScanRunning
+                ? "Scan in progress..."
+                : selectedChannels.length > 0
+                  ? "Rescan selected channels for all videos"
+                  : "Rescan all channels for all videos"}
+            >
+              All
+            </button>
+          </div>
+
           <SearchInput
             value={searchInput}
             onChange={setSearchInput}
@@ -869,62 +926,6 @@ export default function Channels() {
             </>
           )}
 
-          {/* Unified Scan Button Group */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-dark-secondary border border-dark-border rounded-lg">
-            {/* Spinning Icon */}
-            <svg
-              className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                isScanRunning ? 'animate-spin text-accent' : 'text-text-secondary'
-              }`}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
-            </svg>
-
-            {/* Scan Label */}
-            <span className="text-sm text-text-primary">Scan</span>
-
-            {/* New Button */}
-            <button
-              onClick={() => handleScanAllChannels(false)}
-              disabled={!channels || channels.length === 0 || isScanRunning}
-              className={`px-3 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
-                isScanRunning && lastScanType === 'new'
-                  ? 'bg-accent text-white'
-                  : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
-              } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
-              title={isScanRunning
-                ? "Scan in progress..."
-                : selectedChannels.length > 0
-                  ? "Scan selected channels for new videos since last scan"
-                  : "Scan all channels for new videos since last scan"}
-            >
-              New
-            </button>
-
-            {/* All Button */}
-            <button
-              onClick={() => handleScanAllChannels(true)}
-              disabled={!channels || channels.length === 0 || isScanRunning}
-              className={`px-3 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
-                isScanRunning && lastScanType === 'all'
-                  ? 'bg-accent text-white'
-                  : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
-              } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
-              title={isScanRunning
-                ? "Scan in progress..."
-                : selectedChannels.length > 0
-                  ? "Rescan selected channels for all videos"
-                  : "Rescan all channels for all videos"}
-            >
-              All
-            </button>
-          </div>
-
           {/* Card Size Slider */}
           <CardSizeSlider />
         </div>
@@ -1211,8 +1212,8 @@ export default function Channels() {
             )}
 
             <div
-              className={`overflow-hidden cursor-pointer transition-all rounded group ${
-                (channel.video_count || 0) > 0 ? 'border-2 border-red-400' : ''
+              className={`overflow-hidden cursor-pointer transition-all rounded-xl group ${
+                (channel.video_count || 0) > 0 ? 'border-2 border-accent' : ''
               }`}
               onClick={() => {
                 if (editMode) {
@@ -1262,16 +1263,16 @@ export default function Channels() {
                     </div>
                   )}
 
-                  {/* Upper Left: To Review Badge (only if > 0) - Small square */}
+                  {/* Upper Left: To Review Badge (only if > 0) - Bigger, no spacing */}
                   {(channel.video_count || 0) > 0 && (
-                    <div className="absolute top-2 left-2 bg-accent text-white font-bold text-xs px-1.5 py-0.5 rounded leading-none z-10">
+                    <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-xl rounded-br-lg leading-none z-10">
                       {channel.video_count}
                     </div>
                   )}
 
-                  {/* Upper Right: AUTO Badge */}
+                  {/* Upper Right: AUTO Badge - Bigger, no spacing */}
                   {channel.auto_download && (
-                    <div className="absolute top-2 right-2 bg-green-500 text-white font-bold text-[10px] px-1.5 py-0.5 rounded z-10">
+                    <div className="absolute top-0 right-0 bg-green-500 text-white font-bold text-sm px-2 py-1 rounded-tr-xl rounded-bl-lg z-10">
                       AUTO
                     </div>
                   )}
