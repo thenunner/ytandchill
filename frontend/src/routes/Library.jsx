@@ -2,14 +2,74 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { cardSize, setCardSize} = useCardSize();
   const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
   const [playlistViewMode, setPlaylistViewMode] = useState(localStorage.getItem('playlistViewMode') || 'grid');
+
+  // Calculate optimal columns based on screen width, card size, AND device type
+  const getGridColumns = (cardSize) => {
+    const width = window.innerWidth;
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    const columnConfig = {
+      touch: {
+        sm: { mobile: 2, tablet: 4, wide: 4 },
+        md: { mobile: 1, tablet: 3, wide: 3 },
+        lg: { mobile: 1, tablet: 2, wide: 2 },
+        xl: { mobile: 1, tablet: 2, wide: 2 }
+      },
+      desktop: {
+        sm: { small: 2, medium: 4, large: 6, xlarge: 8 },
+        md: { small: 1, medium: 3, large: 5, xlarge: 6 },
+        lg: { small: 1, medium: 2, large: 4, xlarge: 5 },
+        xl: { small: 1, medium: 2, large: 3, xlarge: 4 }
+      }
+    };
+
+    const deviceType = isTouch ? 'touch' : 'desktop';
+    const config = columnConfig[deviceType][cardSize] || columnConfig.desktop.md;
+
+    if (isTouch) {
+      if (width < 640) return config.mobile;
+      if (width < 2048) return config.tablet;
+      return config.wide;
+    } else {
+      if (width < 768) return config.small;
+      if (width < 1440) return config.medium;
+      if (width < 2560) return config.large;
+      return config.xlarge;
+    }
+  };
+
+  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
+
+  useEffect(() => {
+    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
+    updateColumns();
+    window.addEventListener('resize', updateColumns);
+    return () => window.removeEventListener('resize', updateColumns);
+  }, [cardSize]);
+
+  const getGridClass = (cols) => {
+    const classMap = {
+      1: 'grid-cols-1',
+      2: 'grid-cols-2',
+      3: 'grid-cols-3',
+      4: 'grid-cols-4',
+      5: 'grid-cols-5',
+      6: 'grid-cols-6',
+      7: 'grid-cols-7',
+      8: 'grid-cols-8'
+    };
+    return classMap[cols] || classMap[5];
+  };
   const [searchInput, setSearchInput] = useState('');
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'channels');
   const [editMode, setEditMode] = useState(false);
@@ -510,7 +570,7 @@ export default function Library() {
     <div className="space-y-4 animate-fade-in">
 
       {/* Header */}
-      <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg pb-4 mb-4">
+      <div className="sticky top-[64px] z-40 bg-dark-primary/95 backdrop-blur-lg py-4 mb-4">
         {activeTab === 'channels' ? (
           /* Channels: Responsive layout - wraps on mobile */
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
@@ -679,6 +739,48 @@ export default function Library() {
               </button>
             </div>
 
+            {/* Card Size Slider - Only show in grid view */}
+            {viewMode === 'grid' && (
+              <div className="flex items-center gap-2">
+                <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                </svg>
+                <input
+                  type="range"
+                  min="0"
+                  max="3"
+                  value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
+                  onChange={(e) => {
+                    const sizes = ['sm', 'md', 'lg', 'xl'];
+                    setCardSize(sizes[e.target.value]);
+                  }}
+                  className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
+                    [&::-webkit-slider-thumb]:appearance-none
+                    [&::-webkit-slider-thumb]:w-4
+                    [&::-webkit-slider-thumb]:h-4
+                    [&::-webkit-slider-thumb]:rounded-full
+                    [&::-webkit-slider-thumb]:bg-accent
+                    [&::-webkit-slider-thumb]:cursor-pointer
+                    [&::-moz-range-thumb]:w-4
+                    [&::-moz-range-thumb]:h-4
+                    [&::-moz-range-thumb]:rounded-full
+                    [&::-moz-range-thumb]:bg-accent
+                    [&::-moz-range-thumb]:border-0
+                    [&::-moz-range-thumb]:cursor-pointer"
+                  title="Adjust card density (sm=compact, xl=spacious)"
+                />
+                <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="2" y="2" width="9" height="9"></rect>
+                  <rect x="13" y="2" width="9" height="9"></rect>
+                  <rect x="2" y="13" width="9" height="9"></rect>
+                  <rect x="13" y="13" width="9" height="9"></rect>
+                </svg>
+              </div>
+            )}
+
             {/* Pagination */}
             <Pagination
               currentPage={currentPage}
@@ -776,6 +878,48 @@ export default function Library() {
                   </svg>
                 </button>
               </div>
+
+              {/* Card Size Slider - Only show in grid view */}
+              {playlistViewMode === 'grid' && (
+                <div className="flex items-center gap-2">
+                  <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                  </svg>
+                  <input
+                    type="range"
+                    min="0"
+                    max="3"
+                    value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
+                    onChange={(e) => {
+                      const sizes = ['sm', 'md', 'lg', 'xl'];
+                      setCardSize(sizes[e.target.value]);
+                    }}
+                    className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
+                      [&::-webkit-slider-thumb]:appearance-none
+                      [&::-webkit-slider-thumb]:w-4
+                      [&::-webkit-slider-thumb]:h-4
+                      [&::-webkit-slider-thumb]:rounded-full
+                      [&::-webkit-slider-thumb]:bg-accent
+                      [&::-webkit-slider-thumb]:cursor-pointer
+                      [&::-moz-range-thumb]:w-4
+                      [&::-moz-range-thumb]:h-4
+                      [&::-moz-range-thumb]:rounded-full
+                      [&::-moz-range-thumb]:bg-accent
+                      [&::-moz-range-thumb]:border-0
+                      [&::-moz-range-thumb]:cursor-pointer"
+                    title="Adjust card density (sm=compact, xl=spacious)"
+                  />
+                  <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="2" y="2" width="9" height="9"></rect>
+                    <rect x="13" y="2" width="9" height="9"></rect>
+                    <rect x="2" y="13" width="9" height="9"></rect>
+                    <rect x="13" y="13" width="9" height="9"></rect>
+                  </svg>
+                </div>
+              )}
 
               {/* Sort Button */}
               <div className="relative" ref={playlistSortMenuRef}>
@@ -926,7 +1070,7 @@ export default function Library() {
             </div>
           ) : viewMode === 'grid' ? (
             <div className="px-6 lg:px-12 xl:px-16">
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+              <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedChannelsList.map(channel => (
             <Link
               key={channel.id}
@@ -1158,7 +1302,7 @@ export default function Library() {
                     {isExpanded && (
                       playlistViewMode === 'grid' ? (
                         <div className="px-6 lg:px-12 xl:px-16">
-                          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+                          <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                           {categoryPlaylists.map(playlist => {
                             const isSelected = selectedPlaylists.includes(playlist.id);
                             return (
@@ -1503,7 +1647,7 @@ export default function Library() {
                   {/* Uncategorized Playlists */}
                   {playlistViewMode === 'grid' ? (
                     <div className="px-6 lg:px-12 xl:px-16">
-                      <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+                      <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                       {groupedPlaylists.uncategorized.map(playlist => {
                         const isSelected = selectedPlaylists.includes(playlist.id);
                         return (

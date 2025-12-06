@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { useCardSize } from '../contexts/CardSizeContext';
 import { Link, useNavigate } from 'react-router-dom';
 import ChannelRow from '../components/ChannelRow';
 import { getUserFriendlyError } from '../utils/errorMessages';
@@ -19,8 +20,74 @@ export default function Channels() {
   const updateCategoryMutation = useUpdateChannelCategory();
   const deleteCategoryMutation = useDeleteChannelCategory();
   const { showNotification } = useNotification();
+  const { cardSize, setCardSize } = useCardSize();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Calculate optimal columns based on screen width, card size, AND device type
+  const getGridColumns = (cardSize) => {
+    const width = window.innerWidth;
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+    const columnConfig = {
+      // Touch devices (tablets/phones) - fewer columns for touch targets
+      touch: {
+        sm: { mobile: 2, tablet: 4, wide: 4 },
+        md: { mobile: 1, tablet: 3, wide: 3 },
+        lg: { mobile: 1, tablet: 2, wide: 2 },
+        xl: { mobile: 1, tablet: 2, wide: 2 }
+      },
+      // Desktop devices (mouse/trackpad) - more columns for large monitors
+      desktop: {
+        sm: { small: 2, medium: 4, large: 6, xlarge: 8 },
+        md: { small: 1, medium: 3, large: 5, xlarge: 6 },
+        lg: { small: 1, medium: 2, large: 4, xlarge: 5 },
+        xl: { small: 1, medium: 2, large: 3, xlarge: 4 }
+      }
+    };
+
+    const deviceType = isTouch ? 'touch' : 'desktop';
+    const config = columnConfig[deviceType][cardSize] || columnConfig.desktop.md;
+
+    if (isTouch) {
+      // Touch devices: phones and tablets
+      if (width < 640) return config.mobile;
+      if (width < 2048) return config.tablet;
+      return config.wide;  // High-res tablets max out at 4 cards
+    } else {
+      // Desktop devices: laptops and monitors
+      if (width < 768) return config.small;
+      if (width < 1440) return config.medium;
+      if (width < 2560) return config.large;
+      return config.xlarge;  // 4K monitors can have up to 8 cards
+    }
+  };
+
+  // State to track current columns (updates on resize)
+  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
+
+  // Update columns when card size changes or window resizes
+  useEffect(() => {
+    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
+    updateColumns();
+    window.addEventListener('resize', updateColumns);
+    return () => window.removeEventListener('resize', updateColumns);
+  }, [cardSize]);
+
+  // Helper to get Tailwind grid class
+  const getGridClass = (cols) => {
+    const classMap = {
+      1: 'grid-cols-1',
+      2: 'grid-cols-2',
+      3: 'grid-cols-3',
+      4: 'grid-cols-4',
+      5: 'grid-cols-5',
+      6: 'grid-cols-6',
+      7: 'grid-cols-7',
+      8: 'grid-cols-8'
+    };
+    return classMap[cols] || classMap[5];
+  };
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
@@ -443,7 +510,7 @@ export default function Channels() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg pb-4">
+      <div className="sticky top-[64px] z-40 bg-dark-primary/95 backdrop-blur-lg py-4">
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
           <button
             onClick={() => setShowAddForm(!showAddForm)}
@@ -878,6 +945,48 @@ export default function Channels() {
               </svg>
             </button>
           </div>
+
+          {/* Card Size Slider - Only show in grid view */}
+          {viewMode === 'grid' && (
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+              </svg>
+              <input
+                type="range"
+                min="0"
+                max="3"
+                value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
+                onChange={(e) => {
+                  const sizes = ['sm', 'md', 'lg', 'xl'];
+                  setCardSize(sizes[e.target.value]);
+                }}
+                className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
+                  [&::-webkit-slider-thumb]:appearance-none
+                  [&::-webkit-slider-thumb]:w-4
+                  [&::-webkit-slider-thumb]:h-4
+                  [&::-webkit-slider-thumb]:rounded-full
+                  [&::-webkit-slider-thumb]:bg-accent
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-4
+                  [&::-moz-range-thumb]:h-4
+                  [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-accent
+                  [&::-moz-range-thumb]:border-0
+                  [&::-moz-range-thumb]:cursor-pointer"
+                title="Adjust card density (sm=compact, xl=spacious)"
+              />
+              <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="2" width="9" height="9"></rect>
+                <rect x="13" y="2" width="9" height="9"></rect>
+                <rect x="2" y="13" width="9" height="9"></rect>
+                <rect x="13" y="13" width="9" height="9"></rect>
+              </svg>
+            </div>
+          )}
         </div>
       </div>
 
@@ -955,7 +1064,7 @@ export default function Channels() {
       {/* Channels Grid/List */}
       {viewMode === 'grid' ? (
         <div className="px-6 lg:px-12 xl:px-16">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+          <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
           {filteredAndSortedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
             {/* Dropdown Menu - OUTSIDE card to avoid overflow:hidden clipping */}

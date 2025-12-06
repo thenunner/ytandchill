@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { useCardSize } from '../contexts/CardSizeContext';
+import { getGridColumns, getGridClass } from '../utils/gridUtils';
 import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
@@ -17,6 +19,16 @@ export default function Playlist() {
   const deleteVideo = useDeleteVideo();
   const bulkUpdateVideos = useBulkUpdateVideos();
   const { showNotification } = useNotification();
+  const { cardSize, setCardSize } = useCardSize();
+
+  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
+
+  useEffect(() => {
+    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
+    updateColumns();
+    window.addEventListener('resize', updateColumns);
+    return () => window.removeEventListener('resize', updateColumns);
+  }, [cardSize]);
 
   const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
   const [searchInput, setSearchInput] = useState('');
@@ -283,6 +295,48 @@ export default function Playlist() {
             </button>
           </div>
 
+          {/* Card Size Slider - Only show in grid view */}
+          {viewMode === 'grid' && (
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+              </svg>
+              <input
+                type="range"
+                min="0"
+                max="3"
+                value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
+                onChange={(e) => {
+                  const sizes = ['sm', 'md', 'lg', 'xl'];
+                  setCardSize(sizes[e.target.value]);
+                }}
+                className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
+                  [&::-webkit-slider-thumb]:appearance-none
+                  [&::-webkit-slider-thumb]:w-4
+                  [&::-webkit-slider-thumb]:h-4
+                  [&::-webkit-slider-thumb]:rounded-full
+                  [&::-webkit-slider-thumb]:bg-accent
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-4
+                  [&::-moz-range-thumb]:h-4
+                  [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-accent
+                  [&::-moz-range-thumb]:border-0
+                  [&::-moz-range-thumb]:cursor-pointer"
+                title="Adjust card density (sm=compact, xl=spacious)"
+              />
+              <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="2" width="9" height="9"></rect>
+                <rect x="13" y="2" width="9" height="9"></rect>
+                <rect x="2" y="13" width="9" height="9"></rect>
+                <rect x="13" y="13" width="9" height="9"></rect>
+              </svg>
+            </div>
+          )}
+
           {/* Pagination */}
           <Pagination
             currentPage={currentPage}
@@ -374,7 +428,7 @@ export default function Playlist() {
       {sortedVideos.length > 0 ? (
         viewMode === 'grid' ? (
           <div className="px-6 lg:px-12 xl:px-16">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+            <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
             {paginatedVideos.map((video) => (
               <VideoCard
                 key={video.id}

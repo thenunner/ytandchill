@@ -2,6 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { useCardSize } from '../contexts/CardSizeContext';
+import { getGridColumns, getGridClass } from '../utils/gridUtils';
 import VideoCard from '../components/VideoCard';
 import VideoRow from '../components/VideoRow';
 import FiltersModal from '../components/FiltersModal';
@@ -26,6 +28,16 @@ export default function ChannelLibrary() {
   const scanChannel = useScanChannel();
   const updateChannel = useUpdateChannel();
   const { showNotification } = useNotification();
+  const { cardSize, setCardSize } = useCardSize();
+
+  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
+
+  useEffect(() => {
+    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
+    updateColumns();
+    window.addEventListener('resize', updateColumns);
+    return () => window.removeEventListener('resize', updateColumns);
+  }, [cardSize]);
 
   // Detect library mode from URL
   const isLibraryMode = location.pathname.endsWith('/library');
@@ -655,7 +667,7 @@ export default function ChannelLibrary() {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Sticky Header Row */}
-      <div className="sticky top-[68px] z-40 bg-dark-primary/95 backdrop-blur-lg md:-mx-8 md:px-8 pb-4 mb-4">
+      <div className="sticky top-[64px] z-40 bg-dark-primary/95 backdrop-blur-lg md:-mx-8 md:px-8 py-4 mb-4">
         <div className="flex items-center justify-center gap-3 flex-wrap">
           {/* Back Arrow - Library mode goes to /library, Discovery mode goes to / (main channels list) */}
           <Link
@@ -779,6 +791,48 @@ export default function ChannelLibrary() {
               </svg>
             </button>
           </div>
+
+          {/* Card Size Slider */}
+          {viewMode === 'grid' && (
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+              </svg>
+              <input
+                type="range"
+                min="0"
+                max="3"
+                value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
+                onChange={(e) => {
+                  const sizes = ['sm', 'md', 'lg', 'xl'];
+                  setCardSize(sizes[e.target.value]);
+                }}
+                className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
+                  [&::-webkit-slider-thumb]:appearance-none
+                  [&::-webkit-slider-thumb]:w-4
+                  [&::-webkit-slider-thumb]:h-4
+                  [&::-webkit-slider-thumb]:rounded-full
+                  [&::-webkit-slider-thumb]:bg-accent
+                  [&::-webkit-slider-thumb]:cursor-pointer
+                  [&::-moz-range-thumb]:w-4
+                  [&::-moz-range-thumb]:h-4
+                  [&::-moz-range-thumb]:rounded-full
+                  [&::-moz-range-thumb]:bg-accent
+                  [&::-moz-range-thumb]:border-0
+                  [&::-moz-range-thumb]:cursor-pointer"
+                title="Adjust card density"
+              />
+              <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="2" y="2" width="9" height="9"></rect>
+                <rect x="13" y="2" width="9" height="9"></rect>
+                <rect x="2" y="13" width="9" height="9"></rect>
+                <rect x="13" y="13" width="9" height="9"></rect>
+              </svg>
+            </div>
+          )}
 
           {/* Pagination */}
           <Pagination
@@ -1184,7 +1238,7 @@ export default function ChannelLibrary() {
           </div>
         ) : viewMode === 'grid' ? (
           <div className="px-6 lg:px-12 xl:px-16">
-            <div className="grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4">
+            <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
             {paginatedVideos.map(video => (
               <VideoCard
                 key={video.id}

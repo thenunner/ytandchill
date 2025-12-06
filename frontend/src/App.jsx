@@ -366,7 +366,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 w-full ${isAuthPage ? '' : 'max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16 pb-2'}`}>
+      <main className={`flex-1 w-full ${isAuthPage ? '' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
         <Routes>
           <Route path="/setup" element={<Setup />} />
           <Route path="/login" element={<Login />} />
