@@ -1213,7 +1213,7 @@ export default function Channels() {
             >
               {/* Checkmark overlay when selected in edit mode */}
               {editMode && selectedChannels.includes(channel.id) && (
-                <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
+                <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-20">
                   <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
                     <polyline points="20 6 9 17 4 12"></polyline>
                   </svg>
@@ -1248,22 +1248,34 @@ export default function Channels() {
                       </svg>
                     </div>
                   )}
+
+                  {/* Upper Left: To Review Badge (only if > 0) - Small square */}
+                  {(channel.video_count || 0) > 0 && (
+                    <div className="absolute top-2 left-2 bg-accent text-white font-bold text-xs px-1.5 py-0.5 rounded leading-none z-10">
+                      {channel.video_count}
+                    </div>
+                  )}
+
+                  {/* Upper Right: AUTO Badge */}
+                  {channel.auto_download && (
+                    <div className="absolute top-2 right-2 bg-green-500 text-white font-bold text-[10px] px-1.5 py-0.5 rounded z-10">
+                      AUTO
+                    </div>
+                  )}
+
+                  {/* Lower Right: Last Scan Time */}
+                  <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded z-10">
+                    {formatScanTime(channel.last_scan_time) || 'Never'}
+                  </div>
                 </div>
 
                 {/* Content Section */}
-                <div className={`p-3 space-y-2 rounded-b-xl transition-colors ${editMode && selectedChannels.includes(channel.id) ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
-                  {/* Title + AUTO badge + 3-dot menu */}
+                <div className={`p-3 rounded-b-xl transition-colors ${editMode && selectedChannels.includes(channel.id) ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
+                  {/* Title + 3-dot menu */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {/* AUTO badge */}
-                      {channel.auto_download && (
-                        <span className="text-green-500 text-[10px] font-bold tracking-wide flex-shrink-0">AUTO</span>
-                      )}
-                      {/* Title */}
-                      <h3 className="text-base font-semibold text-text-primary line-clamp-1 leading-tight flex-1 min-w-0" title={channel.title}>
-                        {channel.title}
-                      </h3>
-                    </div>
+                    <h3 className="text-base font-semibold text-text-primary line-clamp-1 leading-tight flex-1 min-w-0" title={channel.title}>
+                      {channel.title}
+                    </h3>
 
                     {/* 3-dot menu - hidden in edit mode */}
                     {!editMode && (
@@ -1285,48 +1297,6 @@ export default function Channels() {
                         </button>
                       </div>
                     )}
-                  </div>
-
-                  {/* Scan and Video Dates - YouTube style */}
-                  <div className="text-sm text-text-secondary font-medium">
-                    Scan • {formatScanTime(channel.last_scan_time) || 'None'} - Last video • {formatVideoDate(channel.last_video_date) || 'None'}
-                  </div>
-
-                  {/* Stats - To Review, Downloaded, Ignored (closer together with dots) */}
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    {/* To Review - First */}
-                    <div className={`flex items-center gap-1 font-semibold ${(channel.video_count || 0) > 0 ? 'text-red-500' : 'text-gray-400'}`} title="To Review">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <circle cx="12" cy="12" r="1"></circle>
-                      </svg>
-                      <span className="font-mono">{channel.video_count || 0}</span>
-                    </div>
-
-                    {/* Separator dot */}
-                    <span className="text-text-secondary">•</span>
-
-                    {/* Downloaded - Second */}
-                    <div className="flex items-center gap-1 font-semibold text-accent-text" title="Downloaded videos">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                        <polyline points="7 10 12 15 17 10"></polyline>
-                        <line x1="12" y1="15" x2="12" y2="3"></line>
-                      </svg>
-                      <span className="font-mono">{channel.downloaded_count || 0}</span>
-                    </div>
-
-                    {/* Separator dot */}
-                    <span className="text-text-secondary">•</span>
-
-                    {/* Ignored - Third */}
-                    <div className="flex items-center gap-1 font-semibold text-gray-400" title="Ignored videos">
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                      </svg>
-                      <span className="font-mono">{channel.ignored_count || 0}</span>
-                    </div>
                   </div>
                 </div>
               </Link>

@@ -3,7 +3,7 @@ export default function ViewToggle({ mode, onChange, className = '' }) {
     <div className={`flex items-center bg-dark-secondary border border-dark-border rounded-lg overflow-hidden ${className}`}>
       <button
         onClick={() => onChange('grid')}
-        className={`px-4 py-2 flex items-center gap-2 transition-colors ${
+        className={`p-2 flex items-center transition-colors ${
           mode === 'grid'
             ? 'bg-accent text-accent-text'
             : 'bg-transparent text-text-secondary hover:text-text-primary'
@@ -16,11 +16,10 @@ export default function ViewToggle({ mode, onChange, className = '' }) {
           <rect x="3" y="14" width="7" height="7"></rect>
           <rect x="14" y="14" width="7" height="7"></rect>
         </svg>
-        <span className="hidden sm:inline">Grid</span>
       </button>
       <button
         onClick={() => onChange('list')}
-        className={`px-4 py-2 flex items-center gap-2 transition-colors ${
+        className={`p-2 flex items-center transition-colors ${
           mode === 'list'
             ? 'bg-accent text-accent-text'
             : 'bg-transparent text-text-secondary hover:text-text-primary'
@@ -35,7 +34,6 @@ export default function ViewToggle({ mode, onChange, className = '' }) {
           <line x1="3" y1="12" x2="3.01" y2="12"></line>
           <line x1="3" y1="18" x2="3.01" y2="18"></line>
         </svg>
-        <span className="hidden sm:inline">List</span>
       </button>
     </div>
   );
