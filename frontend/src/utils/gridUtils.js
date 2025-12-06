@@ -51,3 +51,30 @@ export const getGridClass = (cols) => {
   };
   return classMap[cols] || classMap[5];
 };
+
+// Helper to get text size classes based on card size
+export const getTextSizes = (cardSize) => {
+  const sizeConfig = {
+    sm: {
+      title: 'text-sm',
+      metadata: 'text-xs',
+      badge: 'text-xs',
+    },
+    md: {
+      title: 'text-base',
+      metadata: 'text-sm',
+      badge: 'text-xs',
+    },
+    lg: {
+      title: 'text-lg',
+      metadata: 'text-sm',
+      badge: 'text-sm',
+    },
+    xl: {
+      title: 'text-xl',
+      metadata: 'text-base',
+      badge: 'text-sm',
+    }
+  };
+  return sizeConfig[cardSize] || sizeConfig.md;
+};

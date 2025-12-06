@@ -1,11 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
+import { useCardSize } from '../contexts/CardSizeContext';
+import { getTextSizes } from '../utils/gridUtils';
 
 export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete, navigate, showNotification, editMode, isSelected, onToggleSelect }) {
+  const { cardSize } = useCardSize();
+  const textSizes = getTextSizes(cardSize);
   const [showMenu, setShowMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [minMinutes, setMinMinutes] = useState(channel.min_minutes || 0);
   const [maxMinutes, setMaxMinutes] = useState(channel.max_minutes || 0);
   const cardRef = useRef(null);
+  const menuRef = useRef(null);
 
   // Helper function to format scan time
   const formatScanTime = (scanTimeString) => {
@@ -38,23 +43,20 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
     return videoDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
   };
 
-  // Click outside to progressively close menus
+  // Close menu when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (cardRef.current && !cardRef.current.contains(event.target)) {
-        if (showSettings) {
-          setShowSettings(false);
-        } else if (showMenu) {
-          setShowMenu(false);
-        }
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setShowMenu(false);
+        setShowSettings(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMenu, showSettings]);
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showMenu]);
 
   const handleSaveSettings = async (e) => {
     e.stopPropagation();
@@ -94,7 +96,7 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
   return (
     <div
       ref={cardRef}
-      className={`card p-0 cursor-pointer transition-all w-full overflow-x-auto relative ${
+      className={`card p-0 cursor-pointer transition-all w-full relative ${
         isSelected ? 'ring-2 ring-accent/60' : ''
       } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
       onClick={(e) => {
@@ -114,116 +116,8 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
         </div>
       )}
 
-      {/* Inner flex container that expands when menu opens */}
-      <div className={`flex items-stretch ${
-        showMenu && !editMode
-          ? showSettings
-            ? 'min-w-[753px]' // Base 393px + drawer 100px + settings 260px
-            : 'min-w-[493px]'  // Base 393px + drawer 100px
-          : 'min-w-full'
-      }`}
-      >
-      {/* 3-Dot Menu Button and Drawers - hidden in edit mode */}
-      {!editMode && (
-        <>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowMenu(!showMenu);
-            if (showSettings) setShowSettings(false);
-          }}
-          className="flex-shrink-0 w-10 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary transition-colors border-r border-dark-border"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="12" cy="5" r="2"></circle>
-            <circle cx="12" cy="12" r="2"></circle>
-            <circle cx="12" cy="19" r="2"></circle>
-          </svg>
-        </button>
-
-        {/* Sliding Drawer Menu - Settings (row 1) and Delete (row 2) */}
-      <div
-        className={`flex flex-col justify-center gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
-          showMenu ? 'w-[100px] opacity-100 px-2' : 'w-0 opacity-0'
-        }`}
-      >
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowSettings(!showSettings);
-          }}
-          className={`px-3 py-1 text-sm text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap ${showSettings ? 'ring-1 ring-accent' : ''}`}
-        >
-          Settings
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete({ id: channel.id, title: channel.title });
-            setShowMenu(false);
-            setShowSettings(false);
-          }}
-          className="px-3 py-1 text-sm text-red-400 hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
-        >
-          Delete
-        </button>
-      </div>
-
-      {/* Channel Settings Slide-out - Row 1: Min/Max, Row 2: Auto-Download, Save button */}
-      <div
-        className={`flex flex-col justify-center gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
-          showSettings && showMenu ? 'w-[260px] opacity-100 px-2' : 'w-0 opacity-0'
-        }`}
-      >
-        {/* Row 1: Min + Max */}
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-text-secondary">Min</span>
-          <input
-            type="number"
-            value={minMinutes}
-            onChange={(e) => setMinMinutes(parseInt(e.target.value) || 0)}
-            onClick={(e) => e.stopPropagation()}
-            className="w-16 px-2 py-1 text-sm bg-dark-tertiary border border-dark-border rounded text-text-primary"
-            min="0"
-            title="Minimum video duration in minutes. Only videos longer than this will be found. Use 0 for no minimum."
-          />
-          <span className="text-xs text-text-secondary">Max</span>
-          <input
-            type="number"
-            value={maxMinutes}
-            onChange={(e) => setMaxMinutes(parseInt(e.target.value) || 0)}
-            onClick={(e) => e.stopPropagation()}
-            className="w-16 px-2 py-1 text-sm bg-dark-tertiary border border-dark-border rounded text-text-primary"
-            min="0"
-            title="Maximum video duration in minutes. Only videos shorter than this will be found. Use 0 for no maximum."
-          />
-        </div>
-        {/* Row 2: Auto-Download checkbox + Save button */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleToggleAutoDownload}
-            className="px-2 py-1 text-sm text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors flex items-center gap-1"
-            title="If checked, will automatically download any new video that is found via scan (manual or automated)"
-          >
-            <input
-              type="checkbox"
-              checked={channel.auto_download || false}
-              readOnly
-              onClick={(e) => e.stopPropagation()}
-              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
-            />
-            <span>Auto-Download</span>
-          </button>
-          <button
-            onClick={handleSaveSettings}
-            className="px-3 py-1 text-sm text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-        </>
-      )}
+      {/* Inner flex container */}
+      <div className="flex items-stretch w-full">
 
       {/* Content - Thumbnail + Info */}
       <div className="flex items-stretch gap-2 sm:gap-2 flex-1 pl-0 sm:pl-2 pr-2">
@@ -242,59 +136,144 @@ export default function ChannelRow({ channel, onScan, onUpdateChannel, onDelete,
               </svg>
             </div>
           )}
+
+          {/* To Review Badge - Upper Left Corner */}
+          {channel.video_count > 0 && (
+            <div className="absolute top-1 left-1 bg-gray-400 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+              {channel.video_count}
+            </div>
+          )}
+
+          {/* Auto Download Badge - Upper Right Corner */}
+          {channel.auto_download && (
+            <div className="absolute top-1 right-1 bg-green-500 text-white px-1.5 py-0.5 rounded text-xs font-bold">
+              AUTO
+            </div>
+          )}
+
+          {/* Last Scan Time - Lower Right Corner */}
+          {formatScanTime(channel.last_scan_time) && (
+            <div className="absolute bottom-1 right-1 bg-black/80 text-white px-1.5 py-0.5 rounded text-xs font-semibold">
+              {formatScanTime(channel.last_scan_time)}
+            </div>
+          )}
         </div>
 
-        {/* Info Section - 3 rows */}
-        <div className="flex-1 min-w-0 space-y-0.5 py-1.5 flex flex-col justify-center">
-          {/* Row 1: Title */}
-          <h3 className="text-sm font-semibold text-text-primary group-hover:text-accent-text transition-colors line-clamp-1 leading-tight" title={channel.title}>
+        {/* Info Section - Title only */}
+        <div className="flex-1 min-w-0 py-1.5 flex items-center justify-between gap-2">
+          {/* Title */}
+          <h3 className={`${textSizes.title} font-semibold text-text-primary group-hover:text-accent-text transition-colors line-clamp-2 leading-tight`} title={channel.title}>
             {channel.title}
           </h3>
 
-          {/* Row 2: Scan and Last Video dates */}
-          <div className="flex items-center gap-2 text-sm text-text-secondary">
-            <span>Scan: <span className="text-text-primary">{formatScanTime(channel.last_scan_time) || 'None'}</span></span>
-            <span className="w-1 h-1 bg-text-muted rounded-full flex-shrink-0"></span>
-            <span>Last Video: <span className="text-text-primary">{formatVideoDate(channel.last_video_date) || 'None'}</span></span>
-          </div>
+          {/* 3-Dot Menu Button - Only show when not in edit mode */}
+          {!editMode && (
+            <div className="relative flex-shrink-0" ref={menuRef}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(!showMenu);
+                }}
+                className="p-1 rounded hover:bg-dark-hover transition-colors text-text-secondary hover:text-text-primary"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="5" r="2"></circle>
+                  <circle cx="12" cy="12" r="2"></circle>
+                  <circle cx="12" cy="19" r="2"></circle>
+                </svg>
+              </button>
 
-          {/* Row 3: AUTO badge + Stats (Downloaded, To Review, Ignored) */}
-          <div className="flex items-center gap-2">
-            {/* AUTO badge */}
-            {channel.auto_download && (
-              <>
-                <span className="text-green-500 text-xs font-bold">AUTO</span>
-                <span className="w-1 h-1 bg-text-muted rounded-full flex-shrink-0"></span>
-              </>
-            )}
-            {/* Downloaded */}
-            <div className="flex items-center gap-0.5 text-sm font-semibold text-accent-text" title="Downloaded">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-              <span className="font-mono">{channel.downloaded_count || 0}</span>
-            </div>
+              {/* Dropdown Menu */}
+              {showMenu && (
+                <div className="absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowSettings(!showSettings);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="3"></circle>
+                      <path d="M12 1v6m0 6v6m5.657-13.657l-4.243 4.243m-2.828 2.828l-4.243 4.243m16.97 1.414l-6-6m-6-6l-6-6"></path>
+                    </svg>
+                    Settings
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete({ id: channel.id, title: channel.title });
+                      setShowMenu(false);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    Delete
+                  </button>
+                </div>
+              )}
 
-            {/* Discovered */}
-            <div className="flex items-center gap-0.5 text-sm font-semibold text-gray-400" title="To Review">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <circle cx="12" cy="12" r="1"></circle>
-              </svg>
-              <span className="font-mono">{channel.video_count || 0}</span>
-            </div>
+              {/* Settings Panel (inline below menu when settings clicked) */}
+              {showSettings && (
+                <div className="absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl p-3 min-w-[280px] z-50">
+                  <div className="space-y-3">
+                    {/* Min/Max Duration */}
+                    <div className="flex items-center gap-2">
+                      <span className={`${textSizes.metadata} text-text-secondary`}>Min</span>
+                      <input
+                        type="number"
+                        value={minMinutes}
+                        onChange={(e) => setMinMinutes(parseInt(e.target.value) || 0)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-16 px-2 py-1 text-sm bg-dark-tertiary border border-dark-border rounded text-text-primary"
+                        min="0"
+                        title="Minimum video duration in minutes"
+                      />
+                      <span className={`${textSizes.metadata} text-text-secondary`}>Max</span>
+                      <input
+                        type="number"
+                        value={maxMinutes}
+                        onChange={(e) => setMaxMinutes(parseInt(e.target.value) || 0)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-16 px-2 py-1 text-sm bg-dark-tertiary border border-dark-border rounded text-text-primary"
+                        min="0"
+                        title="Maximum video duration in minutes"
+                      />
+                    </div>
 
-            {/* Ignored */}
-            <div className="flex items-center gap-0.5 text-sm font-semibold text-gray-400" title="Ignored">
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-              </svg>
-              <span className="font-mono">{channel.ignored_count || 0}</span>
+                    {/* Auto-Download */}
+                    <button
+                      onClick={handleToggleAutoDownload}
+                      className="w-full px-2 py-1.5 text-sm text-text-primary hover:bg-dark-hover bg-dark-tertiary rounded border border-dark-border transition-colors flex items-center gap-2"
+                      title="Automatically download new videos"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={channel.auto_download || false}
+                        readOnly
+                        onClick={(e) => e.stopPropagation()}
+                        className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent"
+                      />
+                      <span>Auto-Download</span>
+                    </button>
+
+                    {/* Save Button */}
+                    <button
+                      onClick={handleSaveSettings}
+                      className="w-full px-3 py-1.5 text-sm text-white bg-accent hover:bg-accent/90 rounded transition-colors font-medium"
+                    >
+                      Save Settings
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          )}
         </div>
       </div>
       </div> {/* Close inner flex container */}

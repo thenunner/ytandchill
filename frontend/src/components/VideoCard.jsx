@@ -2,6 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { useCardSize } from '../contexts/CardSizeContext';
+import { getTextSizes } from '../utils/gridUtils';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -15,6 +17,8 @@ export default function VideoCard({
   editMode = false, // New prop for edit mode
   isLibraryView = false, // New prop for library view (shows 3-column layout with file size)
 }) {
+  const { cardSize } = useCardSize();
+  const textSizes = getTextSizes(cardSize);
   const navigate = useNavigate();
   const location = useLocation();
   const deleteVideo = useDeleteVideo();
@@ -253,33 +257,33 @@ export default function VideoCard({
 
         {/* Status Badge - For non-library videos (channels view) */}
         {statusBadge && statusBadge.position === 'top' && (
-          <div className={`absolute top-2 left-2 ${statusBadge.bg} text-white px-3 py-1 rounded text-xs font-bold tracking-wide backdrop-blur-sm z-10`}>
+          <div className={`absolute top-2 left-2 ${statusBadge.bg} text-white px-3 py-1 rounded ${textSizes.badge} font-bold tracking-wide backdrop-blur-sm z-10`}>
             {statusBadge.text}
           </div>
         )}
         {statusBadge && statusBadge.position === 'bottom' && (
-          <div className={`absolute bottom-0 left-0 right-0 ${statusBadge.bg} text-white px-3 py-1.5 text-center text-xs font-bold tracking-wide backdrop-blur-sm z-10`}>
+          <div className={`absolute bottom-0 left-0 right-0 ${statusBadge.bg} text-white px-3 py-1.5 text-center ${textSizes.badge} font-bold tracking-wide backdrop-blur-sm z-10`}>
             {statusBadge.text}
           </div>
         )}
 
         {/* Duration overlay - bottom right (YouTube style) */}
         {video.duration_sec && (
-          <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs font-semibold px-1.5 py-0.5 rounded">
+          <div className={`absolute bottom-1 right-1 bg-black/80 text-white ${textSizes.badge} font-semibold px-1.5 py-0.5 rounded`}>
             {formatDuration(video.duration_sec)}
           </div>
         )}
 
         {/* WATCHED badge - top left overlay (library videos only) */}
         {isDownloaded && video.watched && (
-          <div className="absolute top-2 left-2 bg-black/80 text-white px-2 py-0.5 rounded text-xs font-semibold">
+          <div className={`absolute top-2 left-2 bg-black/80 text-white px-2 py-0.5 rounded ${textSizes.badge} font-semibold`}>
             WATCHED
           </div>
         )}
 
         {/* PLAYLIST badge - bottom left overlay (when video is in playlists) */}
         {video.playlist_ids && video.playlist_ids.length > 0 && (
-          <div className="absolute bottom-1 left-1 bg-green-600/90 text-white px-1.5 py-0.5 rounded text-xs font-semibold">
+          <div className={`absolute bottom-1 left-1 bg-green-600/90 text-white px-1.5 py-0.5 rounded ${textSizes.badge} font-semibold`}>
             PLAYLIST
           </div>
         )}
@@ -289,7 +293,7 @@ export default function VideoCard({
       <div className={`p-3 space-y-2 rounded-b-xl transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
         {/* Title + 3-dot menu (library videos only) */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className="text-base font-medium text-text-primary line-clamp-2 leading-tight flex-1 min-w-0" title={video.title}>
+          <h3 className={`${textSizes.title} font-medium text-text-primary line-clamp-2 leading-tight flex-1 min-w-0`} title={video.title}>
             {video.title}
           </h3>
 
@@ -374,12 +378,12 @@ export default function VideoCard({
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
           // Library view: downloaded date • size
-          <div className="text-sm text-text-secondary font-medium">
+          <div className={`${textSizes.metadata} text-text-secondary font-medium`}>
             <span>{formatDateTime(video.downloaded_at)} • {formatFileSize(video.file_size_bytes)}</span>
           </div>
         ) : (
           // Channel view: upload date only - duration now on thumbnail
-          <div className="text-sm text-text-secondary font-medium">
+          <div className={`${textSizes.metadata} text-text-secondary font-medium`}>
             <span>{formatDate(video.upload_date)}</span>
           </div>
         )}
