@@ -11,6 +11,7 @@ import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import api from '../api/client';
+import { StickyBar, SearchInput, ViewToggle, CardSizeSlider } from '../components/stickybar';
 
 export default function ChannelLibrary() {
   const { channelId } = useParams();
@@ -667,7 +668,7 @@ export default function ChannelLibrary() {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Sticky Header Row */}
-      <div className="sticky top-[64px] z-40 bg-dark-primary/95 backdrop-blur-lg md:-mx-8 md:px-8 py-4 mb-4">
+      <StickyBar className="md:-mx-8 md:px-8 mb-4">
         <div className="flex items-center justify-center gap-3 flex-wrap">
           {/* Back Arrow - Library mode goes to /library, Discovery mode goes to / (main channels list) */}
           <Link
@@ -744,95 +745,18 @@ export default function ChannelLibrary() {
           </div>
 
           {/* Search */}
-          <div className="flex items-center">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              placeholder="Search videos..."
-              className="search-input w-full sm:w-[180px]"
-            />
-          </div>
+          <SearchInput
+            value={searchInput}
+            onChange={handleSearchChange}
+            placeholder="Search videos..."
+            className="w-full sm:w-[180px]"
+          />
 
           {/* View Toggle */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg border transition-all ${
-                viewMode === 'grid'
-                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary'
-                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-              }`}
-              title="Grid View"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg border transition-all ${
-                viewMode === 'list'
-                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary'
-                  : 'bg-dark-primary/95 border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-              }`}
-              title="List View"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="8" y1="6" x2="21" y2="6"></line>
-                <line x1="8" y1="12" x2="21" y2="12"></line>
-                <line x1="8" y1="18" x2="21" y2="18"></line>
-                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-              </svg>
-            </button>
-          </div>
+          <ViewToggle mode={viewMode} onChange={setViewMode} />
 
           {/* Card Size Slider */}
-          {viewMode === 'grid' && (
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-              </svg>
-              <input
-                type="range"
-                min="0"
-                max="3"
-                value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
-                onChange={(e) => {
-                  const sizes = ['sm', 'md', 'lg', 'xl'];
-                  setCardSize(sizes[e.target.value]);
-                }}
-                className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
-                  [&::-webkit-slider-thumb]:appearance-none
-                  [&::-webkit-slider-thumb]:w-4
-                  [&::-webkit-slider-thumb]:h-4
-                  [&::-webkit-slider-thumb]:rounded-full
-                  [&::-webkit-slider-thumb]:bg-accent
-                  [&::-webkit-slider-thumb]:cursor-pointer
-                  [&::-moz-range-thumb]:w-4
-                  [&::-moz-range-thumb]:h-4
-                  [&::-moz-range-thumb]:rounded-full
-                  [&::-moz-range-thumb]:bg-accent
-                  [&::-moz-range-thumb]:border-0
-                  [&::-moz-range-thumb]:cursor-pointer"
-                title="Adjust card density"
-              />
-              <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="2" width="9" height="9"></rect>
-                <rect x="13" y="2" width="9" height="9"></rect>
-                <rect x="2" y="13" width="9" height="9"></rect>
-                <rect x="13" y="13" width="9" height="9"></rect>
-              </svg>
-            </div>
-          )}
+          <CardSizeSlider show={viewMode === 'grid'} />
 
           {/* Pagination */}
           <Pagination
@@ -985,7 +909,7 @@ export default function ChannelLibrary() {
             </>
           )}
         </div>
-      </div>
+      </StickyBar>
 
       {/* Channel Header - Only show in discovery mode for videos, not in library mode or playlists */}
       {channel && contentFilter !== 'playlists' && !isLibraryMode && (

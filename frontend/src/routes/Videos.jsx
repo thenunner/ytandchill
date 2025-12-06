@@ -3,6 +3,7 @@ import { useScanYouTubePlaylist, useQueuePlaylistVideos, useRemovePlaylistVideos
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridColumns, getGridClass } from '../utils/gridUtils';
+import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 
 export default function Videos() {
   const { showNotification } = useNotification();
@@ -320,7 +321,7 @@ export default function Videos() {
 
       {/* Results Summary */}
       {scanResults && (
-        <div className="sticky top-[64px] z-40 bg-dark-secondary/95 backdrop-blur-lg rounded-lg p-4">
+        <StickyBar className="rounded-lg">
           <div className="flex flex-col sm:flex-row sm:items-center justify-center gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               <div className="text-text-secondary">
@@ -336,56 +337,16 @@ export default function Videos() {
                 )}
               </div>
               {scanResults.videos.length > 0 && (
-                <input
-                  type="text"
+                <SearchInput
                   value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
+                  onChange={setSearchInput}
                   placeholder="Search..."
-                  className="bg-dark-tertiary border border-dark-border rounded-lg px-3 py-1 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent w-40"
+                  className="w-40 max-w-none"
                 />
               )}
 
               {/* Card Size Slider */}
-              {scanResults.videos.length > 0 && (
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="3" y="3" width="7" height="7"></rect>
-                    <rect x="14" y="3" width="7" height="7"></rect>
-                    <rect x="3" y="14" width="7" height="7"></rect>
-                    <rect x="14" y="14" width="7" height="7"></rect>
-                  </svg>
-                  <input
-                    type="range"
-                    min="0"
-                    max="3"
-                    value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
-                    onChange={(e) => {
-                      const sizes = ['sm', 'md', 'lg', 'xl'];
-                      setCardSize(sizes[e.target.value]);
-                    }}
-                    className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
-                      [&::-webkit-slider-thumb]:appearance-none
-                      [&::-webkit-slider-thumb]:w-4
-                      [&::-webkit-slider-thumb]:h-4
-                      [&::-webkit-slider-thumb]:rounded-full
-                      [&::-webkit-slider-thumb]:bg-accent
-                      [&::-webkit-slider-thumb]:cursor-pointer
-                      [&::-moz-range-thumb]:w-4
-                      [&::-moz-range-thumb]:h-4
-                      [&::-moz-range-thumb]:rounded-full
-                      [&::-moz-range-thumb]:bg-accent
-                      [&::-moz-range-thumb]:border-0
-                      [&::-moz-range-thumb]:cursor-pointer"
-                    title="Adjust card density"
-                  />
-                  <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="2" width="9" height="9"></rect>
-                    <rect x="13" y="2" width="9" height="9"></rect>
-                    <rect x="2" y="13" width="9" height="9"></rect>
-                    <rect x="13" y="13" width="9" height="9"></rect>
-                  </svg>
-                </div>
-              )}
+              <CardSizeSlider show={scanResults.videos.length > 0} />
             </div>
 
             {scanResults.videos.length > 0 && (
@@ -468,7 +429,7 @@ export default function Videos() {
               </button>
             </div>
           )}
-        </div>
+        </StickyBar>
       )}
 
       {/* Video Grid */}
@@ -537,18 +498,14 @@ export default function Videos() {
                   </div>
                 )}
 
-                {/* Selection Indicator */}
-                <div className={`absolute top-2 left-2 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                  selectedVideos.has(video.yt_id)
-                    ? 'bg-accent border-accent'
-                    : 'bg-black/50 border-white/50'
-                }`}>
-                  {selectedVideos.has(video.yt_id) && (
-                    <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <path d="M5 13l4 4L19 7" />
+                {/* Selection Checkmark - Upper Right (higher z-index than status badge) */}
+                {selectedVideos.has(video.yt_id) && (
+                  <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-20">
+                    <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
               {/* Video Info */}

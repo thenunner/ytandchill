@@ -7,6 +7,7 @@ import ChannelRow from '../components/ChannelRow';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
+import { StickyBar, SearchInput, ViewToggle, CardSizeSlider, SortDropdown } from '../components/stickybar';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -510,7 +511,7 @@ export default function Channels() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="sticky top-[64px] z-40 bg-dark-primary/95 backdrop-blur-lg py-4">
+      <StickyBar>
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
           <button
             onClick={() => setShowAddForm(!showAddForm)}
@@ -533,12 +534,11 @@ export default function Channels() {
               </svg>
             )}
           </button>
-          <input
-            type="text"
+          <SearchInput
             value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            onChange={setSearchInput}
             placeholder="Search channels..."
-            className="search-input w-full sm:w-[200px] h-8 py-1 px-3 text-sm"
+            className="w-full sm:w-[200px]"
           />
 
           {/* Sort Button */}
@@ -909,86 +909,12 @@ export default function Channels() {
           </button>
 
           {/* View Toggle */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 rounded-lg border transition-all ${
-                viewMode === 'grid'
-                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
-                  : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
-              }`}
-              title="Grid View"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-              </svg>
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 rounded-lg border transition-all ${
-                viewMode === 'list'
-                  ? 'bg-dark-tertiary border-dark-border-light text-text-primary ring-2 ring-accent/40'
-                  : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-secondary hover:text-text-primary hover:border-dark-border-light'
-              }`}
-              title="List View"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="8" y1="6" x2="21" y2="6"></line>
-                <line x1="8" y1="12" x2="21" y2="12"></line>
-                <line x1="8" y1="18" x2="21" y2="18"></line>
-                <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                <line x1="3" y1="18" x2="3.01" y2="18"></line>
-              </svg>
-            </button>
-          </div>
+          <ViewToggle mode={viewMode} onChange={setViewMode} />
 
           {/* Card Size Slider - Only show in grid view */}
-          {viewMode === 'grid' && (
-            <div className="flex items-center gap-2">
-              <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7"></rect>
-                <rect x="14" y="3" width="7" height="7"></rect>
-                <rect x="3" y="14" width="7" height="7"></rect>
-                <rect x="14" y="14" width="7" height="7"></rect>
-              </svg>
-              <input
-                type="range"
-                min="0"
-                max="3"
-                value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
-                onChange={(e) => {
-                  const sizes = ['sm', 'md', 'lg', 'xl'];
-                  setCardSize(sizes[e.target.value]);
-                }}
-                className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
-                  [&::-webkit-slider-thumb]:appearance-none
-                  [&::-webkit-slider-thumb]:w-4
-                  [&::-webkit-slider-thumb]:h-4
-                  [&::-webkit-slider-thumb]:rounded-full
-                  [&::-webkit-slider-thumb]:bg-accent
-                  [&::-webkit-slider-thumb]:cursor-pointer
-                  [&::-moz-range-thumb]:w-4
-                  [&::-moz-range-thumb]:h-4
-                  [&::-moz-range-thumb]:rounded-full
-                  [&::-moz-range-thumb]:bg-accent
-                  [&::-moz-range-thumb]:border-0
-                  [&::-moz-range-thumb]:cursor-pointer"
-                title="Adjust card density (sm=compact, xl=spacious)"
-              />
-              <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="2" width="9" height="9"></rect>
-                <rect x="13" y="2" width="9" height="9"></rect>
-                <rect x="2" y="13" width="9" height="9"></rect>
-                <rect x="13" y="13" width="9" height="9"></rect>
-              </svg>
-            </div>
-          )}
+          <CardSizeSlider show={viewMode === 'grid'} />
         </div>
-      </div>
+      </StickyBar>
 
       {showAddForm && (
         <div className="card p-4 animate-slide-down max-w-2xl mx-auto">

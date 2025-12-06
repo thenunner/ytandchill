@@ -7,6 +7,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { formatQueueError, getUserFriendlyError } from '../utils/errorMessages';
+import { StickyBar } from '../components/stickybar';
 
 // Sortable Queue Item Component
 function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom }) {
@@ -334,7 +335,7 @@ export default function Queue() {
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Button Bar */}
-      <div className="sticky top-[64px] z-40 bg-dark-primary/95 backdrop-blur-lg py-4">
+      <StickyBar>
         <div className="flex items-center justify-center gap-4">
           <div className="flex space-x-2">
           {/* Only show Resume when queue is paused AND has items */}
@@ -356,7 +357,7 @@ export default function Queue() {
           </button>
         </div>
         </div>
-      </div>
+      </StickyBar>
 
       {/* Show message if worker is paused with items in queue */}
       {workerPaused && hasQueuedItems && (
