@@ -7,6 +7,7 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { StickyBar, SearchInput, CardSizeSlider, SortDropdown } from '../components/stickybar';
+import { getTextSizes } from '../utils/gridUtils';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -23,6 +24,7 @@ export default function Channels() {
   const { cardSize, setCardSize } = useCardSize();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const textSizes = getTextSizes(cardSize);
 
   // Calculate optimal columns based on screen width, card size, AND device type
   const getGridColumns = (cardSize) => {
@@ -1287,7 +1289,7 @@ export default function Channels() {
                 <div className={`p-3 rounded-b-xl transition-colors ${editMode && selectedChannels.includes(channel.id) ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
                   {/* Title + 3-dot menu */}
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-base font-semibold text-text-primary line-clamp-2 leading-tight flex-1 min-w-0" title={channel.title}>
+                    <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 leading-tight flex-1 min-w-0`} title={channel.title}>
                       {channel.title}
                     </h3>
 

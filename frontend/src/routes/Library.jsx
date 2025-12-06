@@ -6,11 +6,13 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
+import { getTextSizes } from '../utils/gridUtils';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize();
+  const textSizes = getTextSizes(cardSize);
 
   // Calculate optimal columns based on screen width, card size, AND device type
   const getGridColumns = (cardSize) => {
@@ -952,7 +954,7 @@ export default function Library() {
 
               {/* Channel Info */}
               <div className="p-3 rounded-b-xl transition-colors group-hover:bg-dark-tertiary">
-                <h3 className="text-base font-semibold text-text-primary line-clamp-2 mb-1" title={channel.title}>
+                <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 mb-1`} title={channel.title}>
                   {channel.title}
                 </h3>
                 <div className="text-sm text-text-secondary font-medium">
@@ -1162,7 +1164,7 @@ export default function Library() {
                                 <div className={`p-3 space-y-2 rounded-b-xl transition-colors ${editMode && isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
                                   {/* Title + 3-Dot Menu (inline, YouTube style) */}
                                   <div className="flex items-start justify-between gap-2">
-                                    <h3 className="text-base font-semibold text-text-primary line-clamp-2 leading-tight flex-1" title={playlist.title || playlist.name}>
+                                    <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 leading-tight flex-1`} title={playlist.title || playlist.name}>
                                       {playlist.title || playlist.name}
                                     </h3>
 
@@ -1453,7 +1455,7 @@ export default function Library() {
 
                             {/* Playlist info */}
                             <div className="p-3">
-                              <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2 mb-1" title={playlist.title || playlist.name}>
+                              <h3 className={`${textSizes.title} font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2 mb-1`} title={playlist.title || playlist.name}>
                                 {playlist.title || playlist.name}
                               </h3>
                               <div className="flex items-center justify-between text-sm text-text-secondary">

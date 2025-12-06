@@ -184,6 +184,16 @@ function App() {
       )
     },
     {
+      path: '/library',
+      label: 'Library',
+      icon: (
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+      )
+    },
+    {
       path: '/videos',
       label: 'Videos',
       icon: (
@@ -205,16 +215,6 @@ function App() {
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
           <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-      )
-    },
-    {
-      path: '/library',
-      label: 'Library',
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
         </svg>
       )
     },
@@ -257,7 +257,7 @@ function App() {
     <div className="min-h-screen flex flex-col bg-dark-primary">
       {/* Top Navigation Bar - Hidden on setup/login pages */}
       {!isAuthPage && (
-        <header className="bg-dark-primary sticky top-0 z-50">
+        <header className="bg-dark-primary/95 backdrop-blur-lg sticky top-0 z-50 border-b border-dark-border">
           <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
         {/* Main Nav Row */}
         <div className="flex items-center justify-center gap-1 md:gap-2 h-[60px]">
