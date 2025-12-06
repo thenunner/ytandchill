@@ -384,9 +384,9 @@ function App() {
         </Routes>
       </main>
 
-      {/* Footer Status Bar - Hidden on auth pages */}
+      {/* Footer Status Bar - Hidden on auth pages and mobile */}
       {!isAuthPage && (downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || health) && (
-        <footer className="bg-dark-primary sticky bottom-0 z-50 pb-safe">
+        <footer className="hidden md:block bg-dark-primary sticky bottom-0 z-50 pb-safe">
           {/* Quick Logs Slide-UP Panel - Hidden on mobile */}
           <div
             className={`overflow-hidden transition-all duration-300 ease-in-out hidden md:block ${

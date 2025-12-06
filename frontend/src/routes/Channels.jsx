@@ -1287,7 +1287,7 @@ export default function Channels() {
                 <div className={`p-3 rounded-b-xl transition-colors ${editMode && selectedChannels.includes(channel.id) ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
                   {/* Title + 3-dot menu */}
                   <div className="flex items-start justify-between gap-2">
-                    <h3 className="text-base font-semibold text-text-primary line-clamp-1 leading-tight flex-1 min-w-0" title={channel.title}>
+                    <h3 className="text-base font-semibold text-text-primary line-clamp-2 leading-tight flex-1 min-w-0" title={channel.title}>
                       {channel.title}
                     </h3>
 

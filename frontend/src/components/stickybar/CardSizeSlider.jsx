@@ -6,7 +6,7 @@ export default function CardSizeSlider({ show = true, className = '' }) {
   if (!show) return null;
 
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`hidden md:flex items-center gap-2 ${className}`}>
       <svg className="w-4 h-4 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="3" y="3" width="7" height="7"></rect>
         <rect x="14" y="3" width="7" height="7"></rect>

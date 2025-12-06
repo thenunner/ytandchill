@@ -25,7 +25,11 @@ export const getGridColumns = (cardSize) => {
 
   if (isTouch) {
     // Touch devices: phones and tablets
-    if (width < 640) return config.mobile;
+    if (width < 640) {
+      // Phone: 1 column in portrait, 2 in landscape
+      const isPortrait = window.innerHeight > window.innerWidth;
+      return isPortrait ? 1 : 2;
+    }
     if (width < 2048) return config.tablet;
     return config.wide;  // High-res tablets max out at 4 cards
   } else {

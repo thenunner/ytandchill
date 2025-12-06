@@ -347,9 +347,22 @@ export default function Library() {
       }
     });
 
-    // Sort categories alphabetically by name
+    // Sort categories based on playlistSortBy
     const sortedCategorized = Object.entries(categorized)
-      .sort(([, a], [, b]) => a.category.name.localeCompare(b.category.name))
+      .sort(([, a], [, b]) => {
+        switch (playlistSortBy) {
+          case 'a_z':
+            return a.category.name.localeCompare(b.category.name);
+          case 'z_a':
+            return b.category.name.localeCompare(a.category.name);
+          case 'most_videos':
+            return b.playlists.length - a.playlists.length;
+          case 'least_videos':
+            return a.playlists.length - b.playlists.length;
+          default:
+            return a.category.name.localeCompare(b.category.name);
+        }
+      })
       .reduce((acc, [key, value]) => {
         acc[key] = value;
         return acc;
@@ -359,7 +372,7 @@ export default function Library() {
       categorized: sortedCategorized,
       uncategorized
     };
-  }, [filteredPlaylists, categories]);
+  }, [filteredPlaylists, categories, playlistSortBy]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -939,7 +952,7 @@ export default function Library() {
 
               {/* Channel Info */}
               <div className="p-3 rounded-b-xl transition-colors group-hover:bg-dark-tertiary">
-                <h3 className="text-base font-semibold text-text-primary truncate mb-1" title={channel.title}>
+                <h3 className="text-base font-semibold text-text-primary line-clamp-2 mb-1" title={channel.title}>
                   {channel.title}
                 </h3>
                 <div className="text-sm text-text-secondary font-medium">
