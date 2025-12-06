@@ -382,9 +382,12 @@ export default function VideoCard({
             <span>{formatDateTime(video.downloaded_at)} • {formatFileSize(video.file_size_bytes)}</span>
           </div>
         ) : (
-          // Channel view: upload date only - duration now on thumbnail
-          <div className={`${textSizes.metadata} text-text-secondary font-medium`}>
+          // Channel view: upload date and duration
+          <div className={`${textSizes.metadata} text-text-secondary font-medium flex justify-between items-center`}>
             <span>{formatDate(video.upload_date)}</span>
+            {video.duration_sec && (
+              <span>{formatDuration(video.duration_sec)}</span>
+            )}
           </div>
         )}
       </div>

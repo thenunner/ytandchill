@@ -315,12 +315,20 @@ export default function ChannelLibrary() {
     setSearchParams(newParams);
   };
 
-  // Helper to parse downloaded_at date
+  // Helper to parse video date for sorting
   const parseVideoDate = (video) => {
-    if (video.downloaded_at) {
+    // Library mode: use downloaded_at (matches displayed date)
+    if (isLibraryMode && video.downloaded_at) {
       return new Date(video.downloaded_at);
     }
-    // Fallback to discovered_at if downloaded_at is not set
+    // Discovery mode (to-review/ignored): use upload_date (matches displayed date)
+    if (video.upload_date) {
+      const year = video.upload_date.slice(0, 4);
+      const month = video.upload_date.slice(4, 6);
+      const day = video.upload_date.slice(6, 8);
+      return new Date(`${year}-${month}-${day}`);
+    }
+    // Fallback to discovered_at if neither is available
     return new Date(video.discovered_at || 0);
   };
 
