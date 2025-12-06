@@ -271,6 +271,11 @@ def scan_channel(channel_id):
             logger.debug(f"Scan requested for non-existent channel ID: {channel_id}")
             return jsonify({'error': 'Channel not found'}), 404
 
+        # Prevent scanning deleted channels
+        if channel.deleted_at is not None:
+            logger.warning(f"Scan requested for deleted channel: {channel.title} (ID: {channel_id})")
+            return jsonify({'error': 'Cannot scan deleted channel'}), 400
+
         # Get scan parameters
         data = request.get_json() or {}
         force_full = data.get('force_full', False)
