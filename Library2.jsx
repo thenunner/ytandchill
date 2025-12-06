@@ -5,12 +5,14 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
+import { StickyBar, SearchInput, ViewToggle, CardSizeSlider } from '../components/stickybar';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize();
+  const [viewMode, setViewMode] = useState(localStorage.getItem('viewMode') || 'grid');
+  const [playlistViewMode, setPlaylistViewMode] = useState(localStorage.getItem('playlistViewMode') || 'grid');
 
   // Calculate optimal columns based on screen width, card size, AND device type
   const getGridColumns = (cardSize) => {
@@ -152,6 +154,16 @@ export default function Library() {
   useEffect(() => {
     localStorage.setItem('expandedCategories', JSON.stringify(expandedCategories));
   }, [expandedCategories]);
+
+  // Persist view mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('viewMode', viewMode);
+  }, [viewMode]);
+
+  // Persist playlist view mode to localStorage
+  useEffect(() => {
+    localStorage.setItem('playlistViewMode', playlistViewMode);
+  }, [playlistViewMode]);
 
   // Helper function to format file size
   const formatFileSize = (bytes) => {
@@ -691,8 +703,11 @@ export default function Library() {
               )}
             </div>
 
-            {/* Card Size Slider */}
-            <CardSizeSlider />
+            {/* View Toggle */}
+            <ViewToggle mode={viewMode} onChange={setViewMode} />
+
+            {/* Card Size Slider - Only show in grid view */}
+            <CardSizeSlider show={viewMode === 'grid'} />
 
             {/* Pagination */}
             <Pagination
@@ -755,8 +770,11 @@ export default function Library() {
                 <span className="hidden sm:inline">Category</span>
               </button>
 
-              {/* Card Size Slider */}
-              <CardSizeSlider />
+              {/* View Toggle */}
+              <ViewToggle mode={playlistViewMode} onChange={setPlaylistViewMode} />
+
+              {/* Card Size Slider - Only show in grid view */}
+              <CardSizeSlider show={playlistViewMode === 'grid'} />
 
               {/* Sort Button */}
               <div className="relative" ref={playlistSortMenuRef}>
@@ -905,7 +923,7 @@ export default function Library() {
                 </>
               )}
             </div>
-          ) : (
+          ) : viewMode === 'grid' ? (
             <div className="px-6 lg:px-12 xl:px-16">
               <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedChannelsList.map(channel => (
@@ -950,6 +968,46 @@ export default function Library() {
           ))}
             </div>
           </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+          {paginatedChannelsList.map(channel => (
+            <Link
+              key={channel.id}
+              to={`/channel/${channel.id}/library`}
+              className="card p-0 group hover:bg-dark-hover transition-colors flex items-stretch gap-3 w-full max-w-3xl"
+            >
+              {/* Thumbnail - Full height */}
+              <div className="relative w-32 bg-dark-tertiary rounded-l-lg overflow-hidden flex-shrink-0">
+                {channel.thumbnail ? (
+                  <img
+                    src={channel.thumbnail}
+                    alt={channel.title}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                    </svg>
+                  </div>
+                )}
+              </div>
+
+              {/* Channel Info */}
+              <div className="py-2">
+                <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors whitespace-nowrap">
+                  {channel.title}
+                </h3>
+                <p className="text-sm text-text-secondary whitespace-nowrap">
+                  {channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''}
+                  {channel.lastAddedAt && (
+                    <> • Last Added: {formatLastAdded(channel.lastAddedAt)}</>
+                  )}
+                </p>
+              </div>
+            </Link>
+          ))}
+            </div>
           )}
 
           {/* Bottom Pagination */}
@@ -973,7 +1031,7 @@ export default function Library() {
 
       {/* Playlists Tab */}
       {activeTab === 'playlists' && (
-        <div>
+        <div key={`playlists-${playlistViewMode}`}>
           {(Object.keys(groupedPlaylists.categorized).length > 0 || groupedPlaylists.uncategorized.length > 0) ? (
             <div className="space-y-6">
               {/* Render Categories */}
@@ -1097,6 +1155,7 @@ export default function Library() {
 
                     {/* Category Playlists - Only show when expanded */}
                     {isExpanded && (
+                      playlistViewMode === 'grid' ? (
                         <div className="px-6 lg:px-12 xl:px-16">
                           <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                           {categoryPlaylists.map(playlist => {
@@ -1267,6 +1326,159 @@ export default function Library() {
                           })}
                           </div>
                         </div>
+                      ) : (
+                        <div className="flex flex-col gap-2 pr-2">
+                          {categoryPlaylists.map(playlist => {
+                            const isSelected = selectedPlaylists.includes(playlist.id);
+                            const showMenu = activeMenuId === playlist.id;
+                            return (
+                              <div
+                                key={playlist.id}
+                                className={`card flex items-center gap-3 p-0 w-full cursor-pointer transition-colors ${
+                                  isSelected ? 'ring-2 ring-accent/60' : ''
+                                } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
+                                onClick={(e) => {
+                                  if (editMode) {
+                                    togglePlaylistSelection(playlist.id);
+                                  } else if (!e.target.closest('button')) {
+                                    navigate(`/playlist/${playlist.id}`, {
+                                      state: { from: '/library?tab=playlists' }
+                                    });
+                                  }
+                                }}
+                              >
+                                {/* 3-Dot Menu Button */}
+                                {!editMode && (
+                                  <div className="flex-shrink-0 pl-3">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveMenuId(showMenu ? null : playlist.id);
+                                      }}
+                                      className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary rounded-lg transition-colors"
+                                    >
+                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                        <circle cx="12" cy="5" r="2"></circle>
+                                        <circle cx="12" cy="12" r="2"></circle>
+                                        <circle cx="12" cy="19" r="2"></circle>
+                                      </svg>
+                                    </button>
+                                  </div>
+                                )}
+
+                                {/* Sliding Drawer Menu */}
+                                {!editMode && (
+                                  <div
+                                    className={`flex flex-col gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
+                                      showMenu ? 'w-[140px] opacity-100 pr-3' : 'w-0 opacity-0'
+                                    }`}
+                                  >
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/play/playlist/${playlist.id}`);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                    >
+                                      Play All
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate(`/play/playlist/${playlist.id}?shuffle=true`);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                    >
+                                      Shuffle
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setRenamePlaylistId(playlist.id);
+                                        setRenameValue(playlist.title || playlist.name || '');
+                                        setShowRenameModal(true);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                    >
+                                      Rename
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedPlaylistForCategory(playlist.id);
+                                        setCategoryActionType('single');
+                                        setShowCategorySelectorModal(true);
+                                        setActiveMenuId(null);
+                                      }}
+                                      className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                    >
+                                      Category
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeletePlaylist(playlist.id);
+                                      }}
+                                      className="px-3 py-1.5 text-left text-xs text-red-400 hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                    >
+                                      Delete
+                                    </button>
+                                  </div>
+                                )}
+
+                                {/* Thumbnail */}
+                                <div className={`relative w-32 h-20 bg-dark-tertiary rounded-lg overflow-hidden flex-shrink-0 ${editMode ? 'ml-3' : ''}`}>
+                                  {playlist.thumbnail ? (
+                                    <img
+                                      src={playlist.thumbnail}
+                                      alt={playlist.title}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                      </svg>
+                                    </div>
+                                  )}
+
+                                  {/* Selection Checkmark */}
+                                  {isSelected && editMode && (
+                                    <div className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 shadow-lg z-10">
+                                      <svg className="w-3 h-3 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                        <polyline points="20 6 9 17 4 12"></polyline>
+                                      </svg>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Info */}
+                                <div className="flex-1 min-w-0">
+                                  <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2" title={playlist.title || playlist.name}>
+                                    {playlist.title || playlist.name}
+                                  </h3>
+                                  <div className="flex items-center gap-3 mt-1">
+                                    <span className="text-sm text-text-secondary">
+                                      {playlist.video_count || 0} videos
+                                    </span>
+                                    {playlist.channel_title && (
+                                      <>
+                                        <span className="text-sm text-text-muted">•</span>
+                                        <span className="text-sm text-text-secondary truncate" title={playlist.channel_title}>
+                                          {playlist.channel_title}
+                                        </span>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )
                     )}
                   </div>
                 );
@@ -1288,6 +1500,7 @@ export default function Library() {
                   )}
 
                   {/* Uncategorized Playlists */}
+                  {playlistViewMode === 'grid' ? (
                     <div className="px-6 lg:px-12 xl:px-16">
                       <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                       {groupedPlaylists.uncategorized.map(playlist => {
@@ -1453,10 +1666,163 @@ export default function Library() {
                       })}
                       </div>
                     </div>
-                </div>
-              )}
+                  ) : (
+                    <div className="flex flex-col gap-2 pr-2">
+                      {groupedPlaylists.uncategorized.map(playlist => {
+                        const isSelected = selectedPlaylists.includes(playlist.id);
+                        const showMenu = activeMenuId === playlist.id;
+                        return (
+                          <div
+                            key={playlist.id}
+                            className={`card flex items-center gap-3 p-0 w-full cursor-pointer transition-colors ${
+                              isSelected ? 'ring-2 ring-accent/60' : ''
+                            } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
+                            onClick={(e) => {
+                              if (editMode) {
+                                togglePlaylistSelection(playlist.id);
+                              } else if (!e.target.closest('button')) {
+                                navigate(`/playlist/${playlist.id}`, {
+                                  state: { from: '/library?tab=playlists' }
+                                });
+                              }
+                            }}
+                          >
+                            {/* 3-Dot Menu Button - Left of thumbnail (only when NOT in edit mode) */}
+                            {!editMode && (
+                              <div className="flex-shrink-0 pl-3">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveMenuId(showMenu ? null : playlist.id);
+                                  }}
+                                  className="w-8 h-8 flex items-center justify-center bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary rounded-lg transition-colors"
+                                >
+                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <circle cx="12" cy="5" r="2"></circle>
+                                    <circle cx="12" cy="12" r="2"></circle>
+                                    <circle cx="12" cy="19" r="2"></circle>
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Sliding Drawer Menu - slides in from left, pushing content right */}
+                            {!editMode && (
+                              <div
+                                className={`flex flex-col gap-1 overflow-hidden transition-all duration-200 ease-in-out ${
+                                  showMenu ? 'w-[140px] opacity-100 pr-3' : 'w-0 opacity-0'
+                                }`}
+                              >
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/play/playlist/${playlist.id}`);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                >
+                                  Play All
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/play/playlist/${playlist.id}?shuffle=true`);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                >
+                                  Shuffle
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setRenamePlaylistId(playlist.id);
+                                    setRenameValue(playlist.title || playlist.name || '');
+                                    setShowRenameModal(true);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                >
+                                  Rename
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPlaylistForCategory(playlist.id);
+                                    setCategoryActionType('single');
+                                    setShowCategorySelectorModal(true);
+                                    setActiveMenuId(null);
+                                  }}
+                                  className="px-3 py-1.5 text-left text-xs text-text-primary hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                >
+                                  Category
+                                </button>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeletePlaylist(playlist.id);
+                                  }}
+                                  className="px-3 py-1.5 text-left text-xs text-red-400 hover:bg-dark-hover bg-dark-secondary rounded border border-dark-border transition-colors whitespace-nowrap"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            )}
+
+                            {/* Thumbnail */}
+                            <div className={`relative w-32 h-20 bg-dark-tertiary rounded-lg overflow-hidden flex-shrink-0 ${editMode ? 'ml-3' : ''}`}>
+                              {playlist.thumbnail ? (
+                                <img
+                                  src={playlist.thumbnail}
+                                  alt={playlist.title}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                                  </svg>
+                                </div>
+                              )}
+
+                              {/* Selection Checkmark */}
+                              {isSelected && editMode && (
+                                <div className="absolute top-1 right-1 bg-black/80 text-white rounded-full p-1 shadow-lg z-10">
+                                  <svg className="w-3 h-3 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <h3 className="text-base font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2" title={playlist.title || playlist.name}>
+                                {playlist.title || playlist.name}
+                              </h3>
+                              <div className="flex items-center gap-3 mt-1">
+                                <span className="text-sm text-text-secondary">
+                                  {playlist.video_count || 0} videos
+                                </span>
+                                {playlist.channel_title && (
+                                  <>
+                                    <span className="text-sm text-text-muted">•</span>
+                                    <span className="text-sm text-text-secondary truncate" title={playlist.channel_title}>
+                                      {playlist.channel_title}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                  })}
+                    </div>
+                  )}
             </div>
-          ) : (
+          )}
+        </div>
+      ) : (
         <div className="text-center py-20 text-text-secondary">
           <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
