@@ -362,11 +362,6 @@ export default function Channels() {
     };
   }, []);
 
-  // Persist viewMode to localStorage
-  useEffect(() => {
-    localStorage.setItem('channelsViewMode', viewMode);
-  }, [viewMode]);
-
   // Persist sortBy to localStorage
   useEffect(() => {
     localStorage.setItem('channels_sortBy', sortBy);
