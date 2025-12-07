@@ -613,11 +613,9 @@ select {
 /* Force Plyr controls to be visible and clickable on desktop (both fullscreen and normal mode) */
 /* This targets devices with fine pointer (mouse) - desktop/laptop devices */
 @media (pointer: fine) {
+  /* Ensure controls are clickable when visible */
   .plyr__controls {
-    opacity: 1 !important;
-    visibility: visible !important;
     pointer-events: auto !important;
-    display: flex !important;
     z-index: 999 !important;
   }
 
@@ -625,20 +623,11 @@ select {
   .plyr__control {
     pointer-events: auto !important;
   }
-
-  /* Prevent Plyr from auto-hiding controls on desktop */
-  .plyr--hide-controls .plyr__controls {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
 }
 
-/* Additional rules for fullscreen mode to ensure controls work there too */
+/* Additional rules for fullscreen mode to ensure controls work when visible */
 .plyr--fullscreen .plyr__controls {
-  opacity: 1 !important;
-  visibility: visible !important;
   pointer-events: auto !important;
-  display: flex !important;
   z-index: 9999 !important; /* Even higher z-index in fullscreen */
   position: relative !important;
 }
@@ -699,7 +688,17 @@ select {
   pointer-events: auto !important;
 }
 
+/* Allow controls to auto-hide in fullscreen when inactive */
 .plyr--fullscreen.plyr--hide-controls .plyr__controls {
+  opacity: 0 !important;
+  transform: translateY(10px) !important;
+  pointer-events: none !important;
+  transition: opacity 0.3s ease, transform 0.3s ease !important;
+}
+
+/* Show controls in fullscreen when active (mouse movement) */
+.plyr--fullscreen:not(.plyr--hide-controls) .plyr__controls {
   opacity: 1 !important;
   transform: translateY(0) !important;
+  transition: opacity 0.3s ease, transform 0.3s ease !important;
 }

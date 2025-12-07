@@ -75,7 +75,7 @@ export default function Player() {
           seekTime: 10,
           autoplay: true,
           clickToPlay: true, // Enable click-to-play everywhere
-          hideControls: false, // Force controls to stay visible
+          hideControls: true, // Auto-hide controls after inactivity
           keyboard: {
             focused: true,
             global: true, // Enable global keyboard shortcuts (works even when not focused on player)
@@ -416,35 +416,7 @@ export default function Player() {
         // ===== FORCE CONTROLS TO STAY VISIBLE IN FULLSCREEN =====
         // Ensure Plyr controls remain visible and clickable in fullscreen on desktop
         player.on('enterfullscreen', () => {
-          console.log('Entered fullscreen');
-          // Force controls to show and prevent auto-hide
-          setTimeout(() => {
-            if (player.elements.controls) {
-              player.elements.controls.style.opacity = '1';
-              player.elements.controls.style.pointerEvents = 'auto';
-              player.elements.controls.style.display = 'flex';
-              player.elements.controls.style.zIndex = '9999';
-
-              // Force pointer-events on ALL control elements
-              const allControls = player.elements.controls.querySelectorAll('button, input, [role="slider"]');
-              allControls.forEach(control => {
-                control.style.pointerEvents = 'auto';
-                control.style.cursor = 'pointer';
-              });
-
-              // Disable pointer events on video wrapper to prevent blocking
-              if (player.elements.wrapper) {
-                player.elements.wrapper.style.pointerEvents = 'none';
-              }
-
-              // Keep video element itself interactive
-              if (player.media) {
-                player.media.style.pointerEvents = 'auto';
-              }
-
-              console.log('Forced controls visible and clickable:', player.elements.controls);
-            }
-          }, 100);
+          console.log('Entered fullscreen - controls will auto-hide after inactivity');
         });
 
         player.on('exitfullscreen', () => {
