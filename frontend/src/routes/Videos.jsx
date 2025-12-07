@@ -510,7 +510,7 @@ export default function Videos() {
 
               {/* Video Info */}
               <div className="p-3">
-                <h3 className="text-text-primary font-medium text-sm line-clamp-2 mb-1">
+                <h3 className="text-text-primary font-medium text-sm line-clamp-2 mb-1" title={video.title}>
                   {video.title}
                 </h3>
                 <div className="flex items-center gap-2 text-xs text-text-secondary">

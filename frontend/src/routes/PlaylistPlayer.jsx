@@ -829,7 +829,7 @@ export default function PlaylistPlayer() {
       <div className="flex-1 min-w-0 py-1">
         <p className={`text-sm font-medium line-clamp-2 ${
           isCurrent ? 'text-accent-text' : 'text-text-primary'
-        }`}>
+        }`} title={video.title}>
           {video.title}
         </p>
         <p className="text-xs text-text-secondary mt-1 truncate">
@@ -1057,7 +1057,7 @@ export default function PlaylistPlayer() {
 
             {/* Video Title */}
             <div className="flex-1 mx-2 sm:mx-4 text-center min-w-0">
-              <h2 className="text-base sm:text-lg font-semibold text-text-primary truncate">
+              <h2 className="text-base sm:text-lg font-semibold text-text-primary truncate" title={currentVideo.title}>
                 {currentVideo.title}
               </h2>
               <p className="text-xs sm:text-sm text-text-secondary truncate">

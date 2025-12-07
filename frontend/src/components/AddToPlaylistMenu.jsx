@@ -203,7 +203,7 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
 
                     {/* Playlist info */}
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-text-primary truncate">{playlist.name}</div>
+                      <div className="text-sm font-medium text-text-primary truncate" title={playlist.name}>{playlist.name}</div>
                       <div className="text-xs text-text-secondary">
                         {playlist.video_count || 0} videos
                       </div>

@@ -74,7 +74,7 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
 
         {/* Video Info */}
         <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-          <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate">
+          <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate" title={item.video?.title}>
             {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
           </p>
 
@@ -415,7 +415,7 @@ export default function Queue() {
                 <div className="flex-1 min-w-0 space-y-1.5">
                   {/* Line 1: Title + Channel + Cancel hint */}
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-red-400 transition-colors">
+                    <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-red-400 transition-colors" title={currentDownload.video?.title}>
                       {currentDownload.video?.title} <span className="text-text-secondary">• {currentDownload.video?.channel_title}</span>
                     </p>
                     <span className="text-xs text-red-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -501,7 +501,7 @@ export default function Queue() {
 
                 {/* Video Info */}
                 <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-                  <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-accent transition-colors">
+                  <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-accent transition-colors" title={item.video?.title}>
                     {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
                   </p>
                   <span className="text-xs text-accent-text font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
@@ -548,7 +548,7 @@ export default function Queue() {
                 {/* Video Info */}
                 <div className="flex-1 min-w-0 space-y-1">
                   <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-red-400 transition-colors">
+                    <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-red-400 transition-colors" title={item.video?.title}>
                       {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
                     </p>
                     <span className="text-xs text-red-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
