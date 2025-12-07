@@ -123,6 +123,11 @@ export default function Videos() {
     if (scanResults?.videos) {
       // Only select visible/filtered videos
       const filteredVideos = scanResults.videos.filter(video => {
+        // Search filter
+        if (searchInput && !(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+          return false;
+        }
+        // Status filter (only in All mode)
         if (filterMode !== 'all' || statusFilter === 'all') return true;
         if (statusFilter === 'available') return !video.status || video.status === 'discovered';
         if (statusFilter === 'ignored') return video.status === 'ignored';
