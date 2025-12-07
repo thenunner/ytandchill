@@ -39,10 +39,10 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary hover:text-text-primary transition-colors p-2 md:p-1 touch-none"
+          className="flex items-center flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary hover:text-text-primary transition-colors px-2 md:px-1 touch-none"
           style={{ touchAction: 'none' }}
         >
-          <svg className="w-6 h-6 md:w-5 md:h-5" viewBox="0 0 24 24" fill="currentColor">
+          <svg className="w-8 h-8 md:w-7 md:h-7" viewBox="0 0 24 24" fill="currentColor">
             <circle cx="9" cy="5" r="1.5"></circle>
             <circle cx="9" cy="12" r="1.5"></circle>
             <circle cx="9" cy="19" r="1.5"></circle>
@@ -53,7 +53,7 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
         </div>
 
         {/* Position Number */}
-        <div className="flex-shrink-0 w-8 text-center text-sm font-semibold text-text-secondary">
+        <div className="flex items-center flex-shrink-0 w-8 text-center text-sm font-semibold text-text-secondary">
           {index + 1}
         </div>
 
@@ -81,7 +81,7 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
           </p>
 
           {/* Action Buttons - Full Height */}
-          <div className="flex items-stretch flex-shrink-0 gap-1">
+          <div className="flex flex-shrink-0 gap-1 -my-3">
             {/* Move to Top - Full height bar */}
             <button
               onClick={(e) => {
@@ -89,10 +89,10 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
                 e.currentTarget.blur();
                 onMoveToTop(item.id);
               }}
-              className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary rounded transition-colors"
+              className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary transition-colors"
               title="Move to top"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="17 11 12 6 7 11"></polyline>
                 <polyline points="17 18 12 13 7 18"></polyline>
               </svg>
@@ -105,10 +105,10 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
                 e.currentTarget.blur();
                 onMoveToBottom(item.id);
               }}
-              className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary rounded transition-colors"
+              className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary transition-colors"
               title="Move to bottom"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="17 13 12 18 7 13"></polyline>
                 <polyline points="17 6 12 11 7 6"></polyline>
               </svg>

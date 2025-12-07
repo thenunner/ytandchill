@@ -639,8 +639,8 @@ class DownloadWorker:
     def _apply_inter_download_delay(self, download_success):
         """Set delay timer after successful download to avoid rate limiting."""
         if download_success:
-            # Random delay: 60 seconds to 3 minutes (60-180 seconds)
-            self.next_download_delay = random.randint(60, 180)
+            # Random delay: 45 seconds to 2 minutes (45-120 seconds)
+            self.next_download_delay = random.randint(45, 120)
             self.last_download_time = time.time()
             logger.info(f"Next download will wait {self.next_download_delay} seconds ({self.next_download_delay/60:.1f} min) to avoid rate limiting")
         else:

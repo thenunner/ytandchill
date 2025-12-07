@@ -25,7 +25,6 @@ function App() {
   const { theme } = useTheme();
   const [showQuickLogs, setShowQuickLogs] = useState(false);
   const [logsData, setLogsData] = useState(null);
-  const prevOperationTypeRef = useRef(null);
   const [visibleErrorMessage, setVisibleErrorMessage] = useState(null);
   const errorMessageRef = useRef(null);
   const [showKebabMenu, setShowKebabMenu] = useState(false);
@@ -67,23 +66,39 @@ function App() {
     return () => clearInterval(interval);
   }, [showQuickLogs]);
 
-  // Auto-clear scan completion message after 10 seconds
+  // Clear scan completion message on any user interaction
   useEffect(() => {
-    if (prevOperationTypeRef.current === 'scanning' && currentOperation?.type === 'scan_complete') {
-      // Scan just completed - clear message after 10 seconds
-      const timer = setTimeout(async () => {
+    if (currentOperation?.type !== 'scan_complete') return;
+
+    const handleInteraction = async () => {
+      try {
+        await api.clearOperation();
+      } catch (error) {
+        console.error('Failed to clear operation:', error);
+      }
+    };
+
+    // Listen for clicks anywhere (once)
+    document.addEventListener('click', handleInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+    };
+  }, [currentOperation?.type]);
+
+  // Also clear scan completion message on navigation/tab changes
+  useEffect(() => {
+    if (currentOperation?.type === 'scan_complete') {
+      const clearMessage = async () => {
         try {
           await api.clearOperation();
         } catch (error) {
           console.error('Failed to clear operation:', error);
         }
-      }, 10000);
-
-      return () => clearTimeout(timer);
+      };
+      clearMessage();
     }
-
-    prevOperationTypeRef.current = currentOperation?.type;
-  }, [currentOperation?.type]);
+  }, [location.pathname, currentOperation?.type]);
 
   // Auto-hide error message after 10 seconds
   useEffect(() => {
