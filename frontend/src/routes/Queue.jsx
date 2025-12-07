@@ -30,13 +30,15 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
     <div
       ref={setNodeRef}
       style={style}
+      onClick={() => onRemove(item.id)}
       className={`card p-3 cursor-pointer hover:bg-dark-hover transition-colors group ${index % 2 === 0 ? 'bg-dark-secondary' : 'bg-dark-tertiary'}`}
     >
-      <div className="flex items-center gap-3">
+      <div className="flex items-stretch gap-3">
         {/* Drag Handle */}
         <div
           {...attributes}
           {...listeners}
+          onClick={(e) => e.stopPropagation()}
           className="flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary hover:text-text-primary transition-colors p-2 md:p-1 touch-none"
           style={{ touchAction: 'none' }}
         >
@@ -78,52 +80,37 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
             {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
           </p>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Move to Top */}
+          {/* Action Buttons - Full Height */}
+          <div className="flex items-stretch flex-shrink-0 gap-1">
+            {/* Move to Top - Full height bar */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                e.currentTarget.blur(); // Remove focus to prevent scroll-into-view
+                e.currentTarget.blur();
                 onMoveToTop(item.id);
               }}
-              className="text-text-secondary hover:text-text-primary transition-colors p-1.5 hover:bg-dark-tertiary rounded"
+              className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary rounded transition-colors"
               title="Move to top"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="17 11 12 6 7 11"></polyline>
                 <polyline points="17 18 12 13 7 18"></polyline>
               </svg>
             </button>
 
-            {/* Move to Bottom */}
+            {/* Move to Bottom - Full height bar */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                e.currentTarget.blur(); // Remove focus to prevent scroll-into-view
+                e.currentTarget.blur();
                 onMoveToBottom(item.id);
               }}
-              className="text-text-secondary hover:text-text-primary transition-colors p-1.5 hover:bg-dark-tertiary rounded"
+              className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary rounded transition-colors"
               title="Move to bottom"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="17 13 12 18 7 13"></polyline>
                 <polyline points="17 6 12 11 7 6"></polyline>
-              </svg>
-            </button>
-
-            {/* Remove */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRemove(item.id);
-              }}
-              className="text-text-secondary hover:text-red-400 transition-colors p-1.5 hover:bg-dark-tertiary rounded"
-              title="Remove from queue"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
           </div>
