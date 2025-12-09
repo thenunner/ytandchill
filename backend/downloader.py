@@ -432,9 +432,10 @@ class DownloadWorker:
             browser_type = self.settings_manager.get('cookie_browser', 'firefox')
             try:
                 # yt-dlp format: ('browser_name', keyring, profile, container)
-                # None values let yt-dlp auto-detect default profile from profiles.ini
-                ydl_opts['cookiesfrombrowser'] = (browser_type, None, None, None)
-                logger.info(f'Using cookies from {browser_type} browser')
+                # Use /firefox_profile as the profile path (where user mounts their Firefox profile)
+                firefox_profile_path = '/firefox_profile'
+                ydl_opts['cookiesfrombrowser'] = (browser_type, None, firefox_profile_path, None)
+                logger.info(f'Using cookies from {browser_type} browser at {firefox_profile_path}')
             except Exception as e:
                 logger.warning(f'Failed to extract cookies from browser: {e}')
                 # Fallback to cookies.txt
