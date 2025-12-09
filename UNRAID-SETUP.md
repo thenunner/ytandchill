@@ -52,7 +52,8 @@
    | `/app/data` | `/mnt/user/appdata/ytandchill/data` | Read/Write |
    | `/app/downloads` | `/mnt/user/data/media/youtube/ytandchill` | Read/Write |
    | `/app/logs` | `/mnt/user/appdata/ytandchill/logs` | Read/Write |
-   | `/app/cookies.txt` | `/mnt/user/appdata/ytandchill/cookies.txt` | Read/Write (Optional) |
+   | `/app/backend/cookies.txt` | `/mnt/user/appdata/ytandchill/cookies.txt` | Read/Write (Optional) |
+   | `/firefox_profile` | `/mnt/user/appdata/firefox/.mozilla/firefox` | Read Only (Optional) |
 
 5. **Environment Variables (Optional):**
    - `PORT=4099`
@@ -61,18 +62,11 @@
 
 ## Directory Structure
 
-Before creating the container, ensure these directories exist:
+**Note:** When using the template (Option 1), Unraid automatically creates the directories when you start the container. Manual creation is only needed for manual setups.
 
+**If you encounter permission errors** after starting the container, run:
 ```bash
-mkdir -p /mnt/user/appdata/ytandchill/data
-mkdir -p /mnt/user/appdata/ytandchill/logs
-mkdir -p /mnt/user/data/media/youtube/ytandchill/thumbnails
-```
-
-Set proper permissions:
-```bash
-chown -R 99:100 /mnt/user/appdata/ytandchill/data
-chown -R 99:100 /mnt/user/appdata/ytandchill/logs
+chown -R 99:100 /mnt/user/appdata/ytandchill
 chown -R 99:100 /mnt/user/data/media/youtube/ytandchill
 ```
 
@@ -110,13 +104,69 @@ Combined with `docker image prune -f` in the build script, this keeps your Docke
 
 ---
 
-## Optional: YouTube Cookies
+## YouTube Cookie Authentication (Strongly Recommended)
 
-For downloading age-restricted content:
+**As of 2024, YouTube cookies are essential for reliable downloads.** Choose one method:
 
-1. Export your YouTube cookies using a browser extension
-2. Save as `/mnt/user/appdata/ytandchill/cookies.txt`
-3. The container will automatically use it
+### Method 1: cookies.txt File
+
+**Setup:**
+1. Install browser extension:
+   - Chrome/Edge: "Get cookies.txt LOCALLY"
+   - Firefox: "cookies.txt"
+2. Go to youtube.com (logged in)
+3. Click extension and export cookies for youtube.com
+4. Save as `/mnt/user/appdata/ytandchill/cookies.txt`
+5. Restart container
+6. In YT and Chill Settings, select "Cookie Source: cookies.txt"
+
+**Template Configuration:**
+- Already configured in template at `/app/backend/cookies.txt`
+- Maps to `/mnt/user/appdata/ytandchill/cookies.txt` on host
+
+### Method 2: Firefox Browser Integration (Recommended)
+
+**Automatically extracts cookies from Firefox - no manual exports needed!**
+
+**Setup:**
+
+1. **If you have a Firefox Docker container:**
+   - Ensure Firefox is running with profile at `/mnt/user/appdata/firefox/.mozilla/firefox`
+   - Make sure YouTube is logged in Firefox
+
+2. **Configure YT and Chill container:**
+
+   **Using Template:**
+   - Edit ytandchill container
+   - Scroll to "Firefox Profile (Optional)" in advanced settings
+   - Set Host Path: `/mnt/user/appdata/firefox/.mozilla/firefox`
+   - Leave Container Path as `/firefox_profile`
+   - Set Access Mode: Read Only
+   - Apply and restart
+
+   **Manual Setup (if not using template):**
+   - Add path mapping:
+     - Container: `/firefox_profile`
+     - Host: `/mnt/user/appdata/firefox/.mozilla/firefox`
+     - Mode: Read Only
+
+3. **Configure in YT and Chill:**
+   - Go to Settings
+   - Under "Cookie Source", select "Firefox"
+   - Status will show:
+     - ✅ Green "Firefox Profile" = Working!
+     - ⚠️ Yellow "No YouTube Login" = Sign into YouTube in Firefox
+     - ❌ Red "Not Mounted" = Check volume mount configuration
+
+**Advantages:**
+- No manual cookie exports
+- Always up-to-date (reads directly from Firefox)
+- Automatic fallback to cookies.txt if extraction fails
+
+**Important:**
+- Use a disposable YouTube account, not your personal account
+- Cookies expire periodically - re-export or keep Firefox logged in
+- Without cookies: expect bot detection errors, rate limiting, and failed downloads
 
 ---
 
@@ -137,9 +187,19 @@ http://YOUR-UNRAID-IP:4099
 - Ensure port 4099 isn't already in use
 
 ### Downloads failing
-- Check that cookies.txt is present for age-restricted content
+- Check cookie authentication is configured (see YouTube Cookie Authentication section)
+- If using cookies.txt: verify file exists and is properly formatted
+- If using Firefox: check Settings shows green "Firefox Profile" status
 - Verify download path has write permissions
 - Check logs at `/mnt/user/appdata/ytandchill/logs/app.log`
+
+### Firefox cookie extraction not working
+- Verify Firefox profile is mounted: `ls /mnt/user/appdata/firefox/.mozilla/firefox`
+- Check container has access: In Unraid Docker, click ytandchill → Edit → verify Firefox Profile path
+- Ensure YouTube is logged in your Firefox browser
+- Check Settings page shows green "Firefox Profile" status
+- Try restarting both Firefox and ytandchill containers
+- Fallback: Use Method 1 (cookies.txt) instead
 
 ### Database errors
 - Ensure `/mnt/user/appdata/ytandchill/data` has 99:100 ownership
