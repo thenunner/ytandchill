@@ -542,11 +542,13 @@ export default function ChannelLibrary() {
           showNotification(`${selectedVideos.length} videos ignored`, 'success');
           break;
         case 'unignore':
-          await bulkUpdate.mutateAsync({
-            videoIds: selectedVideos,
-            updates: { status: 'discovered' },
-          });
-          showNotification(`${selectedVideos.length} videos unignored`, 'success');
+          // Add ignored videos directly to queue instead of just unignoring
+          const unignoreResult = await addToQueueBulk.mutateAsync(selectedVideos);
+          if (unignoreResult.skipped_count > 0) {
+            showNotification(`${unignoreResult.added_count} videos added to queue, ${unignoreResult.skipped_count} already in queue`, 'success');
+          } else {
+            showNotification(`${unignoreResult.added_count} videos added to queue`, 'success');
+          }
           break;
         case 'delete':
           // Delete multiple videos
@@ -902,7 +904,7 @@ export default function ChannelLibrary() {
                       onClick={() => handleBulkAction('unignore')}
                       className="btn btn-primary btn-sm"
                     >
-                      Unignore
+                      Add to Queue
                     </button>
                   )}
                   <button
