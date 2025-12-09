@@ -41,6 +41,7 @@ export default function Settings() {
 
   // Cookie source state
   const [cookieSource, setCookieSource] = useState('file');
+  const [showCookieHelp, setShowCookieHelp] = useState(false);
 
   // SponsorBlock state
   const [removeSponsor, setRemoveSponsor] = useState(false);
@@ -309,10 +310,11 @@ export default function Settings() {
     }
   };
 
-  const handleSaveCookieSettings = async () => {
+  const handleCookieSourceChange = async (newSource) => {
+    setCookieSource(newSource);
     try {
       await updateSettings.mutateAsync({
-        cookie_source: cookieSource,
+        cookie_source: newSource,
         cookie_browser: 'firefox'
       });
       showNotification('Cookie source updated successfully!', 'success');
@@ -349,8 +351,15 @@ export default function Settings() {
               {/* Cookies - Mobile: (3,1), Desktop: (1,2) */}
               <div className="flex items-center justify-center gap-3 order-5 md:order-2">
                 <span className="text-text-secondary w-16">Cookies</span>
-                <span className={`font-medium text-xs ${health?.cookies_available ? 'text-text-primary' : 'text-yellow-400'}`}>
-                  {health?.cookies_available ? 'Active' : 'Inactive'}
+                <span className={`font-medium text-xs ${
+                  cookieSource === 'browser'
+                    ? (health?.firefox_has_cookies ? 'text-text-primary' : health?.firefox_profile_mounted ? 'text-yellow-400' : 'text-red-400')
+                    : (health?.cookies_available ? 'text-text-primary' : 'text-yellow-400')
+                }`}>
+                  {cookieSource === 'browser'
+                    ? (health?.firefox_has_cookies ? 'Firefox Profile' : health?.firefox_profile_mounted ? 'No YouTube Login' : 'Not Mounted')
+                    : (health?.cookies_available ? 'cookies.txt' : 'Inactive')
+                  }
                 </span>
               </div>
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
@@ -418,90 +427,59 @@ export default function Settings() {
             {/* Separator */}
             <div className="border-t border-dark-border my-4"></div>
 
-            {/* Cookie Source Toggle */}
-            <div className="mb-4">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <h4 className="text-sm font-semibold text-text-primary">Cookie Source</h4>
+            {/* Reset User and Cookie Source Section */}
+            <div className="flex flex-col md:flex-row gap-6">
+              {/* Reset User Button */}
+              <div className="flex-1 flex flex-col items-center">
+                <h3 className="text-sm font-semibold text-text-primary mb-3">Reset User</h3>
                 <button
-                  type="button"
-                  className="text-text-muted hover:text-text-primary"
-                  title="Choose where yt-dlp gets YouTube authentication cookies from"
+                  onClick={() => setShowPasswordChange(!showPasswordChange)}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
                 >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                  </svg>
+                  Reset User
                 </button>
               </div>
 
-              <div className="flex justify-center gap-4">
-                {/* cookies.txt option */}
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="cookieSource"
-                    value="file"
-                    checked={cookieSource === 'file'}
-                    onChange={(e) => setCookieSource(e.target.value)}
-                    className="form-radio text-accent"
-                  />
-                  <span className="text-sm text-text-primary">cookies.txt</span>
+              {/* Cookie Source Section */}
+              <div className="flex-1">
+                <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center justify-center gap-2">
+                  Cookie Source
                   <button
                     type="button"
-                    className="text-text-muted hover:text-text-primary"
-                    title="Use manually uploaded cookies.txt file. Export from browser using extension like 'Get cookies.txt'"
+                    onClick={() => setShowCookieHelp(true)}
+                    className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
                   >
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
+                    ?
                   </button>
-                </label>
-
-                {/* Firefox browser option */}
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="cookieSource"
-                    value="browser"
-                    checked={cookieSource === 'browser'}
-                    onChange={(e) => setCookieSource(e.target.value)}
-                    className="form-radio text-accent"
-                  />
-                  <span className="text-sm text-text-primary">Firefox</span>
-                  <button
-                    type="button"
-                    className="text-text-muted hover:text-text-primary"
-                    title="Extract cookies directly from Firefox browser. Requires Firefox profile mounted to /firefox_profile and YouTube login in Firefox."
-                  >
-                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </label>
-              </div>
-
-              {/* Firefox status indicator */}
-              {cookieSource === 'browser' && (
-                <div className="mt-3 text-center">
-                  {health?.firefox_has_cookies ? (
-                    <p className="text-xs text-green-400">✓ Firefox profile detected with cookies</p>
-                  ) : health?.firefox_profile_mounted ? (
-                    <p className="text-xs text-yellow-400">⚠ Firefox mounted but no YouTube cookies found. Sign into YouTube in Firefox.</p>
-                  ) : (
-                    <p className="text-xs text-red-400">✗ Firefox profile not mounted at /firefox_profile</p>
-                  )}
+                </h3>
+                <div className="flex flex-col gap-2 items-center">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cookieSource"
+                      value="file"
+                      checked={cookieSource === 'file'}
+                      onChange={(e) => handleCookieSourceChange(e.target.value)}
+                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                    />
+                    <span className="text-sm text-text-primary font-medium">cookies.txt</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cookieSource"
+                      value="browser"
+                      checked={cookieSource === 'browser'}
+                      onChange={(e) => handleCookieSourceChange(e.target.value)}
+                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                    />
+                    <span className="text-sm text-text-primary font-medium">Firefox</span>
+                  </label>
                 </div>
-              )}
-
-              <button
-                type="button"
-                onClick={handleSaveCookieSettings}
-                className="mt-3 w-full btn bg-dark-tertiary text-text-primary hover:bg-dark-hover text-sm py-1.5"
-              >
-                Save Cookie Source
-              </button>
+              </div>
             </div>
 
-            {/* Reset User Section */}
+            {/* Password Change Form */}
             <div className="flex justify-center">
               <button
                 onClick={() => setShowPasswordChange(!showPasswordChange)}
@@ -1160,6 +1138,50 @@ export default function Settings() {
           </div>
         </div>
       </div>
+
+      {/* Cookie Source Help Modal */}
+      {showCookieHelp && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowCookieHelp(false)}>
+          <div className="card p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-text-primary">Cookie Source Options</h2>
+              <button
+                onClick={() => setShowCookieHelp(false)}
+                className="text-text-muted hover:text-text-primary transition-colors"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4 text-sm text-text-secondary">
+              <div className="space-y-3">
+                <div className="bg-dark-tertiary p-3 rounded-lg">
+                  <h3 className="font-semibold text-text-primary mb-2">cookies.txt (Default)</h3>
+                  <p className="mb-2">Uses a manually exported cookies.txt file from your browser.</p>
+                  <p className="text-xs text-text-muted"><strong>How to use:</strong> Export cookies from your browser using an extension like "Get cookies.txt" while logged into YouTube, then save the file as <code className="bg-dark-primary px-1 rounded">cookies.txt</code> in the backend directory.</p>
+                </div>
+
+                <div className="bg-dark-tertiary p-3 rounded-lg">
+                  <h3 className="font-semibold text-text-primary mb-2">Firefox Browser</h3>
+                  <p className="mb-2">Automatically extracts cookies directly from your Firefox browser profile.</p>
+                  <p className="text-xs text-text-muted mb-2"><strong>Requirements:</strong></p>
+                  <ul className="text-xs text-text-muted list-disc list-inside space-y-1 ml-2">
+                    <li>Firefox profile mounted to <code className="bg-dark-primary px-1 rounded">/firefox_profile</code> in container</li>
+                    <li>YouTube must be logged in via Firefox</li>
+                    <li>Configure volume mount: <code className="bg-dark-primary px-1 rounded">/path/to/firefox/.mozilla/firefox:/firefox_profile:ro</code></li>
+                  </ul>
+                  <p className="text-xs text-yellow-400 mt-2">⚠️ If browser extraction fails, automatically falls back to cookies.txt</p>
+                </div>
+              </div>
+
+              <p className="text-xs text-text-muted mt-4">
+                Cookies allow yt-dlp to download age-restricted videos and avoid rate limiting. Choose the method that works best for your setup.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* SponsorBlock Help Modal */}
       {showSponsorBlockHelp && (
