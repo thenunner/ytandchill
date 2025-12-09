@@ -148,6 +148,29 @@ export default function Channels() {
     prevOperationTypeRef.current = currentOperation?.type;
   }, [currentOperation?.type, queryClient]);
 
+  // Check for new discoveries flag and auto-sort to most_to_review
+  useEffect(() => {
+    const checkDiscoveriesFlag = async () => {
+      try {
+        const response = await fetch('/api/settings/discoveries-flag');
+        const data = await response.json();
+
+        if (data.new_discoveries) {
+          // Override sort to most_to_review regardless of stored preference
+          setSortBy('most_to_review');
+          localStorage.setItem('channels_sortBy', 'most_to_review');
+
+          // Clear the flag so it doesn't trigger again
+          await fetch('/api/settings/discoveries-flag', { method: 'DELETE' });
+        }
+      } catch (error) {
+        console.error('Error checking discoveries flag:', error);
+      }
+    };
+
+    checkDiscoveriesFlag();
+  }, []); // Run only once on component mount
+
   const handleAddChannel = async (e) => {
     e.preventDefault();
 

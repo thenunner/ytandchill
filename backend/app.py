@@ -713,6 +713,11 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     else:
         logger.info(f"Scan complete. {new_count} new, {ignored_count} ignored, {auto_queued_count} auto-queued")
 
+    # Set flag to notify frontend about new discovered videos (trigger auto-sort)
+    if new_count > 0:
+        settings_manager.set('new_discoveries_flag', 'true')
+        logger.debug(f"Set new_discoveries_flag due to {new_count} discovered videos")
+
     # Auto-resume the download worker if videos were auto-queued
     if auto_queued_count > 0 and download_worker.paused:
         download_worker.resume()

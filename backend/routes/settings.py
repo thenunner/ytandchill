@@ -126,6 +126,20 @@ def update_settings():
     return jsonify({'success': True})
 
 
+@settings_bp.route('/api/settings/discoveries-flag', methods=['GET'])
+def get_discoveries_flag():
+    """Check if there are new discoveries that need user attention"""
+    flag = _settings_manager.get('new_discoveries_flag', 'false')
+    return jsonify({'new_discoveries': flag == 'true'})
+
+
+@settings_bp.route('/api/settings/discoveries-flag', methods=['DELETE'])
+def clear_discoveries_flag():
+    """Clear the new discoveries notification flag"""
+    _settings_manager.set('new_discoveries_flag', 'false')
+    return jsonify({'status': 'ok'})
+
+
 # =============================================================================
 # Health & Logs Endpoints
 # =============================================================================

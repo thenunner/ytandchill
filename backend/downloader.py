@@ -530,6 +530,8 @@ class DownloadWorker:
                     video.status = 'discovered'
                     session.delete(queue_item)
                     session.commit()
+                    # Set flag to notify frontend about kicked back videos (trigger auto-sort)
+                    self.settings_manager.set('new_discoveries_flag', 'true')
                     self.current_download = None
                     return False, False, False, False, True, None  # already_handled=True
 
@@ -636,16 +638,22 @@ class DownloadWorker:
             logger.info(f'Download cancelled for {video.yt_id}, resetting to discovered')
             video.status = 'discovered'
             session.delete(queue_item)
+            # Set flag to notify frontend about kicked back videos (trigger auto-sort)
+            self.settings_manager.set('new_discoveries_flag', 'true')
         elif timed_out:
             # Timeout - reset to discovered and delete queue item (same as cancelled)
             logger.warning(f'Download timed out for {video.yt_id}, resetting to discovered')
             video.status = 'discovered'
             session.delete(queue_item)
+            # Set flag to notify frontend about kicked back videos (trigger auto-sort)
+            self.settings_manager.set('new_discoveries_flag', 'true')
         elif not download_success:
             # Failed (non-rate-limit) - reset to discovered and delete queue item
             logger.error(f'Download failed for {video.yt_id}, resetting to discovered')
             video.status = 'discovered'
             session.delete(queue_item)
+            # Set flag to notify frontend about kicked back videos (trigger auto-sort)
+            self.settings_manager.set('new_discoveries_flag', 'true')
         else:
             # Success - mark as library and delete queue item
             logger.info(f'Successfully downloaded video {video.yt_id}')
