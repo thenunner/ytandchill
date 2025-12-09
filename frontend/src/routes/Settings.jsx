@@ -427,60 +427,45 @@ export default function Settings() {
             {/* Separator */}
             <div className="border-t border-dark-border my-4"></div>
 
-            {/* Reset User and Cookie Source Section */}
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Reset User Button */}
-              <div className="flex-1 flex flex-col items-center">
-                <h3 className="text-sm font-semibold text-text-primary mb-3">Reset User</h3>
-                <button
-                  onClick={() => setShowPasswordChange(!showPasswordChange)}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                >
-                  Reset User
-                </button>
-              </div>
-
-              {/* Cookie Source Section */}
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center justify-center gap-2">
-                  Cookie Source
+            {/* Cookie Source Section */}
+            <div className="flex flex-col items-center gap-3">
+              {/* Cookie Source Row */}
+              <div className="flex items-center gap-3 flex-wrap justify-center">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-text-primary">Cookie Source</h3>
                   <button
                     type="button"
                     onClick={() => setShowCookieHelp(true)}
-                    className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                    className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
                   >
                     ?
                   </button>
-                </h3>
-                <div className="flex flex-col gap-2 items-center">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="cookieSource"
-                      value="file"
-                      checked={cookieSource === 'file'}
-                      onChange={(e) => handleCookieSourceChange(e.target.value)}
-                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                    />
-                    <span className="text-sm text-text-primary font-medium">cookies.txt</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="cookieSource"
-                      value="browser"
-                      checked={cookieSource === 'browser'}
-                      onChange={(e) => handleCookieSourceChange(e.target.value)}
-                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                    />
-                    <span className="text-sm text-text-primary font-medium">Firefox</span>
-                  </label>
                 </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cookieSource"
+                    value="file"
+                    checked={cookieSource === 'file'}
+                    onChange={(e) => handleCookieSourceChange(e.target.value)}
+                    className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                  />
+                  <span className="text-sm text-text-primary font-medium">cookies.txt</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cookieSource"
+                    value="browser"
+                    checked={cookieSource === 'browser'}
+                    onChange={(e) => handleCookieSourceChange(e.target.value)}
+                    className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                  />
+                  <span className="text-sm text-text-primary font-medium">Firefox</span>
+                </label>
               </div>
-            </div>
 
-            {/* Password Change Form */}
-            <div className="flex justify-center">
+              {/* Reset User Button Row */}
               <button
                 onClick={() => setShowPasswordChange(!showPasswordChange)}
                 className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"

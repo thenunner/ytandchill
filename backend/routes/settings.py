@@ -153,8 +153,8 @@ def health_check():
     auto_refresh_enabled = _settings_manager.get_bool('auto_refresh_enabled')
     auto_refresh_time = _settings_manager.get('auto_refresh_time', '03:00')
 
-    # Check cookies.txt
-    cookies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cookies.txt')
+    # Check cookies.txt (in backend folder)
+    cookies_path = os.path.join(os.path.dirname(__file__), '..', 'cookies.txt')
     cookies_available = os.path.exists(cookies_path)
 
     # Check Firefox profile availability at /firefox_profile mount
