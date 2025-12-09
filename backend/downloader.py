@@ -51,6 +51,7 @@ class DownloadWorker:
         self.last_download_time = None  # Track when last download finished for rate limiting
         self.next_download_delay = 0  # Delay in seconds before next download can start
         self.last_error_message = None  # Last download error for UI display
+        self.cookie_warning_message = None  # Persistent cookie warning (cleared on user interaction)
 
         # Ensure download directory exists
         os.makedirs(download_dir, exist_ok=True)
@@ -459,19 +460,32 @@ class DownloadWorker:
         rate_limited = False
         ext = None
         attempt = 1
-        max_attempts = 2
+        max_attempts = 3  # Try with cookies twice, then without cookies once
+        tried_without_cookies = False
 
         # Retry loop
         while attempt <= max_attempts and not download_success:
             try:
-                logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id}')
+                # On 3rd attempt with 403 errors, try without cookies
+                current_ydl_opts = ydl_opts.copy()
+                if attempt == 3 and cookies_path and 'cookiefile' in ydl_opts:
+                    logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id} (without cookies)')
+                    current_ydl_opts.pop('cookiefile', None)
+                    tried_without_cookies = True
+                else:
+                    logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id}')
 
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                with yt_dlp.YoutubeDL(current_ydl_opts) as ydl:
                     info = ydl.extract_info(f'https://www.youtube.com/watch?v={video.yt_id}', download=True)
                     ext = info['ext']
 
                 logger.info(f'Download attempt {attempt} succeeded for {video.yt_id}')
                 download_success = True
+
+                # If succeeded without cookies after failing with cookies, warn about stale cookies
+                if tried_without_cookies and attempt == 3:
+                    logger.warning('Download succeeded without cookies after failing with cookies - cookies may be stale/invalid')
+                    self.cookie_warning_message = 'Download succeeded but cookies.txt appears to be stale/invalid. Please update your cookies.txt file.'
 
             except GeoRestrictedError as geo_error:
                 # Video is geo-blocked - mark as removed and skip
@@ -562,7 +576,7 @@ class DownloadWorker:
                         time.sleep(2)
                         attempt += 1
                     else:
-                        # Also pause on 403 errors as they often indicate rate limiting
+                        # Only pause if we've exhausted all retries including without cookies
                         self.last_error_message = f"{video.title[:50]} - 403 Forbidden (rate limit)"
                         self._handle_rate_limit(session, video, queue_item, cookies_path, '403')
                         return False, False, False, False, True, None  # already_handled=True

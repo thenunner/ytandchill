@@ -42,6 +42,7 @@ function App() {
   const isAutoRefreshing = queueData?.is_auto_refreshing || false;
   const lastAutoRefresh = queueData?.last_auto_refresh || null;
   const lastErrorMessage = queueData?.last_error_message || null;
+  const cookieWarning = queueData?.cookie_warning_message || null;
 
   // Poll logs for quick logs panel
   useEffect(() => {
@@ -99,6 +100,46 @@ function App() {
       clearMessage();
     }
   }, [location.pathname, currentOperation?.type]);
+
+  // Clear cookie warning on any user interaction
+  useEffect(() => {
+    if (!cookieWarning) return;
+
+    const handleInteraction = async () => {
+      try {
+        await fetch('/api/cookie-warning/clear', {
+          method: 'POST',
+          credentials: 'include',
+        });
+      } catch (error) {
+        console.error('Failed to clear cookie warning:', error);
+      }
+    };
+
+    // Listen for clicks anywhere (once)
+    document.addEventListener('click', handleInteraction, { once: true });
+
+    return () => {
+      document.removeEventListener('click', handleInteraction);
+    };
+  }, [cookieWarning]);
+
+  // Also clear cookie warning on navigation/tab changes
+  useEffect(() => {
+    if (cookieWarning) {
+      const clearWarning = async () => {
+        try {
+          await fetch('/api/cookie-warning/clear', {
+            method: 'POST',
+            credentials: 'include',
+          });
+        } catch (error) {
+          console.error('Failed to clear cookie warning:', error);
+        }
+      };
+      clearWarning();
+    }
+  }, [location.pathname, cookieWarning]);
 
   // Auto-hide error message after 10 seconds
   useEffect(() => {
@@ -400,7 +441,7 @@ function App() {
       </main>
 
       {/* Footer Status Bar - Hidden on auth pages and mobile */}
-      {!isAuthPage && (downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || health) && (
+      {!isAuthPage && (downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || cookieWarning || health) && (
         <footer className="hidden md:block bg-dark-primary sticky bottom-0 z-50 pb-safe">
           {/* Quick Logs Slide-UP Panel - Hidden on mobile */}
           <div
@@ -547,7 +588,7 @@ function App() {
                 )}
 
                 {/* Last Error Message (auto-fades after 10 seconds) */}
-                {visibleErrorMessage && !notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && (
+                {visibleErrorMessage && !notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && !cookieWarning && (
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <svg className="w-4 h-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"></circle>
@@ -555,6 +596,18 @@ function App() {
                       <line x1="12" y1="16" x2="12.01" y2="16"></line>
                     </svg>
                     <span className="text-red-400">{visibleErrorMessage}</span>
+                  </div>
+                )}
+
+                {/* Cookie Warning (persists until user interaction) */}
+                {cookieWarning && !notification && currentOperation?.type !== 'scan_complete' && currentOperation?.type !== 'scanning' && (
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                      <line x1="12" y1="9" x2="12" y2="13"></line>
+                      <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    <span className="text-yellow-400">{cookieWarning}</span>
                   </div>
                 )}
 

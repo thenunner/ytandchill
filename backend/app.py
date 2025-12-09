@@ -675,6 +675,7 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         session.flush()  # Get video.id for queue item
 
         # Auto-queue if channel has auto_download enabled and video passed filters
+        logger.debug(f"[{idx}/{total_videos}] Auto-queue check for '{video.title}': status={status}, auto_download={channel.auto_download}")
         if status == 'discovered' and channel.auto_download:
             video.status = 'queued'
             max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
@@ -682,6 +683,8 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
             session.add(queue_item)
             auto_queued_count += 1
             logger.info(f"[{idx}/{total_videos}] Auto-queued: '{video.title}' (position {max_pos + 1})")
+        elif status == 'discovered' and not channel.auto_download:
+            logger.debug(f"[{idx}/{total_videos}] NOT auto-queued (auto_download=False): '{video.title}'")
 
         if status == 'ignored':
             ignored_count += 1
@@ -908,6 +911,14 @@ def set_operation_status():
 def clear_operation_status():
     """Clear the current operation status"""
     clear_operation()
+    return jsonify({'status': 'cleared'}), 200
+
+@app.route('/api/cookie-warning/clear', methods=['POST'])
+def clear_cookie_warning():
+    """Clear the cookie warning message"""
+    if download_worker and hasattr(download_worker, 'cookie_warning_message'):
+        download_worker.cookie_warning_message = None
+        logger.debug("Cookie warning cleared")
     return jsonify({'status': 'cleared'}), 200
 
 # Serve React app

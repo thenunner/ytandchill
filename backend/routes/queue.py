@@ -85,6 +85,9 @@ def get_queue():
         # Get last error message from download worker
         last_error_message = _download_worker.last_error_message if hasattr(_download_worker, 'last_error_message') else None
 
+        # Get cookie warning message from download worker
+        cookie_warning_message = _download_worker.cookie_warning_message if hasattr(_download_worker, 'cookie_warning_message') else None
+
         return jsonify({
             'queue_items': queue_items,
             'current_download': current_download,
@@ -95,7 +98,8 @@ def get_queue():
             'last_auto_refresh': last_auto_refresh.isoformat() if last_auto_refresh else None,
             'auto_refresh_enabled': auto_refresh_enabled,
             'rate_limit_message': rate_limit_message,
-            'last_error_message': last_error_message
+            'last_error_message': last_error_message,
+            'cookie_warning_message': cookie_warning_message
         })
 
 
