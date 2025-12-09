@@ -533,6 +533,13 @@ class DownloadWorker:
                     self.current_download = None
                     return False, False, False, False, True, None  # already_handled=True
 
+                # Check for geo-restriction errors - move to removed status
+                if 'not available in your country' in error_str.lower() or \
+                   'geo' in error_str.lower() and 'restrict' in error_str.lower():
+                    self.last_error_message = f"{video.title[:50]} - Geo-blocked in your region"
+                    self._cleanup_failed_video(session, video, queue_item, channel_dir, 'Geo-restricted')
+                    return False, False, False, False, True, None  # already_handled=True
+
                 # Check for age verification errors - move to removed status
                 if 'verify your age' in error_str.lower() or \
                    ('age' in error_str.lower() and 'verif' in error_str.lower()):
