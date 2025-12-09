@@ -424,11 +424,28 @@ class DownloadWorker:
 
         # Add cookies if available
         cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
-        if os.path.exists(cookies_path):
-            ydl_opts['cookiefile'] = cookies_path
-            logger.info('Using cookies.txt file for authentication')
-        else:
-            logger.warning('No cookies.txt file found - downloads may be rate-limited')
+
+        # Check cookie source setting (default: 'file' for backward compatibility)
+        cookie_source = self.settings_manager.get('cookie_source', 'file')
+
+        if cookie_source == 'browser':
+            browser_type = self.settings_manager.get('cookie_browser', 'firefox')
+            try:
+                # yt-dlp format: ('browser_name', keyring, profile, container)
+                # None values let yt-dlp auto-detect default profile from profiles.ini
+                ydl_opts['cookiesfrombrowser'] = (browser_type, None, None, None)
+                logger.info(f'Using cookies from {browser_type} browser')
+            except Exception as e:
+                logger.warning(f'Failed to extract cookies from browser: {e}')
+                # Fallback to cookies.txt
+                cookie_source = 'file'
+
+        if cookie_source == 'file':
+            if os.path.exists(cookies_path):
+                ydl_opts['cookiefile'] = cookies_path
+                logger.info('Using cookies.txt file for authentication')
+            else:
+                logger.warning('No cookies.txt file found - downloads may be rate-limited')
 
         # Add SponsorBlock if enabled
         try:

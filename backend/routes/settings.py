@@ -157,6 +157,28 @@ def health_check():
     cookies_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'cookies.txt')
     cookies_available = os.path.exists(cookies_path)
 
+    # Check Firefox profile availability at /firefox_profile mount
+    firefox_profile_path = '/firefox_profile'
+    firefox_profile_mounted = os.path.exists(firefox_profile_path)
+
+    # Check if Firefox profile has YouTube cookies
+    firefox_has_cookies = False
+    if firefox_profile_mounted:
+        try:
+            # Look for profiles.ini to find default profile
+            profiles_ini = os.path.join(firefox_profile_path, 'profiles.ini')
+            if os.path.exists(profiles_ini):
+                # Check for any .default or .default-release profile
+                for profile_dir in os.listdir(firefox_profile_path):
+                    if profile_dir.endswith('.default') or profile_dir.endswith('.default-release'):
+                        profile_path = os.path.join(firefox_profile_path, profile_dir)
+                        cookies_db = os.path.join(profile_path, 'cookies.sqlite')
+                        if os.path.exists(cookies_db) and os.path.getsize(cookies_db) > 0:
+                            firefox_has_cookies = True
+                            break
+        except Exception as e:
+            logger.debug(f'Error checking Firefox cookies: {e}')
+
     # Calculate total storage size of downloads directory
     total_storage_bytes = 0
     downloads_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'downloads')
@@ -203,6 +225,8 @@ def health_check():
         'auto_refresh_time': auto_refresh_time,
         'download_worker_running': worker_alive,
         'cookies_available': cookies_available,
+        'firefox_profile_mounted': firefox_profile_mounted,
+        'firefox_has_cookies': firefox_has_cookies,
         'total_storage': total_storage
     })
 

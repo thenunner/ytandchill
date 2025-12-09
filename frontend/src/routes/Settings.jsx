@@ -39,6 +39,9 @@ export default function Settings() {
   const [passwordError, setPasswordError] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
 
+  // Cookie source state
+  const [cookieSource, setCookieSource] = useState('file');
+
   // SponsorBlock state
   const [removeSponsor, setRemoveSponsor] = useState(false);
   const [removeSelfpromo, setRemoveSelfpromo] = useState(false);
@@ -115,6 +118,8 @@ export default function Settings() {
       setRemoveSponsor(settings.sponsorblock_remove_sponsor === 'true');
       setRemoveSelfpromo(settings.sponsorblock_remove_selfpromo === 'true');
       setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
+      // Load cookie source setting
+      setCookieSource(settings.cookie_source || 'file');
     }
   }, [settings]);
 
@@ -304,6 +309,18 @@ export default function Settings() {
     }
   };
 
+  const handleSaveCookieSettings = async () => {
+    try {
+      await updateSettings.mutateAsync({
+        cookie_source: cookieSource,
+        cookie_browser: 'firefox'
+      });
+      showNotification('Cookie source updated successfully!', 'success');
+    } catch (err) {
+      showNotification('Failed to update cookie source', 'error');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -339,7 +356,7 @@ export default function Settings() {
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
               <div className="flex items-center justify-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.8.7</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.8.8</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center justify-center gap-3 order-3 md:order-4">
@@ -400,6 +417,89 @@ export default function Settings() {
 
             {/* Separator */}
             <div className="border-t border-dark-border my-4"></div>
+
+            {/* Cookie Source Toggle */}
+            <div className="mb-4">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <h4 className="text-sm font-semibold text-text-primary">Cookie Source</h4>
+                <button
+                  type="button"
+                  className="text-text-muted hover:text-text-primary"
+                  title="Choose where yt-dlp gets YouTube authentication cookies from"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="flex justify-center gap-4">
+                {/* cookies.txt option */}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cookieSource"
+                    value="file"
+                    checked={cookieSource === 'file'}
+                    onChange={(e) => setCookieSource(e.target.value)}
+                    className="form-radio text-accent"
+                  />
+                  <span className="text-sm text-text-primary">cookies.txt</span>
+                  <button
+                    type="button"
+                    className="text-text-muted hover:text-text-primary"
+                    title="Use manually uploaded cookies.txt file. Export from browser using extension like 'Get cookies.txt'"
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </label>
+
+                {/* Firefox browser option */}
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cookieSource"
+                    value="browser"
+                    checked={cookieSource === 'browser'}
+                    onChange={(e) => setCookieSource(e.target.value)}
+                    className="form-radio text-accent"
+                  />
+                  <span className="text-sm text-text-primary">Firefox</span>
+                  <button
+                    type="button"
+                    className="text-text-muted hover:text-text-primary"
+                    title="Extract cookies directly from Firefox browser. Requires Firefox profile mounted to /firefox_profile and YouTube login in Firefox."
+                  >
+                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                </label>
+              </div>
+
+              {/* Firefox status indicator */}
+              {cookieSource === 'browser' && (
+                <div className="mt-3 text-center">
+                  {health?.firefox_has_cookies ? (
+                    <p className="text-xs text-green-400">✓ Firefox profile detected with cookies</p>
+                  ) : health?.firefox_profile_mounted ? (
+                    <p className="text-xs text-yellow-400">⚠ Firefox mounted but no YouTube cookies found. Sign into YouTube in Firefox.</p>
+                  ) : (
+                    <p className="text-xs text-red-400">✗ Firefox profile not mounted at /firefox_profile</p>
+                  )}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={handleSaveCookieSettings}
+                className="mt-3 w-full btn bg-dark-tertiary text-text-primary hover:bg-dark-hover text-sm py-1.5"
+              >
+                Save Cookie Source
+              </button>
+            </div>
 
             {/* Reset User Section */}
             <div className="flex justify-center">
