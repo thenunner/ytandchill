@@ -1062,11 +1062,10 @@ export default function Library() {
 
                     {/* Category Playlists - Only show when expanded */}
                     {isExpanded && (() => {
-                      const effectiveCardSize = getEffectiveCardSize(cardSize, categoryPlaylists.length);
-                      const textSizes = getTextSizes(effectiveCardSize);
+                      const textSizes = getTextSizes(cardSize);
                       return (
                         <div className="px-6 lg:px-12 xl:px-16">
-                          <div className={`grid ${getGridClass(gridColumns, categoryPlaylists.length)} gap-4 w-full [&>*]:min-w-0`}>
+                          <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                           {categoryPlaylists.map(playlist => {
                             const isSelected = selectedPlaylists.includes(playlist.id);
                             return (
@@ -1258,11 +1257,10 @@ export default function Library() {
 
                   {/* Uncategorized Playlists */}
                   {(() => {
-                    const effectiveCardSize = getEffectiveCardSize(cardSize, groupedPlaylists.uncategorized.length);
-                    const textSizes = getTextSizes(effectiveCardSize);
+                    const textSizes = getTextSizes(cardSize);
                     return (
                     <div className="px-6 lg:px-12 xl:px-16">
-                      <div className={`grid ${getGridClass(gridColumns, groupedPlaylists.uncategorized.length)} gap-4 w-full [&>*]:min-w-0`}>
+                      <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                       {groupedPlaylists.uncategorized.map(playlist => {
                         const isSelected = selectedPlaylists.includes(playlist.id);
                         return (
