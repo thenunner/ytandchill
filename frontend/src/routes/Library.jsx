@@ -6,14 +6,13 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
-import { getGridClass, getTextSizes } from '../utils/gridUtils';
+import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize();
-  const textSizes = getTextSizes(cardSize);
   const gridColumns = useGridColumns(cardSize);
 
   const [searchInput, setSearchInput] = useState('');
@@ -867,7 +866,10 @@ export default function Library() {
                 </>
               )}
             </div>
-          ) : (
+          ) : (() => {
+            const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedChannelsList.length);
+            const textSizes = getTextSizes(effectiveCardSize);
+            return (
             <div className="px-6 lg:px-12 xl:px-16">
               <div className={`grid ${getGridClass(gridColumns, paginatedChannelsList.length)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedChannelsList.map(channel => (
@@ -912,7 +914,8 @@ export default function Library() {
           ))}
             </div>
           </div>
-          )}
+            );
+          })()}
 
           {/* Bottom Pagination */}
           {channelsList.length > 0 && (
@@ -1058,7 +1061,10 @@ export default function Library() {
                     </div>
 
                     {/* Category Playlists - Only show when expanded */}
-                    {isExpanded && (
+                    {isExpanded && (() => {
+                      const effectiveCardSize = getEffectiveCardSize(cardSize, categoryPlaylists.length);
+                      const textSizes = getTextSizes(effectiveCardSize);
+                      return (
                         <div className="px-6 lg:px-12 xl:px-16">
                           <div className={`grid ${getGridClass(gridColumns, categoryPlaylists.length)} gap-4 w-full [&>*]:min-w-0`}>
                           {categoryPlaylists.map(playlist => {
@@ -1229,7 +1235,8 @@ export default function Library() {
                           })}
                           </div>
                         </div>
-                    )}
+                      );
+                    })()}
                   </div>
                 );
               })}
@@ -1250,6 +1257,10 @@ export default function Library() {
                   )}
 
                   {/* Uncategorized Playlists */}
+                  {(() => {
+                    const effectiveCardSize = getEffectiveCardSize(cardSize, groupedPlaylists.uncategorized.length);
+                    const textSizes = getTextSizes(effectiveCardSize);
+                    return (
                     <div className="px-6 lg:px-12 xl:px-16">
                       <div className={`grid ${getGridClass(gridColumns, groupedPlaylists.uncategorized.length)} gap-4 w-full [&>*]:min-w-0`}>
                       {groupedPlaylists.uncategorized.map(playlist => {
@@ -1415,6 +1426,8 @@ export default function Library() {
                       })}
                       </div>
                     </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>

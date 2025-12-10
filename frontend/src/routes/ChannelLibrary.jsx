@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'reac
 import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
-import { getGridClass } from '../utils/gridUtils';
+import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
 import FiltersModal from '../components/FiltersModal';
@@ -1162,7 +1162,9 @@ export default function ChannelLibrary() {
             </>
           )}
         </div>
-      ) : (
+      ) : (() => {
+        const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedVideos.length);
+        return (
         <div className="px-6 lg:px-12 xl:px-16">
           <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedVideos.map(video => (
@@ -1174,11 +1176,13 @@ export default function ChannelLibrary() {
               isQueued={queueVideoIds.has(video.id)}
               editMode={isLibraryMode && editMode}
               isLibraryView={isLibraryMode}
+              effectiveCardSize={effectiveCardSize}
             />
           ))}
           </div>
         </div>
-      )}
+        );
+      })()}
 
       {/* Bottom Pagination */}
       {sortedVideos.length > 0 && (

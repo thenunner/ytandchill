@@ -7,7 +7,7 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { StickyBar, SearchInput, CardSizeSlider, SortDropdown } from '../components/stickybar';
-import { getGridClass, getTextSizes } from '../utils/gridUtils';
+import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 
 export default function Channels() {
@@ -25,7 +25,6 @@ export default function Channels() {
   const { cardSize, setCardSize } = useCardSize();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const textSizes = getTextSizes(cardSize);
   const gridColumns = useGridColumns(cardSize);
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -965,6 +964,10 @@ export default function Channels() {
       )}
 
       {/* Channels Grid */}
+      {(() => {
+        const effectiveCardSize = getEffectiveCardSize(cardSize, filteredAndSortedChannels.length);
+        const textSizes = getTextSizes(effectiveCardSize);
+        return (
       <div className="px-6 lg:px-12 xl:px-16">
         <div className={`grid ${getGridClass(gridColumns, filteredAndSortedChannels.length)} gap-4 w-full [&>*]:min-w-0`}>
           {filteredAndSortedChannels.map(channel => (
@@ -1232,9 +1235,9 @@ export default function Channels() {
                     </div>
                   )}
 
-                  {/* Upper Right: AUTO Badge - Bigger, no spacing */}
+                  {/* Lower Left: AUTO Badge */}
                   {channel.auto_download && (
-                    <div className="absolute top-0 right-0 bg-green-500 text-white font-bold text-sm px-2 py-1 rounded-tr-xl rounded-bl-lg z-10">
+                    <div className="absolute bottom-2 left-2 bg-green-500 text-white font-bold text-xs px-1.5 py-0.5 rounded z-10">
                       AUTO
                     </div>
                   )}
@@ -1282,6 +1285,8 @@ export default function Channels() {
           ))}
         </div>
       </div>
+        );
+      })()}
 
       {filteredAndSortedChannels.length === 0 && (
         <div className="text-center py-20 text-text-secondary">

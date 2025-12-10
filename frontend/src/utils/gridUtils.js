@@ -57,8 +57,35 @@ export const getGridClass = (cols, itemCount = Infinity) => {
   return classMap[actualCols] || classMap[5];
 };
 
+// Helper to get effective card size based on actual columns shown
+// When grid is capped due to low item count, determines which card size
+// normally produces that column count to keep text sizing consistent
+export const getEffectiveCardSize = (cardSize, itemCount = Infinity) => {
+  const configuredCols = getGridColumns(cardSize);
+  const actualCols = Math.min(configuredCols, itemCount);
+
+  // If not capped, use the selected card size
+  if (actualCols === configuredCols) {
+    return cardSize;
+  }
+
+  // If capped, find which card size normally produces this column count
+  const smCols = getGridColumns('sm');
+  const mdCols = getGridColumns('md');
+  const lgCols = getGridColumns('lg');
+
+  // Match actual columns to the card size that normally produces it
+  // Check from largest to smallest to prefer larger text when ambiguous
+  if (actualCols <= lgCols) return 'lg';
+  if (actualCols <= mdCols) return 'md';
+  return 'sm';
+};
+
 // Helper to get text size classes based on card size
-export const getTextSizes = (cardSize) => {
+export const getTextSizes = (cardSize, itemCount = Infinity) => {
+  // Use effective card size when grid is capped
+  const effectiveSize = getEffectiveCardSize(cardSize, itemCount);
+
   const sizeConfig = {
     sm: {
       title: 'text-sm',
@@ -76,5 +103,5 @@ export const getTextSizes = (cardSize) => {
       badge: 'text-sm',
     }
   };
-  return sizeConfig[cardSize] || sizeConfig.md;
+  return sizeConfig[effectiveSize] || sizeConfig.md;
 };

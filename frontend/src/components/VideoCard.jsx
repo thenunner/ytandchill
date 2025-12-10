@@ -16,9 +16,10 @@ export default function VideoCard({
   isQueued,
   editMode = false, // New prop for edit mode
   isLibraryView = false, // New prop for library view (shows 3-column layout with file size)
+  effectiveCardSize, // Optional: overrides cardSize for text sizing when grid is capped
 }) {
   const { cardSize } = useCardSize();
-  const textSizes = getTextSizes(cardSize);
+  const textSizes = getTextSizes(effectiveCardSize || cardSize);
   const navigate = useNavigate();
   const location = useLocation();
   const deleteVideo = useDeleteVideo();

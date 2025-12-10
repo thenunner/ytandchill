@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
-import { getGridClass } from '../utils/gridUtils';
+import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
 import FiltersModal from '../components/FiltersModal';
@@ -334,7 +334,9 @@ export default function Playlist() {
       </StickyBar>
 
       {/* Videos Grid */}
-      {sortedVideos.length > 0 ? (
+      {sortedVideos.length > 0 ? (() => {
+        const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedVideos.length);
+        return (
         <div className="px-6 lg:px-12 xl:px-16">
           <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedVideos.map((video) => (
@@ -347,11 +349,13 @@ export default function Playlist() {
               editMode={editMode}
               isSelected={selectedVideos.includes(video.id)}
               onToggleSelect={editMode ? toggleVideoSelection : undefined}
+              effectiveCardSize={effectiveCardSize}
             />
           ))}
           </div>
         </div>
-      ) : (
+        );
+      })() : (
         <div className="text-center py-20 text-text-secondary">
           <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
