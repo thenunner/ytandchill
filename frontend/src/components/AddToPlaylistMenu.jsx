@@ -68,14 +68,28 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
 
   const handleTogglePlaylist = async (playlistId, isInPlaylist) => {
     try {
-      if (isInPlaylist) {
-        // Remove from playlist
-        await removeFromPlaylist.mutateAsync({ playlistId, videoId });
-        showNotification('Removed from playlist', 'success');
+      if (isBulk) {
+        // Bulk mode: toggle all selected videos
+        for (const vidId of videosToAdd) {
+          if (isInPlaylist) {
+            await removeFromPlaylist.mutateAsync({ playlistId, videoId: vidId });
+          } else {
+            await addToPlaylist.mutateAsync({ playlistId, videoId: vidId });
+          }
+        }
+        const action = isInPlaylist ? 'removed from' : 'added to';
+        showNotification(`${videosToAdd.length} video${videosToAdd.length > 1 ? 's' : ''} ${action} playlist`, 'success');
       } else {
-        // Add to playlist
-        await addToPlaylist.mutateAsync({ playlistId, videoId });
-        showNotification('Added to playlist', 'success');
+        // Single video mode
+        if (isInPlaylist) {
+          // Remove from playlist
+          await removeFromPlaylist.mutateAsync({ playlistId, videoId });
+          showNotification('Removed from playlist', 'success');
+        } else {
+          // Add to playlist
+          await addToPlaylist.mutateAsync({ playlistId, videoId });
+          showNotification('Added to playlist', 'success');
+        }
       }
     } catch (error) {
       showNotification(error.message, 'error');

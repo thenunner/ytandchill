@@ -9,6 +9,7 @@ import VideoCard from '../components/VideoCard';
 import FiltersModal from '../components/FiltersModal';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 
 export default function Playlist() {
@@ -29,6 +30,7 @@ export default function Playlist() {
   const [hideWatched, setHideWatched] = useState(localStorage.getItem('playlist_hideWatched') === 'true');
   const [editMode, setEditMode] = useState(false);
   const [selectedVideos, setSelectedVideos] = useState([]);
+  const [showBulkPlaylistOptions, setShowBulkPlaylistOptions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(() => {
     const stored = localStorage.getItem('playlist_itemsPerPage');
@@ -50,15 +52,6 @@ export default function Playlist() {
       setSort(value);
     } else if (key === 'hide_watched') {
       setHideWatched(value === 'true');
-    }
-  };
-
-  const handleRemoveVideo = async (videoId) => {
-    try {
-      await removeVideo.mutateAsync({ playlistId: parseInt(id), videoId });
-      showNotification('Video removed from playlist', 'success');
-    } catch (error) {
-      showNotification(error.message, 'error');
     }
   };
 
@@ -309,10 +302,10 @@ export default function Playlist() {
                     Mark Watched
                   </button>
                   <button
-                    onClick={() => handleBulkAction('remove')}
+                    onClick={() => setShowBulkPlaylistOptions(true)}
                     className="btn btn-secondary btn-sm"
                   >
-                    Remove from Playlist
+                    Playlist Options
                   </button>
                   <button
                     onClick={() => handleBulkAction('delete')}
@@ -343,8 +336,6 @@ export default function Playlist() {
             <VideoCard
               key={video.id}
               video={video}
-              showRemoveFromPlaylist={!editMode}
-              onRemoveFromPlaylist={() => handleRemoveVideo(video.id)}
               isLibraryView={true}
               editMode={editMode}
               isSelected={selectedVideos.includes(video.id)}
@@ -427,6 +418,18 @@ export default function Playlist() {
         onConfirm={handleConfirmAction}
         onCancel={() => setConfirmAction(null)}
       />
+
+      {/* Bulk Playlist Options Menu */}
+      {showBulkPlaylistOptions && (
+        <AddToPlaylistMenu
+          videoIds={selectedVideos}
+          onClose={() => {
+            setShowBulkPlaylistOptions(false);
+            setSelectedVideos([]);
+            setEditMode(false);
+          }}
+        />
+      )}
     </div>
   );
 }
