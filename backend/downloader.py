@@ -108,6 +108,16 @@ class DownloadWorker:
             logger.info(f"Cancelling current download: {self.current_download}")
             self.current_download['cancelled'] = True
 
+    def _set_discoveries_flag(self, session):
+        """Set the new discoveries flag using the existing session to avoid database locks."""
+        setting = session.query(Setting).filter(Setting.key == 'new_discoveries_flag').first()
+        if setting:
+            setting.value = 'true'
+        else:
+            setting = Setting(key='new_discoveries_flag', value='true')
+            session.add(setting)
+        # Don't commit here - let the caller handle the transaction
+
     def _cleanup_failed_video(self, session, video, queue_item, channel_dir, reason):
         """
         Cleanup files and set video to removed status (permanent error).
@@ -529,9 +539,9 @@ class DownloadWorker:
                     # yt-dlp will auto-resume from .part when re-queued later
                     video.status = 'discovered'
                     session.delete(queue_item)
-                    session.commit()
                     # Set flag to notify frontend about kicked back videos (trigger auto-sort)
-                    self.settings_manager.set('new_discoveries_flag', 'true')
+                    self._set_discoveries_flag(session)
+                    session.commit()
                     self.current_download = None
                     return False, False, False, False, True, None  # already_handled=True
 
@@ -639,21 +649,21 @@ class DownloadWorker:
             video.status = 'discovered'
             session.delete(queue_item)
             # Set flag to notify frontend about kicked back videos (trigger auto-sort)
-            self.settings_manager.set('new_discoveries_flag', 'true')
+            self._set_discoveries_flag(session)
         elif timed_out:
             # Timeout - reset to discovered and delete queue item (same as cancelled)
             logger.warning(f'Download timed out for {video.yt_id}, resetting to discovered')
             video.status = 'discovered'
             session.delete(queue_item)
             # Set flag to notify frontend about kicked back videos (trigger auto-sort)
-            self.settings_manager.set('new_discoveries_flag', 'true')
+            self._set_discoveries_flag(session)
         elif not download_success:
             # Failed (non-rate-limit) - reset to discovered and delete queue item
             logger.error(f'Download failed for {video.yt_id}, resetting to discovered')
             video.status = 'discovered'
             session.delete(queue_item)
             # Set flag to notify frontend about kicked back videos (trigger auto-sort)
-            self.settings_manager.set('new_discoveries_flag', 'true')
+            self._set_discoveries_flag(session)
         else:
             # Success - mark as library and delete queue item
             logger.info(f'Successfully downloaded video {video.yt_id}')

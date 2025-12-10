@@ -715,7 +715,14 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
 
     # Set flag to notify frontend about new discovered videos (trigger auto-sort)
     if new_count > 0:
-        settings_manager.set('new_discoveries_flag', 'true')
+        # Use existing session to avoid database locking issues
+        setting = session.query(Setting).filter(Setting.key == 'new_discoveries_flag').first()
+        if setting:
+            setting.value = 'true'
+        else:
+            setting = Setting(key='new_discoveries_flag', value='true')
+            session.add(setting)
+        # Don't commit here - the outer context manager will handle it
         logger.debug(f"Set new_discoveries_flag due to {new_count} discovered videos")
 
     # Auto-resume the download worker if videos were auto-queued
