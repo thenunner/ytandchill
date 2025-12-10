@@ -869,7 +869,7 @@ export default function Library() {
             </div>
           ) : (
             <div className="px-6 lg:px-12 xl:px-16">
-              <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
+              <div className={`grid ${getGridClass(gridColumns, paginatedChannelsList.length)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedChannelsList.map(channel => (
             <Link
               key={channel.id}
@@ -1060,7 +1060,7 @@ export default function Library() {
                     {/* Category Playlists - Only show when expanded */}
                     {isExpanded && (
                         <div className="px-6 lg:px-12 xl:px-16">
-                          <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
+                          <div className={`grid ${getGridClass(gridColumns, categoryPlaylists.length)} gap-4 w-full [&>*]:min-w-0`}>
                           {categoryPlaylists.map(playlist => {
                             const isSelected = selectedPlaylists.includes(playlist.id);
                             return (
@@ -1251,7 +1251,7 @@ export default function Library() {
 
                   {/* Uncategorized Playlists */}
                     <div className="px-6 lg:px-12 xl:px-16">
-                      <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
+                      <div className={`grid ${getGridClass(gridColumns, groupedPlaylists.uncategorized.length)} gap-4 w-full [&>*]:min-w-0`}>
                       {groupedPlaylists.uncategorized.map(playlist => {
                         const isSelected = selectedPlaylists.includes(playlist.id);
                         return (

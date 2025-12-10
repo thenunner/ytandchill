@@ -431,22 +431,23 @@ export default function Videos() {
       )}
 
       {/* Video Grid */}
-      {scanResults?.videos && scanResults.videos.length > 0 && (
-        <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
-          {scanResults.videos
-            .filter(video => {
-              // Search filter
-              if (searchInput && !(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
-                return false;
-              }
-              // Status filter (only in All mode)
-              if (filterMode !== 'all' || statusFilter === 'all') return true;
-              if (statusFilter === 'available') return !video.status || video.status === 'discovered';
-              if (statusFilter === 'ignored') return video.status === 'ignored';
-              if (statusFilter === 'error') return video.status === 'removed';
-              return true;
-            })
-            .map((video) => (
+      {scanResults?.videos && scanResults.videos.length > 0 && (() => {
+        const filteredVideos = scanResults.videos.filter(video => {
+          // Search filter
+          if (searchInput && !(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+            return false;
+          }
+          // Status filter (only in All mode)
+          if (filterMode !== 'all' || statusFilter === 'all') return true;
+          if (statusFilter === 'available') return !video.status || video.status === 'discovered';
+          if (statusFilter === 'ignored') return video.status === 'ignored';
+          if (statusFilter === 'error') return video.status === 'removed';
+          return true;
+        });
+
+        return (
+          <div className={`grid ${getGridClass(gridColumns, filteredVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
+            {filteredVideos.map((video) => (
             <div
               key={video.yt_id}
               onClick={() => handleToggleSelect(video.yt_id)}
@@ -524,7 +525,8 @@ export default function Videos() {
             </div>
           ))}
         </div>
-      )}
+        );
+      })()}
 
       {/* Empty State */}
       {!scanResults && !isScanning && (

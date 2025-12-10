@@ -36,7 +36,10 @@ export const getGridColumns = (cardSize) => {
 };
 
 // Helper to get Tailwind grid class from column count
-export const getGridClass = (cols) => {
+export const getGridClass = (cols, itemCount = Infinity) => {
+  // Cap columns at actual item count to prevent stretching with few items
+  const actualCols = Math.min(cols, itemCount);
+
   const classMap = {
     1: 'grid-cols-1',
     2: 'grid-cols-2',
@@ -51,7 +54,7 @@ export const getGridClass = (cols) => {
     11: 'grid-cols-11',
     12: 'grid-cols-12'
   };
-  return classMap[cols] || classMap[5];
+  return classMap[actualCols] || classMap[5];
 };
 
 // Helper to get text size classes based on card size

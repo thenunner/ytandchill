@@ -966,7 +966,7 @@ export default function Channels() {
 
       {/* Channels Grid */}
       <div className="px-6 lg:px-12 xl:px-16">
-        <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
+        <div className={`grid ${getGridClass(gridColumns, filteredAndSortedChannels.length)} gap-4 w-full [&>*]:min-w-0`}>
           {filteredAndSortedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
             {/* Dropdown Menu - OUTSIDE card to avoid overflow:hidden clipping */}

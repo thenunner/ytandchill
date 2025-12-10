@@ -1164,7 +1164,7 @@ export default function ChannelLibrary() {
         </div>
       ) : (
         <div className="px-6 lg:px-12 xl:px-16">
-          <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
+          <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedVideos.map(video => (
             <VideoCard
               key={video.id}
