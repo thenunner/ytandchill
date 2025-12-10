@@ -37,8 +37,12 @@ export const getGridColumns = (cardSize) => {
 
 // Helper to get Tailwind grid class from column count
 export const getGridClass = (cols, itemCount = Infinity) => {
-  // Cap columns at actual item count to prevent stretching with few items
-  const actualCols = Math.min(cols, itemCount);
+  // Get minimum columns (lg position = largest cards, fewest columns)
+  const minCols = getGridColumns('lg');
+
+  // Cap at item count, but never go below the minimum column count from lg slider position
+  // This prevents cards from stretching too wide when there are very few items
+  const actualCols = Math.min(cols, Math.max(minCols, itemCount));
 
   const classMap = {
     1: 'grid-cols-1',
