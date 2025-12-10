@@ -840,7 +840,7 @@ export default function ChannelLibrary() {
                     onClick={() => handleBulkAction('playlist')}
                     className="btn btn-primary btn-sm"
                   >
-                    Add to Playlist
+                    Playlist Options
                   </button>
                   <button
                     onClick={clearSelection}
