@@ -6,48 +6,13 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
-import { getTextSizes } from '../utils/gridUtils';
+import { getGridColumns, getGridClass, getTextSizes } from '../utils/gridUtils';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize();
   const textSizes = getTextSizes(cardSize);
-
-  // Calculate optimal columns based on screen width, card size, AND device type
-  const getGridColumns = (cardSize) => {
-    const width = window.innerWidth;
-    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-
-    const columnConfig = {
-      touch: {
-        sm: { mobile: 2, tablet: 4, wide: 4 },
-        md: { mobile: 1, tablet: 3, wide: 3 },
-        lg: { mobile: 1, tablet: 2, wide: 2 },
-        xl: { mobile: 1, tablet: 2, wide: 2 }
-      },
-      desktop: {
-        sm: { small: 2, medium: 4, large: 6, xlarge: 8 },
-        md: { small: 1, medium: 3, large: 5, xlarge: 6 },
-        lg: { small: 1, medium: 2, large: 4, xlarge: 5 },
-        xl: { small: 1, medium: 2, large: 3, xlarge: 4 }
-      }
-    };
-
-    const deviceType = isTouch ? 'touch' : 'desktop';
-    const config = columnConfig[deviceType][cardSize] || columnConfig.desktop.md;
-
-    if (isTouch) {
-      if (width < 640) return config.mobile;
-      if (width < 2048) return config.tablet;
-      return config.wide;
-    } else {
-      if (width < 768) return config.small;
-      if (width < 1440) return config.medium;
-      if (width < 2560) return config.large;
-      return config.xlarge;
-    }
-  };
 
   const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
 
@@ -58,19 +23,6 @@ export default function Library() {
     return () => window.removeEventListener('resize', updateColumns);
   }, [cardSize]);
 
-  const getGridClass = (cols) => {
-    const classMap = {
-      1: 'grid-cols-1',
-      2: 'grid-cols-2',
-      3: 'grid-cols-3',
-      4: 'grid-cols-4',
-      5: 'grid-cols-5',
-      6: 'grid-cols-6',
-      7: 'grid-cols-7',
-      8: 'grid-cols-8'
-    };
-    return classMap[cols] || classMap[5];
-  };
   const [searchInput, setSearchInput] = useState('');
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'channels');
   const [editMode, setEditMode] = useState(false);

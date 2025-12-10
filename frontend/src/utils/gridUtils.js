@@ -6,17 +6,17 @@ export const getGridColumns = (cardSize) => {
   const columnConfig = {
     // Touch devices (tablets/phones) - fewer columns for touch targets
     touch: {
-      sm: { mobile: 2, tablet: 4, wide: 4 },
-      md: { mobile: 1, tablet: 3, wide: 3 },
-      lg: { mobile: 1, tablet: 2, wide: 2 },
-      xl: { mobile: 1, tablet: 2, wide: 2 }
+      sm: { portrait: 2, landscape: 3, tablet: 5 },
+      md: { portrait: 1, landscape: 2, tablet: 4 },
+      lg: { portrait: 1, landscape: 2, tablet: 3 },
+      xl: { portrait: 1, landscape: 1, tablet: 2 }
     },
     // Desktop devices (mouse/trackpad) - more columns for large monitors
     desktop: {
-      sm: { small: 2, medium: 4, large: 6, xlarge: 8 },
-      md: { small: 1, medium: 3, large: 5, xlarge: 6 },
-      lg: { small: 1, medium: 2, large: 4, xlarge: 5 },
-      xl: { small: 1, medium: 2, large: 3, xlarge: 4 }
+      sm: { up1440: 6, up2560: 8, over2560: 10 },
+      md: { up1440: 5, up2560: 7, over2560: 8 },
+      lg: { up1440: 4, up2560: 5, over2560: 6 },
+      xl: { up1440: 3, up2560: 4, over2560: 4 }
     }
   };
 
@@ -25,19 +25,14 @@ export const getGridColumns = (cardSize) => {
 
   if (isTouch) {
     // Touch devices: phones and tablets
-    if (width < 640) {
-      // Phone: 1 column in portrait, 2 in landscape
-      const isPortrait = window.innerHeight > window.innerWidth;
-      return isPortrait ? 1 : 2;
-    }
-    if (width < 2048) return config.tablet;
-    return config.wide;  // High-res tablets max out at 4 cards
+    if (width < 640) return config.portrait;  // Portrait phones
+    if (width < 1024) return config.landscape;  // Landscape phones
+    return config.tablet;  // Tablets
   } else {
     // Desktop devices: laptops and monitors
-    if (width < 768) return config.small;
-    if (width < 1440) return config.medium;
-    if (width < 2560) return config.large;
-    return config.xlarge;  // 4K monitors can have up to 8 cards
+    if (width < 1440) return config.up1440;  // Up to 1440p (max 6)
+    if (width < 2560) return config.up2560;  // 1440p to 2560p (max 8)
+    return config.over2560;  // Above 2560p (max 10)
   }
 };
 
@@ -51,7 +46,9 @@ export const getGridClass = (cols) => {
     5: 'grid-cols-5',
     6: 'grid-cols-6',
     7: 'grid-cols-7',
-    8: 'grid-cols-8'
+    8: 'grid-cols-8',
+    9: 'grid-cols-9',
+    10: 'grid-cols-10'
   };
   return classMap[cols] || classMap[5];
 };
