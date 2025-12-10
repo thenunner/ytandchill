@@ -12,7 +12,7 @@ import { useGridColumns } from '../hooks/useGridColumns';
 export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { cardSize, setCardSize} = useCardSize();
+  const { cardSize, setCardSize} = useCardSize('library');
   const gridColumns = useGridColumns(cardSize);
 
   const [searchInput, setSearchInput] = useState('');
@@ -653,7 +653,7 @@ export default function Library() {
             </div>
 
             {/* Card Size Slider */}
-            <CardSizeSlider />
+            <CardSizeSlider tab="library" />
 
             {/* Pagination */}
             <Pagination
@@ -717,7 +717,7 @@ export default function Library() {
               </button>
 
               {/* Card Size Slider */}
-              <CardSizeSlider />
+              <CardSizeSlider tab="library" />
 
               {/* Sort Button */}
               <div className="relative" ref={playlistSortMenuRef}>

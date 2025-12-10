@@ -29,11 +29,13 @@ export default function ChannelLibrary() {
   const scanChannel = useScanChannel();
   const updateChannel = useUpdateChannel();
   const { showNotification } = useNotification();
-  const { cardSize, setCardSize } = useCardSize();
-  const gridColumns = useGridColumns(cardSize);
 
   // Detect library mode from URL
   const isLibraryMode = location.pathname.endsWith('/library');
+
+  // Use appropriate card size based on whether we're in library or channels mode
+  const { cardSize, setCardSize } = useCardSize(isLibraryMode ? 'library' : 'channels');
+  const gridColumns = useGridColumns(cardSize);
 
   // Get queue video IDs for showing "QUEUED" status
   const queueVideoIds = new Set(
@@ -758,7 +760,7 @@ export default function ChannelLibrary() {
           />
 
           {/* Card Size Slider */}
-          <CardSizeSlider />
+          <CardSizeSlider tab={isLibraryMode ? 'library' : 'channels'} />
 
           {/* Pagination */}
           <Pagination

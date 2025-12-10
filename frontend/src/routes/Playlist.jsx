@@ -20,7 +20,7 @@ export default function Playlist() {
   const deleteVideo = useDeleteVideo();
   const bulkUpdateVideos = useBulkUpdateVideos();
   const { showNotification } = useNotification();
-  const { cardSize, setCardSize } = useCardSize();
+  const { cardSize, setCardSize } = useCardSize('library');
   const gridColumns = useGridColumns(cardSize);
 
   const [searchInput, setSearchInput] = useState('');
@@ -244,7 +244,7 @@ export default function Playlist() {
           />
 
           {/* Card Size Slider */}
-          <CardSizeSlider />
+          <CardSizeSlider tab="library" />
 
           {/* Pagination */}
           <Pagination

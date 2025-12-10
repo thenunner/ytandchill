@@ -22,7 +22,7 @@ export default function Channels() {
   const updateCategoryMutation = useUpdateChannelCategory();
   const deleteCategoryMutation = useDeleteChannelCategory();
   const { showNotification } = useNotification();
-  const { cardSize, setCardSize } = useCardSize();
+  const { cardSize, setCardSize } = useCardSize('channels');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const gridColumns = useGridColumns(cardSize);
@@ -888,7 +888,7 @@ export default function Channels() {
           )}
 
           {/* Card Size Slider */}
-          <CardSizeSlider />
+          <CardSizeSlider tab="channels" />
         </div>
       </StickyBar>
 

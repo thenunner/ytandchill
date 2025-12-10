@@ -8,7 +8,7 @@ import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar'
 
 export default function Videos() {
   const { showNotification } = useNotification();
-  const { cardSize, setCardSize } = useCardSize();
+  const { cardSize, setCardSize } = useCardSize('videos');
   const scanPlaylist = useScanYouTubePlaylist();
   const queueVideos = useQueuePlaylistVideos();
   const removeVideos = useRemovePlaylistVideos();
@@ -344,7 +344,7 @@ export default function Videos() {
               )}
 
               {/* Card Size Slider */}
-              <CardSizeSlider show={scanResults.videos.length > 0} />
+              <CardSizeSlider show={scanResults.videos.length > 0} tab="videos" />
             </div>
 
             {scanResults.videos.length > 0 && (

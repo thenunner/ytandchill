@@ -1,7 +1,7 @@
 import { useCardSize } from '../../contexts/CardSizeContext';
 
-export default function CardSizeSlider({ show = true, className = '' }) {
-  const { cardSize, setCardSize } = useCardSize();
+export default function CardSizeSlider({ show = true, className = '', tab = 'library' }) {
+  const { cardSize, setCardSize } = useCardSize(tab);
 
   if (!show) return null;
 
