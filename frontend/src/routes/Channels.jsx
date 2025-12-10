@@ -1237,7 +1237,7 @@ export default function Channels() {
 
                   {/* Lower Left: AUTO Badge - Attached to border like upper badges */}
                   {channel.auto_download && (
-                    <div className="absolute bottom-0 left-0 bg-green-500 text-white font-bold text-sm px-2 py-1 rounded-bl-xl rounded-tr-lg z-10">
+                    <div className="absolute bottom-0 left-0 bg-green-500 text-white font-bold text-xs px-1.5 py-0.5 rounded-bl-xl rounded-tr-lg z-10">
                       AUTO
                     </div>
                   )}
