@@ -6,9 +6,9 @@ export const getGridColumns = (cardSize) => {
   const columnConfig = {
     // Touch devices (tablets/phones) - fewer columns for touch targets
     touch: {
-      sm: { portrait: 2, landscape: 4, tablet: 6 },
-      md: { portrait: 2, landscape: 3, tablet: 5 },
-      lg: { portrait: 1, landscape: 3, tablet: 4 },
+      sm: { portrait: 1, landscape: 2, tablet: 6 },
+      md: { portrait: 1, landscape: 2, tablet: 5 },
+      lg: { portrait: 1, landscape: 2, tablet: 4 },
       xl: { portrait: 1, landscape: 2, tablet: 4 }
     },
     // Desktop devices (mouse/trackpad) - more columns for large monitors

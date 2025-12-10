@@ -9,11 +9,18 @@ export const useGridColumns = (cardSize) => {
   const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
 
   useEffect(() => {
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
     const updateColumns = () => {
-      // Small delay to ensure window dimensions are updated after orientation change
-      setTimeout(() => {
+      // Only delay for touch devices during orientation changes
+      if (isTouch) {
+        setTimeout(() => {
+          setGridColumns(getGridColumns(cardSize));
+        }, 100);
+      } else {
+        // Desktop: update immediately, no delay
         setGridColumns(getGridColumns(cardSize));
-      }, 100);
+      }
     };
 
     // Initial update
