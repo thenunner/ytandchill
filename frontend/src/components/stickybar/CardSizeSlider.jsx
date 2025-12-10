@@ -16,10 +16,10 @@ export default function CardSizeSlider({ show = true, className = '' }) {
       <input
         type="range"
         min="0"
-        max="3"
-        value={['sm', 'md', 'lg', 'xl'].indexOf(cardSize)}
+        max="2"
+        value={['sm', 'md', 'lg'].indexOf(cardSize)}
         onChange={(e) => {
-          const sizes = ['sm', 'md', 'lg', 'xl'];
+          const sizes = ['sm', 'md', 'lg'];
           setCardSize(sizes[e.target.value]);
         }}
         className="w-20 sm:w-24 h-2 bg-dark-tertiary rounded-lg appearance-none cursor-pointer
@@ -35,7 +35,7 @@ export default function CardSizeSlider({ show = true, className = '' }) {
           [&::-moz-range-thumb]:bg-accent
           [&::-moz-range-thumb]:border-0
           [&::-moz-range-thumb]:cursor-pointer"
-        title="Adjust card density (sm=compact, xl=spacious)"
+        title="Adjust card density (sm=compact, lg=spacious)"
       />
       <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <rect x="2" y="2" width="9" height="9"></rect>

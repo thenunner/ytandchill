@@ -8,15 +8,13 @@ export const getGridColumns = (cardSize) => {
     touch: {
       sm: { portrait: 1, landscape: 4, tablet: 6 },
       md: { portrait: 1, landscape: 3, tablet: 5 },
-      lg: { portrait: 1, landscape: 2, tablet: 4 },
-      xl: { portrait: 1, landscape: 2, tablet: 4 }
+      lg: { portrait: 1, landscape: 2, tablet: 4 }
     },
     // Desktop devices (mouse/trackpad) - more columns for large monitors
     desktop: {
-      sm: { up1440: 6, up2560: 12, over2560: 12 },
-      md: { up1440: 5, up2560: 10, over2560: 10 },
-      lg: { up1440: 4, up2560: 8, over2560: 8 },
-      xl: { up1440: 3, up2560: 6, over2560: 8 }
+      sm: { up1440: 6, up1920: 8, up2560: 10, over2560: 12 },
+      md: { up1440: 5, up1920: 6, up2560: 8, over2560: 10 },
+      lg: { up1440: 4, up1920: 5, up2560: 6, over2560: 8 }
     }
   };
 
@@ -30,9 +28,10 @@ export const getGridColumns = (cardSize) => {
     return config.tablet;  // Tablets
   } else {
     // Desktop devices: laptops and monitors
-    if (width < 1440) return config.up1440;  // Up to 1440p (max 6)
-    if (width < 2560) return config.up2560;  // 1440p to 2560p (max 12)
-    return config.over2560;  // Above 2560p (max 12)
+    if (width < 1440) return config.up1440;  // Up to 1440p: 6-5-4-4
+    if (width < 1920) return config.up1920;  // 1440p to 1920p: 8-6-5-5
+    if (width < 2560) return config.up2560;  // 1920p to 2560p: 10-8-6-6
+    return config.over2560;  // 2560p+: 12-10-8-8
   }
 };
 
@@ -71,11 +70,6 @@ export const getTextSizes = (cardSize) => {
     lg: {
       title: 'text-lg',
       metadata: 'text-sm',
-      badge: 'text-sm',
-    },
-    xl: {
-      title: 'text-xl',
-      metadata: 'text-base',
       badge: 'text-sm',
     }
   };
