@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
-import { getGridColumns, getGridClass } from '../utils/gridUtils';
+import { getGridClass } from '../utils/gridUtils';
+import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
 import FiltersModal from '../components/FiltersModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
@@ -29,15 +30,7 @@ export default function ChannelLibrary() {
   const updateChannel = useUpdateChannel();
   const { showNotification } = useNotification();
   const { cardSize, setCardSize } = useCardSize();
-
-  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
-
-  useEffect(() => {
-    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
-    updateColumns();
-    window.addEventListener('resize', updateColumns);
-    return () => window.removeEventListener('resize', updateColumns);
-  }, [cardSize]);
+  const gridColumns = useGridColumns(cardSize);
 
   // Detect library mode from URL
   const isLibraryMode = location.pathname.endsWith('/library');

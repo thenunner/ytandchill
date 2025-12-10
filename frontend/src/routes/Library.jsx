@@ -6,22 +6,15 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
-import { getGridColumns, getGridClass, getTextSizes } from '../utils/gridUtils';
+import { getGridClass, getTextSizes } from '../utils/gridUtils';
+import { useGridColumns } from '../hooks/useGridColumns';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize();
   const textSizes = getTextSizes(cardSize);
-
-  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
-
-  useEffect(() => {
-    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
-    updateColumns();
-    window.addEventListener('resize', updateColumns);
-    return () => window.removeEventListener('resize', updateColumns);
-  }, [cardSize]);
+  const gridColumns = useGridColumns(cardSize);
 
   const [searchInput, setSearchInput] = useState('');
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'channels');

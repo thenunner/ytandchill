@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useScanYouTubePlaylist, useQueuePlaylistVideos, useRemovePlaylistVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
-import { getGridColumns, getGridClass } from '../utils/gridUtils';
+import { getGridClass } from '../utils/gridUtils';
+import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 
 export default function Videos() {
@@ -11,15 +12,7 @@ export default function Videos() {
   const scanPlaylist = useScanYouTubePlaylist();
   const queueVideos = useQueuePlaylistVideos();
   const removeVideos = useRemovePlaylistVideos();
-
-  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
-
-  useEffect(() => {
-    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
-    updateColumns();
-    window.addEventListener('resize', updateColumns);
-    return () => window.removeEventListener('resize', updateColumns);
-  }, [cardSize]);
+  const gridColumns = useGridColumns(cardSize);
 
   // State
   const [playlistUrl, setPlaylistUrl] = useState('');

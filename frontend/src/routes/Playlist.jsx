@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
-import { getGridColumns, getGridClass } from '../utils/gridUtils';
+import { getGridClass } from '../utils/gridUtils';
+import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
 import FiltersModal from '../components/FiltersModal';
 import Pagination from '../components/Pagination';
@@ -20,15 +21,7 @@ export default function Playlist() {
   const bulkUpdateVideos = useBulkUpdateVideos();
   const { showNotification } = useNotification();
   const { cardSize, setCardSize } = useCardSize();
-
-  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
-
-  useEffect(() => {
-    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
-    updateColumns();
-    window.addEventListener('resize', updateColumns);
-    return () => window.removeEventListener('resize', updateColumns);
-  }, [cardSize]);
+  const gridColumns = useGridColumns(cardSize);
 
   const [searchInput, setSearchInput] = useState('');
   const [showFiltersModal, setShowFiltersModal] = useState(false);

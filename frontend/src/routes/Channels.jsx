@@ -7,7 +7,8 @@ import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { StickyBar, SearchInput, CardSizeSlider, SortDropdown } from '../components/stickybar';
-import { getGridColumns, getGridClass, getTextSizes } from '../utils/gridUtils';
+import { getGridClass, getTextSizes } from '../utils/gridUtils';
+import { useGridColumns } from '../hooks/useGridColumns';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -25,17 +26,7 @@ export default function Channels() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const textSizes = getTextSizes(cardSize);
-
-  // State to track current columns (updates on resize)
-  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
-
-  // Update columns when card size changes or window resizes
-  useEffect(() => {
-    const updateColumns = () => setGridColumns(getGridColumns(cardSize));
-    updateColumns();
-    window.addEventListener('resize', updateColumns);
-    return () => window.removeEventListener('resize', updateColumns);
-  }, [cardSize]);
+  const gridColumns = useGridColumns(cardSize);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
