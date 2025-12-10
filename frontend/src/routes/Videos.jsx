@@ -446,8 +446,9 @@ export default function Videos() {
         });
 
         return (
-          <div className={`grid ${getGridClass(gridColumns, filteredVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
-            {filteredVideos.map((video) => (
+          <div className="px-6 lg:px-12 xl:px-16">
+            <div className={`grid ${getGridClass(gridColumns, filteredVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
+              {filteredVideos.map((video) => (
             <div
               key={video.yt_id}
               onClick={() => handleToggleSelect(video.yt_id)}
@@ -524,7 +525,8 @@ export default function Videos() {
               </div>
             </div>
           ))}
-        </div>
+            </div>
+          </div>
         );
       })()}
 
