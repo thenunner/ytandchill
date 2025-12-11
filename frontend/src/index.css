@@ -481,16 +481,6 @@
   position: relative;
 }
 
-/* Theater mode - YouTube-style width expansion with height limit */
-.theater-mode .plyr {
-  max-height: 55vh;
-}
-
-.theater-mode .plyr video {
-  max-height: 55vh;
-  object-fit: contain;
-}
-
 /* Ensure controls are always above video and clickable */
 .plyr__controls {
   position: relative;

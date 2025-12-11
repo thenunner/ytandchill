@@ -634,7 +634,7 @@ export default function Player() {
 
       {/* Player Container */}
       <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
-          <div className={`bg-black rounded-xl overflow-hidden shadow-card-hover ${isTheaterMode ? 'theater-mode' : ''}`}>
+          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
             <video
               ref={videoRef}
               className="w-full h-auto block"
