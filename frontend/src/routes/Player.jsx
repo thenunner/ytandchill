@@ -634,10 +634,10 @@ export default function Player() {
 
       {/* Player Container */}
       <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
-          <div className={`bg-black rounded-xl overflow-hidden shadow-card-hover ${isTheaterMode ? 'max-h-[70vh]' : ''}`}>
+          <div className={`bg-black rounded-xl overflow-hidden shadow-card-hover ${isTheaterMode ? 'theater-mode' : ''}`}>
             <video
               ref={videoRef}
-              className={`w-full block ${isTheaterMode ? 'max-h-[70vh] object-contain' : 'h-auto'}`}
+              className="w-full h-auto block"
               playsInline
               preload="auto"
             />
