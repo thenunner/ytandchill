@@ -1017,10 +1017,10 @@ export default function PlaylistPlayer() {
           </div>
 
           {/* Video Player */}
-          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
+          <div className="bg-black rounded-xl overflow-hidden min-h-[300px] md:min-h-[400px]">
             <video
               ref={videoRef}
-              className="w-full h-auto block"
+              className="w-full h-auto"
               playsInline
               preload="auto"
             />
