@@ -1017,20 +1017,22 @@ export default function PlaylistPlayer() {
           </div>
 
           {/* Video Player */}
-          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
-            <video
-              ref={videoRef}
-              className="w-full h-auto block"
-              playsInline
-              preload="auto"
-            />
-            {/* Hidden preload video for next in queue */}
-            <video
-              ref={preloadVideoRef}
-              className="hidden"
-              preload="auto"
-              muted
-            />
+          <div className="w-full max-w-5xl mx-auto">
+            <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
+              <video
+                ref={videoRef}
+                className="w-full h-auto block"
+                playsInline
+                preload="auto"
+              />
+              {/* Hidden preload video for next in queue */}
+              <video
+                ref={preloadVideoRef}
+                className="hidden"
+                preload="auto"
+                muted
+              />
+            </div>
           </div>
 
           {/* Controls Below Player */}
