@@ -431,8 +431,18 @@ export default function Player() {
 
       // Restore playback position when metadata is loaded
       player.on('loadedmetadata', () => {
-        if (video.playback_seconds > 0) {
-          player.currentTime = video.playback_seconds;
+        const savedPosition = video.playback_seconds;
+        const duration = player.duration;
+
+        // Validate saved position before restoring
+        if (
+          savedPosition > 0 &&
+          !isNaN(savedPosition) &&
+          isFinite(savedPosition) &&
+          duration > 0 &&
+          savedPosition < duration
+        ) {
+          player.currentTime = savedPosition;
         }
       });
 
@@ -444,7 +454,16 @@ export default function Player() {
 
         saveProgressTimeout.current = setTimeout(() => {
           const currentTime = Math.floor(player.currentTime);
-          if (currentTime > 0) {
+          const duration = player.duration;
+
+          // Only save valid progress
+          if (
+            currentTime > 0 &&
+            !isNaN(currentTime) &&
+            isFinite(currentTime) &&
+            duration > 0 &&
+            currentTime < duration
+          ) {
             updateVideo.mutate({
               id: video.id,
               data: { playback_seconds: currentTime },

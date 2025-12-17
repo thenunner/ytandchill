@@ -376,8 +376,19 @@ export default function PlaylistPlayer() {
       };
       // Autoplay after source loads
       plyrInstanceRef.current.once('loadedmetadata', () => {
-        if (currentVideo.playback_seconds > 0 && plyrInstanceRef.current) {
-          plyrInstanceRef.current.currentTime = currentVideo.playback_seconds;
+        const savedPosition = currentVideo.playback_seconds;
+        const duration = plyrInstanceRef.current?.duration;
+
+        // Validate saved position before restoring
+        if (
+          plyrInstanceRef.current &&
+          savedPosition > 0 &&
+          !isNaN(savedPosition) &&
+          isFinite(savedPosition) &&
+          duration > 0 &&
+          savedPosition < duration
+        ) {
+          plyrInstanceRef.current.currentTime = savedPosition;
         }
         plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
       });
@@ -703,8 +714,19 @@ export default function PlaylistPlayer() {
     // Restore playback position when metadata loads
     player.on('loadedmetadata', () => {
       const vid = finalVideos[displayOrder[currentIndex] ?? 0];
-      if (vid?.playback_seconds > 0 && plyrInstanceRef.current) {
-        plyrInstanceRef.current.currentTime = vid.playback_seconds;
+      const savedPosition = vid?.playback_seconds;
+      const duration = plyrInstanceRef.current?.duration;
+
+      // Validate saved position before restoring
+      if (
+        plyrInstanceRef.current &&
+        savedPosition > 0 &&
+        !isNaN(savedPosition) &&
+        isFinite(savedPosition) &&
+        duration > 0 &&
+        savedPosition < duration
+      ) {
+        plyrInstanceRef.current.currentTime = savedPosition;
       }
     });
 
@@ -724,7 +746,16 @@ export default function PlaylistPlayer() {
 
       saveProgressTimeout.current = setTimeout(() => {
         const time = Math.floor(plyrInstanceRef.current?.currentTime || 0);
-        if (time > 0) {
+        const duration = plyrInstanceRef.current?.duration;
+
+        // Only save valid progress
+        if (
+          time > 0 &&
+          !isNaN(time) &&
+          isFinite(time) &&
+          duration > 0 &&
+          time < duration
+        ) {
           updateVideo.mutate({
             id: videoId,
             data: { playback_seconds: time },
