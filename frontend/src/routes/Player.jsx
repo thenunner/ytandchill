@@ -701,6 +701,8 @@ export default function Player() {
               ref={videoRef}
               className="w-full h-auto block"
               playsInline
+              webkit-playsinline="true"
+              x-webkit-airplay="allow"
               preload="auto"
             />
           </div>
