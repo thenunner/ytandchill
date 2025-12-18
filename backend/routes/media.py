@@ -5,7 +5,7 @@ Handles:
 - GET /api/media/<path:filename> - Serve video/media files
 """
 
-from flask import Blueprint, jsonify, send_from_directory
+from flask import Blueprint, jsonify, send_from_directory, request, Response
 from werkzeug.utils import safe_join
 import logging
 import os
@@ -22,7 +22,7 @@ media_bp = Blueprint('media', __name__)
 
 @media_bp.route('/api/media/<path:filename>')
 def serve_media(filename):
-    """Serve media files with path traversal protection and HTTP range request support"""
+    """Serve media files with path traversal protection and HTTP range request support for iOS"""
     # Validate and sanitize the path to prevent directory traversal
     safe_path = safe_join('downloads', filename)
     if safe_path is None or not os.path.exists(safe_path):
@@ -36,5 +36,45 @@ def serve_media(filename):
         logger.warning(f"Path traversal attempt blocked: {filename}")
         return jsonify({'error': 'Access denied'}), 403
 
-    # Enable HTTP 206 Partial Content support for fast video seeking
-    return send_from_directory('downloads', filename, conditional=True)
+    # Get file size
+    file_size = os.path.getsize(safe_path)
+
+    # Check if this is a range request (required for iOS video playback)
+    range_header = request.headers.get('Range', None)
+
+    if not range_header:
+        # No range request - send full file with Accept-Ranges header for iOS
+        response = send_from_directory('downloads', filename, conditional=True)
+        response.headers['Accept-Ranges'] = 'bytes'
+        response.headers['Content-Length'] = str(file_size)
+        return response
+
+    # Parse range header (e.g., "bytes=0-1023")
+    try:
+        byte_range = range_header.replace('bytes=', '').split('-')
+        start = int(byte_range[0]) if byte_range[0] else 0
+        end = int(byte_range[1]) if len(byte_range) > 1 and byte_range[1] else file_size - 1
+
+        # Ensure end doesn't exceed file size
+        end = min(end, file_size - 1)
+        length = end - start + 1
+
+        # Read the requested range
+        with open(safe_path, 'rb') as f:
+            f.seek(start)
+            data = f.read(length)
+
+        # Create 206 Partial Content response
+        response = Response(data, 206, mimetype='video/mp4', direct_passthrough=True)
+        response.headers['Content-Range'] = f'bytes {start}-{end}/{file_size}'
+        response.headers['Accept-Ranges'] = 'bytes'
+        response.headers['Content-Length'] = str(length)
+        response.headers['Cache-Control'] = 'no-cache'
+
+        logger.info(f"iOS range request: {filename} bytes {start}-{end}/{file_size}")
+        return response
+
+    except Exception as e:
+        logger.error(f"Error handling range request for {filename}: {e}")
+        # Fallback to regular send if range parsing fails
+        return send_from_directory('downloads', filename, conditional=True)
