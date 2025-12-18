@@ -49,10 +49,18 @@ export default function Player() {
       const isMobileDevice = () => {
         const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
         const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        return hasCoarsePointer && isMobileUA;
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isSmallScreen = window.innerWidth < 768;
+
+        // iOS devices always need special handling, especially phones
+        if (isIOS) return true;
+
+        // Android phones and other mobile devices
+        return hasCoarsePointer && isMobileUA && isSmallScreen;
       };
 
       const isMobile = isMobileDevice();
+      console.log('Is mobile device:', isMobile, 'User agent:', navigator.userAgent);
 
       // Initialize Plyr
       let player;
@@ -109,6 +117,29 @@ export default function Player() {
         };
 
         console.log('Source set to:', videoSrc);
+
+        // Add error handling for debugging
+        player.on('error', (event) => {
+          console.error('Plyr error:', event);
+          const error = player.media.error;
+          if (error) {
+            console.error('Media error code:', error.code, 'message:', error.message);
+          }
+        });
+
+        player.media.addEventListener('error', (e) => {
+          console.error('Video element error:', e);
+          const error = player.media.error;
+          if (error) {
+            const errorTypes = ['ABORTED', 'NETWORK', 'DECODE', 'SRC_NOT_SUPPORTED'];
+            console.error('Error type:', errorTypes[error.code - 1] || 'UNKNOWN', 'code:', error.code);
+          }
+        });
+
+        player.on('loadstart', () => console.log('Mobile: Load started'));
+        player.on('loadedmetadata', () => console.log('Mobile: Metadata loaded'));
+        player.on('loadeddata', () => console.log('Mobile: Data loaded'));
+        player.on('canplay', () => console.log('Mobile: Can play'));
 
         // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
         player.on('dblclick', (event) => {

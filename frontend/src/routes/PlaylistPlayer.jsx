@@ -367,14 +367,21 @@ export default function PlaylistPlayer() {
     // Update URL
     setSearchParams({ v: currentVideo.id }, { replace: true });
 
-    // If Plyr exists, just update source and autoplay
+    // If Plyr exists, just update source and autoplay (if not mobile)
     if (plyrInstanceRef.current) {
       console.log('Updating Plyr source to:', videoSrc);
+
+      // Check if mobile for autoplay decision
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isSmallScreen = window.innerWidth < 768;
+      const isMobile = isIOS || (isMobileUA && isSmallScreen);
+
       plyrInstanceRef.current.source = {
         type: 'video',
         sources: [{ src: videoSrc, type: 'video/mp4' }],
       };
-      // Autoplay after source loads
+      // Autoplay after source loads (skip on mobile to avoid autoplay blocking)
       plyrInstanceRef.current.once('loadedmetadata', () => {
         const savedPosition = currentVideo.playback_seconds;
         const duration = plyrInstanceRef.current?.duration;
@@ -390,7 +397,11 @@ export default function PlaylistPlayer() {
         ) {
           plyrInstanceRef.current.currentTime = savedPosition;
         }
-        plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
+
+        // Only autoplay on desktop
+        if (!isMobile) {
+          plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
+        }
       });
       return;
     }
@@ -402,10 +413,18 @@ export default function PlaylistPlayer() {
     const isMobileDevice = () => {
       const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
       const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      return hasCoarsePointer && isMobileUA;
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      const isSmallScreen = window.innerWidth < 768;
+
+      // iOS devices always need special handling, especially phones
+      if (isIOS) return true;
+
+      // Android phones and other mobile devices
+      return hasCoarsePointer && isMobileUA && isSmallScreen;
     };
 
     const isMobile = isMobileDevice();
+    console.log('Playlist: Is mobile device:', isMobile, 'User agent:', navigator.userAgent);
 
     const player = new Plyr(videoRef.current, {
       controls: [
