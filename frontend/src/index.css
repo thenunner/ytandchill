@@ -710,3 +710,111 @@ select {
     opacity: 1 !important;
   }
 }
+
+/* ===== VIDEO.JS CUSTOM THEMING ===== */
+/* Override video.js default blue with our accent color */
+.video-js {
+  font-family: inherit;
+}
+
+/* Big play button */
+.video-js .vjs-big-play-button {
+  background-color: hsla(var(--accent) / 0.9);
+  border: none;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  font-size: 3em;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.video-js .vjs-big-play-button:hover {
+  background-color: hsl(var(--accent-hover));
+}
+
+/* Control bar background */
+.video-js .vjs-control-bar {
+  background-color: hsla(var(--bg-secondary) / 0.9);
+  backdrop-filter: blur(8px);
+}
+
+/* Progress bar */
+.video-js .vjs-play-progress,
+.video-js .vjs-volume-level {
+  background-color: hsl(var(--accent));
+}
+
+.video-js .vjs-load-progress {
+  background-color: hsla(var(--accent) / 0.3);
+}
+
+.video-js .vjs-progress-holder {
+  background-color: hsla(var(--border) / 0.5);
+}
+
+/* Buttons */
+.video-js .vjs-button > .vjs-icon-placeholder:before {
+  line-height: 1.9em;
+}
+
+.video-js .vjs-button:hover {
+  color: hsl(var(--accent-text));
+}
+
+/* Volume slider */
+.video-js .vjs-volume-panel-horizontal:hover {
+  width: 8em;
+}
+
+/* Time display */
+.video-js .vjs-current-time,
+.video-js .vjs-time-divider,
+.video-js .vjs-duration {
+  color: hsl(var(--text-primary));
+  font-size: 1em;
+  line-height: 3em;
+}
+
+/* Menu */
+.video-js .vjs-menu-button .vjs-menu .vjs-menu-content {
+  background-color: hsl(var(--bg-secondary));
+  max-height: 20em;
+}
+
+.video-js .vjs-menu li {
+  color: hsl(var(--text-primary));
+  padding: 0.5em 1em;
+}
+
+.video-js .vjs-menu li:hover,
+.video-js .vjs-menu li.vjs-selected {
+  background-color: hsl(var(--bg-hover));
+  color: hsl(var(--accent-text));
+}
+
+/* Loading spinner */
+.video-js .vjs-loading-spinner {
+  border-color: hsla(var(--accent) / 0.8);
+}
+
+/* Error display */
+.video-js .vjs-error-display {
+  background-color: hsla(var(--bg-secondary) / 0.9);
+}
+
+.video-js .vjs-error-display:before {
+  color: hsl(var(--accent));
+}
+
+/* Responsive sizing */
+.video-js.vjs-fluid {
+  padding-top: 56.25%; /* 16:9 */
+}
+
+/* iOS fixes */
+.video-js .vjs-tech {
+  object-fit: contain;
+}
