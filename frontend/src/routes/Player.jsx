@@ -25,6 +25,7 @@ export default function Player() {
     const saved = localStorage.getItem('theaterMode');
     return saved === 'true';
   });
+  const [debugInfo, setDebugInfo] = useState('');
 
   useEffect(() => {
     console.log('useEffect: video exists?', !!video, 'videoRef exists?', !!videoRef.current, 'plyrInstance exists?', !!plyrInstanceRef.current);
@@ -134,6 +135,8 @@ export default function Player() {
           const error = player.media.error;
           if (error) {
             console.error('Media error code:', error.code, 'message:', error.message);
+            const errorTypes = ['ABORTED', 'NETWORK', 'DECODE', 'SRC_NOT_SUPPORTED'];
+            setDebugInfo(`ERROR: ${errorTypes[error.code - 1] || 'UNKNOWN'} (code ${error.code})`);
           }
         });
 
@@ -143,25 +146,54 @@ export default function Player() {
           if (error) {
             const errorTypes = ['ABORTED', 'NETWORK', 'DECODE', 'SRC_NOT_SUPPORTED'];
             console.error('Error type:', errorTypes[error.code - 1] || 'UNKNOWN', 'code:', error.code);
+            setDebugInfo(`VIDEO ERROR: ${errorTypes[error.code - 1] || 'UNKNOWN'} (code ${error.code})`);
           }
         });
 
         player.on('loadstart', () => {
           console.log('iOS: Load started');
           console.log('iOS: networkState:', player.media.networkState);
+          if (isIOS) setDebugInfo('Loading video...');
         });
         player.on('loadedmetadata', () => {
           console.log('iOS: Metadata loaded, duration:', player.media.duration);
+          if (isIOS) setDebugInfo('Metadata loaded');
         });
-        player.on('loadeddata', () => console.log('iOS: Data loaded'));
-        player.on('canplay', () => console.log('iOS: Can play'));
-        player.on('canplaythrough', () => console.log('iOS: Can play through'));
-        player.on('waiting', () => console.log('iOS: Waiting for data'));
-        player.on('stalled', () => console.log('iOS: Stalled'));
-        player.on('suspend', () => console.log('iOS: Suspended'));
-        player.on('play', () => console.log('iOS: Play event fired'));
-        player.on('playing', () => console.log('iOS: Playing'));
-        player.on('pause', () => console.log('iOS: Paused'));
+        player.on('loadeddata', () => {
+          console.log('iOS: Data loaded');
+          if (isIOS) setDebugInfo('Data loaded');
+        });
+        player.on('canplay', () => {
+          console.log('iOS: Can play');
+          if (isIOS) setDebugInfo('Ready to play');
+        });
+        player.on('canplaythrough', () => {
+          console.log('iOS: Can play through');
+          if (isIOS) setDebugInfo('');
+        });
+        player.on('waiting', () => {
+          console.log('iOS: Waiting for data');
+          if (isIOS) setDebugInfo('Waiting for data...');
+        });
+        player.on('stalled', () => {
+          console.log('iOS: Stalled');
+          if (isIOS) setDebugInfo('Loading stalled');
+        });
+        player.on('suspend', () => {
+          console.log('iOS: Suspended');
+          if (isIOS) setDebugInfo('Loading suspended');
+        });
+        player.on('play', () => {
+          console.log('iOS: Play event fired');
+          if (isIOS) setDebugInfo('');
+        });
+        player.on('playing', () => {
+          console.log('iOS: Playing');
+          if (isIOS) setDebugInfo('');
+        });
+        player.on('pause', () => {
+          console.log('iOS: Paused');
+        });
 
         // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
         player.on('dblclick', (event) => {
@@ -668,6 +700,13 @@ export default function Player() {
 
   return (
     <div className="space-y-4 animate-fade-in">
+      {/* iOS Debug Info */}
+      {debugInfo && (
+        <div className="bg-red-600 text-white p-4 rounded-lg text-center font-mono text-sm">
+          {debugInfo}
+        </div>
+      )}
+
       {/* Centered Control Buttons */}
       <div className="flex justify-center gap-3 mb-4">
         <button
