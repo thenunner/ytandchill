@@ -427,9 +427,17 @@ class DownloadWorker:
             'continue': True,
             'noprogress': True,  # Disable progress bar (we use progress_hooks instead)
             'concurrent_fragment_downloads': 3,  # Download 3 fragments in parallel for better performance
+            'merge_output_format': 'mp4',  # Force MP4 output to ensure faststart is applied
             'postprocessor_args': {
-                'ffmpeg': ['-movflags', '+faststart']  # Move MOOV atom to beginning for fast video seeking
+                'ffmpeg': ['-movflags', '+faststart']  # Move MOOV atom to beginning for iPhone compatibility
             },
+            'postprocessors': [{
+                'key': 'FFmpegVideoRemuxer',
+                'preferedformat': 'mp4',  # Note: yt-dlp uses British spelling 'prefered'
+            }, {
+                'key': 'FFmpegMetadata',
+                'add_metadata': True,
+            }],
         }
 
         # Add cookies if available

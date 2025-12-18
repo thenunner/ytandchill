@@ -20,6 +20,7 @@ githubtoken.txt
 
 # Personal/maintainer scripts
 update.sh
+fix_moov_atoms.sh
 
 # Python
 __pycache__/
