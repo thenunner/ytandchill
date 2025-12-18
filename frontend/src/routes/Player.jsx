@@ -90,7 +90,7 @@ export default function Player() {
           hideControls: isIOS ? false : true, // Don't auto-hide on iOS to prevent black screen on pause
           keyboard: {
             focused: true,
-            global: true, // Enable global keyboard shortcuts (works even when not focused on player)
+            global: isIOS ? false : true, // Disable global shortcuts on iOS to prevent conflicts
           },
           fullscreen: {
             enabled: true,
@@ -119,6 +119,14 @@ export default function Player() {
         };
 
         console.log('Source set to:', videoSrc);
+        console.log('Video src attribute:', player.media.src);
+        console.log('Video readyState:', player.media.readyState);
+
+        // iOS: Force load the video
+        if (isIOS) {
+          console.log('iOS: Forcing video load()');
+          player.media.load();
+        }
 
         // Add error handling for debugging
         player.on('error', (event) => {
@@ -138,10 +146,22 @@ export default function Player() {
           }
         });
 
-        player.on('loadstart', () => console.log('Mobile: Load started'));
-        player.on('loadedmetadata', () => console.log('Mobile: Metadata loaded'));
-        player.on('loadeddata', () => console.log('Mobile: Data loaded'));
-        player.on('canplay', () => console.log('Mobile: Can play'));
+        player.on('loadstart', () => {
+          console.log('iOS: Load started');
+          console.log('iOS: networkState:', player.media.networkState);
+        });
+        player.on('loadedmetadata', () => {
+          console.log('iOS: Metadata loaded, duration:', player.media.duration);
+        });
+        player.on('loadeddata', () => console.log('iOS: Data loaded'));
+        player.on('canplay', () => console.log('iOS: Can play'));
+        player.on('canplaythrough', () => console.log('iOS: Can play through'));
+        player.on('waiting', () => console.log('iOS: Waiting for data'));
+        player.on('stalled', () => console.log('iOS: Stalled'));
+        player.on('suspend', () => console.log('iOS: Suspended'));
+        player.on('play', () => console.log('iOS: Play event fired'));
+        player.on('playing', () => console.log('iOS: Playing'));
+        player.on('pause', () => console.log('iOS: Paused'));
 
         // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
         player.on('dblclick', (event) => {
@@ -695,7 +715,7 @@ export default function Player() {
       </div>
 
       {/* Player Container */}
-      <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
+      <div className="w-full max-w-5xl mx-auto">
           <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
             <video
               ref={videoRef}

@@ -1085,6 +1085,8 @@ export default function PlaylistPlayer() {
                 ref={videoRef}
                 className="w-full h-auto block"
                 playsInline
+                webkit-playsinline="true"
+                x-webkit-airplay="allow"
                 preload="auto"
               />
               {/* Hidden preload video for next in queue */}
