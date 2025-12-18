@@ -60,7 +60,8 @@ export default function Player() {
       };
 
       const isMobile = isMobileDevice();
-      console.log('Is mobile device:', isMobile, 'User agent:', navigator.userAgent);
+      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      console.log('Is mobile device:', isMobile, 'Is iOS:', isIOS, 'User agent:', navigator.userAgent);
 
       // Initialize Plyr
       let player;
@@ -84,8 +85,9 @@ export default function Player() {
           speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
           seekTime: 10,
           autoplay: !isMobile, // Disable autoplay on mobile
+          muted: isIOS, // iOS may need this even without autoplay
           clickToPlay: true, // Enable click-to-play everywhere
-          hideControls: true, // Auto-hide controls after inactivity
+          hideControls: isIOS ? false : true, // Don't auto-hide on iOS to prevent black screen on pause
           keyboard: {
             focused: true,
             global: true, // Enable global keyboard shortcuts (works even when not focused on player)
@@ -460,6 +462,14 @@ export default function Player() {
       } catch (error) {
         console.error('Error initializing Plyr:', error);
         return;
+      }
+
+      // iOS unmute on first play
+      if (isIOS) {
+        player.once('play', () => {
+          console.log('iOS: First play event, unmuting');
+          player.muted = false;
+        });
       }
 
       // Restore playback position when metadata is loaded

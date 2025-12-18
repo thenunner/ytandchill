@@ -424,7 +424,8 @@ export default function PlaylistPlayer() {
     };
 
     const isMobile = isMobileDevice();
-    console.log('Playlist: Is mobile device:', isMobile, 'User agent:', navigator.userAgent);
+    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    console.log('Playlist: Is mobile device:', isMobile, 'Is iOS:', isIOS, 'User agent:', navigator.userAgent);
 
     const player = new Plyr(videoRef.current, {
       controls: [
@@ -445,8 +446,9 @@ export default function PlaylistPlayer() {
       speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
       seekTime: 10,
       autoplay: !isMobile, // Disable autoplay on mobile
+      muted: isIOS, // iOS may need this even without autoplay
       clickToPlay: true, // Enable click-to-play everywhere
-      hideControls: true, // Auto-hide controls after inactivity
+      hideControls: isIOS ? false : true, // Don't auto-hide on iOS to prevent black screen on pause
       keyboard: { focused: true, global: false },
       fullscreen: { enabled: true, fallback: true, iosNative: true, container: null },
       tooltips: { controls: true, seek: true },
@@ -731,6 +733,14 @@ export default function PlaylistPlayer() {
       console.log('Exited fullscreen');
     });
     // ===== END FULLSCREEN TOUCH CONTROLS =====
+
+    // iOS unmute on first play
+    if (isIOS) {
+      player.once('play', () => {
+        console.log('iOS Playlist: First play event, unmuting');
+        player.muted = false;
+      });
+    }
 
     // Restore playback position when metadata loads
     player.on('loadedmetadata', () => {
