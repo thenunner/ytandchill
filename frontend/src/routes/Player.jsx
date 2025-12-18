@@ -40,18 +40,29 @@ export default function Player() {
 
     console.log('Initializing video.js with source:', videoSrc);
 
-    // Detect iOS
+    // Detect iOS and iPhone specifically
     const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isIPhone = /iPhone/i.test(navigator.userAgent);
     const isMobile = isIOS || window.innerWidth < 768;
 
-    // Initialize video.js player
+    console.log('Device:', { isIOS, isIPhone, isMobile, userAgent: navigator.userAgent });
+
+    // Initialize video.js player with iOS-specific options
     const player = videojs(videoRef.current, {
       controls: true,
-      autoplay: !isMobile,
-      preload: 'auto',
+      autoplay: false, // Never autoplay - iOS blocks it anyway
+      preload: 'metadata', // Use metadata for iOS instead of auto
       fluid: false,
       responsive: true,
       playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+      html5: {
+        vhs: {
+          overrideNative: !isIOS, // Use native HLS on iOS
+        },
+        nativeVideoTracks: isIOS,
+        nativeAudioTracks: isIOS,
+        nativeTextTracks: isIOS
+      },
       controlBar: {
         children: [
           'playToggle',
@@ -122,14 +133,34 @@ export default function Player() {
         }
       });
 
-      // Error handling
+      // Enhanced error handling for iOS debugging
       this.on('error', () => {
         const error = this.error();
         if (error) {
           console.error('video.js error:', error);
-          showNotification(`Video error: ${error.message}`, 'error');
+          console.error('Error code:', error.code);
+          console.error('Error message:', error.message);
+          console.error('Media error:', this.tech(true)?.error);
+
+          const errorMessages = {
+            1: 'MEDIA_ERR_ABORTED - You aborted the video playback',
+            2: 'MEDIA_ERR_NETWORK - A network error caused the video download to fail',
+            3: 'MEDIA_ERR_DECODE - The video playback was aborted due to a corruption problem',
+            4: 'MEDIA_ERR_SRC_NOT_SUPPORTED - The video could not be loaded (format not supported)'
+          };
+
+          const errorMsg = errorMessages[error.code] || error.message;
+          showNotification(`Video error: ${errorMsg}`, 'error');
         }
       });
+
+      // Log all media events for debugging
+      if (isIPhone) {
+        const events = ['loadstart', 'loadedmetadata', 'loadeddata', 'canplay', 'canplaythrough', 'playing', 'waiting', 'stalled', 'suspend'];
+        events.forEach(event => {
+          this.on(event, () => console.log(`video.js event: ${event}`));
+        });
+      }
     });
 
     playerRef.current = player;
