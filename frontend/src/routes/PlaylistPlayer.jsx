@@ -367,21 +367,14 @@ export default function PlaylistPlayer() {
     // Update URL
     setSearchParams({ v: currentVideo.id }, { replace: true });
 
-    // If Plyr exists, just update source and autoplay (if not mobile)
+    // If Plyr exists, just update source and autoplay
     if (plyrInstanceRef.current) {
       console.log('Updating Plyr source to:', videoSrc);
-
-      // Check if mobile for autoplay decision
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const isSmallScreen = window.innerWidth < 768;
-      const isMobile = isIOS || (isMobileUA && isSmallScreen);
-
       plyrInstanceRef.current.source = {
         type: 'video',
         sources: [{ src: videoSrc, type: 'video/mp4' }],
       };
-      // Autoplay after source loads (skip on mobile to avoid autoplay blocking)
+      // Autoplay after source loads
       plyrInstanceRef.current.once('loadedmetadata', () => {
         const savedPosition = currentVideo.playback_seconds;
         const duration = plyrInstanceRef.current?.duration;
@@ -397,11 +390,7 @@ export default function PlaylistPlayer() {
         ) {
           plyrInstanceRef.current.currentTime = savedPosition;
         }
-
-        // Only autoplay on desktop
-        if (!isMobile) {
-          plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
-        }
+        plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
       });
       return;
     }
@@ -413,19 +402,8 @@ export default function PlaylistPlayer() {
     const isMobileDevice = () => {
       const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
       const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const isSmallScreen = window.innerWidth < 768;
-
-      // iOS devices always need special handling, especially phones
-      if (isIOS) return true;
-
-      // Android phones and other mobile devices
-      return hasCoarsePointer && isMobileUA && isSmallScreen;
+      return hasCoarsePointer && isMobileUA;
     };
-
-    const isMobile = isMobileDevice();
-    const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    console.log('Playlist: Is mobile device:', isMobile, 'Is iOS:', isIOS, 'User agent:', navigator.userAgent);
 
     const player = new Plyr(videoRef.current, {
       controls: [
@@ -445,10 +423,9 @@ export default function PlaylistPlayer() {
       settings: ['speed'],
       speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
       seekTime: 10,
-      autoplay: !isMobile, // Disable autoplay on mobile
-      muted: isIOS, // iOS may need this even without autoplay
+      autoplay: true,
       clickToPlay: true, // Enable click-to-play everywhere
-      hideControls: isIOS ? false : true, // Don't auto-hide on iOS to prevent black screen on pause
+      hideControls: true, // Auto-hide controls after inactivity
       keyboard: { focused: true, global: false },
       fullscreen: { enabled: true, fallback: true, iosNative: true, container: null },
       tooltips: { controls: true, seek: true },
@@ -471,7 +448,7 @@ export default function PlaylistPlayer() {
     });
 
         // ===== MOBILE TOUCH CONTROLS (YOUTUBE-STYLE) =====
-        if (isMobile) {
+        if (isMobileDevice()) {
           console.log('Initializing YouTube-style touch controls');
 
           // Double-tap to enter fullscreen when NOT in fullscreen, prevent exit when IN fullscreen
@@ -733,14 +710,6 @@ export default function PlaylistPlayer() {
       console.log('Exited fullscreen');
     });
     // ===== END FULLSCREEN TOUCH CONTROLS =====
-
-    // iOS unmute on first play
-    if (isIOS) {
-      player.once('play', () => {
-        console.log('iOS Playlist: First play event, unmuting');
-        player.muted = false;
-      });
-    }
 
     // Restore playback position when metadata loads
     player.on('loadedmetadata', () => {
@@ -1085,8 +1054,6 @@ export default function PlaylistPlayer() {
                 ref={videoRef}
                 className="w-full h-auto block"
                 playsInline
-                webkit-playsinline="true"
-                x-webkit-airplay="allow"
                 preload="auto"
               />
               {/* Hidden preload video for next in queue */}

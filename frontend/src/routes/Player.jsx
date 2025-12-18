@@ -1,11 +1,18 @@
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
-import videojs from 'video.js';
-import 'video.js/dist/video-js.css';
+import { useEffect, useRef, useState, useMemo } from 'react';
+import Plyr from 'plyr';
+import 'plyr/dist/plyr.css';
 import { useVideo, useUpdateVideo, useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
+
+// Constants
+const SEEK_TIME_SECONDS = 10;
+const DOUBLE_TAP_DELAY_MS = 250;
+const BUTTON_HIDE_DELAY_MS = 1500;
+const PROGRESS_SAVE_DEBOUNCE_MS = 3000;
+const WATCHED_THRESHOLD = 0.9;
 
 export default function Player() {
   const { videoId } = useParams();
@@ -15,17 +22,41 @@ export default function Player() {
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
   const { showNotification } = useNotification();
+
+  // Player refs
   const videoRef = useRef(null);
-  const playerRef = useRef(null);
+  const plyrInstanceRef = useRef(null);
   const saveProgressTimeout = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
+
+  // Refs to hold latest values for event handlers (avoid stale closures)
+  const updateVideoRef = useRef(updateVideo);
+  const showNotificationRef = useRef(showNotification);
+  const videoDataRef = useRef(video);
+  const hasMarkedWatchedRef = useRef(video?.watched || false);
+
+  // Mobile touch control refs for cleanup
+  const hideTimeoutRef = useRef(null);
+  const mediaDoubleTapListenerRef = useRef(null);
+  const overlayTouchListenerRef = useRef(null);
+  const theaterButtonRef = useRef(null);
+  const touchOverlayRef = useRef(null);
+
+  // State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(() => {
     const saved = localStorage.getItem('theaterMode');
     return saved === 'true';
   });
-  const [debugInfo, setDebugInfo] = useState('');
+
+  // Keep refs updated with latest values
+  useEffect(() => {
+    updateVideoRef.current = updateVideo;
+    showNotificationRef.current = showNotification;
+    videoDataRef.current = video;
+    hasMarkedWatchedRef.current = video?.watched || false;
+  });
 
   useEffect(() => {
     console.log('useEffect: video exists?', !!video, 'videoRef exists?', !!videoRef.current, 'plyrInstance exists?', !!plyrInstanceRef.current);
@@ -50,19 +81,8 @@ export default function Player() {
       const isMobileDevice = () => {
         const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
         const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const isSmallScreen = window.innerWidth < 768;
-
-        // iOS devices always need special handling, especially phones
-        if (isIOS) return true;
-
-        // Android phones and other mobile devices
-        return hasCoarsePointer && isMobileUA && isSmallScreen;
+        return hasCoarsePointer && isMobileUA;
       };
-
-      const isMobile = isMobileDevice();
-      const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      console.log('Is mobile device:', isMobile, 'Is iOS:', isIOS, 'User agent:', navigator.userAgent);
 
       // Initialize Plyr
       let player;
@@ -84,20 +104,19 @@ export default function Player() {
           ],
           settings: ['speed'],
           speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
-          seekTime: 10,
-          autoplay: !isMobile, // Disable autoplay on mobile
-          muted: isIOS, // iOS may need this even without autoplay
-          clickToPlay: true, // Enable click-to-play everywhere
-          hideControls: isIOS ? false : true, // Don't auto-hide on iOS to prevent black screen on pause
+          seekTime: SEEK_TIME_SECONDS,
+          autoplay: true,
+          clickToPlay: true,
+          hideControls: true,
           keyboard: {
             focused: true,
-            global: isIOS ? false : true, // Disable global shortcuts on iOS to prevent conflicts
+            global: true,
           },
           fullscreen: {
             enabled: true,
             fallback: true,
-            iosNative: true, // Enable native fullscreen on iOS
-            container: null, // Use default container
+            iosNative: true,
+            container: null,
           },
           tooltips: {
             controls: true,
@@ -121,36 +140,6 @@ export default function Player() {
 
         console.log('Source set to:', videoSrc);
 
-        // Add error handling for debugging
-        player.on('error', (event) => {
-          console.error('Plyr error:', event);
-          const error = player.media.error;
-          if (error) {
-            console.error('Media error code:', error.code, 'message:', error.message);
-            const errorTypes = ['ABORTED', 'NETWORK', 'DECODE', 'SRC_NOT_SUPPORTED'];
-            setDebugInfo(`ERROR: ${errorTypes[error.code - 1] || 'UNKNOWN'} (code ${error.code})`);
-          }
-        });
-
-        player.media.addEventListener('error', (e) => {
-          console.error('Video element error:', e);
-          const error = player.media.error;
-          if (error) {
-            const errorTypes = ['ABORTED', 'NETWORK', 'DECODE', 'SRC_NOT_SUPPORTED'];
-            console.error('Error type:', errorTypes[error.code - 1] || 'UNKNOWN', 'code:', error.code);
-            setDebugInfo(`VIDEO ERROR: ${errorTypes[error.code - 1] || 'UNKNOWN'} (code ${error.code})`);
-          }
-        });
-
-        player.on('waiting', () => {
-          console.log('Waiting for data');
-          if (isIOS) setDebugInfo('Buffering...');
-        });
-        player.on('playing', () => {
-          console.log('Playing');
-          if (isIOS) setDebugInfo('');
-        });
-
         // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
         player.on('dblclick', (event) => {
           if (player.fullscreen.active) {
@@ -173,6 +162,7 @@ export default function Player() {
         theaterButton.type = 'button';
         theaterButton.className = 'plyr__controls__item plyr__control';
         theaterButton.setAttribute('data-plyr', 'theater');
+        theaterButton.setAttribute('aria-label', 'Toggle theater mode');
         theaterButton.innerHTML = `
           <svg class="icon--pressed" role="presentation" viewBox="0 0 24 24">
             <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
@@ -187,6 +177,7 @@ export default function Player() {
           <span class="plyr__tooltip" role="tooltip">Theater mode</span>
         `;
         theaterButton.addEventListener('click', toggleTheaterMode);
+        theaterButtonRef.current = theaterButton;
 
         // Update pressed state attribute
         theaterButton.setAttribute('aria-pressed', isTheaterMode);
@@ -197,31 +188,22 @@ export default function Player() {
           settingsButton.parentNode.insertBefore(theaterButton, settingsButton.nextSibling);
         }
 
-        // Update button state when theater mode changes
-        const updateButtonState = () => {
-          theaterButton.setAttribute('aria-pressed', isTheaterMode);
-        };
-        updateButtonState();
-
         // ===== MOBILE TOUCH CONTROLS (YOUTUBE-STYLE) =====
-        if (isMobile) {
+        if (isMobileDevice()) {
           console.log('Initializing YouTube-style touch controls');
 
           // Double-tap to enter fullscreen when NOT in fullscreen, prevent exit when IN fullscreen
-          // Use touchend for instant response (no 300ms delay)
           let lastVideoTapTime = 0;
-          player.media.addEventListener('touchend', (e) => {
+          const mediaTouchHandler = (e) => {
             const currentTime = Date.now();
-            const isDoubleTap = (currentTime - lastVideoTapTime) < 250;
+            const isDoubleTap = (currentTime - lastVideoTapTime) < DOUBLE_TAP_DELAY_MS;
 
             if (!player.fullscreen.active) {
-              // NOT in fullscreen - double tap to enter
               if (isDoubleTap) {
                 e.preventDefault();
                 player.fullscreen.enter();
               }
             } else {
-              // IN fullscreen - prevent double tap from exiting
               if (isDoubleTap) {
                 e.preventDefault();
                 e.stopPropagation();
@@ -229,7 +211,9 @@ export default function Player() {
             }
 
             lastVideoTapTime = currentTime;
-          });
+          };
+          player.media.addEventListener('touchend', mediaTouchHandler);
+          mediaDoubleTapListenerRef.current = mediaTouchHandler;
 
           // Create touch overlay that covers the video area
           const touchOverlay = document.createElement('div');
@@ -314,8 +298,8 @@ export default function Player() {
           touchOverlay.appendChild(playPauseBtn);
           touchOverlay.appendChild(forwardBtn);
           touchOverlay.appendChild(exitBtn);
+          touchOverlayRef.current = touchOverlay;
 
-          let hideTimeout;
           let currentVisibleButton = null;
           let lastTapTime = 0;
           let lastTapZone = null;
@@ -339,15 +323,15 @@ export default function Player() {
 
             currentVisibleButton = button;
 
-            if (hideTimeout) clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(() => {
+            if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+            hideTimeoutRef.current = setTimeout(() => {
               button.style.opacity = '0';
               if (button === rewindBtn) button.style.transform = 'translate(-50%, -50%) scale(0.9)';
               else if (button === forwardBtn) button.style.transform = 'translate(50%, -50%) scale(0.9)';
               else if (button === exitBtn) button.style.transform = 'translate(-50%, 0) scale(0.9)';
               else button.style.transform = 'translate(-50%, -50%) scale(0.9)';
               currentVisibleButton = null;
-            }, 1500);
+            }, BUTTON_HIDE_DELAY_MS);
           };
 
           const updatePlayPauseIcon = () => {
@@ -362,9 +346,9 @@ export default function Player() {
             }
           };
 
-          // Detect which zone was tapped (use touchend for instant response)
-          touchOverlay.addEventListener('touchend', (e) => {
-            e.preventDefault(); // Prevent ghost clicks
+          // Detect which zone was tapped
+          const overlayTouchHandler = (e) => {
+            e.preventDefault();
 
             const touch = e.changedTouches[0];
             const rect = touchOverlay.getBoundingClientRect();
@@ -374,7 +358,7 @@ export default function Player() {
             const height = rect.height;
 
             const currentTime = Date.now();
-            const isDoubleTap = (currentTime - lastTapTime) < 250;
+            const isDoubleTap = (currentTime - lastTapTime) < DOUBLE_TAP_DELAY_MS;
 
             let zone = null;
             let button = null;
@@ -388,11 +372,11 @@ export default function Player() {
             } else if (x < width * 0.3) {
               zone = 'rewind';
               button = rewindBtn;
-              action = () => player.rewind(10);
+              action = () => player.rewind(SEEK_TIME_SECONDS);
             } else if (x > width * 0.7) {
               zone = 'forward';
               button = forwardBtn;
-              action = () => player.forward(10);
+              action = () => player.forward(SEEK_TIME_SECONDS);
             } else {
               zone = 'center';
               button = playPauseBtn;
@@ -425,7 +409,9 @@ export default function Player() {
 
             lastTapTime = currentTime;
             lastTapZone = zone;
-          });
+          };
+          touchOverlay.addEventListener('touchend', overlayTouchHandler);
+          overlayTouchListenerRef.current = overlayTouchHandler;
 
           player.on('play', updatePlayPauseIcon);
           player.on('pause', updatePlayPauseIcon);
@@ -472,14 +458,6 @@ export default function Player() {
         return;
       }
 
-      // iOS unmute on first play
-      if (isIOS) {
-        player.once('play', () => {
-          console.log('iOS: First play event, unmuting');
-          player.muted = false;
-        });
-      }
-
       // Restore playback position when metadata is loaded
       player.on('loadedmetadata', () => {
         const savedPosition = video.playback_seconds;
@@ -497,73 +475,114 @@ export default function Player() {
         }
       });
 
-      // Save progress periodically
+      // Consolidated timeupdate handler: save progress + check watched threshold
       player.on('timeupdate', () => {
+        const currentTime = player.currentTime;
+        const duration = player.duration;
+
+        // Debounced progress save
         if (saveProgressTimeout.current) {
           clearTimeout(saveProgressTimeout.current);
         }
 
         saveProgressTimeout.current = setTimeout(() => {
-          const currentTime = Math.floor(player.currentTime);
-          const duration = player.duration;
+          const currentTimeFloor = Math.floor(player.currentTime);
+          const dur = player.duration;
 
-          // Only save valid progress
           if (
-            currentTime > 0 &&
-            !isNaN(currentTime) &&
-            isFinite(currentTime) &&
-            duration > 0 &&
-            currentTime < duration
+            currentTimeFloor > 0 &&
+            !isNaN(currentTimeFloor) &&
+            isFinite(currentTimeFloor) &&
+            dur > 0 &&
+            currentTimeFloor < dur
           ) {
-            updateVideo.mutate({
-              id: video.id,
-              data: { playback_seconds: currentTime },
+            updateVideoRef.current.mutate({
+              id: videoDataRef.current.id,
+              data: { playback_seconds: currentTimeFloor },
             });
           }
-        }, 5000);
+        }, PROGRESS_SAVE_DEBOUNCE_MS);
+
+        // Check watched threshold
+        if (!hasMarkedWatchedRef.current && duration > 0 && currentTime >= duration * WATCHED_THRESHOLD) {
+          hasMarkedWatchedRef.current = true;
+          updateVideoRef.current.mutateAsync({
+            id: videoDataRef.current.id,
+            data: { watched: true },
+          }).then(() => {
+            showNotificationRef.current('Video marked as watched', 'success');
+          }).catch((error) => {
+            console.error('Error marking video as watched:', error);
+            showNotificationRef.current('Failed to mark as watched', 'error');
+          });
+        }
       });
 
-      // Mark as watched when video reaches 90% (or ends)
-      let hasMarkedWatched = video.watched;
-      const checkWatchedThreshold = async () => {
-        if (hasMarkedWatched) return;
-
-        const currentTime = player.currentTime;
-        const duration = player.duration;
-
-        if (duration > 0 && currentTime >= duration * 0.9) {
-          hasMarkedWatched = true;
-          try {
-            await updateVideo.mutateAsync({
-              id: video.id,
-              data: { watched: true },
-            });
-            showNotification('Video marked as watched', 'success');
-          } catch (error) {
+      // Also check on ended event
+      player.on('ended', () => {
+        if (!hasMarkedWatchedRef.current) {
+          hasMarkedWatchedRef.current = true;
+          updateVideoRef.current.mutateAsync({
+            id: videoDataRef.current.id,
+            data: { watched: true },
+          }).then(() => {
+            showNotificationRef.current('Video marked as watched', 'success');
+          }).catch((error) => {
             console.error('Error marking video as watched:', error);
-          }
+          });
         }
-      };
-
-      player.on('timeupdate', checkWatchedThreshold);
-      player.on('ended', checkWatchedThreshold);
+      });
 
       // Cleanup
       return () => {
+        // Cancel any pending debounced save to avoid race condition
+        if (saveProgressTimeout.current) {
+          clearTimeout(saveProgressTimeout.current);
+          saveProgressTimeout.current = null;
+        }
+
+        // Clear hide timeout for mobile buttons
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current);
+          hideTimeoutRef.current = null;
+        }
+
         // Save current position immediately before cleanup
-        if (plyrInstanceRef.current && video.id) {
+        if (plyrInstanceRef.current && videoDataRef.current?.id) {
           const currentTime = Math.floor(plyrInstanceRef.current.currentTime);
-          if (currentTime > 0) {
-            updateVideo.mutate({
-              id: video.id,
+          if (currentTime > 0 && !isNaN(currentTime)) {
+            updateVideoRef.current.mutate({
+              id: videoDataRef.current.id,
               data: { playback_seconds: currentTime },
             });
           }
         }
 
-        if (saveProgressTimeout.current) {
-          clearTimeout(saveProgressTimeout.current);
+        // Clean up mobile touch event listeners
+        if (player?.media && mediaDoubleTapListenerRef.current) {
+          player.media.removeEventListener('touchend', mediaDoubleTapListenerRef.current);
+          mediaDoubleTapListenerRef.current = null;
         }
+
+        if (touchOverlayRef.current && overlayTouchListenerRef.current) {
+          touchOverlayRef.current.removeEventListener('touchend', overlayTouchListenerRef.current);
+          overlayTouchListenerRef.current = null;
+        }
+
+        // Remove theater button
+        if (theaterButtonRef.current && theaterButtonRef.current.parentNode) {
+          theaterButtonRef.current.removeEventListener('click', toggleTheaterMode);
+          theaterButtonRef.current.parentNode.removeChild(theaterButtonRef.current);
+          theaterButtonRef.current = null;
+        }
+
+        // Remove touch overlay
+        if (touchOverlayRef.current && touchOverlayRef.current.parentNode) {
+          touchOverlayRef.current.parentNode.removeChild(touchOverlayRef.current);
+          touchOverlayRef.current = null;
+        }
+
+        // Destroy Plyr instance (this removes all Plyr event listeners)
         if (plyrInstanceRef.current) {
           plyrInstanceRef.current.destroy();
           plyrInstanceRef.current = null;
@@ -656,19 +675,13 @@ export default function Player() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* iOS Debug Info */}
-      {debugInfo && (
-        <div className="bg-red-600 text-white p-4 rounded-lg text-center font-mono text-sm">
-          {debugInfo}
-        </div>
-      )}
-
       {/* Centered Control Buttons */}
       <div className="flex justify-center gap-3 mb-4">
         <button
           onClick={handleBack}
           className="icon-btn hover:bg-accent hover:border-accent"
           title="Back"
+          aria-label="Go back to previous page"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="15 18 9 12 15 6"></polyline>
@@ -680,6 +693,7 @@ export default function Player() {
           onClick={() => setShowPlaylistMenu(true)}
           className="icon-btn hover:bg-accent hover:border-accent"
           title="Add to playlist"
+          aria-label="Add video to playlist"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M12 5v14m-7-7h14"></path>
@@ -690,6 +704,7 @@ export default function Player() {
           onClick={toggleWatched}
           className={`icon-btn hover:bg-accent hover:border-accent ${video.watched ? 'bg-accent' : ''}`}
           title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
+          aria-label={video.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
@@ -701,6 +716,7 @@ export default function Player() {
           onClick={() => setShowDeleteConfirm(true)}
           className="icon-btn hover:bg-red-600 hover:border-red-700"
           title="Delete video"
+          aria-label="Delete video permanently"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="3 6 5 6 21 6"></polyline>
@@ -710,15 +726,14 @@ export default function Player() {
       </div>
 
       {/* Player Container */}
-      <div className="w-full max-w-5xl mx-auto">
+      <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
           <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
             <video
               ref={videoRef}
               className="w-full h-auto block"
               playsInline
-              webkit-playsinline="true"
-              x-webkit-airplay="allow"
               preload="auto"
+              aria-label={video.title}
             />
           </div>
 

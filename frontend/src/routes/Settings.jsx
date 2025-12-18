@@ -365,7 +365,7 @@ export default function Settings() {
               {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
               <div className="flex items-center justify-center gap-3 order-4 md:order-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.9.1</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.9.2</span>
               </div>
               {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center justify-center gap-3 order-3 md:order-4">
