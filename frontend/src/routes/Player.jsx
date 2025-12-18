@@ -569,9 +569,8 @@ export default function Player() {
           overlayTouchListenerRef.current = null;
         }
 
-        // Remove theater button
+        // Remove theater button (removing from DOM automatically removes event listeners)
         if (theaterButtonRef.current && theaterButtonRef.current.parentNode) {
-          theaterButtonRef.current.removeEventListener('click', toggleTheaterMode);
           theaterButtonRef.current.parentNode.removeChild(theaterButtonRef.current);
           theaterButtonRef.current = null;
         }
