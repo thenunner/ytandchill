@@ -52,6 +52,8 @@ export default function Player() {
         return hasCoarsePointer && isMobileUA;
       };
 
+      const isMobile = isMobileDevice();
+
       // Initialize Plyr
       let player;
       try {
@@ -73,7 +75,7 @@ export default function Player() {
           settings: ['speed'],
           speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
           seekTime: 10,
-          autoplay: true,
+          autoplay: !isMobile, // Disable autoplay on mobile
           clickToPlay: true, // Enable click-to-play everywhere
           hideControls: true, // Auto-hide controls after inactivity
           keyboard: {
@@ -161,7 +163,7 @@ export default function Player() {
         updateButtonState();
 
         // ===== MOBILE TOUCH CONTROLS (YOUTUBE-STYLE) =====
-        if (isMobileDevice()) {
+        if (isMobile) {
           console.log('Initializing YouTube-style touch controls');
 
           // Double-tap to enter fullscreen when NOT in fullscreen, prevent exit when IN fullscreen

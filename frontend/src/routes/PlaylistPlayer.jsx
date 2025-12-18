@@ -405,6 +405,8 @@ export default function PlaylistPlayer() {
       return hasCoarsePointer && isMobileUA;
     };
 
+    const isMobile = isMobileDevice();
+
     const player = new Plyr(videoRef.current, {
       controls: [
         'play-large',
@@ -423,7 +425,7 @@ export default function PlaylistPlayer() {
       settings: ['speed'],
       speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
       seekTime: 10,
-      autoplay: true,
+      autoplay: !isMobile, // Disable autoplay on mobile
       clickToPlay: true, // Enable click-to-play everywhere
       hideControls: true, // Auto-hide controls after inactivity
       keyboard: { focused: true, global: false },
@@ -448,7 +450,7 @@ export default function PlaylistPlayer() {
     });
 
         // ===== MOBILE TOUCH CONTROLS (YOUTUBE-STYLE) =====
-        if (isMobileDevice()) {
+        if (isMobile) {
           console.log('Initializing YouTube-style touch controls');
 
           // Double-tap to enter fullscreen when NOT in fullscreen, prevent exit when IN fullscreen
