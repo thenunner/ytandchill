@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { useEffect, useRef, useState, useMemo } from 'react';
-import Plyr from 'plyr';
-import 'plyr/dist/plyr.css';
+import { useEffect, useRef, useState } from 'react';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
 import { useVideo, useUpdateVideo, useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -25,7 +25,7 @@ export default function Player() {
 
   // Player refs
   const videoRef = useRef(null);
-  const plyrInstanceRef = useRef(null);
+  const playerInstanceRef = useRef(null);
   const saveProgressTimeout = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
 
@@ -59,11 +59,11 @@ export default function Player() {
   });
 
   useEffect(() => {
-    console.log('useEffect: video exists?', !!video, 'videoRef exists?', !!videoRef.current, 'plyrInstance exists?', !!plyrInstanceRef.current);
-    console.log('Plyr is available?', typeof Plyr);
+    console.log('useEffect: video exists?', !!video, 'videoRef exists?', !!videoRef.current, 'playerInstance exists?', !!playerInstanceRef.current);
+    console.log('videojs is available?', typeof videojs);
 
-    if (video && videoRef.current && !plyrInstanceRef.current) {
-      console.log('Initializing Plyr...');
+    if (video && videoRef.current && !playerInstanceRef.current) {
+      console.log('Initializing video.js...');
       console.log('VideoRef element:', videoRef.current);
 
       // Construct video source path - extract path after 'downloads/'
@@ -77,72 +77,118 @@ export default function Player() {
       const videoSrc = `/api/media/${relativePath}`;
       console.log('Constructed videoSrc:', videoSrc);
 
-      // Detect mobile devices first for clickToPlay config
+      // Detect mobile and iOS devices
       const isMobileDevice = () => {
         const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
         const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         return hasCoarsePointer && isMobileUA;
       };
 
-      // Initialize Plyr
+      const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+      console.log('Is iOS device:', isIOSDevice);
+
+      // Initialize video.js
       let player;
       try {
-        player = new Plyr(videoRef.current, {
-          controls: [
-            'play-large',
-            'rewind',
-            'play',
-            'fast-forward',
-            'progress',
-            'current-time',
-            'duration',
-            'mute',
-            'volume',
-            'settings',
-            'pip',
-            'fullscreen',
-          ],
-          settings: ['speed'],
-          speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
-          seekTime: SEEK_TIME_SECONDS,
-          autoplay: true,
-          clickToPlay: true,
-          hideControls: true,
-          keyboard: {
-            focused: true,
-            global: true,
+        player = videojs(videoRef.current, {
+          controls: true,
+          playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+          fluid: false,
+          responsive: true,
+          preload: 'auto',
+          html5: {
+            vhs: {
+              overrideNative: true
+            },
+            nativeVideoTracks: false,
+            nativeAudioTracks: false,
+            nativeTextTracks: false
           },
-          fullscreen: {
-            enabled: true,
-            fallback: true,
-            iosNative: true,
-            container: null,
+          controlBar: {
+            skipButtons: {
+              forward: SEEK_TIME_SECONDS,
+              backward: SEEK_TIME_SECONDS
+            },
+            children: [
+              'playToggle',
+              'skipBackward',
+              'skipForward',
+              'volumePanel',
+              'currentTimeDisplay',
+              'timeDivider',
+              'durationDisplay',
+              'progressControl',
+              'playbackRateMenuButton',
+              'pictureInPictureToggle',
+              'fullscreenToggle'
+            ]
           },
-          tooltips: {
-            controls: true,
-            seek: true,
-          },
+          userActions: {
+            hotkeys: function(event) {
+              if (isIOSDevice) return; // Disable hotkeys on iOS
+
+              // Space or K = play/pause
+              if (event.which === 32 || event.which === 75) {
+                event.preventDefault();
+                if (this.paused()) {
+                  this.play();
+                } else {
+                  this.pause();
+                }
+              }
+              // Left arrow or J = rewind
+              else if (event.which === 37 || event.which === 74) {
+                event.preventDefault();
+                this.currentTime(Math.max(0, this.currentTime() - SEEK_TIME_SECONDS));
+              }
+              // Right arrow or L = forward
+              else if (event.which === 39 || event.which === 76) {
+                event.preventDefault();
+                this.currentTime(Math.min(this.duration(), this.currentTime() + SEEK_TIME_SECONDS));
+              }
+              // F = fullscreen
+              else if (event.which === 70) {
+                event.preventDefault();
+                if (this.isFullscreen()) {
+                  this.exitFullscreen();
+                } else {
+                  this.requestFullscreen();
+                }
+              }
+              // M = mute
+              else if (event.which === 77) {
+                event.preventDefault();
+                this.muted(!this.muted());
+              }
+              // Up arrow = volume up
+              else if (event.which === 38) {
+                event.preventDefault();
+                this.volume(Math.min(1, this.volume() + 0.1));
+              }
+              // Down arrow = volume down
+              else if (event.which === 40) {
+                event.preventDefault();
+                this.volume(Math.max(0, this.volume() - 0.1));
+              }
+            }
+          }
         });
 
-        console.log('Plyr player object:', player);
-        console.log('Player elements:', player.elements);
+        console.log('video.js player object:', player);
 
-        plyrInstanceRef.current = player;
+        playerInstanceRef.current = player;
 
-        // Set source using Plyr's API
-        player.source = {
-          type: 'video',
-          sources: [{
-            src: videoSrc,
-            type: 'video/mp4',
-          }],
-        };
+        // Set source
+        player.src({
+          src: videoSrc,
+          type: 'video/mp4'
+        });
 
         console.log('Source set to:', videoSrc);
 
         // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
         player.on('dblclick', (event) => {
-          if (player.fullscreen.active) {
+          if (player.isFullscreen()) {
             event.preventDefault();
             event.stopPropagation();
           }
@@ -157,36 +203,53 @@ export default function Player() {
           });
         };
 
-        // Create theater mode button element
-        const theaterButton = document.createElement('button');
-        theaterButton.type = 'button';
-        theaterButton.className = 'plyr__controls__item plyr__control';
-        theaterButton.setAttribute('data-plyr', 'theater');
-        theaterButton.setAttribute('aria-label', 'Toggle theater mode');
-        theaterButton.innerHTML = `
-          <svg class="icon--pressed" role="presentation" viewBox="0 0 24 24">
-            <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
-            <polygon points="15 7 9 12 15 17" fill="currentColor"/>
-            <polygon points="9 7 15 12 9 17" fill="currentColor"/>
-          </svg>
-          <svg class="icon--not-pressed" role="presentation" viewBox="0 0 24 24">
-            <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
-            <polygon points="9 7 5 12 9 17" fill="currentColor"/>
-            <polygon points="15 7 19 12 15 17" fill="currentColor"/>
-          </svg>
-          <span class="plyr__tooltip" role="tooltip">Theater mode</span>
-        `;
-        theaterButton.addEventListener('click', toggleTheaterMode);
-        theaterButtonRef.current = theaterButton;
+        // Video.js Button Component for Theater Mode
+        const Button = videojs.getComponent('Button');
+        class TheaterButton extends Button {
+          constructor(player, options) {
+            super(player, options);
+            this.controlText('Theater mode');
+            this.addClass('vjs-theater-button');
+          }
 
-        // Update pressed state attribute
-        theaterButton.setAttribute('aria-pressed', isTheaterMode);
+          buildCSSClass() {
+            return `vjs-control vjs-button ${super.buildCSSClass()}`;
+          }
 
-        // Insert button after settings button
-        const settingsButton = player.elements.controls.querySelector('[data-plyr="settings"]');
-        if (settingsButton && settingsButton.parentNode) {
-          settingsButton.parentNode.insertBefore(theaterButton, settingsButton.nextSibling);
+          handleClick() {
+            toggleTheaterMode();
+          }
+
+          createEl() {
+            const el = super.createEl('button', {
+              className: 'vjs-control vjs-button vjs-theater-button'
+            });
+
+            el.innerHTML = `
+              <span class="vjs-icon-placeholder" aria-hidden="true">
+                <svg class="vjs-theater-icon-pressed" viewBox="0 0 24 24" style="display: none;">
+                  <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
+                  <polygon points="15 7 9 12 15 17" fill="currentColor"/>
+                  <polygon points="9 7 15 12 9 17" fill="currentColor"/>
+                </svg>
+                <svg class="vjs-theater-icon-not-pressed" viewBox="0 0 24 24">
+                  <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
+                  <polygon points="9 7 5 12 9 17" fill="currentColor"/>
+                  <polygon points="15 7 19 12 15 17" fill="currentColor"/>
+                </svg>
+              </span>
+              <span class="vjs-control-text" aria-live="polite">Theater mode</span>
+            `;
+
+            return el;
+          }
         }
+
+        videojs.registerComponent('TheaterButton', TheaterButton);
+        player.getChild('controlBar').addChild('TheaterButton', {},
+          player.getChild('controlBar').children().length - 1);
+
+        theaterButtonRef.current = player.getChild('controlBar').getChild('TheaterButton');
 
         // ===== MOBILE TOUCH CONTROLS (YOUTUBE-STYLE) =====
         if (isMobileDevice()) {
@@ -198,10 +261,10 @@ export default function Player() {
             const currentTime = Date.now();
             const isDoubleTap = (currentTime - lastVideoTapTime) < DOUBLE_TAP_DELAY_MS;
 
-            if (!player.fullscreen.active) {
+            if (!player.isFullscreen()) {
               if (isDoubleTap) {
                 e.preventDefault();
-                player.fullscreen.enter();
+                player.requestFullscreen();
               }
             } else {
               if (isDoubleTap) {
@@ -212,12 +275,12 @@ export default function Player() {
 
             lastVideoTapTime = currentTime;
           };
-          player.media.addEventListener('touchend', mediaTouchHandler);
+          player.el().querySelector('video').addEventListener('touchend', mediaTouchHandler);
           mediaDoubleTapListenerRef.current = mediaTouchHandler;
 
           // Create touch overlay that covers the video area
           const touchOverlay = document.createElement('div');
-          touchOverlay.className = 'plyr-touch-overlay';
+          touchOverlay.className = 'vjs-touch-overlay';
           touchOverlay.style.cssText = `
             position: absolute;
             top: 0;
@@ -255,7 +318,7 @@ export default function Player() {
 
           // Create buttons in fixed positions
           const rewindBtn = document.createElement('button');
-          rewindBtn.className = 'plyr-mobile-btn';
+          rewindBtn.className = 'vjs-mobile-btn';
           rewindBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;">
               <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
@@ -264,7 +327,7 @@ export default function Player() {
           rewindBtn.style.cssText = buttonStyle(110) + `left: 20%; top: 50%; transform: translate(-50%, -50%) scale(0.9);`;
 
           const playPauseBtn = document.createElement('button');
-          playPauseBtn.className = 'plyr-mobile-btn';
+          playPauseBtn.className = 'vjs-mobile-btn';
           playPauseBtn.innerHTML = `
             <svg class="play-icon" viewBox="0 0 24 24" fill="white" style="width: 50px; height: 50px;">
               <polygon points="8 5 19 12 8 19 8 5"/>
@@ -277,7 +340,7 @@ export default function Player() {
           playPauseBtn.style.cssText = buttonStyle(130) + `left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.9);`;
 
           const forwardBtn = document.createElement('button');
-          forwardBtn.className = 'plyr-mobile-btn';
+          forwardBtn.className = 'vjs-mobile-btn';
           forwardBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;">
               <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
@@ -286,7 +349,7 @@ export default function Player() {
           forwardBtn.style.cssText = buttonStyle(110) + `right: 20%; top: 50%; transform: translate(50%, -50%) scale(0.9);`;
 
           const exitBtn = document.createElement('button');
-          exitBtn.className = 'plyr-mobile-btn';
+          exitBtn.className = 'vjs-mobile-btn';
           exitBtn.innerHTML = `
             <svg viewBox="0 0 24 24" fill="white" style="width: 32px; height: 32px;">
               <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
@@ -337,7 +400,7 @@ export default function Player() {
           const updatePlayPauseIcon = () => {
             const playIcon = playPauseBtn.querySelector('.play-icon');
             const pauseIcon = playPauseBtn.querySelector('.pause-icon');
-            if (player.playing) {
+            if (!player.paused()) {
               playIcon.style.display = 'none';
               pauseIcon.style.display = 'block';
             } else {
@@ -368,19 +431,25 @@ export default function Player() {
             if (y < height * 0.2) {
               zone = 'exit';
               button = exitBtn;
-              action = () => player.fullscreen.exit();
+              action = () => player.exitFullscreen();
             } else if (x < width * 0.3) {
               zone = 'rewind';
               button = rewindBtn;
-              action = () => player.rewind(SEEK_TIME_SECONDS);
+              action = () => player.currentTime(Math.max(0, player.currentTime() - SEEK_TIME_SECONDS));
             } else if (x > width * 0.7) {
               zone = 'forward';
               button = forwardBtn;
-              action = () => player.forward(SEEK_TIME_SECONDS);
+              action = () => player.currentTime(Math.min(player.duration(), player.currentTime() + SEEK_TIME_SECONDS));
             } else {
               zone = 'center';
               button = playPauseBtn;
-              action = () => player.togglePlay();
+              action = () => {
+                if (player.paused()) {
+                  player.play();
+                } else {
+                  player.pause();
+                }
+              };
             }
 
             // Center zone = instant action
@@ -417,51 +486,68 @@ export default function Player() {
           player.on('pause', updatePlayPauseIcon);
           player.on('playing', updatePlayPauseIcon);
 
-          player.elements.container.appendChild(touchOverlay);
+          player.el().appendChild(touchOverlay);
 
           // Show/hide overlay in fullscreen
-          player.on('enterfullscreen', () => {
-            touchOverlay.style.display = 'block';
-            updatePlayPauseIcon();
+          player.on('fullscreenchange', () => {
+            if (player.isFullscreen()) {
+              touchOverlay.style.display = 'block';
+              updatePlayPauseIcon();
 
-            // Hide the play-large button in fullscreen on mobile
-            const playLargeBtn = player.elements.container.querySelector('.plyr__control--overlaid');
-            if (playLargeBtn) {
-              playLargeBtn.style.display = 'none';
-            }
-          });
+              // Hide the big play button in fullscreen on mobile
+              const bigPlayButton = player.el().querySelector('.vjs-big-play-button');
+              if (bigPlayButton) {
+                bigPlayButton.style.display = 'none';
+              }
+            } else {
+              touchOverlay.style.display = 'none';
 
-          player.on('exitfullscreen', () => {
-            touchOverlay.style.display = 'none';
-
-            // Show the play-large button again when exiting fullscreen
-            const playLargeBtn = player.elements.container.querySelector('.plyr__control--overlaid');
-            if (playLargeBtn) {
-              playLargeBtn.style.display = '';
+              // Show the big play button again when exiting fullscreen
+              const bigPlayButton = player.el().querySelector('.vjs-big-play-button');
+              if (bigPlayButton) {
+                bigPlayButton.style.display = '';
+              }
             }
           });
         }
 
         // ===== FORCE CONTROLS TO STAY VISIBLE IN FULLSCREEN =====
-        // Ensure Plyr controls remain visible and clickable in fullscreen on desktop
-        player.on('enterfullscreen', () => {
-          console.log('Entered fullscreen - controls will auto-hide after inactivity');
-        });
-
-        player.on('exitfullscreen', () => {
-          console.log('Exited fullscreen');
+        // Ensure video.js controls remain visible and clickable in fullscreen on desktop
+        player.on('fullscreenchange', () => {
+          if (player.isFullscreen()) {
+            console.log('Entered fullscreen - controls will auto-hide after inactivity');
+          } else {
+            console.log('Exited fullscreen');
+          }
         });
         // ===== END FULLSCREEN TOUCH CONTROLS =====
 
       } catch (error) {
-        console.error('Error initializing Plyr:', error);
+        console.error('Error initializing video.js:', error);
+        showNotificationRef.current('Failed to initialize video player', 'error');
         return;
       }
+
+      // Add error handling for video loading
+      player.on('error', () => {
+        console.error('video.js error event');
+        const error = player.error();
+        if (error) {
+          console.error('Media error:', error.code, error.message);
+          const errorMessages = {
+            1: 'Video loading aborted',
+            2: 'Network error - check your connection',
+            3: 'Video decoding failed - file may be corrupted',
+            4: 'Video format not supported'
+          };
+          showNotificationRef.current(errorMessages[error.code] || 'Video playback error', 'error');
+        }
+      });
 
       // Restore playback position when metadata is loaded
       player.on('loadedmetadata', () => {
         const savedPosition = video.playback_seconds;
-        const duration = player.duration;
+        const duration = player.duration();
 
         // Validate saved position before restoring
         if (
@@ -471,14 +557,14 @@ export default function Player() {
           duration > 0 &&
           savedPosition < duration
         ) {
-          player.currentTime = savedPosition;
+          player.currentTime(savedPosition);
         }
       });
 
       // Consolidated timeupdate handler: save progress + check watched threshold
       player.on('timeupdate', () => {
-        const currentTime = player.currentTime;
-        const duration = player.duration;
+        const currentTime = player.currentTime();
+        const duration = player.duration();
 
         // Debounced progress save
         if (saveProgressTimeout.current) {
@@ -486,8 +572,8 @@ export default function Player() {
         }
 
         saveProgressTimeout.current = setTimeout(() => {
-          const currentTimeFloor = Math.floor(player.currentTime);
-          const dur = player.duration;
+          const currentTimeFloor = Math.floor(player.currentTime());
+          const dur = player.duration();
 
           if (
             currentTimeFloor > 0 &&
@@ -548,8 +634,8 @@ export default function Player() {
         }
 
         // Save current position immediately before cleanup
-        if (plyrInstanceRef.current && videoDataRef.current?.id) {
-          const currentTime = Math.floor(plyrInstanceRef.current.currentTime);
+        if (playerInstanceRef.current && videoDataRef.current?.id) {
+          const currentTime = Math.floor(playerInstanceRef.current.currentTime());
           if (currentTime > 0 && !isNaN(currentTime)) {
             updateVideoRef.current.mutate({
               id: videoDataRef.current.id,
@@ -559,8 +645,9 @@ export default function Player() {
         }
 
         // Clean up mobile touch event listeners
-        if (player?.media && mediaDoubleTapListenerRef.current) {
-          player.media.removeEventListener('touchend', mediaDoubleTapListenerRef.current);
+        const videoEl = playerInstanceRef.current?.el()?.querySelector('video');
+        if (videoEl && mediaDoubleTapListenerRef.current) {
+          videoEl.removeEventListener('touchend', mediaDoubleTapListenerRef.current);
           mediaDoubleTapListenerRef.current = null;
         }
 
@@ -569,22 +656,16 @@ export default function Player() {
           overlayTouchListenerRef.current = null;
         }
 
-        // Remove theater button (removing from DOM automatically removes event listeners)
-        if (theaterButtonRef.current && theaterButtonRef.current.parentNode) {
-          theaterButtonRef.current.parentNode.removeChild(theaterButtonRef.current);
-          theaterButtonRef.current = null;
-        }
-
         // Remove touch overlay
         if (touchOverlayRef.current && touchOverlayRef.current.parentNode) {
           touchOverlayRef.current.parentNode.removeChild(touchOverlayRef.current);
           touchOverlayRef.current = null;
         }
 
-        // Destroy Plyr instance (this removes all Plyr event listeners)
-        if (plyrInstanceRef.current) {
-          plyrInstanceRef.current.destroy();
-          plyrInstanceRef.current = null;
+        // Dispose video.js instance (this removes all event listeners)
+        if (playerInstanceRef.current) {
+          playerInstanceRef.current.dispose();
+          playerInstanceRef.current = null;
         }
       };
     }
@@ -592,10 +673,19 @@ export default function Player() {
 
   // Update theater mode button state when isTheaterMode changes
   useEffect(() => {
-    if (plyrInstanceRef.current) {
-      const theaterButton = plyrInstanceRef.current.elements.controls?.querySelector('[data-plyr="theater"]');
+    if (playerInstanceRef.current && theaterButtonRef.current) {
+      const theaterButton = theaterButtonRef.current.el();
       if (theaterButton) {
-        theaterButton.setAttribute('aria-pressed', isTheaterMode);
+        const pressedIcon = theaterButton.querySelector('.vjs-theater-icon-pressed');
+        const notPressedIcon = theaterButton.querySelector('.vjs-theater-icon-not-pressed');
+
+        if (isTheaterMode) {
+          if (pressedIcon) pressedIcon.style.display = 'block';
+          if (notPressedIcon) notPressedIcon.style.display = 'none';
+        } else {
+          if (pressedIcon) pressedIcon.style.display = 'none';
+          if (notPressedIcon) notPressedIcon.style.display = 'block';
+        }
       }
     }
   }, [isTheaterMode]);
@@ -729,7 +819,7 @@ export default function Player() {
           <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
             <video
               ref={videoRef}
-              className="w-full h-auto block"
+              className="video-js vjs-default-skin vjs-big-play-centered w-full h-auto block"
               playsInline
               preload="auto"
               aria-label={video.title}

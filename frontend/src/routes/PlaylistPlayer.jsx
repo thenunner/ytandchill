@@ -374,7 +374,7 @@ export default function PlaylistPlayer() {
         type: 'video',
         sources: [{ src: videoSrc, type: 'video/mp4' }],
       };
-      // Autoplay after source loads
+      // Restore position after source loads (no autoplay)
       plyrInstanceRef.current.once('loadedmetadata', () => {
         const savedPosition = currentVideo.playback_seconds;
         const duration = plyrInstanceRef.current?.duration;
@@ -390,7 +390,7 @@ export default function PlaylistPlayer() {
         ) {
           plyrInstanceRef.current.currentTime = savedPosition;
         }
-        plyrInstanceRef.current?.play().catch(err => console.warn('Autoplay prevented:', err));
+        // No autoplay - user must click play for next video
       });
       return;
     }
@@ -398,12 +398,15 @@ export default function PlaylistPlayer() {
     // First time: Initialize Plyr
     console.log('Initializing Plyr with source:', videoSrc);
 
-    // Detect mobile devices first for clickToPlay config
+    // Detect mobile and iOS devices
     const isMobileDevice = () => {
       const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
       const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       return hasCoarsePointer && isMobileUA;
     };
+
+    const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    console.log('PlaylistPlayer - Is iOS device:', isIOSDevice);
 
     const player = new Plyr(videoRef.current, {
       controls: [
@@ -423,10 +426,10 @@ export default function PlaylistPlayer() {
       settings: ['speed'],
       speed: { selected: 1, options: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2] },
       seekTime: 10,
-      autoplay: true,
-      clickToPlay: true, // Enable click-to-play everywhere
-      hideControls: true, // Auto-hide controls after inactivity
-      keyboard: { focused: true, global: false },
+      autoplay: false, // No autoplay - user must click play
+      clickToPlay: true,
+      hideControls: isIOSDevice ? false : true, // Keep controls visible on iOS
+      keyboard: { focused: true, global: !isIOSDevice }, // Disable global shortcuts on iOS
       fullscreen: { enabled: true, fallback: true, iosNative: true, container: null },
       tooltips: { controls: true, seek: true },
     });
@@ -438,6 +441,22 @@ export default function PlaylistPlayer() {
       type: 'video',
       sources: [{ src: videoSrc, type: 'video/mp4' }],
     };
+
+    // Add error handling for video loading
+    player.on('error', (event) => {
+      console.error('Plyr error event:', event);
+      const error = player.media?.error;
+      if (error) {
+        console.error('Media error:', error.code, error.message);
+        const errorMessages = {
+          1: 'Video loading aborted',
+          2: 'Network error - check your connection',
+          3: 'Video decoding failed - file may be corrupted',
+          4: 'Video format not supported'
+        };
+        showNotification(errorMessages[error.code] || 'Video playback error', 'error');
+      }
+    });
 
     // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
     player.on('dblclick', (event) => {
