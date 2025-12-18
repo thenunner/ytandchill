@@ -9,6 +9,7 @@ from flask import Blueprint, jsonify, send_from_directory, request, Response
 from werkzeug.utils import safe_join
 import logging
 import os
+import mimetypes
 
 logger = logging.getLogger(__name__)
 
@@ -36,17 +37,21 @@ def serve_media(filename):
         logger.warning(f"Path traversal attempt blocked: {filename}")
         return jsonify({'error': 'Access denied'}), 403
 
-    # Get file size
+    # Get file size and MIME type
     file_size = os.path.getsize(safe_path)
+    mime_type, _ = mimetypes.guess_type(safe_path)
+    if not mime_type:
+        mime_type = 'video/mp4'  # Default fallback
 
     # Check if this is a range request (required for iOS video playback)
     range_header = request.headers.get('Range', None)
 
     if not range_header:
         # No range request - send full file with Accept-Ranges header for iOS
-        response = send_from_directory('downloads', filename, conditional=True)
+        response = send_from_directory('downloads', filename, conditional=True, mimetype=mime_type)
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Content-Length'] = str(file_size)
+        response.headers['Access-Control-Allow-Origin'] = '*'
         return response
 
     # Parse range header (e.g., "bytes=0-1023")
@@ -73,17 +78,22 @@ def serve_media(filename):
                     yield chunk
 
         # Create 206 Partial Content response with streaming
-        response = Response(generate(), 206, mimetype='video/mp4')
+        response = Response(generate(), 206, mimetype=mime_type)
         response.headers['Content-Range'] = f'bytes {start}-{end}/{file_size}'
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Content-Length'] = str(length)
+        response.headers['Content-Type'] = mime_type
         response.headers['Cache-Control'] = 'public, max-age=3600'
         response.headers['Connection'] = 'keep-alive'
+        response.headers['Access-Control-Allow-Origin'] = '*'
 
-        logger.info(f"Serving range: {filename} bytes {start}-{end}/{file_size}")
+        logger.info(f"Serving range: {filename} ({mime_type}) bytes {start}-{end}/{file_size}")
         return response
 
     except Exception as e:
         logger.error(f"Error handling range request for {filename}: {e}")
         # Fallback to regular send if range parsing fails
-        return send_from_directory('downloads', filename, conditional=True)
+        response = send_from_directory('downloads', filename, conditional=True, mimetype=mime_type)
+        response.headers['Accept-Ranges'] = 'bytes'
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
