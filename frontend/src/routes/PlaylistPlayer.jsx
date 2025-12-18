@@ -731,6 +731,27 @@ export default function PlaylistPlayer() {
 
     player.on('exitfullscreen', () => {
       console.log('Exited fullscreen');
+
+      // iOS fix: force redraw to prevent black screen after fullscreen exit
+      if (isIOS && plyrInstanceRef.current) {
+        const currentTime = plyrInstanceRef.current.currentTime;
+        const wasPaused = plyrInstanceRef.current.paused;
+
+        // Force video element to redraw
+        setTimeout(() => {
+          if (plyrInstanceRef.current && plyrInstanceRef.current.media) {
+            plyrInstanceRef.current.media.style.display = 'none';
+            // Force reflow
+            void plyrInstanceRef.current.media.offsetHeight;
+            plyrInstanceRef.current.media.style.display = 'block';
+
+            // Restore playback state
+            if (!wasPaused) {
+              plyrInstanceRef.current.play().catch(e => console.warn('Resume play failed:', e));
+            }
+          }
+        }, 100);
+      }
     });
     // ===== END FULLSCREEN TOUCH CONTROLS =====
 

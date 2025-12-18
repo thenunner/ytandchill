@@ -703,26 +703,10 @@ select {
   transition: opacity 0.3s ease, transform 0.3s ease !important;
 }
 
-/* iOS-specific fixes for controls */
+/* iOS-specific fixes for controls - minimal to avoid breaking */
 @supports (-webkit-touch-callout: none) {
-  /* Force controls to stay visible on iOS */
-  .plyr__controls {
+  /* Keep controls visible when paused on iOS */
+  .plyr--paused .plyr__controls {
     opacity: 1 !important;
-    pointer-events: auto !important;
-  }
-
-  /* Prevent controls from hiding on iOS */
-  .plyr--hide-controls .plyr__controls {
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-  }
-
-  /* Ensure video doesn't block controls */
-  .plyr__video-wrapper {
-    pointer-events: none !important;
-  }
-
-  .plyr__video-wrapper video {
-    pointer-events: auto !important;
   }
 }
