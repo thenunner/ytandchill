@@ -59,19 +59,28 @@ def serve_media(filename):
         end = min(end, file_size - 1)
         length = end - start + 1
 
-        # Read the requested range
-        with open(safe_path, 'rb') as f:
-            f.seek(start)
-            data = f.read(length)
+        # Generator function to stream file in chunks
+        def generate():
+            with open(safe_path, 'rb') as f:
+                f.seek(start)
+                remaining = length
+                chunk_size = 8192  # 8KB chunks
+                while remaining > 0:
+                    chunk = f.read(min(chunk_size, remaining))
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
+                    yield chunk
 
-        # Create 206 Partial Content response
-        response = Response(data, 206, mimetype='video/mp4', direct_passthrough=True)
+        # Create 206 Partial Content response with streaming
+        response = Response(generate(), 206, mimetype='video/mp4')
         response.headers['Content-Range'] = f'bytes {start}-{end}/{file_size}'
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Content-Length'] = str(length)
-        response.headers['Cache-Control'] = 'no-cache'
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+        response.headers['Connection'] = 'keep-alive'
 
-        logger.info(f"iOS range request: {filename} bytes {start}-{end}/{file_size}")
+        logger.info(f"Serving range: {filename} bytes {start}-{end}/{file_size}")
         return response
 
     except Exception as e:
