@@ -87,7 +87,7 @@ export default function Player() {
 
     // Create video element dynamically (React best practice for video.js)
     const videoElement = document.createElement('video-js');
-    videoElement.classList.add('vjs-big-play-centered', 'w-full', 'h-auto');
+    videoElement.classList.add('vjs-big-play-centered');
     videoElement.setAttribute('playsinline', 'playsinline');
     videoElement.setAttribute('preload', 'auto');
     if (video.title) {
@@ -103,7 +103,7 @@ export default function Player() {
       player = videojs(videoElement, {
         controls: true,
         playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-        fluid: false,
+        fluid: true,
         responsive: true,
         preload: 'auto',
         html5: {
@@ -776,7 +776,7 @@ export default function Player() {
   return (
     <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
       {/* Centered Control Buttons */}
-      <div className="flex justify-center gap-3 mb-4">
+      <div className="flex justify-center gap-3 mb-8">
         <button
           onClick={handleBack}
           className="icon-btn hover:bg-accent hover:border-accent"
@@ -827,8 +827,8 @@ export default function Player() {
 
       {/* Player Container */}
       <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
-          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
-            <div ref={videoContainerRef} data-vjs-player />
+          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover relative">
+            <div ref={videoContainerRef} data-vjs-player className="w-full aspect-video" />
           </div>
 
           {/* Video Info Below Player */}
