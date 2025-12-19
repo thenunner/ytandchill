@@ -27,6 +27,9 @@ export default function PlaylistPlayer() {
   // Get starting video from URL if provided
   const startVideoId = searchParams.get('v');
 
+  // Track if we've initialized the starting video (to prevent URL sync from resetting position)
+  const hasInitializedRef = useRef(false);
+
   // Fetch playlist data based on mode (single playlist vs category)
   const { data: playlist, isLoading: isLoadingPlaylist } = usePlaylist(playlistId, { enabled: !!playlistId });
   const { data: playlistsData, isLoading: isLoadingCategory } = usePlaylists({ enabled: !!categoryId });
@@ -180,18 +183,32 @@ export default function PlaylistPlayer() {
     hasMarkedWatchedRef.current = currentVideo?.watched || false;
   });
 
-  // Set initial index based on startVideoId
+  // Set initial index based on startVideoId (ONLY on first load, not on URL updates during navigation)
   useEffect(() => {
-    if (startVideoId && videos.length > 0) {
+    // Only run once when videos first load
+    if (hasInitializedRef.current || videos.length === 0) return;
+
+    if (startVideoId) {
       const videoId = parseInt(startVideoId, 10);
       if (!isNaN(videoId)) {
-        const idx = videos.findIndex(v => v.id === videoId);
-        if (idx !== -1) {
-          setCurrentIndex(idx);
+        // Find the index in displayOrder (not just videos array, to respect shuffle)
+        const actualIdx = videos.findIndex(v => v.id === videoId);
+        if (actualIdx !== -1) {
+          // Find where this video is in the display order
+          const displayIdx = displayOrder.findIndex(i => i === actualIdx);
+          if (displayIdx !== -1) {
+            console.log(`Setting initial video: ID=${videoId}, actualIdx=${actualIdx}, displayIdx=${displayIdx}`);
+            setCurrentIndex(displayIdx);
+          } else {
+            // Fallback: if not in display order yet, use actual index
+            setCurrentIndex(actualIdx);
+          }
         }
       }
     }
-  }, [startVideoId, videos]);
+
+    hasInitializedRef.current = true;
+  }, [videos.length]); // Only re-run if videos array length changes (i.e., new data loaded)
 
   // Shuffle functions
   const shuffleArray = useCallback((arr) => {
@@ -1197,13 +1214,13 @@ export default function PlaylistPlayer() {
           <div className={`w-full transition-all duration-300 ease-in-out ${
             isTheaterMode ? 'md:w-[calc(100%-3.5rem)]' : 'md:w-[60%]'
           }`} style={{ willChange: 'width' }}>
-            <div className={`bg-black rounded-xl shadow-card-hover relative w-full transition-all duration-300 ease-in-out flex items-center justify-center ${
-              isTheaterMode ? '' : 'max-h-[600px]'
+            {/* Fixed height container to prevent layout shifts when changing videos */}
+            <div className={`bg-black rounded-xl shadow-card-hover relative w-full flex items-center justify-center ${
+              isTheaterMode ? 'h-[80vh]' : 'h-[600px]'
             }`}>
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered max-w-full h-auto block mx-auto"
-              style={{ maxHeight: '80vh' }}
+              className="video-js vjs-big-play-centered w-full h-full"
               playsInline
               preload="auto"
             />
