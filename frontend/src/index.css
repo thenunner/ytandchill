@@ -851,3 +851,78 @@ select {
 .video-js .vjs-theater-button .vjs-icon-placeholder:before {
   display: none;
 }
+
+/* ===== LARGER CONTROLS FOR BETTER USABILITY ===== */
+/* Increase control bar height on all devices */
+.video-js .vjs-control-bar {
+  height: 4em;
+  font-size: 14px;
+}
+
+/* Mobile/Tablet: Even larger controls */
+@media (max-width: 1024px) {
+  .video-js .vjs-control-bar {
+    height: 5em;
+    font-size: 16px;
+  }
+}
+
+/* Larger buttons */
+.video-js .vjs-button {
+  width: 3.5em;
+  height: 100%;
+}
+
+/* Larger icons inside buttons */
+.video-js .vjs-icon-placeholder:before {
+  font-size: 2em;
+  line-height: 2em;
+}
+
+/* Larger time displays */
+.video-js .vjs-current-time,
+.video-js .vjs-time-divider,
+.video-js .vjs-duration {
+  font-size: 1.3em;
+  line-height: 3em;
+  padding: 0 0.5em;
+}
+
+/* Larger progress bar for easier scrubbing */
+.video-js .vjs-progress-control {
+  min-height: 0.8em;
+}
+
+.video-js .vjs-progress-holder {
+  height: 0.8em;
+}
+
+/* Larger volume slider */
+.video-js .vjs-volume-bar {
+  height: 0.8em;
+}
+
+/* Increase touch targets on mobile */
+@media (max-width: 1024px) {
+  .video-js .vjs-button {
+    width: 4em;
+  }
+
+  .video-js .vjs-icon-placeholder:before {
+    font-size: 2.2em;
+  }
+
+  .video-js .vjs-current-time,
+  .video-js .vjs-time-divider,
+  .video-js .vjs-duration {
+    font-size: 1.5em;
+  }
+
+  .video-js .vjs-progress-control {
+    min-height: 1em;
+  }
+
+  .video-js .vjs-progress-holder {
+    height: 1em;
+  }
+}
