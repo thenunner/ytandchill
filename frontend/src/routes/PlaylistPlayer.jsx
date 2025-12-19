@@ -1238,7 +1238,7 @@ export default function PlaylistPlayer() {
       </div>
 
       {/* Player and Queue Layout */}
-      <div className="max-w-[83.333%] transition-all duration-300">
+      <div className="md:max-w-[83.333%] transition-all duration-300">
         <div className="flex flex-col md:flex-row gap-2 items-start">
           {/* Player Container - 3/5 in normal mode, 5/5 in theater mode */}
           <div className={`w-full transition-all duration-300 ${
