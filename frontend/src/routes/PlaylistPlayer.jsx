@@ -293,6 +293,9 @@ export default function PlaylistPlayer() {
     setIsQueueCollapsed(prev => {
       const newValue = !prev;
       localStorage.setItem('queueCollapsed', newValue.toString());
+      // Sync with theater mode: collapsed = theater on, expanded = theater off
+      setIsTheaterMode(newValue);
+      localStorage.setItem('theaterMode', newValue.toString());
       return newValue;
     });
   }, []);
@@ -578,6 +581,9 @@ export default function PlaylistPlayer() {
           setIsTheaterMode(prev => {
             const newValue = !prev;
             localStorage.setItem('theaterMode', newValue.toString());
+            // Sync with queue: theater on = queue collapsed, theater off = queue expanded
+            setIsQueueCollapsed(newValue);
+            localStorage.setItem('queueCollapsed', newValue.toString());
             return newValue;
           });
         };
@@ -1232,10 +1238,12 @@ export default function PlaylistPlayer() {
       </div>
 
       {/* Player and Queue Layout */}
-      <div className={`transition-all duration-300 ${isTheaterMode ? '' : 'max-w-6xl mx-auto'}`}>
+      <div className="max-w-[83.333%] transition-all duration-300">
         <div className="flex flex-col md:flex-row gap-2 items-start">
-          {/* Player Container */}
-          <div className="w-full md:flex-1">
+          {/* Player Container - 3/5 in normal mode, 5/5 in theater mode */}
+          <div className={`w-full transition-all duration-300 ${
+            isTheaterMode ? 'md:flex-1' : 'md:w-[60%]'
+          }`}>
             <div className="bg-black rounded-xl shadow-card-hover relative w-full">
             <video
               ref={videoRef}
@@ -1285,15 +1293,14 @@ export default function PlaylistPlayer() {
           </div>
         </div>
 
-        {/* Queue Sidebar (Desktop Only) - Hidden completely in theater mode */}
-        {!isTheaterMode && (
-          <div
-            ref={sidebarRef}
-            className={`hidden md:block transition-all duration-300 ${
-              isQueueCollapsed ? 'w-12' : 'w-80'
-            }`}
-          >
-            {isQueueCollapsed ? (
+        {/* Queue Sidebar (Desktop Only) - 2/5 of container when expanded */}
+        <div
+          ref={sidebarRef}
+          className={`hidden md:block transition-all duration-300 ${
+            isQueueCollapsed ? 'w-12' : 'md:w-[40%]'
+          }`}
+        >
+          {isQueueCollapsed ? (
               // Collapsed state - icon button
               <div className="sticky top-4 flex-shrink-0">
                 <button
@@ -1453,9 +1460,8 @@ export default function PlaylistPlayer() {
               })}
             </div>
             </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
         </div>
       </div>
 
