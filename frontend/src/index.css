@@ -726,9 +726,10 @@ select {
   height: 80px;
   line-height: 80px;
   font-size: 3em;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
 }
 
 .video-js .vjs-big-play-button:hover {
@@ -819,16 +820,15 @@ select {
   object-fit: contain;
 }
 
-/* Fullscreen mode - remove size constraints */
-.video-js.vjs-fullscreen,
-.video-js.vjs-fullscreen * {
+/* Fullscreen mode - remove size constraints from player container only */
+.video-js.vjs-fullscreen {
   max-width: none !important;
   max-height: none !important;
   width: 100% !important;
   height: 100% !important;
 }
 
-/* Video player size constraints */
+/* Non-fullscreen: constrain video size to fit on screen */
 .video-js:not(.vjs-fullscreen) {
   max-height: 60vh;
 }

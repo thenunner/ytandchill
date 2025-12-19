@@ -413,7 +413,7 @@ class DownloadWorker:
         """
         # yt-dlp options - Works with HLS/m3u8 streams
         ydl_opts = {
-            'format': 'bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',  # Prefer 1080p, fallback to best available
+            'format': 'bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',  # Prefer MP4/M4A sources for iOS compatibility, fallback to best available
             'outtmpl': os.path.join(channel_dir, f'{video_yt_id}.%(ext)s'),
             'quiet': False,  # Enable output for logging
             'verbose': True,  # Verbose output for debugging
