@@ -1317,8 +1317,8 @@ export default function PlaylistPlayer() {
                 </button>
               </div>
             ) : (
-            // Expanded state - full queue
-            <div className="bg-surface rounded-xl shadow-card overflow-hidden flex flex-col self-start">
+            // Expanded state - full queue (limited to video player height)
+            <div className="bg-surface rounded-xl shadow-card overflow-hidden flex flex-col self-start max-h-[600px]">
               <div className="p-4 border-b border-border">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
