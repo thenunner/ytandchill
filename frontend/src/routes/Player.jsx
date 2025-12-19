@@ -99,6 +99,10 @@ export default function Player() {
           fluid: false,
           responsive: true,
           preload: 'auto',
+          sources: [{
+            src: videoSrc,
+            type: 'video/mp4'
+          }],
           html5: {
             vhs: {
               overrideNative: true
@@ -178,16 +182,9 @@ export default function Player() {
         });
 
         console.log('video.js player object:', player);
+        console.log('Player ready state:', player.readyState());
 
         playerInstanceRef.current = player;
-
-        // Set source
-        player.src({
-          src: videoSrc,
-          type: 'video/mp4'
-        });
-
-        console.log('Source set to:', videoSrc);
 
         // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
         player.on('dblclick', (event) => {
@@ -826,8 +823,11 @@ export default function Player() {
               playsInline
               preload="auto"
               aria-label={video.title}
-              data-setup='{"fluid": false}'
-            />
+            >
+              <p className="vjs-no-js">
+                To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5 video
+              </p>
+            </video>
           </div>
 
           {/* Video Info Below Player */}
