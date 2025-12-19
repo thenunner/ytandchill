@@ -154,15 +154,26 @@ export default function PlaylistPlayer() {
 
   // Current video based on index
   const currentVideo = useMemo(() => {
-    if (videos.length === 0) return null;
+    if (videos.length === 0) {
+      console.log('[PlaylistPlayer] No videos available');
+      return null;
+    }
     // Ensure currentIndex is valid
     const safeIndex = Math.min(currentIndex, displayOrder.length - 1);
     const actualIndex = displayOrder[safeIndex];
     if (actualIndex === undefined || actualIndex >= videos.length) {
-      console.warn('Invalid video index:', actualIndex, 'falling back to first video');
+      console.warn('[PlaylistPlayer] Invalid video index:', actualIndex, 'falling back to first video');
       return videos[0];
     }
-    return videos[actualIndex];
+    const video = videos[actualIndex];
+    console.log('[PlaylistPlayer] Current video changed:', {
+      title: video.title,
+      id: video.id,
+      currentIndex,
+      actualIndex,
+      file_path: video.file_path
+    });
+    return video;
   }, [videos, displayOrder, currentIndex]);
 
   // Next video for preloading
@@ -242,27 +253,44 @@ export default function PlaylistPlayer() {
 
   // Navigation functions
   const goToNext = useCallback(() => {
+    console.log('[PlaylistPlayer] goToNext called. currentIndex:', currentIndex, 'displayOrder.length:', displayOrder.length);
     if (videos.length === 0) return;
     if (currentIndex < displayOrder.length - 1) {
-      setCurrentIndex(currentIndex + 1);
+      const newIndex = currentIndex + 1;
+      console.log('[PlaylistPlayer] Moving to next video. New index:', newIndex);
+      setCurrentIndex(newIndex);
     } else if (isLooping) {
+      console.log('[PlaylistPlayer] Looping back to first video');
       setCurrentIndex(0);
       showNotification('Playlist restarted', 'info');
+    } else {
+      console.log('[PlaylistPlayer] At end of playlist, not looping');
     }
   }, [currentIndex, displayOrder.length, isLooping, videos.length, showNotification]);
 
   const goToPrevious = useCallback(() => {
+    console.log('[PlaylistPlayer] goToPrevious called. currentIndex:', currentIndex);
     if (videos.length === 0) return;
     if (currentIndex > 0) {
-      setCurrentIndex(currentIndex - 1);
+      const newIndex = currentIndex - 1;
+      console.log('[PlaylistPlayer] Moving to previous video. New index:', newIndex);
+      setCurrentIndex(newIndex);
     } else if (isLooping) {
-      setCurrentIndex(displayOrder.length - 1);
+      const newIndex = displayOrder.length - 1;
+      console.log('[PlaylistPlayer] Looping to last video. New index:', newIndex);
+      setCurrentIndex(newIndex);
+    } else {
+      console.log('[PlaylistPlayer] At beginning of playlist, not looping');
     }
   }, [currentIndex, displayOrder.length, isLooping, videos.length]);
 
   const goToVideo = useCallback((index) => {
+    console.log('[PlaylistPlayer] goToVideo called. Requested index:', index, 'displayOrder.length:', displayOrder.length);
     if (index >= 0 && index < displayOrder.length) {
+      console.log('[PlaylistPlayer] Switching to video at index:', index);
       setCurrentIndex(index);
+    } else {
+      console.warn('[PlaylistPlayer] Invalid index requested:', index);
     }
   }, [displayOrder.length]);
 
@@ -443,18 +471,30 @@ export default function PlaylistPlayer() {
 
   // Initialize player ONCE on mount (do NOT depend on currentVideo to avoid disposal on video change)
   useEffect(() => {
+    console.log('[PlaylistPlayer] Init effect triggered. videoRef:', !!videoRef.current, 'playerInstance:', !!playerInstanceRef.current, 'currentVideo:', !!currentVideo);
+
     // Don't initialize if: no video element or already initialized
-    if (!videoRef.current || playerInstanceRef.current) return;
+    if (!videoRef.current || playerInstanceRef.current) {
+      console.log('[PlaylistPlayer] Skipping init - already initialized or no video element');
+      return;
+    }
 
     // Wait for first video to be available
-    if (!currentVideo) return;
+    if (!currentVideo) {
+      console.log('[PlaylistPlayer] Waiting for first video to load...');
+      return;
+    }
 
     const videoSrc = getVideoSource(currentVideo.file_path);
-    if (!videoSrc) return;
+    if (!videoSrc) {
+      console.error('[PlaylistPlayer] No video source for:', currentVideo.file_path);
+      return;
+    }
 
     // First time: Initialize player
-    console.log('Initializing video.js player for first video...');
-    console.log('Video source:', videoSrc);
+    console.log('[PlaylistPlayer] ===== INITIALIZING PLAYER =====');
+    console.log('[PlaylistPlayer] First video:', currentVideo.title);
+    console.log('[PlaylistPlayer] Video source:', videoSrc);
 
     // Detect mobile and iOS devices
     const isMobileDevice = () => {
@@ -1111,33 +1151,62 @@ export default function PlaylistPlayer() {
 
   // Update video source when currentVideo changes
   useEffect(() => {
-    if (!currentVideo || !playerInstanceRef.current) return;
+    console.log('[PlaylistPlayer] Source update effect triggered. currentVideo:', currentVideo?.title, 'playerInstance:', !!playerInstanceRef.current);
+
+    if (!currentVideo || !playerInstanceRef.current) {
+      console.log('[PlaylistPlayer] Skipping source update - no video or no player');
+      return;
+    }
 
     // Safety check: don't operate on disposed player
     if (playerInstanceRef.current.isDisposed && playerInstanceRef.current.isDisposed()) {
-      console.error('Attempted to update source on disposed player');
+      console.error('[PlaylistPlayer] ERROR: Attempted to update source on disposed player!');
       return;
     }
 
     const videoSrc = getVideoSource(currentVideo.file_path);
-    if (!videoSrc) return;
+    if (!videoSrc) {
+      console.error('[PlaylistPlayer] ERROR: No video source for:', currentVideo.file_path);
+      return;
+    }
 
-    console.log('Updating video source to:', currentVideo.title);
+    console.log('[PlaylistPlayer] ===== UPDATING VIDEO SOURCE =====');
+    console.log('[PlaylistPlayer] New video:', currentVideo.title);
+    console.log('[PlaylistPlayer] Video ID:', currentVideo.id);
+    console.log('[PlaylistPlayer] Source path:', videoSrc);
+    console.log('[PlaylistPlayer] Player state before update:', {
+      paused: playerInstanceRef.current.paused(),
+      currentTime: playerInstanceRef.current.currentTime(),
+      duration: playerInstanceRef.current.duration()
+    });
 
     // Reset player state before changing source
     playerInstanceRef.current.pause();
+    console.log('[PlaylistPlayer] Player paused');
+
     playerInstanceRef.current.src({
       src: videoSrc,
       type: 'video/mp4'
     });
+    console.log('[PlaylistPlayer] Source set to:', videoSrc);
 
     // Explicitly load the new source
     playerInstanceRef.current.load();
+    console.log('[PlaylistPlayer] Load() called');
 
     // Restore position after source loads
     playerInstanceRef.current.one('loadedmetadata', () => {
+      console.log('[PlaylistPlayer] loadedmetadata event fired');
       const savedPosition = currentVideo.playback_seconds;
       const duration = playerInstanceRef.current.duration();
+
+      console.log('[PlaylistPlayer] Video metadata loaded:', {
+        title: currentVideo.title,
+        duration: duration,
+        savedPosition: savedPosition,
+        videoWidth: playerInstanceRef.current.videoWidth(),
+        videoHeight: playerInstanceRef.current.videoHeight()
+      });
 
       if (
         savedPosition > 0 &&
@@ -1146,21 +1215,37 @@ export default function PlaylistPlayer() {
         duration > 0 &&
         savedPosition < duration
       ) {
-        console.log('Restoring playback position to:', savedPosition);
+        console.log('[PlaylistPlayer] Restoring playback position to:', savedPosition);
         playerInstanceRef.current.currentTime(savedPosition);
+      } else {
+        console.log('[PlaylistPlayer] Starting from beginning (no saved position or invalid)');
       }
 
       // Autoplay on desktop and tablet (not mobile)
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       if (!isMobile) {
+        console.log('[PlaylistPlayer] Attempting autoplay (desktop/tablet)');
         playerInstanceRef.current.play().catch(e => {
-          console.log('Autoplay prevented:', e);
+          console.warn('[PlaylistPlayer] Autoplay prevented:', e);
         });
+      } else {
+        console.log('[PlaylistPlayer] Skipping autoplay (mobile device)');
       }
+    });
+
+    // Add error handler
+    playerInstanceRef.current.one('error', (e) => {
+      console.error('[PlaylistPlayer] ERROR: Video error event:', e);
+      console.error('[PlaylistPlayer] Error details:', {
+        error: playerInstanceRef.current.error(),
+        src: videoSrc,
+        readyState: playerInstanceRef.current.readyState()
+      });
     });
 
     // Update current video ID ref
     currentVideoIdRef.current = currentVideo.id;
+    console.log('[PlaylistPlayer] Source update complete, waiting for loadedmetadata...');
   }, [currentVideo?.id]); // Run when video changes
 
   // Update theater mode button state when isTheaterMode changes
