@@ -1319,7 +1319,7 @@ export default function PlaylistPlayer() {
             ) : (
             // Expanded state - full queue (limited to video player height)
             <div className="bg-surface rounded-xl shadow-card overflow-hidden flex flex-col self-start max-h-[600px]">
-              <div className="p-4 border-b border-border">
+              <div className="p-4 border-b border-accent/30">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h2 className="text-lg font-semibold text-text-primary">
@@ -1409,7 +1409,7 @@ export default function PlaylistPlayer() {
                   <button
                     key={video.id}
                     onClick={() => goToVideo(displayIndex)}
-                    className={`w-full p-2 flex gap-2 hover:bg-surface-hover transition-colors border-b border-border/50 ${
+                    className={`w-full p-2 flex gap-2 hover:bg-surface-hover transition-colors ${
                       isCurrent ? 'bg-accent/20' : ''
                     }`}
                   >
@@ -1478,7 +1478,7 @@ export default function PlaylistPlayer() {
             className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl max-h-[80vh] flex flex-col animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-4 border-b border-border flex items-center justify-between">
+            <div className="p-4 border-b border-accent/30 flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-text-primary">
                   {sourceTitle}
@@ -1512,7 +1512,7 @@ export default function PlaylistPlayer() {
                       goToVideo(displayIndex);
                       setShowMobileQueue(false);
                     }}
-                    className={`w-full p-3 flex gap-3 hover:bg-surface-hover transition-colors border-b border-border/50 ${
+                    className={`w-full p-3 flex gap-3 hover:bg-surface-hover transition-colors ${
                       isCurrent ? 'bg-accent/20' : ''
                     }`}
                   >
