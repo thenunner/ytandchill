@@ -717,23 +717,9 @@ select {
   font-family: inherit;
 }
 
-/* Big play button */
+/* Hide big play button - controls are always visible */
 .video-js .vjs-big-play-button {
-  background-color: hsla(var(--accent) / 0.9);
-  border: none;
-  border-radius: 50%;
-  width: 80px;
-  height: 80px;
-  line-height: 80px;
-  font-size: 3em;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  margin: 0 !important;
-}
-
-.video-js .vjs-big-play-button:hover {
-  background-color: hsl(var(--accent-hover));
+  display: none !important;
 }
 
 /* Control bar background */
@@ -897,6 +883,16 @@ select {
   height: 0.8em;
 }
 
+/* Fix progress bar scrubber/handle alignment */
+.video-js .vjs-play-progress:before {
+  top: -0.3em;
+}
+
+.video-js .vjs-slider-handle {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 /* Larger volume slider */
 .video-js .vjs-volume-bar {
   height: 0.8em;
@@ -924,5 +920,10 @@ select {
 
   .video-js .vjs-progress-holder {
     height: 1em;
+  }
+
+  /* Adjust scrubber alignment for larger mobile progress bar */
+  .video-js .vjs-play-progress:before {
+    top: -0.25em;
   }
 }
