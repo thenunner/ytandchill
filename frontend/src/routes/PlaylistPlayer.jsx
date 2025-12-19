@@ -1232,13 +1232,21 @@ export default function PlaylistPlayer() {
       </div>
 
       {/* Player and Queue Layout */}
-      <div className={`flex flex-col md:flex-row gap-4 ${isTheaterMode ? '' : 'max-w-7xl mx-auto'} transition-all duration-300`}>
+      <div className={`flex flex-col md:flex-row gap-4 transition-all duration-300 ${
+        isTheaterMode || isQueueCollapsed ? 'items-start' : ''
+      }`}>
         {/* Player Container */}
-        <div className={`${isTheaterMode ? 'flex-1' : 'flex-1 md:max-w-4xl'} transition-all duration-300`}>
-          <div className="bg-black rounded-xl shadow-card-hover relative">
+        <div className={`flex-1 transition-all duration-300 ${isQueueCollapsed ? 'max-w-none' : ''}`}>
+          <div className={`bg-black rounded-xl shadow-card-hover relative ${
+            isTheaterMode || isQueueCollapsed
+              ? 'max-w-[1920px] mx-auto md:h-[calc(100vh-12rem)]'
+              : 'max-w-4xl'
+          }`}>
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered w-full h-auto block"
+              className={`video-js vjs-big-play-centered w-full block ${
+                isTheaterMode || isQueueCollapsed ? 'md:h-full md:object-contain h-auto' : 'h-auto'
+              }`}
               playsInline
               preload="auto"
             />
@@ -1307,7 +1315,9 @@ export default function PlaylistPlayer() {
             </div>
           ) : (
             // Expanded state - full queue
-            <div className="bg-surface rounded-xl shadow-card border border-border sticky top-4 max-h-[calc(100vh-8rem)] overflow-hidden flex flex-col">
+            <div className={`bg-surface rounded-xl shadow-card border border-border sticky top-4 overflow-hidden flex flex-col ${
+              isTheaterMode || isQueueCollapsed ? 'md:h-[calc(100vh-12rem)]' : 'max-h-[calc(100vh-8rem)]'
+            }`}>
               <div className="p-4 border-b border-border">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
