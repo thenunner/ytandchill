@@ -826,9 +826,9 @@ export default function Player() {
       </div>
 
       {/* Player Container */}
-      <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
-          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover relative">
-            <div ref={videoContainerRef} data-vjs-player className="w-full aspect-video" />
+      <div className={`w-full ${isTheaterMode ? '' : 'max-w-4xl mx-auto'} transition-all duration-300`}>
+          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover relative max-h-[60vh]">
+            <div ref={videoContainerRef} data-vjs-player className="w-full h-full" />
           </div>
 
           {/* Video Info Below Player */}
