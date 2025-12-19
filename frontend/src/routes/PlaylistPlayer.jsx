@@ -441,8 +441,9 @@ export default function PlaylistPlayer() {
     };
   }, []);
 
-  // Initialize player ONCE on mount
+  // Initialize player ONCE when currentVideo becomes available
   useEffect(() => {
+    // Don't initialize if: no video element, already initialized, or no video loaded yet
     if (!videoRef.current || playerInstanceRef.current || !currentVideo) return;
 
     const videoSrc = getVideoSource(currentVideo.file_path);
@@ -1103,7 +1104,7 @@ export default function PlaylistPlayer() {
       }
       playerInstanceRef.current = null;
     };
-  }, []); // Only run on mount/unmount
+  }, [currentVideo]); // Run when currentVideo becomes available (but only init once due to playerInstanceRef check)
 
   // Update video source when currentVideo changes
   useEffect(() => {
