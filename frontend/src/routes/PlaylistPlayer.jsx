@@ -1,5 +1,6 @@
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import { useQueries } from '@tanstack/react-query';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo } from '../api/queries';
@@ -30,6 +31,27 @@ export default function PlaylistPlayer() {
   const { data: playlist, isLoading: isLoadingPlaylist } = usePlaylist(playlistId, { enabled: !!playlistId });
   const { data: playlistsData, isLoading: isLoadingCategory } = usePlaylists({ enabled: !!categoryId });
 
+  // For category mode, get all playlists in this category
+  const categoryPlaylists = useMemo(() => {
+    if (!categoryId || !playlistsData) return [];
+    const catId = parseInt(categoryId, 10);
+    if (isNaN(catId)) return [];
+    return playlistsData.filter(p => p.category_id === catId);
+  }, [categoryId, playlistsData]);
+
+  // Fetch videos from all playlists in the category
+  const categoryPlaylistQueries = useQueries({
+    queries: categoryPlaylists.map(pl => ({
+      queryKey: ['playlist', pl.id],
+      queryFn: async () => {
+        const response = await fetch(`/api/playlists/${pl.id}`);
+        if (!response.ok) throw new Error('Failed to fetch playlist');
+        return response.json();
+      },
+      enabled: !!categoryId && categoryPlaylists.length > 0,
+    })),
+  });
+
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
 
@@ -43,6 +65,10 @@ export default function PlaylistPlayer() {
   const [showMobileQueue, setShowMobileQueue] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(() => {
     const saved = localStorage.getItem('theaterMode');
+    return saved === 'true';
+  });
+  const [isQueueCollapsed, setIsQueueCollapsed] = useState(() => {
+    const saved = localStorage.getItem('queueCollapsed');
     return saved === 'true';
   });
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
@@ -77,21 +103,43 @@ export default function PlaylistPlayer() {
     if (playlistId && playlist?.videos) {
       return playlist.videos.filter(v => v.status === 'library' && v.file_path);
     }
-    if (categoryId && playlistsData) {
-      // For category mode, combine all videos from playlists in that category
-      const catId = parseInt(categoryId, 10);
-      if (!isNaN(catId)) {
-        const categoryPlaylists = playlistsData.filter(p => p.category_id === catId);
-        // We'd need to fetch each playlist's videos - for now return empty
-        // This would need the same category video fetching logic from PLYR version
-        return [];
-      }
+    if (categoryId && categoryPlaylistQueries.length > 0) {
+      // Check if all queries are loaded
+      const allLoaded = categoryPlaylistQueries.every(q => q.isSuccess);
+      if (!allLoaded) return [];
+
+      // Combine videos from all playlists in the category
+      const allVideos = [];
+      categoryPlaylistQueries.forEach(query => {
+        if (query.data?.videos) {
+          const playlistVideos = query.data.videos.filter(v => v.status === 'library' && v.file_path);
+          allVideos.push(...playlistVideos);
+        }
+      });
+
+      return allVideos;
     }
     return [];
-  }, [playlistId, categoryId, playlist, playlistsData]);
+  }, [playlistId, categoryId, playlist, categoryPlaylistQueries]);
 
-  const sourceTitle = playlist?.name || 'Playlist';
-  const isLoading = isLoadingPlaylist || isLoadingCategory;
+  const sourceTitle = useMemo(() => {
+    if (playlistId && playlist?.name) {
+      return playlist.name;
+    }
+    if (categoryId && categoryPlaylists.length > 0) {
+      // Use the category name from the first playlist
+      return categoryPlaylists[0]?.category_name || 'Category';
+    }
+    return 'Playlist';
+  }, [playlistId, playlist, categoryId, categoryPlaylists]);
+
+  const isLoading = useMemo(() => {
+    if (playlistId) return isLoadingPlaylist;
+    if (categoryId) {
+      return isLoadingCategory || categoryPlaylistQueries.some(q => q.isLoading);
+    }
+    return false;
+  }, [playlistId, categoryId, isLoadingPlaylist, isLoadingCategory, categoryPlaylistQueries]);
 
   // Get display order (original or shuffled)
   const displayOrder = useMemo(() => {
@@ -240,6 +288,14 @@ export default function PlaylistPlayer() {
       showNotification(error.message, 'error');
     }
   }, [currentVideo, updateVideo, showNotification]);
+
+  const toggleQueueCollapse = useCallback(() => {
+    setIsQueueCollapsed(prev => {
+      const newValue = !prev;
+      localStorage.setItem('queueCollapsed', newValue.toString());
+      return newValue;
+    });
+  }, []);
 
   // Update goToNextRef
   useEffect(() => {
@@ -1108,80 +1164,8 @@ export default function PlaylistPlayer() {
 
   return (
     <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
-      {/* Playlist Controls - Shuffle, Loop, Queue Button */}
-      <div className="flex justify-center gap-3 mb-4">
-        <button
-          onClick={shufflePlaylist}
-          className="icon-btn hover:bg-accent hover:border-accent"
-          title="Shuffle playlist"
-          aria-label="Shuffle playlist order"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="16 3 21 3 21 8"></polyline>
-            <line x1="4" y1="20" x2="21" y2="3"></line>
-            <polyline points="21 16 21 21 16 21"></polyline>
-            <line x1="15" y1="15" x2="21" y2="21"></line>
-            <line x1="4" y1="4" x2="9" y2="9"></line>
-          </svg>
-        </button>
-
-        <button
-          onClick={toggleLoop}
-          className={`icon-btn hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent' : ''}`}
-          title={isLooping ? 'Disable loop' : 'Enable loop'}
-          aria-label={isLooping ? 'Disable playlist loop' : 'Enable playlist loop'}
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M17 1l4 4-4 4"></path>
-            <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-            <path d="M7 23l-4-4 4-4"></path>
-            <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-          </svg>
-        </button>
-
-        <button
-          onClick={goToPrevious}
-          disabled={currentIndex === 0 && !isLooping}
-          className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Previous video (P)"
-          aria-label="Go to previous video"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-          </svg>
-        </button>
-
-        <button
-          onClick={goToNext}
-          disabled={currentIndex === displayOrder.length - 1 && !isLooping}
-          className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-          title="Next video (N)"
-          aria-label="Go to next video"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M16 18h2V6h-2zm-11-6l8.5-6v12z"/>
-          </svg>
-        </button>
-
-        <button
-          onClick={() => setShowMobileQueue(true)}
-          className="icon-btn hover:bg-accent hover:border-accent md:hidden"
-          title="Show queue"
-          aria-label="Show video queue"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
-      {/* Centered Control Buttons */}
-      <div className="flex justify-center gap-3 mb-8">
+      {/* Control Buttons - Left aligned like YouTube */}
+      <div className="flex gap-3 mb-8">
         <button
           onClick={handleBack}
           className="icon-btn hover:bg-accent hover:border-accent"
@@ -1226,6 +1210,23 @@ export default function PlaylistPlayer() {
           <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <polyline points="3 6 5 6 21 6"></polyline>
             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
+
+        {/* Mobile Queue Button */}
+        <button
+          onClick={() => setShowMobileQueue(true)}
+          className="icon-btn hover:bg-accent hover:border-accent md:hidden"
+          title="Show queue"
+          aria-label="Show video queue"
+        >
+          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="8" y1="6" x2="21" y2="6"></line>
+            <line x1="8" y1="12" x2="21" y2="12"></line>
+            <line x1="8" y1="18" x2="21" y2="18"></line>
+            <line x1="3" y1="6" x2="3.01" y2="6"></line>
+            <line x1="3" y1="12" x2="3.01" y2="12"></line>
+            <line x1="3" y1="18" x2="3.01" y2="18"></line>
           </svg>
         </button>
       </div>
@@ -1286,17 +1287,112 @@ export default function PlaylistPlayer() {
         {/* Queue Sidebar (Desktop Only) */}
         <div
           ref={sidebarRef}
-          className={`hidden md:block ${isTheaterMode ? 'w-96' : 'w-80'} transition-all duration-300`}
+          className={`hidden md:block transition-all duration-300 ${
+            isQueueCollapsed ? 'w-12' : (isTheaterMode ? 'w-96' : 'w-80')
+          }`}
         >
-          <div className="bg-surface rounded-xl shadow-card border border-border sticky top-4 max-h-[calc(100vh-8rem)] overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-border">
-              <h2 className="text-lg font-semibold text-text-primary">
-                {sourceTitle}
-              </h2>
-              <p className="text-sm text-text-secondary mt-1">
-                {currentIndex + 1} / {videos.length} videos
-              </p>
+          {isQueueCollapsed ? (
+            // Collapsed state - vertical button
+            <div className="sticky top-4">
+              <button
+                onClick={toggleQueueCollapse}
+                className="w-12 h-32 bg-surface hover:bg-surface-hover rounded-xl shadow-card border border-border flex items-center justify-center transition-colors"
+                title="Show queue"
+                aria-label="Show video queue"
+              >
+                <svg className="w-6 h-6 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </button>
             </div>
+          ) : (
+            // Expanded state - full queue
+            <div className="bg-surface rounded-xl shadow-card border border-border sticky top-4 max-h-[calc(100vh-8rem)] overflow-hidden flex flex-col">
+              <div className="p-4 border-b border-border">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-text-primary">
+                      {sourceTitle}
+                    </h2>
+                    <p className="text-sm text-text-secondary mt-1">
+                      {currentIndex + 1} / {videos.length} videos
+                    </p>
+                  </div>
+                  <button
+                    onClick={toggleQueueCollapse}
+                    className="icon-btn"
+                    title="Hide queue"
+                    aria-label="Hide video queue"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Playlist Controls - YouTube style */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={shufflePlaylist}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover transition-colors text-sm text-text-secondary hover:text-text-primary"
+                    title="Shuffle playlist"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="16 3 21 3 21 8"></polyline>
+                      <line x1="4" y1="20" x2="21" y2="3"></line>
+                      <polyline points="21 16 21 21 16 21"></polyline>
+                      <line x1="15" y1="15" x2="21" y2="21"></line>
+                      <line x1="4" y1="4" x2="9" y2="9"></line>
+                    </svg>
+                    <span>Shuffle</span>
+                  </button>
+
+                  <button
+                    onClick={toggleLoop}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors text-sm ${
+                      isLooping
+                        ? 'bg-accent/20 text-accent-text'
+                        : 'hover:bg-surface-hover text-text-secondary hover:text-text-primary'
+                    }`}
+                    title={isLooping ? 'Disable loop' : 'Enable loop'}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 1l4 4-4 4"></path>
+                      <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                      <path d="M7 23l-4-4 4-4"></path>
+                      <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                    <span>Loop</span>
+                  </button>
+                </div>
+
+                {/* Navigation Buttons */}
+                <div className="flex items-center gap-2 mt-3">
+                  <button
+                    onClick={goToPrevious}
+                    disabled={currentIndex === 0 && !isLooping}
+                    className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Previous video (P)"
+                    aria-label="Go to previous video"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={goToNext}
+                    disabled={currentIndex === displayOrder.length - 1 && !isLooping}
+                    className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Next video (N)"
+                    aria-label="Go to next video"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
 
             <div className="overflow-y-auto flex-1">
               {displayOrder.map((actualIndex, displayIndex) => {
@@ -1314,11 +1410,19 @@ export default function PlaylistPlayer() {
                     }`}
                   >
                     <div className="relative flex-shrink-0 w-32 h-18 bg-black rounded overflow-hidden">
-                      <img
-                        src={video.thumbnail_path || '/placeholder-thumb.jpg'}
-                        alt={video.title}
-                        className="w-full h-full object-cover"
-                      />
+                      {video.thumb_url ? (
+                        <img
+                          src={video.thumb_url}
+                          alt={video.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-surface-hover">
+                          <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                          </svg>
+                        </div>
+                      )}
                       <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
                         {formatDuration(video.duration_sec)}
                       </div>
@@ -1353,7 +1457,8 @@ export default function PlaylistPlayer() {
                 );
               })}
             </div>
-          </div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -1407,11 +1512,19 @@ export default function PlaylistPlayer() {
                     }`}
                   >
                     <div className="relative flex-shrink-0 w-32 h-18 bg-black rounded overflow-hidden">
-                      <img
-                        src={video.thumbnail_path || '/placeholder-thumb.jpg'}
-                        alt={video.title}
-                        className="w-full h-full object-cover"
-                      />
+                      {video.thumb_url ? (
+                        <img
+                          src={video.thumb_url}
+                          alt={video.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-surface-hover">
+                          <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                          </svg>
+                        </div>
+                      )}
                       <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
                         {formatDuration(video.duration_sec)}
                       </div>

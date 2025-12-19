@@ -195,6 +195,58 @@ class AutoRefreshScheduler:
         except Exception as e:
             logger.error(f"Auto-scan: Error updating yt-dlp: {e}")
 
+    def cleanup_orphaned_videos(self):
+        """Remove or mark as ignored videos whose files no longer exist on disk"""
+        logger.info("Auto-scan: Checking for orphaned videos...")
+
+        with get_session(self.session_factory) as session:
+            # Get all videos marked as 'library' status
+            library_videos = session.query(Video).filter(Video.status == 'library').all()
+
+            if not library_videos:
+                logger.debug("Auto-scan: No library videos to check")
+                return
+
+            logger.debug(f"Auto-scan: Checking {len(library_videos)} library videos for missing files")
+
+            orphaned_count = 0
+            deleted_count = 0
+            ignored_count = 0
+
+            for video in library_videos:
+                # Skip videos without file_path
+                if not video.file_path:
+                    continue
+
+                # Check if file exists on disk
+                if not os.path.exists(video.file_path):
+                    orphaned_count += 1
+
+                    # Check if this is a singles video
+                    is_single = (
+                        video.channel_id is None or
+                        video.channel is None or
+                        video.channel.yt_id == '__singles__'
+                    )
+
+                    if is_single:
+                        # Delete singles videos completely
+                        logger.info(f"Auto-scan: Deleting orphaned single video: {video.title} (ID: {video.id})")
+                        session.delete(video)
+                        deleted_count += 1
+                    else:
+                        # Mark channel videos as ignored
+                        logger.info(f"Auto-scan: Marking orphaned channel video as ignored: {video.title} (Channel: {video.channel.title})")
+                        video.status = 'ignored'
+                        ignored_count += 1
+
+            session.commit()
+
+            if orphaned_count > 0:
+                logger.info(f"Auto-scan: Cleaned up {orphaned_count} orphaned videos ({deleted_count} deleted, {ignored_count} marked ignored)")
+            else:
+                logger.debug("Auto-scan: No orphaned videos found")
+
     def scan_all_channels(self):
         """Queue scans for all channels and update yt-dlp"""
         logger.info("Auto-scan: Starting scheduled auto-scan")
@@ -203,6 +255,11 @@ class AutoRefreshScheduler:
         if self.set_operation:
             self.set_operation('auto_refresh', 'Updating dependencies...')
         self.update_dependencies()
+
+        # Clean up orphaned videos (files that no longer exist)
+        if self.set_operation:
+            self.set_operation('auto_refresh', 'Cleaning up orphaned videos...')
+        self.cleanup_orphaned_videos()
 
         # Then queue all channels for scanning
         if self.set_operation:
