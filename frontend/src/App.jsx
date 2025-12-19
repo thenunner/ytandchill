@@ -30,6 +30,29 @@ function App() {
   const [showKebabMenu, setShowKebabMenu] = useState(false);
   const kebabMenuRef = useRef(null);
 
+  // Status bar visibility - sync with localStorage
+  const [statusBarVisible, setStatusBarVisible] = useState(() => {
+    const saved = localStorage.getItem('statusBarVisible');
+    return saved !== null ? saved === 'true' : true; // Default: visible
+  });
+
+  // Listen for changes to status bar visibility in localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('statusBarVisible');
+      setStatusBarVisible(saved !== null ? saved === 'true' : true);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // Also check on interval for same-tab changes
+    const interval = setInterval(handleStorageChange, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Check if current theme is a light theme
   const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'debug';
 
@@ -440,8 +463,8 @@ function App() {
         </Routes>
       </main>
 
-      {/* Footer Status Bar - Hidden on auth pages and mobile */}
-      {!isAuthPage && (downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || cookieWarning || health) && (
+      {/* Footer Status Bar - Hidden on auth pages and mobile, or when user hides it */}
+      {!isAuthPage && statusBarVisible && (downloading > 0 || pending > 0 || currentOperation?.type === 'scan_complete' || currentOperation?.type === 'scanning' || notification || isAutoRefreshing || delayInfo || visibleErrorMessage || cookieWarning || health) && (
         <footer className="hidden md:block bg-dark-primary sticky bottom-0 z-50 pb-safe">
           {/* Quick Logs Slide-UP Panel - Hidden on mobile */}
           <div

@@ -1177,10 +1177,11 @@ export default function PlaylistPlayer() {
           <div className={`w-full transition-all duration-300 ease-in-out ${
             isTheaterMode ? 'md:w-[calc(100%-3.5rem)]' : 'md:w-[60%]'
           }`} style={{ willChange: 'width' }}>
-            <div className="bg-black rounded-xl shadow-card-hover relative w-full transition-all duration-300 ease-in-out">
+            <div className="bg-black rounded-xl shadow-card-hover relative w-full transition-all duration-300 ease-in-out flex items-center justify-center">
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered w-full h-auto block"
+              className="video-js vjs-big-play-centered max-w-full h-auto block mx-auto"
+              style={{ maxHeight: '80vh' }}
               playsInline
               preload="auto"
             />

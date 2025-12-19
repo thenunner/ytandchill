@@ -55,20 +55,19 @@ export default function Settings() {
     return saved !== null ? saved === 'true' : true; // Default: open
   });
 
+  // Initialize status bar visibility from localStorage, default to true (visible)
+  const [statusBarVisible, setStatusBarVisible] = useState(() => {
+    const saved = localStorage.getItem('statusBarVisible');
+    return saved !== null ? saved === 'true' : true; // Default: visible
+  });
+
   // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
-  // Auto-scroll to bottom of logs when they update (instant scroll)
-  useEffect(() => {
-    if (logEndRef.current && showLogs) {
-      // Use instant scroll for initial load, smooth for updates
-      const isInitialLoad = !logEndRef.current.hasScrolledBefore;
-      logEndRef.current.scrollIntoView({ behavior: isInitialLoad ? 'instant' : 'smooth' });
-      logEndRef.current.hasScrolledBefore = true;
-    }
-  }, [logsData, showLogs]);
+  // Do NOT auto-scroll to bottom of logs - let user control their scroll position
+  // This prevents the page from jumping when new logs come in while user is reading
 
   useEffect(() => {
     if (settings) {
@@ -246,6 +245,12 @@ export default function Settings() {
     } catch (error) {
       showNotification(error.message || 'Failed to save auto-scan settings', 'error');
     }
+  };
+
+  const toggleStatusBar = () => {
+    const newValue = !statusBarVisible;
+    setStatusBarVisible(newValue);
+    localStorage.setItem('statusBarVisible', newValue.toString());
   };
 
   const handlePasswordChange = async (e) => {
@@ -465,13 +470,21 @@ export default function Settings() {
                 </label>
               </div>
 
-              {/* Reset User Button Row */}
-              <button
-                onClick={() => setShowPasswordChange(!showPasswordChange)}
-                className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-              >
-                Reset User
-              </button>
+              {/* Reset User and Status Bar Toggle Buttons Row */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowPasswordChange(!showPasswordChange)}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+                >
+                  Reset User
+                </button>
+                <button
+                  onClick={toggleStatusBar}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+                >
+                  {statusBarVisible ? 'Hide Status Bar' : 'Show Status Bar'}
+                </button>
+              </div>
             </div>
 
             {/* Password Change Form */}

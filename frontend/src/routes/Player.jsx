@@ -812,10 +812,11 @@ export default function Player() {
       <div className={`md:max-w-[83.333%] transition-all duration-300 ease-in-out ${
         isTheaterMode ? 'md:w-[83.333%]' : 'md:w-[60%]'
       }`} style={{ willChange: 'width' }}>
-          <div className="bg-black rounded-xl shadow-card-hover relative">
+          <div className="bg-black rounded-xl shadow-card-hover relative flex items-center justify-center">
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered w-full h-auto block"
+              className="video-js vjs-big-play-centered max-w-full h-auto block mx-auto"
+              style={{ maxHeight: '80vh' }}
               playsInline
               preload="auto"
             />
