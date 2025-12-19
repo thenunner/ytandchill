@@ -1173,9 +1173,9 @@ export default function PlaylistPlayer() {
       {/* Player and Queue Layout */}
       <div className="md:max-w-[83.333%]">
         <div className="flex flex-col md:flex-row gap-2 items-start transition-all duration-300 ease-in-out">
-          {/* Player Container - 3/5 in normal mode, 5/5 in theater mode */}
+          {/* Player Container - 3/5 in normal mode, full width minus queue button in theater mode */}
           <div className={`w-full transition-all duration-300 ease-in-out ${
-            isTheaterMode ? 'md:flex-1' : 'md:w-[60%]'
+            isTheaterMode ? 'md:w-[calc(100%-3.5rem)]' : 'md:w-[60%]'
           }`} style={{ willChange: 'width' }}>
             <div className="bg-black rounded-xl shadow-card-hover relative w-full transition-all duration-300 ease-in-out">
             <video
