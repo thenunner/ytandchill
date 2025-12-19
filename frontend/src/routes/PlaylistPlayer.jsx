@@ -1232,21 +1232,17 @@ export default function PlaylistPlayer() {
       </div>
 
       {/* Player and Queue Layout */}
-      <div className={`flex flex-col md:flex-row gap-4 transition-all duration-300 ${
-        isTheaterMode || isQueueCollapsed ? 'items-start' : ''
-      }`}>
+      <div className="flex flex-col md:flex-row gap-4 transition-all duration-300 items-start">
         {/* Player Container */}
-        <div className={`flex-1 transition-all duration-300 ${isQueueCollapsed ? 'max-w-none' : ''}`}>
+        <div className="w-full md:flex-1">
           <div className={`bg-black rounded-xl shadow-card-hover relative ${
             isTheaterMode || isQueueCollapsed
-              ? 'max-w-[1920px] mx-auto md:h-[calc(100vh-12rem)]'
-              : 'max-w-4xl'
+              ? 'md:max-h-[calc(100vh-12rem)] w-full flex items-center justify-center'
+              : 'max-w-4xl w-full'
           }`}>
             <video
               ref={videoRef}
-              className={`video-js vjs-big-play-centered w-full block ${
-                isTheaterMode || isQueueCollapsed ? 'md:h-full md:object-contain h-auto' : 'h-auto'
-              }`}
+              className="video-js vjs-big-play-centered w-full h-auto block"
               playsInline
               preload="auto"
             />
@@ -1301,14 +1297,14 @@ export default function PlaylistPlayer() {
         >
           {isQueueCollapsed ? (
             // Collapsed state - vertical button
-            <div className="sticky top-4">
+            <div className="sticky top-4 flex-shrink-0">
               <button
                 onClick={toggleQueueCollapse}
-                className="w-12 h-32 bg-surface hover:bg-surface-hover rounded-xl shadow-card border border-border flex items-center justify-center transition-colors"
+                className="w-10 h-24 bg-surface hover:bg-surface-hover rounded-lg shadow-card border border-border flex items-center justify-center transition-colors"
                 title="Show queue"
                 aria-label="Show video queue"
               >
-                <svg className="w-6 h-6 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
               </button>
@@ -1340,44 +1336,8 @@ export default function PlaylistPlayer() {
                   </button>
                 </div>
 
-                {/* Playlist Controls - YouTube style */}
+                {/* Playlist Controls - Previous, Shuffle, Loop, Next */}
                 <div className="flex items-center gap-2">
-                  <button
-                    onClick={shufflePlaylist}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-full hover:bg-surface-hover transition-colors text-sm text-text-secondary hover:text-text-primary"
-                    title="Shuffle playlist"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="16 3 21 3 21 8"></polyline>
-                      <line x1="4" y1="20" x2="21" y2="3"></line>
-                      <polyline points="21 16 21 21 16 21"></polyline>
-                      <line x1="15" y1="15" x2="21" y2="21"></line>
-                      <line x1="4" y1="4" x2="9" y2="9"></line>
-                    </svg>
-                    <span>Shuffle</span>
-                  </button>
-
-                  <button
-                    onClick={toggleLoop}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors text-sm ${
-                      isLooping
-                        ? 'bg-accent/20 text-accent-text'
-                        : 'hover:bg-surface-hover text-text-secondary hover:text-text-primary'
-                    }`}
-                    title={isLooping ? 'Disable loop' : 'Enable loop'}
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17 1l4 4-4 4"></path>
-                      <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                      <path d="M7 23l-4-4 4-4"></path>
-                      <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                    </svg>
-                    <span>Loop</span>
-                  </button>
-                </div>
-
-                {/* Navigation Buttons */}
-                <div className="flex items-center gap-2 mt-3">
                   <button
                     onClick={goToPrevious}
                     disabled={currentIndex === 0 && !isLooping}
@@ -1387,6 +1347,35 @@ export default function PlaylistPlayer() {
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={shufflePlaylist}
+                    className="icon-btn hover:bg-accent hover:border-accent"
+                    title="Shuffle playlist (S)"
+                    aria-label="Shuffle playlist"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="16 3 21 3 21 8"></polyline>
+                      <line x1="4" y1="20" x2="21" y2="3"></line>
+                      <polyline points="21 16 21 21 16 21"></polyline>
+                      <line x1="15" y1="15" x2="21" y2="21"></line>
+                      <line x1="4" y1="4" x2="9" y2="9"></line>
+                    </svg>
+                  </button>
+
+                  <button
+                    onClick={toggleLoop}
+                    className={`icon-btn hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
+                    title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
+                    aria-label={isLooping ? 'Disable loop' : 'Enable loop'}
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 1l4 4-4 4"></path>
+                      <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                      <path d="M7 23l-4-4 4-4"></path>
+                      <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
                     </svg>
                   </button>
 
