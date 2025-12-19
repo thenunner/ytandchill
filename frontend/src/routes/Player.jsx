@@ -87,6 +87,9 @@ export default function Player() {
       const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
       console.log('Is iOS device:', isIOSDevice);
 
+      // Add video.js classes to the element
+      videoRef.current.classList.add('video-js', 'vjs-default-skin', 'vjs-big-play-centered');
+
       // Initialize video.js
       let player;
       try {
@@ -819,10 +822,11 @@ export default function Player() {
           <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
             <video
               ref={videoRef}
-              className="video-js vjs-default-skin vjs-big-play-centered w-full h-auto block"
+              className="w-full h-auto block"
               playsInline
               preload="auto"
               aria-label={video.title}
+              data-setup='{"fluid": false}'
             />
           </div>
 
