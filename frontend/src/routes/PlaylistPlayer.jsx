@@ -1562,7 +1562,7 @@ export default function PlaylistPlayer() {
       {/* Mobile Queue Drawer */}
       {showMobileQueue && (
         <div
-          className="md:hidden fixed inset-0 bg-black/50 z-50 animate-fade-in"
+          className="md:hidden fixed inset-0 bg-black/50 z-[200] animate-fade-in"
           onClick={() => setShowMobileQueue(false)}
         >
           <div
@@ -1605,7 +1605,7 @@ export default function PlaylistPlayer() {
                       setShowMobileQueue(false);
                     }}
                     className={`w-full p-3 flex gap-3 hover:bg-surface-hover transition-colors ${
-                      isCurrent ? 'bg-accent/20' : ''
+                      isCurrent ? 'bg-accent/20' : 'bg-surface'
                     }`}
                   >
                     <div className="relative flex-shrink-0 w-32 h-18 bg-black rounded overflow-hidden">

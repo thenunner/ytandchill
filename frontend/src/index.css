@@ -709,7 +709,7 @@ select {
   .video-js .vjs-control-bar {
     display: flex !important;
     pointer-events: auto !important;
-    z-index: 2147483647 !important;
+    z-index: 100 !important;
   }
 
   /* Keep controls visible when paused */
@@ -874,7 +874,7 @@ select {
     height: 3.5em;
     font-size: 13px;
     display: flex !important;
-    z-index: 1000 !important;
+    z-index: 100 !important;
   }
 
   /* Ensure controls are visible on mobile */
