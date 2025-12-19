@@ -152,8 +152,13 @@ export default function PlaylistPlayer() {
   // Current video based on index
   const currentVideo = useMemo(() => {
     if (videos.length === 0) return null;
-    const actualIndex = displayOrder[currentIndex];
-    if (actualIndex === undefined) return videos[0];
+    // Ensure currentIndex is valid
+    const safeIndex = Math.min(currentIndex, displayOrder.length - 1);
+    const actualIndex = displayOrder[safeIndex];
+    if (actualIndex === undefined || actualIndex >= videos.length) {
+      console.warn('Invalid video index:', actualIndex, 'falling back to first video');
+      return videos[0];
+    }
     return videos[actualIndex];
   }, [videos, displayOrder, currentIndex]);
 
@@ -1192,7 +1197,9 @@ export default function PlaylistPlayer() {
           <div className={`w-full transition-all duration-300 ease-in-out ${
             isTheaterMode ? 'md:w-[calc(100%-3.5rem)]' : 'md:w-[60%]'
           }`} style={{ willChange: 'width' }}>
-            <div className="bg-black rounded-xl shadow-card-hover relative w-full transition-all duration-300 ease-in-out flex items-center justify-center">
+            <div className={`bg-black rounded-xl shadow-card-hover relative w-full transition-all duration-300 ease-in-out flex items-center justify-center ${
+              isTheaterMode ? '' : 'max-h-[600px]'
+            }`}>
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered max-w-full h-auto block mx-auto"
