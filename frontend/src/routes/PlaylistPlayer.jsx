@@ -1567,7 +1567,7 @@ export default function PlaylistPlayer() {
         >
           <div
             ref={mobileQueueRef}
-            className="absolute bottom-0 left-0 right-0 bg-surface rounded-t-2xl max-h-[80vh] flex flex-col animate-slide-up"
+            className="absolute bottom-0 left-0 right-0 bg-dark-secondary rounded-t-2xl max-h-[80vh] flex flex-col animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 border-b border-accent/30 flex items-center justify-between">
