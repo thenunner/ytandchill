@@ -1318,7 +1318,7 @@ export default function PlaylistPlayer() {
               </div>
             ) : (
             // Expanded state - full queue
-            <div className="bg-surface rounded-xl shadow-card border border-border sticky top-4 overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
+            <div className="bg-surface rounded-xl shadow-card overflow-hidden flex flex-col self-start">
               <div className="p-4 border-b border-border">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
