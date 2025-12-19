@@ -705,25 +705,19 @@ select {
 
 /* iOS-specific fixes for video.js controls */
 @supports (-webkit-touch-callout: none) {
-  /* Force controls to always be visible on iOS */
-  .video-js .vjs-control-bar {
-    display: flex !important;
+  /* Keep controls visible when paused on iOS */
+  .video-js.vjs-paused .vjs-control-bar {
     opacity: 1 !important;
-    visibility: visible !important;
+  }
+
+  /* Ensure controls are clickable on iOS */
+  .video-js .vjs-control-bar {
     pointer-events: auto !important;
   }
 
-  /* Ensure control bar stays visible when paused */
-  .video-js.vjs-paused .vjs-control-bar {
-    opacity: 1 !important;
-    display: flex !important;
-  }
-
-  /* Force controls to show on user interaction */
-  .video-js.vjs-user-active .vjs-control-bar,
-  .video-js.vjs-user-inactive .vjs-control-bar {
-    opacity: 1 !important;
-    display: flex !important;
+  /* Hide loading spinner after video loads */
+  .video-js.vjs-has-started:not(.vjs-waiting) .vjs-loading-spinner {
+    display: none !important;
   }
 }
 
@@ -861,15 +855,11 @@ select {
   font-size: 14px;
 }
 
-/* Mobile/Tablet: Even larger controls */
+/* Mobile/Tablet: Moderately larger controls (not too big) */
 @media (max-width: 1024px) {
   .video-js .vjs-control-bar {
-    height: 5em;
-    font-size: 16px;
-    display: flex !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    z-index: 1000 !important;
+    height: 3.5em;
+    font-size: 13px;
   }
 }
 
@@ -918,32 +908,32 @@ select {
   height: 0.8em;
 }
 
-/* Increase touch targets on mobile */
+/* Adjust mobile touch targets (not too big) */
 @media (max-width: 1024px) {
   .video-js .vjs-button {
-    width: 4em;
+    width: 3em;
   }
 
   .video-js .vjs-icon-placeholder:before {
-    font-size: 2.2em;
+    font-size: 1.8em;
   }
 
   .video-js .vjs-current-time,
   .video-js .vjs-time-divider,
   .video-js .vjs-duration {
-    font-size: 1.5em;
+    font-size: 1.2em;
   }
 
   .video-js .vjs-progress-control {
-    min-height: 1em;
+    min-height: 0.7em;
   }
 
   .video-js .vjs-progress-holder {
-    height: 1em;
+    height: 0.7em;
   }
 
-  /* Adjust scrubber alignment for larger mobile progress bar */
+  /* Adjust scrubber alignment for mobile progress bar */
   .video-js .vjs-play-progress:before {
-    top: -0.25em;
+    top: -0.35em;
   }
 }
