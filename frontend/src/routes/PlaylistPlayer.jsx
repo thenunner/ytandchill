@@ -293,10 +293,6 @@ export default function PlaylistPlayer() {
     setIsQueueCollapsed(prev => {
       const newValue = !prev;
       localStorage.setItem('queueCollapsed', newValue.toString());
-      // When collapsing queue, also activate theater mode
-      // When expanding queue, deactivate theater mode
-      setIsTheaterMode(newValue);
-      localStorage.setItem('theaterMode', newValue.toString());
       return newValue;
     });
   }, []);
@@ -582,10 +578,6 @@ export default function PlaylistPlayer() {
           setIsTheaterMode(prev => {
             const newValue = !prev;
             localStorage.setItem('theaterMode', newValue.toString());
-            // When entering theater mode, collapse queue
-            // When exiting theater mode, expand queue
-            setIsQueueCollapsed(newValue);
-            localStorage.setItem('queueCollapsed', newValue.toString());
             return newValue;
           });
         };
@@ -1240,14 +1232,11 @@ export default function PlaylistPlayer() {
       </div>
 
       {/* Player and Queue Layout */}
-      <div className="flex flex-col md:flex-row gap-2 transition-all duration-300 items-start">
-        {/* Player Container */}
-        <div className="w-full md:flex-1">
-          <div className={`bg-black rounded-xl shadow-card-hover relative ${
-            isTheaterMode || isQueueCollapsed
-              ? 'md:max-h-[calc(100vh-12rem)] w-full flex items-center justify-center'
-              : 'w-full'
-          }`}>
+      <div className={`transition-all duration-300 ${isTheaterMode ? '' : 'max-w-6xl mx-auto'}`}>
+        <div className="flex flex-col md:flex-row gap-2 items-start">
+          {/* Player Container */}
+          <div className="w-full md:flex-1">
+            <div className="bg-black rounded-xl shadow-card-hover relative w-full">
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered w-full h-auto block"
@@ -1296,32 +1285,31 @@ export default function PlaylistPlayer() {
           </div>
         </div>
 
-        {/* Queue Sidebar (Desktop Only) */}
-        <div
-          ref={sidebarRef}
-          className={`hidden md:block transition-all duration-300 ${
-            isQueueCollapsed ? 'w-12' : (isTheaterMode ? 'w-96' : 'w-80')
-          }`}
-        >
-          {isQueueCollapsed || isTheaterMode ? (
-            // Collapsed state - icon button
-            <div className="sticky top-4 flex-shrink-0">
-              <button
-                onClick={toggleQueueCollapse}
-                className="icon-btn"
-                title="Show queue"
-                aria-label="Show video queue"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-              </button>
-            </div>
-          ) : (
+        {/* Queue Sidebar (Desktop Only) - Hidden completely in theater mode */}
+        {!isTheaterMode && (
+          <div
+            ref={sidebarRef}
+            className={`hidden md:block transition-all duration-300 ${
+              isQueueCollapsed ? 'w-12' : 'w-80'
+            }`}
+          >
+            {isQueueCollapsed ? (
+              // Collapsed state - icon button
+              <div className="sticky top-4 flex-shrink-0">
+                <button
+                  onClick={toggleQueueCollapse}
+                  className="icon-btn"
+                  title="Show queue"
+                  aria-label="Show video queue"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+              </div>
+            ) : (
             // Expanded state - full queue
-            <div className={`bg-surface rounded-xl shadow-card border border-border sticky top-4 overflow-hidden flex flex-col ${
-              isTheaterMode || isQueueCollapsed ? 'md:h-[calc(100vh-12rem)]' : 'max-h-[calc(100vh-8rem)]'
-            }`}>
+            <div className="bg-surface rounded-xl shadow-card border border-border sticky top-4 overflow-hidden flex flex-col max-h-[calc(100vh-8rem)]">
               <div className="p-4 border-b border-border">
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
@@ -1465,7 +1453,9 @@ export default function PlaylistPlayer() {
               })}
             </div>
             </div>
-          )}
+            )}
+          </div>
+        )}
         </div>
       </div>
 
