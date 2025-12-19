@@ -89,7 +89,10 @@ export default function Player() {
     const videoElement = document.createElement('video-js');
     videoElement.classList.add('vjs-big-play-centered');
     videoElement.setAttribute('playsinline', 'playsinline');
-    videoElement.setAttribute('preload', 'auto');
+    // Add webkit-playsinline for older iOS compatibility
+    videoElement.setAttribute('webkit-playsinline', 'webkit-playsinline');
+    // Use metadata preload on iOS to avoid autoplay restrictions
+    videoElement.setAttribute('preload', isIOSDevice ? 'metadata' : 'auto');
     if (video.title) {
       videoElement.setAttribute('aria-label', video.title);
     }
@@ -105,15 +108,16 @@ export default function Player() {
         playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         fluid: true,
         responsive: true,
-        preload: 'auto',
+        preload: isIOSDevice ? 'metadata' : 'auto',
         html5: {
           vhs: {
-            overrideNative: true
+            overrideNative: !isIOSDevice  // Use native on iOS
           },
-          nativeVideoTracks: false,
-          nativeAudioTracks: false,
-          nativeTextTracks: false
+          nativeVideoTracks: isIOSDevice,  // Use native on iOS
+          nativeAudioTracks: isIOSDevice,  // Use native on iOS
+          nativeTextTracks: isIOSDevice    // Use native on iOS
         },
+        techOrder: ['html5'],  // Explicitly prefer html5 tech
         controlBar: {
           children: [
             'playToggle',
@@ -186,12 +190,16 @@ export default function Player() {
       playerInstanceRef.current = player;
 
       // Set source AFTER initialization (like Plyr pattern)
+      // Try simple MIME type first on iOS (explicit codecs can cause issues)
+      console.log('Setting video source:', videoSrc);
+      console.log('Using iOS-optimized settings:', isIOSDevice);
+
       player.src({
         src: videoSrc,
         type: 'video/mp4'
       });
 
-      console.log('Source set to:', videoSrc);
+      console.log('Source set successfully');
 
         // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
         player.on('dblclick', (event) => {
@@ -534,21 +542,65 @@ export default function Player() {
         console.error('video.js error event');
         const error = player.error();
         if (error) {
-          console.error('Media error:', error.code, error.message);
+          console.error('=== Video Playback Error ===');
+          console.error('Error code:', error.code);
+          console.error('Error message:', error.message);
+          console.error('Full error object:', error);
+          console.error('iOS Device:', isIOSDevice);
+          console.error('Video source URL:', videoSrc);
+          console.error('Player tech in use:', player.techName_);
+          console.error('Current source:', player.currentSrc());
+          console.error('Network state:', player.networkState());
+          console.error('Ready state:', player.readyState());
+          console.error('User Agent:', navigator.userAgent);
+
           const errorMessages = {
-            1: 'Video loading aborted',
-            2: 'Network error - check your connection',
-            3: 'Video decoding failed - file may be corrupted',
-            4: 'Video format not supported'
+            1: 'Video loading aborted by user or browser',
+            2: 'Network error - failed to fetch video',
+            3: 'Video decoding failed - file may be corrupted or codec unsupported',
+            4: 'Video format or codec not supported by browser'
           };
-          showNotificationRef.current(errorMessages[error.code] || 'Video playback error', 'error');
+
+          let errorMsg = errorMessages[error.code] || 'Video playback error';
+
+          if (isIOSDevice) {
+            if (error.code === 2) {
+              errorMsg = 'Network error on iOS - check server CORS and Content-Type headers';
+              console.error('iOS Network Error - Possible causes:');
+              console.error('1. Server not sending correct Content-Type header');
+              console.error('2. CORS configuration blocking iOS Safari');
+              console.error('3. Video file path is incorrect');
+              console.error('4. Server not responding to iOS user agent');
+            } else if (error.code === 4) {
+              errorMsg = 'Video codec not supported on iOS - check video encoding';
+              console.error('iOS Format Error - Video must be:');
+              console.error('- H.264 (AVC) video codec');
+              console.error('- AAC audio codec');
+              console.error('- MP4 container with moov atom at front');
+            }
+          }
+
+          showNotificationRef.current(errorMsg, 'error');
         }
+      });
+
+      // Log successful loading events for debugging
+      player.on('loadstart', () => {
+        console.log('Video load started');
+      });
+
+      player.on('loadeddata', () => {
+        console.log('Video data loaded successfully');
       });
 
       // Restore playback position when metadata is loaded
       player.on('loadedmetadata', () => {
+        console.log('Video metadata loaded successfully');
         const savedPosition = video.playback_seconds;
         const duration = player.duration();
+
+        console.log('Video duration:', duration);
+        console.log('Saved position:', savedPosition);
 
         // Validate saved position before restoring
         if (
@@ -558,6 +610,7 @@ export default function Player() {
           duration > 0 &&
           savedPosition < duration
         ) {
+          console.log('Restoring playback position to:', savedPosition);
           player.currentTime(savedPosition);
         }
       });
