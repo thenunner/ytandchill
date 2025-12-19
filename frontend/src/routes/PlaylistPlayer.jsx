@@ -196,6 +196,51 @@ export default function PlaylistPlayer() {
     }
   }, [displayOrder.length]);
 
+  // Handler functions using useCallback
+  const handleBack = useCallback(() => {
+    if (!currentVideo) return;
+    // Navigate back to playlist view
+    if (playlistId) {
+      navigate(`/playlist/${playlistId}`);
+    } else {
+      navigate(-1);
+    }
+  }, [currentVideo, playlistId, navigate]);
+
+  const handleDelete = useCallback(async () => {
+    if (!currentVideo) return;
+    try {
+      showNotification('Deleting video...', 'info', { persistent: true });
+      await deleteVideo.mutateAsync(currentVideo.id);
+      showNotification('Video deleted', 'success');
+      setShowDeleteConfirm(false);
+      // Navigate to next video or go back to playlist
+      if (goToNext && videos.length > 1) {
+        goToNext();
+      } else {
+        navigate(-1);
+      }
+    } catch (error) {
+      showNotification(error.message || 'Failed to delete video', 'error');
+    }
+  }, [currentVideo, deleteVideo, showNotification, goToNext, videos.length, navigate]);
+
+  const toggleWatched = useCallback(async () => {
+    if (!currentVideo) return;
+    try {
+      await updateVideo.mutateAsync({
+        id: currentVideo.id,
+        data: { watched: !currentVideo.watched },
+      });
+      showNotification(
+        !currentVideo.watched ? 'Marked as watched' : 'Marked as unwatched',
+        'success'
+      );
+    } catch (error) {
+      showNotification(error.message, 'error');
+    }
+  }, [currentVideo, updateVideo, showNotification]);
+
   // Update goToNextRef
   useEffect(() => {
     goToNextRef.current = goToNext;
@@ -1060,50 +1105,6 @@ export default function PlaylistPlayer() {
       </div>
     );
   }
-
-  const handleDelete = async () => {
-    if (!currentVideo) return;
-    try {
-      showNotification('Deleting video...', 'info', { persistent: true });
-      await deleteVideo.mutateAsync(currentVideo.id);
-      showNotification('Video deleted', 'success');
-      setShowDeleteConfirm(false);
-      // Navigate to next video or go back to playlist
-      if (goToNext && videos.length > 1) {
-        goToNext();
-      } else {
-        navigate(-1);
-      }
-    } catch (error) {
-      showNotification(error.message || 'Failed to delete video', 'error');
-    }
-  };
-
-  const handleBack = () => {
-    if (!currentVideo) return;
-    // Navigate back to playlist view
-    if (playlistId) {
-      navigate(`/playlist/${playlistId}`);
-    } else {
-      navigate(-1);
-    }
-  };
-
-  const toggleWatched = async () => {
-    if (!currentVideo) return;
-    try {
-      await updateVideo.mutateAsync({
-        id: currentVideo.id,
-        data: { watched: !currentVideo.watched },
-      });
-      showNotification(
-        !currentVideo.watched ? 'Marked as watched' : 'Marked as unwatched',
-        'success'
-      );
-    } catch (error) {
-      showNotification(error.message, 'error');
-    }
-  };
 
   return (
     <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
