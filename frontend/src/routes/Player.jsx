@@ -774,7 +774,7 @@ export default function Player() {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
       {/* Centered Control Buttons */}
       <div className="flex justify-center gap-3 mb-4">
         <button
