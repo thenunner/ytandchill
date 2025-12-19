@@ -828,6 +828,11 @@ select {
   height: 100% !important;
 }
 
+/* Video player size constraints */
+.video-js:not(.vjs-fullscreen) {
+  max-height: 60vh;
+}
+
 /* Theater mode button styling */
 .video-js .vjs-theater-button .vjs-icon-placeholder {
   display: flex;

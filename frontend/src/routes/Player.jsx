@@ -86,13 +86,13 @@ export default function Player() {
     console.log('Is iOS device:', isIOSDevice);
 
     // Create video element dynamically (React best practice for video.js)
-    const videoElement = document.createElement('video-js');
-    videoElement.classList.add('vjs-big-play-centered');
-    videoElement.setAttribute('playsinline', 'playsinline');
-    // Add webkit-playsinline for older iOS compatibility
-    videoElement.setAttribute('webkit-playsinline', 'webkit-playsinline');
-    // Use metadata preload on iOS to avoid autoplay restrictions
-    videoElement.setAttribute('preload', isIOSDevice ? 'metadata' : 'auto');
+    // CRITICAL: Use plain 'video' element, not 'video-js' tag!
+    const videoElement = document.createElement('video');
+    videoElement.classList.add('video-js', 'vjs-big-play-centered', 'w-full', 'h-auto');
+    // CRITICAL: Set display block for iOS compatibility
+    videoElement.style.display = 'block';
+    videoElement.setAttribute('playsinline', '');
+    videoElement.setAttribute('preload', 'auto');
     if (video.title) {
       videoElement.setAttribute('aria-label', video.title);
     }
@@ -108,7 +108,7 @@ export default function Player() {
         playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         fluid: true,
         responsive: true,
-        preload: isIOSDevice ? 'metadata' : 'auto',
+        preload: 'auto',  // Use auto for all platforms (works in PlaylistPlayer)
         html5: {
           vhs: {
             overrideNative: !isIOSDevice  // Use native on iOS
@@ -880,8 +880,8 @@ export default function Player() {
 
       {/* Player Container */}
       <div className={`w-full ${isTheaterMode ? '' : 'max-w-4xl mx-auto'} transition-all duration-300`}>
-          <div className="bg-black rounded-xl overflow-hidden shadow-card-hover relative max-h-[60vh]">
-            <div ref={videoContainerRef} data-vjs-player className="w-full h-full" />
+          <div className="bg-black rounded-xl shadow-card-hover relative">
+            <div ref={videoContainerRef} data-vjs-player className="w-full" />
           </div>
 
           {/* Video Info Below Player */}
