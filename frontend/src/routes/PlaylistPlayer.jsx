@@ -1604,8 +1604,8 @@ export default function PlaylistPlayer() {
                       goToVideo(displayIndex);
                       setShowMobileQueue(false);
                     }}
-                    className={`w-full p-3 flex gap-3 hover:bg-surface-hover transition-colors ${
-                      isCurrent ? 'bg-accent/20' : 'bg-surface'
+                    className={`w-full p-3 flex gap-3 hover:bg-dark-hover transition-colors ${
+                      isCurrent ? 'bg-accent/20' : 'bg-dark-secondary'
                     }`}
                   >
                     <div className="relative flex-shrink-0 w-32 h-18 bg-black rounded overflow-hidden">
