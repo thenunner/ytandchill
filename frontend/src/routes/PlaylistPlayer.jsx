@@ -293,6 +293,10 @@ export default function PlaylistPlayer() {
     setIsQueueCollapsed(prev => {
       const newValue = !prev;
       localStorage.setItem('queueCollapsed', newValue.toString());
+      // When collapsing queue, also activate theater mode
+      // When expanding queue, deactivate theater mode
+      setIsTheaterMode(newValue);
+      localStorage.setItem('theaterMode', newValue.toString());
       return newValue;
     });
   }, []);
@@ -578,6 +582,10 @@ export default function PlaylistPlayer() {
           setIsTheaterMode(prev => {
             const newValue = !prev;
             localStorage.setItem('theaterMode', newValue.toString());
+            // When entering theater mode, collapse queue
+            // When exiting theater mode, expand queue
+            setIsQueueCollapsed(newValue);
+            localStorage.setItem('queueCollapsed', newValue.toString());
             return newValue;
           });
         };
@@ -1232,13 +1240,13 @@ export default function PlaylistPlayer() {
       </div>
 
       {/* Player and Queue Layout */}
-      <div className="flex flex-col md:flex-row gap-4 transition-all duration-300 items-start">
+      <div className="flex flex-col md:flex-row gap-2 transition-all duration-300 items-start">
         {/* Player Container */}
         <div className="w-full md:flex-1">
           <div className={`bg-black rounded-xl shadow-card-hover relative ${
             isTheaterMode || isQueueCollapsed
               ? 'md:max-h-[calc(100vh-12rem)] w-full flex items-center justify-center'
-              : 'max-w-4xl w-full'
+              : 'w-full'
           }`}>
             <video
               ref={videoRef}
@@ -1295,16 +1303,16 @@ export default function PlaylistPlayer() {
             isQueueCollapsed ? 'w-12' : (isTheaterMode ? 'w-96' : 'w-80')
           }`}
         >
-          {isQueueCollapsed ? (
-            // Collapsed state - vertical button
+          {isQueueCollapsed || isTheaterMode ? (
+            // Collapsed state - icon button
             <div className="sticky top-4 flex-shrink-0">
               <button
                 onClick={toggleQueueCollapse}
-                className="w-10 h-24 bg-surface hover:bg-surface-hover rounded-lg shadow-card border border-border flex items-center justify-center transition-colors"
+                className="icon-btn"
                 title="Show queue"
                 aria-label="Show video queue"
               >
-                <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
               </button>
