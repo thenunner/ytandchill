@@ -1221,6 +1221,7 @@ export default function PlaylistPlayer() {
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered w-full h-full"
+              style={{ objectFit: 'contain' }}
               playsInline
               preload="auto"
             />
