@@ -1093,13 +1093,15 @@ export default function PlaylistPlayer() {
       });
 
     } catch (error) {
-      console.error('Error in player initialization:', error);
+      console.error('[PlaylistPlayer] Error in player initialization:', error);
       showNotificationRef.current('Failed to initialize video player', 'error');
     }
+  }, [currentVideo]); // Run when currentVideo becomes available (playerInstanceRef guard prevents re-init)
 
-    // Cleanup function (outside try-catch)
+  // Cleanup effect - ONLY runs on unmount, not on video changes
+  useEffect(() => {
     return () => {
-      console.log('Cleaning up video.js player');
+      console.log('[PlaylistPlayer] Component unmounting, cleaning up player');
 
       // Cancel any pending saves
       if (saveProgressTimeout.current) {
