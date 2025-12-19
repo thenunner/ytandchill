@@ -1113,10 +1113,16 @@ export default function PlaylistPlayer() {
     if (!videoSrc) return;
 
     console.log('Updating video source to:', currentVideo.title);
+
+    // Reset player state before changing source
+    playerInstanceRef.current.pause();
     playerInstanceRef.current.src({
       src: videoSrc,
       type: 'video/mp4'
     });
+
+    // Explicitly load the new source
+    playerInstanceRef.current.load();
 
     // Restore position after source loads
     playerInstanceRef.current.one('loadedmetadata', () => {
@@ -1214,14 +1220,14 @@ export default function PlaylistPlayer() {
           <div className={`w-full transition-all duration-300 ease-in-out ${
             isTheaterMode ? 'md:w-[calc(100%-3.5rem)]' : 'md:w-[60%]'
           }`} style={{ willChange: 'width' }}>
-            {/* Fixed height container to prevent layout shifts when changing videos */}
+            {/* Video container with min-height to reduce layout shifts */}
             <div className={`bg-black rounded-xl shadow-card-hover relative w-full flex items-center justify-center ${
-              isTheaterMode ? 'h-[80vh]' : 'h-[600px]'
+              isTheaterMode ? 'min-h-[400px]' : 'min-h-[400px] max-h-[600px]'
             }`}>
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered w-full h-full"
-              style={{ objectFit: 'contain' }}
+              className="video-js vjs-big-play-centered max-w-full h-auto block mx-auto"
+              style={{ maxHeight: '80vh' }}
               playsInline
               preload="auto"
             />
