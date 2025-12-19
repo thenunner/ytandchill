@@ -24,7 +24,7 @@ export default function Player() {
   const { showNotification } = useNotification();
 
   // Player refs
-  const videoRef = useRef(null);
+  const videoContainerRef = useRef(null);
   const playerInstanceRef = useRef(null);
   const saveProgressTimeout = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
@@ -59,132 +59,139 @@ export default function Player() {
   });
 
   useEffect(() => {
-    console.log('useEffect: video exists?', !!video, 'videoRef exists?', !!videoRef.current, 'playerInstance exists?', !!playerInstanceRef.current);
-    console.log('videojs is available?', typeof videojs);
+    // Only initialize if we have video data and no player exists yet
+    if (!video || !videoContainerRef.current || playerInstanceRef.current) {
+      return;
+    }
 
-    if (video && videoRef.current && !playerInstanceRef.current) {
-      console.log('Initializing video.js...');
-      console.log('VideoRef element:', videoRef.current);
+    console.log('Initializing video.js player...');
 
-      // Construct video source path - extract path after 'downloads/'
-      // Handles both channel videos (downloads/ChannelFolder/video.mp4)
-      // and singles (downloads/Singles/FolderName/video.mp4)
-      const pathParts = video.file_path.replace(/\\/g, '/').split('/');
-      const downloadsIndex = pathParts.indexOf('downloads');
-      const relativePath = downloadsIndex >= 0
-        ? pathParts.slice(downloadsIndex + 1).join('/')
-        : pathParts.slice(-2).join('/');  // Fallback for edge cases
-      const videoSrc = `/api/media/${relativePath}`;
-      console.log('Constructed videoSrc:', videoSrc);
+    // Construct video source path
+    const pathParts = video.file_path.replace(/\\/g, '/').split('/');
+    const downloadsIndex = pathParts.indexOf('downloads');
+    const relativePath = downloadsIndex >= 0
+      ? pathParts.slice(downloadsIndex + 1).join('/')
+      : pathParts.slice(-2).join('/');
+    const videoSrc = `/api/media/${relativePath}`;
+    console.log('Video source:', videoSrc);
 
-      // Detect mobile and iOS devices
-      const isMobileDevice = () => {
-        const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        return hasCoarsePointer && isMobileUA;
-      };
+    // Detect mobile and iOS devices
+    const isMobileDevice = () => {
+      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
+      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      return hasCoarsePointer && isMobileUA;
+    };
 
-      const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-      console.log('Is iOS device:', isIOSDevice);
+    const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    console.log('Is iOS device:', isIOSDevice);
 
-      // Add video.js classes to the element
-      videoRef.current.classList.add('video-js', 'vjs-default-skin', 'vjs-big-play-centered');
+    // Create video element dynamically (React best practice for video.js)
+    const videoElement = document.createElement('video-js');
+    videoElement.classList.add('vjs-big-play-centered', 'w-full', 'h-auto');
+    videoElement.setAttribute('playsinline', 'playsinline');
+    videoElement.setAttribute('preload', 'auto');
+    if (video.title) {
+      videoElement.setAttribute('aria-label', video.title);
+    }
 
-      // Initialize video.js
-      let player;
-      try {
-        player = videojs(videoRef.current, {
-          controls: true,
-          playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-          fluid: false,
-          responsive: true,
-          preload: 'auto',
-          sources: [{
-            src: videoSrc,
-            type: 'video/mp4'
-          }],
-          html5: {
-            vhs: {
-              overrideNative: true
-            },
-            nativeVideoTracks: false,
-            nativeAudioTracks: false,
-            nativeTextTracks: false
+    // Append to container
+    videoContainerRef.current.appendChild(videoElement);
+
+    // Initialize video.js
+    let player;
+    try {
+      player = videojs(videoElement, {
+        controls: true,
+        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+        fluid: false,
+        responsive: true,
+        preload: 'auto',
+        html5: {
+          vhs: {
+            overrideNative: true
           },
-          controlBar: {
-            skipButtons: {
-              forward: SEEK_TIME_SECONDS,
-              backward: SEEK_TIME_SECONDS
-            },
-            children: [
-              'playToggle',
-              'skipBackward',
-              'skipForward',
-              'volumePanel',
-              'currentTimeDisplay',
-              'timeDivider',
-              'durationDisplay',
-              'progressControl',
-              'playbackRateMenuButton',
-              'pictureInPictureToggle',
-              'fullscreenToggle'
-            ]
-          },
-          userActions: {
-            hotkeys: function(event) {
-              if (isIOSDevice) return; // Disable hotkeys on iOS
+          nativeVideoTracks: false,
+          nativeAudioTracks: false,
+          nativeTextTracks: false
+        },
+        controlBar: {
+          children: [
+            'playToggle',
+            'skipBackward',
+            'skipForward',
+            'volumePanel',
+            'currentTimeDisplay',
+            'timeDivider',
+            'durationDisplay',
+            'progressControl',
+            'playbackRateMenuButton',
+            'pictureInPictureToggle',
+            'fullscreenToggle'
+          ]
+        },
+        userActions: {
+          hotkeys: function(event) {
+            if (isIOSDevice) return; // Disable hotkeys on iOS
 
-              // Space or K = play/pause
-              if (event.which === 32 || event.which === 75) {
-                event.preventDefault();
-                if (this.paused()) {
-                  this.play();
-                } else {
-                  this.pause();
-                }
-              }
-              // Left arrow or J = rewind
-              else if (event.which === 37 || event.which === 74) {
-                event.preventDefault();
-                this.currentTime(Math.max(0, this.currentTime() - SEEK_TIME_SECONDS));
-              }
-              // Right arrow or L = forward
-              else if (event.which === 39 || event.which === 76) {
-                event.preventDefault();
-                this.currentTime(Math.min(this.duration(), this.currentTime() + SEEK_TIME_SECONDS));
-              }
-              // F = fullscreen
-              else if (event.which === 70) {
-                event.preventDefault();
-                if (this.isFullscreen()) {
-                  this.exitFullscreen();
-                } else {
-                  this.requestFullscreen();
-                }
-              }
-              // M = mute
-              else if (event.which === 77) {
-                event.preventDefault();
-                this.muted(!this.muted());
-              }
-              // Up arrow = volume up
-              else if (event.which === 38) {
-                event.preventDefault();
-                this.volume(Math.min(1, this.volume() + 0.1));
-              }
-              // Down arrow = volume down
-              else if (event.which === 40) {
-                event.preventDefault();
-                this.volume(Math.max(0, this.volume() - 0.1));
+            // Space or K = play/pause
+            if (event.which === 32 || event.which === 75) {
+              event.preventDefault();
+              if (this.paused()) {
+                this.play();
+              } else {
+                this.pause();
               }
             }
+            // Left arrow or J = rewind
+            else if (event.which === 37 || event.which === 74) {
+              event.preventDefault();
+              this.currentTime(Math.max(0, this.currentTime() - SEEK_TIME_SECONDS));
+            }
+            // Right arrow or L = forward
+            else if (event.which === 39 || event.which === 76) {
+              event.preventDefault();
+              this.currentTime(Math.min(this.duration(), this.currentTime() + SEEK_TIME_SECONDS));
+            }
+            // F = fullscreen
+            else if (event.which === 70) {
+              event.preventDefault();
+              if (this.isFullscreen()) {
+                this.exitFullscreen();
+              } else {
+                this.requestFullscreen();
+              }
+            }
+            // M = mute
+            else if (event.which === 77) {
+              event.preventDefault();
+              this.muted(!this.muted());
+            }
+            // Up arrow = volume up
+            else if (event.which === 38) {
+              event.preventDefault();
+              this.volume(Math.min(1, this.volume() + 0.1));
+            }
+            // Down arrow = volume down
+            else if (event.which === 40) {
+              event.preventDefault();
+              this.volume(Math.max(0, this.volume() - 0.1));
+            }
           }
-        });
+        }
+      });
 
-        console.log('video.js player object:', player);
-        console.log('Player ready state:', player.readyState());
+      console.log('Player initialized successfully');
 
-        playerInstanceRef.current = player;
+      // Store player reference
+      playerInstanceRef.current = player;
+
+      // Set source AFTER initialization (like Plyr pattern)
+      player.src({
+        src: videoSrc,
+        type: 'video/mp4'
+      });
+
+      console.log('Source set to:', videoSrc);
 
         // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
         player.on('dblclick', (event) => {
@@ -522,12 +529,6 @@ export default function Player() {
         });
         // ===== END FULLSCREEN TOUCH CONTROLS =====
 
-      } catch (error) {
-        console.error('Error initializing video.js:', error);
-        showNotificationRef.current('Failed to initialize video player', 'error');
-        return;
-      }
-
       // Add error handling for video loading
       player.on('error', () => {
         console.error('video.js error event');
@@ -619,57 +620,67 @@ export default function Player() {
         }
       });
 
-      // Cleanup
-      return () => {
-        // Cancel any pending debounced save to avoid race condition
-        if (saveProgressTimeout.current) {
-          clearTimeout(saveProgressTimeout.current);
-          saveProgressTimeout.current = null;
-        }
-
-        // Clear hide timeout for mobile buttons
-        if (hideTimeoutRef.current) {
-          clearTimeout(hideTimeoutRef.current);
-          hideTimeoutRef.current = null;
-        }
-
-        // Save current position immediately before cleanup
-        if (playerInstanceRef.current && videoDataRef.current?.id) {
-          const currentTime = Math.floor(playerInstanceRef.current.currentTime());
-          if (currentTime > 0 && !isNaN(currentTime)) {
-            updateVideoRef.current.mutate({
-              id: videoDataRef.current.id,
-              data: { playback_seconds: currentTime },
-            });
-          }
-        }
-
-        // Clean up mobile touch event listeners
-        const videoEl = playerInstanceRef.current?.el()?.querySelector('video');
-        if (videoEl && mediaDoubleTapListenerRef.current) {
-          videoEl.removeEventListener('touchend', mediaDoubleTapListenerRef.current);
-          mediaDoubleTapListenerRef.current = null;
-        }
-
-        if (touchOverlayRef.current && overlayTouchListenerRef.current) {
-          touchOverlayRef.current.removeEventListener('touchend', overlayTouchListenerRef.current);
-          overlayTouchListenerRef.current = null;
-        }
-
-        // Remove touch overlay
-        if (touchOverlayRef.current && touchOverlayRef.current.parentNode) {
-          touchOverlayRef.current.parentNode.removeChild(touchOverlayRef.current);
-          touchOverlayRef.current = null;
-        }
-
-        // Dispose video.js instance (this removes all event listeners)
-        if (playerInstanceRef.current) {
-          playerInstanceRef.current.dispose();
-          playerInstanceRef.current = null;
-        }
-      };
+    } catch (error) {
+      console.error('Error in player initialization:', error);
+      showNotificationRef.current('Failed to initialize video player', 'error');
     }
-  }, [video?.id]); // Only re-run if video ID changes
+
+    // Cleanup function (outside try-catch)
+    return () => {
+      console.log('Cleaning up video.js player');
+
+      // Cancel any pending saves
+      if (saveProgressTimeout.current) {
+        clearTimeout(saveProgressTimeout.current);
+        saveProgressTimeout.current = null;
+      }
+
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+
+      // Save current position before cleanup
+      if (playerInstanceRef.current && !playerInstanceRef.current.isDisposed() && videoDataRef.current?.id) {
+        const currentTime = Math.floor(playerInstanceRef.current.currentTime());
+        if (currentTime > 0 && !isNaN(currentTime)) {
+          updateVideoRef.current.mutate({
+            id: videoDataRef.current.id,
+            data: { playback_seconds: currentTime },
+          });
+        }
+      }
+
+      // Clean up mobile touch event listeners
+      const videoEl = playerInstanceRef.current?.el()?.querySelector('video');
+      if (videoEl && mediaDoubleTapListenerRef.current) {
+        videoEl.removeEventListener('touchend', mediaDoubleTapListenerRef.current);
+        mediaDoubleTapListenerRef.current = null;
+      }
+
+      if (touchOverlayRef.current && overlayTouchListenerRef.current) {
+        touchOverlayRef.current.removeEventListener('touchend', overlayTouchListenerRef.current);
+        overlayTouchListenerRef.current = null;
+      }
+
+      // Remove touch overlay
+      if (touchOverlayRef.current && touchOverlayRef.current.parentNode) {
+        touchOverlayRef.current.parentNode.removeChild(touchOverlayRef.current);
+        touchOverlayRef.current = null;
+      }
+
+      // Dispose player and clean up
+      if (playerInstanceRef.current && !playerInstanceRef.current.isDisposed()) {
+        playerInstanceRef.current.dispose();
+      }
+      playerInstanceRef.current = null;
+
+      // Clear container
+      if (videoContainerRef.current) {
+        videoContainerRef.current.innerHTML = '';
+      }
+    };
+  }, [video?.id]); // Only re-run when video ID changes
 
   // Update theater mode button state when isTheaterMode changes
   useEffect(() => {
@@ -817,17 +828,7 @@ export default function Player() {
       {/* Player Container */}
       <div className={`w-full ${isTheaterMode ? '' : 'max-w-5xl mx-auto'} transition-all duration-300`}>
           <div className="bg-black rounded-xl overflow-hidden shadow-card-hover">
-            <video
-              ref={videoRef}
-              className="w-full h-auto block"
-              playsInline
-              preload="auto"
-              aria-label={video.title}
-            >
-              <p className="vjs-no-js">
-                To view this video please enable JavaScript, and consider upgrading to a web browser that supports HTML5 video
-              </p>
-            </video>
+            <div ref={videoContainerRef} data-vjs-player />
           </div>
 
           {/* Video Info Below Player */}
