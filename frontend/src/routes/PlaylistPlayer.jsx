@@ -441,16 +441,19 @@ export default function PlaylistPlayer() {
     };
   }, []);
 
-  // Initialize player ONCE when currentVideo becomes available
+  // Initialize player ONCE on mount (do NOT depend on currentVideo to avoid disposal on video change)
   useEffect(() => {
-    // Don't initialize if: no video element, already initialized, or no video loaded yet
-    if (!videoRef.current || playerInstanceRef.current || !currentVideo) return;
+    // Don't initialize if: no video element or already initialized
+    if (!videoRef.current || playerInstanceRef.current) return;
+
+    // Wait for first video to be available
+    if (!currentVideo) return;
 
     const videoSrc = getVideoSource(currentVideo.file_path);
     if (!videoSrc) return;
 
     // First time: Initialize player
-    console.log('Initializing video.js player...');
+    console.log('Initializing video.js player for first video...');
     console.log('Video source:', videoSrc);
 
     // Detect mobile and iOS devices
@@ -1104,11 +1107,17 @@ export default function PlaylistPlayer() {
       }
       playerInstanceRef.current = null;
     };
-  }, [currentVideo]); // Run when currentVideo becomes available (but only init once due to playerInstanceRef check)
+  }, []); // Empty array: only run on mount/unmount, NOT on video changes (prevents disposal race condition)
 
   // Update video source when currentVideo changes
   useEffect(() => {
     if (!currentVideo || !playerInstanceRef.current) return;
+
+    // Safety check: don't operate on disposed player
+    if (playerInstanceRef.current.isDisposed && playerInstanceRef.current.isDisposed()) {
+      console.error('Attempted to update source on disposed player');
+      return;
+    }
 
     const videoSrc = getVideoSource(currentVideo.file_path);
     if (!videoSrc) return;
@@ -1219,16 +1228,16 @@ export default function PlaylistPlayer() {
         <div className="flex flex-col md:flex-row gap-2 items-start transition-all duration-300 ease-in-out">
           {/* Player Container - 3/5 in normal mode, full width minus queue button in theater mode */}
           <div className={`w-full transition-all duration-300 ease-in-out ${
-            isTheaterMode ? 'md:w-[calc(100%-3.5rem)]' : 'md:w-[60%]'
+            isTheaterMode ? 'md:w-[calc(100%-3rem)]' : 'md:w-[60%]'
           }`} style={{ willChange: 'width' }}>
-            {/* Video container with min-height to reduce layout shifts */}
+            {/* Video container with fixed height to prevent collapse during video switching */}
             <div className={`bg-black rounded-xl shadow-card-hover relative w-full flex items-center justify-center ${
-              isTheaterMode ? 'min-h-[400px]' : 'min-h-[400px] max-h-[600px]'
+              isTheaterMode ? 'h-[80vh]' : 'h-[600px]'
             }`}>
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered max-w-full h-auto block mx-auto"
-              style={{ maxHeight: '80vh' }}
+              className="video-js vjs-big-play-centered w-full h-full"
+              style={{ objectFit: 'contain' }}
               playsInline
               preload="auto"
             />
