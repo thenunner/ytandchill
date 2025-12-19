@@ -1170,81 +1170,14 @@ export default function PlaylistPlayer() {
 
   return (
     <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
-      {/* Control Buttons - Left aligned like YouTube */}
-      <div className="flex gap-3 mb-8">
-        <button
-          onClick={handleBack}
-          className="icon-btn hover:bg-accent hover:border-accent"
-          title="Back"
-          aria-label="Go back to previous page"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="15 18 9 12 15 6"></polyline>
-          </svg>
-        </button>
-
-        <button
-          ref={addToPlaylistButtonRef}
-          onClick={() => setShowPlaylistMenu(true)}
-          className="icon-btn hover:bg-accent hover:border-accent"
-          title="Add to playlist"
-          aria-label="Add video to playlist"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M12 5v14m-7-7h14"></path>
-          </svg>
-        </button>
-
-        <button
-          onClick={toggleWatched}
-          className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
-          title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
-          aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-            <circle cx="12" cy="12" r="3"></circle>
-          </svg>
-        </button>
-
-        <button
-          onClick={() => setShowDeleteConfirm(true)}
-          className="icon-btn hover:bg-red-600 hover:border-red-700"
-          title="Delete video"
-          aria-label="Delete video permanently"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="3 6 5 6 21 6"></polyline>
-            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-          </svg>
-        </button>
-
-        {/* Mobile Queue Button */}
-        <button
-          onClick={() => setShowMobileQueue(true)}
-          className="icon-btn hover:bg-accent hover:border-accent md:hidden"
-          title="Show queue"
-          aria-label="Show video queue"
-        >
-          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <line x1="8" y1="6" x2="21" y2="6"></line>
-            <line x1="8" y1="12" x2="21" y2="12"></line>
-            <line x1="8" y1="18" x2="21" y2="18"></line>
-            <line x1="3" y1="6" x2="3.01" y2="6"></line>
-            <line x1="3" y1="12" x2="3.01" y2="12"></line>
-            <line x1="3" y1="18" x2="3.01" y2="18"></line>
-          </svg>
-        </button>
-      </div>
-
       {/* Player and Queue Layout */}
-      <div className="md:max-w-[83.333%] transition-all duration-300">
-        <div className="flex flex-col md:flex-row gap-2 items-start">
+      <div className="md:max-w-[83.333%]">
+        <div className="flex flex-col md:flex-row gap-2 items-start transition-all duration-300 ease-in-out">
           {/* Player Container - 3/5 in normal mode, 5/5 in theater mode */}
-          <div className={`w-full transition-all duration-300 ${
+          <div className={`w-full transition-all duration-300 ease-in-out ${
             isTheaterMode ? 'md:flex-1' : 'md:w-[60%]'
-          }`}>
-            <div className="bg-black rounded-xl shadow-card-hover relative w-full">
+          }`} style={{ willChange: 'width' }}>
+            <div className="bg-black rounded-xl shadow-card-hover relative w-full transition-all duration-300 ease-in-out">
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered w-full h-auto block"
@@ -1290,15 +1223,83 @@ export default function PlaylistPlayer() {
                 </>
               )}
             </div>
+
+            {/* Control Buttons */}
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={handleBack}
+                className="icon-btn hover:bg-accent hover:border-accent"
+                title="Back"
+                aria-label="Go back to previous page"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+
+              <button
+                ref={addToPlaylistButtonRef}
+                onClick={() => setShowPlaylistMenu(true)}
+                className="icon-btn hover:bg-accent hover:border-accent"
+                title="Add to playlist"
+                aria-label="Add video to playlist"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 5v14m-7-7h14"></path>
+                </svg>
+              </button>
+
+              <button
+                onClick={toggleWatched}
+                className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
+                title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
+                aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+              </button>
+
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="icon-btn hover:bg-red-600 hover:border-red-700"
+                title="Delete video"
+                aria-label="Delete video permanently"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+
+              {/* Mobile Queue Button */}
+              <button
+                onClick={() => setShowMobileQueue(true)}
+                className="icon-btn hover:bg-accent hover:border-accent md:hidden"
+                title="Show queue"
+                aria-label="Show video queue"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Queue Sidebar (Desktop Only) - 2/5 of container when expanded */}
         <div
           ref={sidebarRef}
-          className={`hidden md:block transition-all duration-300 ${
+          className={`hidden md:block transition-all duration-300 ease-in-out ${
             isQueueCollapsed ? 'w-12' : 'md:w-[40%]'
           }`}
+          style={{ willChange: 'width' }}
         >
           {isQueueCollapsed ? (
               // Collapsed state - icon button
@@ -1407,11 +1408,11 @@ export default function PlaylistPlayer() {
                   <button
                     key={video.id}
                     onClick={() => goToVideo(displayIndex)}
-                    className={`w-full p-3 flex gap-3 hover:bg-surface-hover transition-colors border-b border-border/50 ${
+                    className={`w-full p-2 flex gap-2 hover:bg-surface-hover transition-colors border-b border-border/50 ${
                       isCurrent ? 'bg-accent/20' : ''
                     }`}
                   >
-                    <div className="relative flex-shrink-0 w-32 h-18 bg-black rounded overflow-hidden">
+                    <div className="relative flex-shrink-0 w-20 h-12 bg-black rounded overflow-hidden">
                       {video.thumb_url ? (
                         <img
                           src={video.thumb_url}
@@ -1438,12 +1439,12 @@ export default function PlaylistPlayer() {
                     </div>
 
                     <div className="flex-1 text-left min-w-0">
-                      <h3 className={`text-sm font-medium line-clamp-2 ${
+                      <h3 className={`text-xs font-medium line-clamp-2 leading-tight ${
                         isCurrent ? 'text-accent-text' : 'text-text-primary'
                       }`}>
                         {video.title}
                       </h3>
-                      <p className="text-xs text-text-secondary mt-1">
+                      <p className="text-xs text-text-secondary mt-0.5">
                         {video.channel_title}
                       </p>
                     </div>
@@ -1541,12 +1542,12 @@ export default function PlaylistPlayer() {
                     </div>
 
                     <div className="flex-1 text-left min-w-0">
-                      <h3 className={`text-sm font-medium line-clamp-2 ${
+                      <h3 className={`text-xs font-medium line-clamp-2 leading-tight ${
                         isCurrent ? 'text-accent-text' : 'text-text-primary'
                       }`}>
                         {video.title}
                       </h3>
-                      <p className="text-xs text-text-secondary mt-1">
+                      <p className="text-xs text-text-secondary mt-0.5">
                         {video.channel_title}
                       </p>
                     </div>
