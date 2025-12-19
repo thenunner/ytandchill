@@ -1002,58 +1002,27 @@ export default function PlaylistPlayer() {
         console.log('Video data loaded successfully');
       });
 
-      // Restore playback position when metadata is loaded
+      // Metadata loaded for first video
       player.on('loadedmetadata', () => {
-        console.log('Video metadata loaded successfully');
-        const savedPosition = currentVideo.playback_seconds;
+        console.log('[PlaylistPlayer] First video metadata loaded successfully');
         const duration = player.duration();
 
-        console.log('Video duration:', duration);
-        console.log('Saved position:', savedPosition);
+        console.log('[PlaylistPlayer] Video duration:', duration);
 
-        // Validate saved position before restoring
-        if (
-          savedPosition > 0 &&
-          !isNaN(savedPosition) &&
-          isFinite(savedPosition) &&
-          duration > 0 &&
-          savedPosition < duration
-        ) {
-          console.log('Restoring playback position to:', savedPosition);
-          player.currentTime(savedPosition);
-        }
+        // In playlist mode, ALWAYS start from beginning (ignore saved position)
+        console.log('[PlaylistPlayer] Starting first video from beginning (playlist mode)');
+        player.currentTime(0);
       });
 
-      // Consolidated timeupdate handler: save progress + check watched threshold
+      // Timeupdate handler: check watched threshold only (NO progress saving in playlist mode)
       player.on('timeupdate', () => {
         const currentTime = player.currentTime();
         const duration = player.duration();
 
-        // Debounced progress save
-        if (saveProgressTimeout.current) {
-          clearTimeout(saveProgressTimeout.current);
-        }
+        // In playlist mode, we DON'T save progress - videos always start from beginning
+        // This prevents saved positions from single-video mode from affecting playlist watching
 
-        saveProgressTimeout.current = setTimeout(() => {
-          const currentTimeFloor = Math.floor(player.currentTime());
-          const dur = player.duration();
-
-          if (
-            currentTimeFloor > 0 &&
-            !isNaN(currentTimeFloor) &&
-            isFinite(currentTimeFloor) &&
-            dur > 0 &&
-            currentTimeFloor < dur &&
-            currentVideoIdRef.current
-          ) {
-            updateVideoRef.current.mutate({
-              id: currentVideoIdRef.current,
-              data: { playback_seconds: currentTimeFloor },
-            });
-          }
-        }, PROGRESS_SAVE_DEBOUNCE_MS);
-
-        // Check watched threshold
+        // Check watched threshold (still mark videos as watched at 90%)
         if (!hasMarkedWatchedRef.current && duration > 0 && currentTime >= duration * WATCHED_THRESHOLD && currentVideoIdRef.current) {
           hasMarkedWatchedRef.current = true;
           updateVideoRef.current.mutateAsync({
@@ -1114,16 +1083,8 @@ export default function PlaylistPlayer() {
         hideTimeoutRef.current = null;
       }
 
-      // Save current position before cleanup
-      if (playerInstanceRef.current && !playerInstanceRef.current.isDisposed() && currentVideoIdRef.current) {
-        const currentTime = Math.floor(playerInstanceRef.current.currentTime());
-        if (currentTime > 0 && !isNaN(currentTime)) {
-          updateVideoRef.current.mutate({
-            id: currentVideoIdRef.current,
-            data: { playback_seconds: currentTime },
-          });
-        }
-      }
+      // In playlist mode, DON'T save position on cleanup
+      // This keeps playlist watching independent from single-video mode positions
 
       // Clean up mobile touch event listeners
       const videoEl = playerInstanceRef.current?.el()?.querySelector('video');
@@ -1199,29 +1160,19 @@ export default function PlaylistPlayer() {
     // Restore position after source loads
     playerInstanceRef.current.one('loadedmetadata', () => {
       console.log('[PlaylistPlayer] loadedmetadata event fired');
-      const savedPosition = currentVideo.playback_seconds;
       const duration = playerInstanceRef.current.duration();
 
       console.log('[PlaylistPlayer] Video metadata loaded:', {
         title: currentVideo.title,
         duration: duration,
-        savedPosition: savedPosition,
         videoWidth: playerInstanceRef.current.videoWidth(),
         videoHeight: playerInstanceRef.current.videoHeight()
       });
 
-      if (
-        savedPosition > 0 &&
-        !isNaN(savedPosition) &&
-        isFinite(savedPosition) &&
-        duration > 0 &&
-        savedPosition < duration
-      ) {
-        console.log('[PlaylistPlayer] Restoring playback position to:', savedPosition);
-        playerInstanceRef.current.currentTime(savedPosition);
-      } else {
-        console.log('[PlaylistPlayer] Starting from beginning (no saved position or invalid)');
-      }
+      // In playlist mode, ALWAYS start from beginning (don't restore saved position)
+      // This allows watching playlists start-to-finish without jumping to saved positions
+      console.log('[PlaylistPlayer] Starting from beginning (playlist mode - ignore saved position)');
+      playerInstanceRef.current.currentTime(0);
 
       // Autoplay on desktop and tablet (not mobile)
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
