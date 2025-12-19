@@ -419,39 +419,12 @@ export default function PlaylistPlayer() {
     };
   }, []);
 
-  // Initialize player and update source when currentVideo changes
+  // Initialize player ONCE on mount
   useEffect(() => {
-    if (!currentVideo || !videoRef.current) return;
+    if (!videoRef.current || playerInstanceRef.current || !currentVideo) return;
 
     const videoSrc = getVideoSource(currentVideo.file_path);
     if (!videoSrc) return;
-
-    // If player exists, just update source
-    if (playerInstanceRef.current) {
-      console.log('Updating video source to:', videoSrc);
-      playerInstanceRef.current.src({
-        src: videoSrc,
-        type: 'video/mp4'
-      });
-
-      // Restore position after source loads
-      playerInstanceRef.current.one('loadedmetadata', () => {
-        const savedPosition = currentVideo.playback_seconds;
-        const duration = playerInstanceRef.current.duration();
-
-        if (
-          savedPosition > 0 &&
-          !isNaN(savedPosition) &&
-          isFinite(savedPosition) &&
-          duration > 0 &&
-          savedPosition < duration
-        ) {
-          console.log('Restoring playback position to:', savedPosition);
-          playerInstanceRef.current.currentTime(savedPosition);
-        }
-      });
-      return;
-    }
 
     // First time: Initialize player
     console.log('Initializing video.js player...');
@@ -1108,7 +1081,49 @@ export default function PlaylistPlayer() {
       }
       playerInstanceRef.current = null;
     };
-  }, [currentVideo?.id]); // Only re-run when current video ID changes
+  }, []); // Only run on mount/unmount
+
+  // Update video source when currentVideo changes
+  useEffect(() => {
+    if (!currentVideo || !playerInstanceRef.current) return;
+
+    const videoSrc = getVideoSource(currentVideo.file_path);
+    if (!videoSrc) return;
+
+    console.log('Updating video source to:', currentVideo.title);
+    playerInstanceRef.current.src({
+      src: videoSrc,
+      type: 'video/mp4'
+    });
+
+    // Restore position after source loads
+    playerInstanceRef.current.one('loadedmetadata', () => {
+      const savedPosition = currentVideo.playback_seconds;
+      const duration = playerInstanceRef.current.duration();
+
+      if (
+        savedPosition > 0 &&
+        !isNaN(savedPosition) &&
+        isFinite(savedPosition) &&
+        duration > 0 &&
+        savedPosition < duration
+      ) {
+        console.log('Restoring playback position to:', savedPosition);
+        playerInstanceRef.current.currentTime(savedPosition);
+      }
+
+      // Autoplay on desktop and tablet (not mobile)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (!isMobile) {
+        playerInstanceRef.current.play().catch(e => {
+          console.log('Autoplay prevented:', e);
+        });
+      }
+    });
+
+    // Update current video ID ref
+    currentVideoIdRef.current = currentVideo.id;
+  }, [currentVideo?.id]); // Run when video changes
 
   // Update theater mode button state when isTheaterMode changes
   useEffect(() => {
