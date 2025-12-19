@@ -1230,10 +1230,8 @@ export default function PlaylistPlayer() {
           <div className={`w-full transition-all duration-300 ease-in-out ${
             isTheaterMode ? 'md:w-[calc(100%-3rem)]' : 'md:w-[60%]'
           }`} style={{ willChange: 'width' }}>
-            {/* Video container with fixed height to prevent collapse during video switching */}
-            <div className={`bg-black rounded-xl shadow-card-hover relative w-full flex items-center justify-center ${
-              isTheaterMode ? 'h-[80vh]' : 'h-[600px]'
-            }`}>
+            {/* Video container with 16:9 aspect ratio (like 1920x1080) */}
+            <div className="bg-black rounded-xl shadow-card-hover relative w-full" style={{ aspectRatio: '16/9' }}>
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered w-full h-full"
