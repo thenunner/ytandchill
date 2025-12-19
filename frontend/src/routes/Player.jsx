@@ -24,7 +24,7 @@ export default function Player() {
   const { showNotification } = useNotification();
 
   // Player refs
-  const videoContainerRef = useRef(null);
+  const videoRef = useRef(null);
   const playerInstanceRef = useRef(null);
   const saveProgressTimeout = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
@@ -60,7 +60,7 @@ export default function Player() {
 
   useEffect(() => {
     // Only initialize if we have video data and no player exists yet
-    if (!video || !videoContainerRef.current || playerInstanceRef.current) {
+    if (!video || !videoRef.current || playerInstanceRef.current) {
       return;
     }
 
@@ -85,25 +85,10 @@ export default function Player() {
     const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
     console.log('Is iOS device:', isIOSDevice);
 
-    // Create video element dynamically (React best practice for video.js)
-    // CRITICAL: Use plain 'video' element, not 'video-js' tag!
-    const videoElement = document.createElement('video');
-    videoElement.classList.add('video-js', 'vjs-big-play-centered', 'w-full', 'h-auto');
-    // CRITICAL: Set display block for iOS compatibility
-    videoElement.style.display = 'block';
-    videoElement.setAttribute('playsinline', '');
-    videoElement.setAttribute('preload', 'auto');
-    if (video.title) {
-      videoElement.setAttribute('aria-label', video.title);
-    }
-
-    // Append to container
-    videoContainerRef.current.appendChild(videoElement);
-
-    // Initialize video.js
+    // Initialize video.js on the JSX video element (like Plyr pattern)
     let player;
     try {
-      player = videojs(videoElement, {
+      player = videojs(videoRef.current, {
         controls: true,
         playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         fluid: true,
@@ -727,11 +712,6 @@ export default function Player() {
         playerInstanceRef.current.dispose();
       }
       playerInstanceRef.current = null;
-
-      // Clear container
-      if (videoContainerRef.current) {
-        videoContainerRef.current.innerHTML = '';
-      }
     };
   }, [video?.id]); // Only re-run when video ID changes
 
@@ -881,7 +861,12 @@ export default function Player() {
       {/* Player Container */}
       <div className={`w-full ${isTheaterMode ? '' : 'max-w-4xl mx-auto'} transition-all duration-300`}>
           <div className="bg-black rounded-xl shadow-card-hover relative">
-            <div ref={videoContainerRef} data-vjs-player className="w-full" />
+            <video
+              ref={videoRef}
+              className="video-js vjs-big-play-centered w-full h-auto block"
+              playsInline
+              preload="auto"
+            />
           </div>
 
           {/* Video Info Below Player */}
