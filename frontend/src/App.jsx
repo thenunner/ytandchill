@@ -15,6 +15,7 @@ import Player from './routes/Player';
 import PlaylistPlayer from './routes/PlaylistPlayer';
 import Setup from './routes/Setup';
 import Login from './routes/Login';
+import NavItem from './components/NavItem';
 
 function App() {
   const location = useLocation();
@@ -362,53 +363,44 @@ function App() {
           {/* Nav Tabs - Compact on mobile (text only), icons on desktop */}
           <nav role="navigation" aria-label="Main navigation" className="flex gap-1 md:gap-2">
             {navLinks.map(link => (
-              <Link
+              <NavItem
                 key={link.path}
                 to={link.path}
-                className={`nav-tab snap-start flex-shrink-0 ${link.iconOnly ? 'px-3' : 'px-3 md:px-4'} ${location.pathname === link.path ? 'active' : ''}`}
-              >
-                {/* Icon: show always for iconOnly tabs, otherwise only on desktop */}
-                {link.iconOnly ? (
-                  link.icon
-                ) : (
-                  <span className="hidden md:inline-flex">{link.icon}</span>
-                )}
-                {/* Label: hidden for iconOnly tabs, always shown for others */}
-                {!link.iconOnly && <span>{link.label}</span>}
-                {link.badge > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {link.badge}
-                  </span>
-                )}
-              </Link>
+                icon={<span className="hidden md:inline-flex">{link.icon}</span>}
+                label={link.label}
+                badge={link.badge}
+                className="snap-start flex-shrink-0 px-3 md:px-4"
+              />
             ))}
           </nav>
 
           {/* Settings Tab - Hidden on mobile, shown on desktop/tablet */}
-          <Link
+          <NavItem
             to="/settings"
-            className={`nav-tab hidden md:flex ${location.pathname === '/settings' ? 'active' : ''}`}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
-              <circle cx="12" cy="12" r="3"></circle>
-            </svg>
-            <span>Settings</span>
-          </Link>
+            icon={
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            }
+            label="Settings"
+            className="hidden md:flex"
+          />
 
           {/* Logout Tab - Hidden on mobile, shown on desktop/tablet */}
-          <button
+          <NavItem
+            isButton={true}
             onClick={handleLogout}
-            className="nav-tab hidden md:flex"
-            title="Logout"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            <span>Logout</span>
-          </button>
+            icon={
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            }
+            label="Logout"
+            className="hidden md:flex"
+          />
 
           {/* Kebab Menu (Settings + Logout) - Mobile only */}
           <div className="relative flex-shrink-0 md:hidden" ref={kebabMenuRef}>

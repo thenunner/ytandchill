@@ -73,6 +73,7 @@ app.lock
 
 # Backup files
 *.bak
+*.backup
 
 # OS
 Thumbs.db
