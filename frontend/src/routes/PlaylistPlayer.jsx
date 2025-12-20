@@ -1269,9 +1269,23 @@ export default function PlaylistPlayer() {
 
           {/* Video Info Below Player */}
           <div className="mt-4 space-y-3">
-            <h1 className="text-2xl font-bold text-text-primary leading-tight">
-              {currentVideo.title}
-            </h1>
+            <div className="flex items-center gap-3">
+              {/* Back button on desktop only */}
+              <button
+                onClick={handleBack}
+                className="hidden md:flex icon-btn hover:bg-accent hover:border-accent flex-shrink-0"
+                title="Back"
+                aria-label="Go back to previous page"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </button>
+
+              <h1 className="text-2xl font-bold text-text-primary leading-tight">
+                {currentVideo.title}
+              </h1>
+            </div>
 
             <div className="flex items-center gap-3 text-sm text-text-secondary">
               <Link
@@ -1305,8 +1319,8 @@ export default function PlaylistPlayer() {
               )}
             </div>
 
-            {/* Control Buttons */}
-            <div className="flex gap-3 mt-4">
+            {/* Control Buttons - Mobile: horizontal row below info */}
+            <div className="flex md:hidden gap-3 mt-4">
               <button
                 onClick={handleBack}
                 className="icon-btn hover:bg-accent hover:border-accent"
@@ -1383,8 +1397,8 @@ export default function PlaylistPlayer() {
           style={{ willChange: 'width' }}
         >
           {isQueueCollapsed ? (
-              // Collapsed state - icon button
-              <div className="sticky top-4 flex-shrink-0">
+              // Collapsed state - vertical button stack
+              <div className="sticky top-4 flex-shrink-0 flex flex-col gap-3">
                 <button
                   onClick={toggleQueueCollapse}
                   className="icon-btn"
@@ -1393,6 +1407,44 @@ export default function PlaylistPlayer() {
                 >
                   <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </button>
+
+                {/* Add to Playlist */}
+                <button
+                  onClick={() => setShowPlaylistMenu(true)}
+                  className="icon-btn hover:bg-accent hover:border-accent"
+                  title="Add to playlist"
+                  aria-label="Add video to playlist"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 5v14m-7-7h14"></path>
+                  </svg>
+                </button>
+
+                {/* Watched */}
+                <button
+                  onClick={toggleWatched}
+                  className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
+                  title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
+                  aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+
+                {/* Delete */}
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="icon-btn hover:bg-red-600 hover:border-red-700"
+                  title="Delete video"
+                  aria-label="Delete video permanently"
+                >
+                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                   </svg>
                 </button>
               </div>
@@ -1473,6 +1525,45 @@ export default function PlaylistPlayer() {
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                       <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
+                    </svg>
+                  </button>
+
+                  {/* Add to Playlist */}
+                  <button
+                    ref={addToPlaylistButtonRef}
+                    onClick={() => setShowPlaylistMenu(true)}
+                    className="icon-btn hover:bg-accent hover:border-accent"
+                    title="Add to playlist"
+                    aria-label="Add video to playlist"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14m-7-7h14"></path>
+                    </svg>
+                  </button>
+
+                  {/* Watched */}
+                  <button
+                    onClick={toggleWatched}
+                    className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
+                    title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
+                    aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  </button>
+
+                  {/* Delete */}
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="icon-btn hover:bg-red-600 hover:border-red-700"
+                    title="Delete video"
+                    aria-label="Delete video permanently"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                     </svg>
                   </button>
                 </div>
