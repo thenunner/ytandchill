@@ -14,6 +14,23 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    assetsDir: 'assets'
+    assetsDir: 'assets',
+    sourcemap: false, // Disable source maps in production
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'video-vendor': ['video.js'],
+          'query-vendor': ['@tanstack/react-query'],
+          'router-vendor': ['react-router-dom']
+          // NO plyr-vendor - Plyr was removed in Tier 2
+        }
+      }
+    },
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true // Remove console.logs in production
+      }
+    }
   }
 })

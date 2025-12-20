@@ -360,7 +360,7 @@ function App() {
         {/* Main Nav Row */}
         <div className="flex items-center justify-center gap-1 md:gap-2 h-[60px]">
           {/* Nav Tabs - Compact on mobile (text only), icons on desktop */}
-          <nav className="flex gap-1 md:gap-2">
+          <nav role="navigation" aria-label="Main navigation" className="flex gap-1 md:gap-2">
             {navLinks.map(link => (
               <Link
                 key={link.path}

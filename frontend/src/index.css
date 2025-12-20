@@ -368,14 +368,6 @@
     @apply scale-x-100;
   }
 
-  /* Stats Pill */
-  .stat-pill {
-    @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-full;
-    @apply text-sm font-medium border;
-    @apply shadow-sm hover:-translate-y-0.5 hover:shadow-md;
-    @apply transition-all duration-200;
-  }
-
   /* Badge */
   .badge {
     @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold;
@@ -421,22 +413,6 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--scrollbar-thumb-hover));
-}
-
-/* Pulse border animation for scan buttons */
-@keyframes pulse-border {
-  0%, 100% {
-    border-color: hsl(var(--accent));
-    box-shadow: 0 0 0 0 hsla(var(--accent) / 0.4);
-  }
-  50% {
-    border-color: hsl(var(--accent-hover));
-    box-shadow: 0 0 0 4px hsla(var(--accent) / 0);
-  }
-}
-
-.animate-pulse-border {
-  animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
 /* iOS-specific fixes for video.js controls */
@@ -617,6 +593,47 @@
 }
 
 /* Mobile/Tablet: Moderately larger controls (not too big) */
+/* Desktop/larger screens - larger controls */
+.video-js .vjs-button {
+  width: 3.5em;
+  height: 100%;
+}
+
+.video-js .vjs-icon-placeholder:before {
+  font-size: 2em;
+  line-height: 2em;
+}
+
+.video-js .vjs-current-time,
+.video-js .vjs-time-divider,
+.video-js .vjs-duration {
+  font-size: 1.3em;
+  line-height: 3em;
+  padding: 0 0.5em;
+}
+
+.video-js .vjs-progress-control {
+  min-height: 0.8em;
+}
+
+.video-js .vjs-progress-holder {
+  height: 0.8em;
+}
+
+.video-js .vjs-play-progress:before {
+  top: -0.3em;
+}
+
+.video-js .vjs-slider-handle {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.video-js .vjs-volume-bar {
+  height: 0.8em;
+}
+
+/* Mobile/tablet adjustments (consolidated) */
 @media (max-width: 1024px) {
   .video-js .vjs-control-bar {
     height: 3.5em;
@@ -630,55 +647,8 @@
   .video-js.vjs-playing .vjs-control-bar {
     display: flex !important;
   }
-}
 
-/* Larger buttons */
-.video-js .vjs-button {
-  width: 3.5em;
-  height: 100%;
-}
-
-/* Larger icons inside buttons */
-.video-js .vjs-icon-placeholder:before {
-  font-size: 2em;
-  line-height: 2em;
-}
-
-/* Larger time displays */
-.video-js .vjs-current-time,
-.video-js .vjs-time-divider,
-.video-js .vjs-duration {
-  font-size: 1.3em;
-  line-height: 3em;
-  padding: 0 0.5em;
-}
-
-/* Larger progress bar for easier scrubbing */
-.video-js .vjs-progress-control {
-  min-height: 0.8em;
-}
-
-.video-js .vjs-progress-holder {
-  height: 0.8em;
-}
-
-/* Fix progress bar scrubber/handle alignment */
-.video-js .vjs-play-progress:before {
-  top: -0.3em;
-}
-
-.video-js .vjs-slider-handle {
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* Larger volume slider */
-.video-js .vjs-volume-bar {
-  height: 0.8em;
-}
-
-/* Adjust mobile touch targets (not too big) */
-@media (max-width: 1024px) {
+  /* Adjust mobile touch targets (not too big) */
   .video-js .vjs-button {
     width: 3em;
   }
@@ -701,7 +671,6 @@
     height: 0.7em;
   }
 
-  /* Adjust scrubber alignment for mobile progress bar */
   .video-js .vjs-play-progress:before {
     top: -0.35em;
   }
