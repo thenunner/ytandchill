@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels, useVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 export default function Settings() {
   const { data: settings, isLoading } = useSettings();
@@ -207,22 +208,6 @@ export default function Settings() {
     }
   };
 
-  const addScanTime = () => {
-    if (scanTimes.length >= 4) {
-      showNotification('Maximum 4 scan times allowed', 'error');
-      return;
-    }
-    setScanTimes([...scanTimes, { hour: 0, minute: 0 }]);
-  };
-
-  const removeScanTime = (index) => {
-    if (scanTimes.length <= 1) {
-      showNotification('At least one scan time required', 'error');
-      return;
-    }
-    setScanTimes(scanTimes.filter((_, i) => i !== index));
-  };
-
   const handleSaveAutoRefresh = async () => {
     try {
       const config = {
@@ -329,11 +314,7 @@ export default function Settings() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

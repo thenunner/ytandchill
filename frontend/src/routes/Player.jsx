@@ -6,6 +6,7 @@ import { useVideo, useUpdateVideo, useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 // Constants
 const SEEK_TIME_SECONDS = 10;
@@ -732,11 +733,7 @@ export default function Player() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!video) {

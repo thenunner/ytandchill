@@ -7,6 +7,7 @@ import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 
 export default function Library() {
@@ -509,11 +510,7 @@ export default function Library() {
 
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

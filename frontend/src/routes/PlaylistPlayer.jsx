@@ -7,6 +7,7 @@ import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo } from '../ap
 import { useNotification } from '../contexts/NotificationContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
+import LoadingSpinner from '../components/LoadingSpinner';
 import {
   SEEK_TIME_SECONDS,
   DOUBLE_TAP_DELAY_MS,
@@ -1218,11 +1219,7 @@ export default function PlaylistPlayer() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (!currentVideo) {

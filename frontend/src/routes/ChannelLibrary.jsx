@@ -8,6 +8,7 @@ import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
 import FiltersModal from '../components/FiltersModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
+import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import api from '../api/client';
@@ -665,11 +666,7 @@ export default function ChannelLibrary() {
   }, [menuOpen]);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

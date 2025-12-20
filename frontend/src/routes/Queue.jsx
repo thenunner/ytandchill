@@ -8,6 +8,7 @@ import { CSS } from '@dnd-kit/utilities';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { formatQueueError, getUserFriendlyError } from '../utils/errorMessages';
 import { StickyBar } from '../components/stickybar';
+import LoadingSpinner from '../components/LoadingSpinner';
 
 // Sortable Queue Item Component
 function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom }) {
@@ -300,11 +301,7 @@ export default function Queue() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   // Handle queue data structure

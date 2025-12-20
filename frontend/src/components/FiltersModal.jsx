@@ -1,5 +1,3 @@
-import { useState } from 'react';
-
 export default function FiltersModal({ isOpen, onClose, filters, onFilterChange, hideVideosFilter, isPlaylistMode, isLibraryMode, isPlaylistView }) {
   if (!isOpen) return null;
 

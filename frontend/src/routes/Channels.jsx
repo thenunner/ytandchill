@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { StickyBar, SearchInput, CardSizeSlider, SortDropdown } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
+import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 
 export default function Channels() {
@@ -406,8 +407,8 @@ export default function Channels() {
     }
   };
 
-  // Filter and sort channels
-  const filteredAndSortedChannels = (() => {
+  // Filter and sort channels (memoized for performance)
+  const filteredAndSortedChannels = useMemo(() => {
     // First filter by search (and exclude Singles pseudo-channel)
     let filtered = channels?.filter(channel =>
       channel.yt_id !== '__singles__' &&
@@ -462,14 +463,10 @@ export default function Channels() {
     });
 
     return sorted;
-  })();
+  }, [channels, searchInput, selectedCategories, sortBy]);
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin h-8 w-8 border-4 border-red-500 border-t-transparent rounded-full"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (

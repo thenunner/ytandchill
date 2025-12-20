@@ -5,6 +5,7 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
+import { getUserFriendlyError } from '../utils/errorMessages';
 
 export default function Videos() {
   const { showNotification } = useNotification();
@@ -106,7 +107,7 @@ export default function Videos() {
         showNotification(msg, 'success');
       }
     } catch (error) {
-      showNotification(error.message || 'Failed to scan URL', 'error');
+      showNotification(getUserFriendlyError(error.message || 'Failed to scan URL'), 'error');
     } finally {
       setIsScanning(false);
     }
@@ -170,7 +171,7 @@ export default function Videos() {
       }
       setSelectedVideos(new Set());
     } catch (error) {
-      showNotification(error.message || 'Failed to remove videos', 'error');
+      showNotification(getUserFriendlyError(error.message || 'Failed to remove videos'), 'error');
     } finally {
       setIsRemoving(false);
     }
@@ -205,7 +206,7 @@ export default function Videos() {
       setSelectedVideos(new Set());
 
     } catch (error) {
-      showNotification(error.message || 'Failed to queue videos', 'error');
+      showNotification(getUserFriendlyError(error.message || 'Failed to queue videos'), 'error');
     } finally {
       setIsQueueing(false);
     }
