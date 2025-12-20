@@ -9,6 +9,7 @@ import ConfirmModal from '../components/ui/ConfirmModal';
 import { formatQueueError, getUserFriendlyError } from '../utils/errorMessages';
 import { StickyBar } from '../components/stickybar';
 import LoadingSpinner from '../components/LoadingSpinner';
+import EmptyState from '../components/EmptyState';
 
 // Sortable Queue Item Component
 function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom }) {
@@ -362,13 +363,11 @@ export default function Queue() {
 
       {/* All Queue Items in One Clean List */}
       {queueItems.length === 0 ? (
-        <div className="text-center py-20 text-text-secondary">
-          <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          <p className="text-lg font-medium">Queue is empty</p>
-          <p className="text-sm mt-2">Add videos from channels to start downloading</p>
-        </div>
+        <EmptyState
+          icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />}
+          title="Queue is empty"
+          message="Add videos from channels to start downloading"
+        />
       ) : (
         <div className="space-y-2">
           {/* Current Download - Click to Cancel */}

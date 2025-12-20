@@ -11,6 +11,7 @@ import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
+import EmptyState from '../components/EmptyState';
 
 export default function Playlist() {
   const { id } = useParams();
@@ -347,13 +348,11 @@ export default function Playlist() {
         </div>
         );
       })() : (
-        <div className="text-center py-20 text-text-secondary">
-          <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-          </svg>
-          <p className="text-lg font-medium">{(playlist.videos || []).length === 0 ? 'This playlist is empty' : 'No videos match your filters'}</p>
-          <p className="text-sm mt-2">{(playlist.videos || []).length === 0 ? 'Add videos from your library to get started' : 'Try adjusting your search or filters'}</p>
-        </div>
+        <EmptyState
+          icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />}
+          title={(playlist.videos || []).length === 0 ? 'This playlist is empty' : 'No videos match your filters'}
+          message={(playlist.videos || []).length === 0 ? 'Add videos from your library to get started' : 'Try adjusting your search or filters'}
+        />
       )}
 
       {/* Bottom Pagination */}

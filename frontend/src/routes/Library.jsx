@@ -9,6 +9,7 @@ import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar'
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
+import EmptyState from '../components/EmptyState';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
@@ -847,22 +848,11 @@ export default function Library() {
       {activeTab === 'channels' && (
         <>
           {channelsList.length === 0 ? (
-            <div className="text-center py-20 text-text-secondary">
-              <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-              </svg>
-              {allChannelsList.length > 0 && searchInput ? (
-                <>
-                  <p className="text-lg font-medium">No channels match filters</p>
-                  <p className="text-sm mt-2">Remove filters to see them</p>
-                </>
-              ) : (
-                <>
-                  <p className="text-lg font-medium">No downloaded videos</p>
-                  <p className="text-sm mt-2">Videos you download will appear here</p>
-                </>
-              )}
-            </div>
+            <EmptyState
+              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />}
+              title={allChannelsList.length > 0 && searchInput ? "No channels match filters" : "No downloaded videos"}
+              message={allChannelsList.length > 0 && searchInput ? "Remove filters to see them" : "Videos you download will appear here"}
+            />
           ) : (() => {
             const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedChannelsList.length);
             const textSizes = getTextSizes(effectiveCardSize);
@@ -1427,15 +1417,12 @@ export default function Library() {
               )}
             </div>
           ) : (
-        <div className="text-center py-20 text-text-secondary">
-          <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h10M4 18h10" />
-            <circle cx="18" cy="16" r="3" />
-          </svg>
-          <p className="text-lg font-medium">{searchInput ? 'No matching playlists' : 'No playlists yet'}</p>
-          <p className="text-sm mt-2">{searchInput ? 'Try a different search term' : 'Create playlists to organize your videos'}</p>
-        </div>
-      )}
+            <EmptyState
+              icon={<><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 6h16M4 10h16M4 14h10M4 18h10" /><circle cx="18" cy="16" r="3" /></>}
+              title={searchInput ? 'No matching playlists' : 'No playlists yet'}
+              message={searchInput ? 'Try a different search term' : 'Create playlists to organize your videos'}
+            />
+          )}
         </div>
       )}
 

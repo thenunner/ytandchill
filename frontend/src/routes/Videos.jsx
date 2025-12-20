@@ -7,6 +7,7 @@ import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { formatDuration } from '../utils/videoPlayerUtils';
+import EmptyState from '../components/EmptyState';
 
 export default function Videos() {
   const { showNotification } = useNotification();
@@ -525,15 +526,12 @@ export default function Videos() {
 
       {/* Empty State */}
       {!scanResults && !isScanning && (
-        <div className="bg-dark-secondary rounded-lg p-8 text-center">
-          <svg className="w-16 h-16 mx-auto text-text-muted mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-          </svg>
-          <h3 className="text-text-primary font-semibold mb-2">Paste a URL to get started</h3>
-          <p className="text-text-secondary text-sm max-w-md mx-auto">
-            Paste a YouTube video, playlist, or channel URL above. Select which videos to download
-            as singles without subscribing to the full channel.
-          </p>
+        <div className="bg-dark-secondary rounded-lg p-8">
+          <EmptyState
+            icon={<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />}
+            title="Paste a URL to get started"
+            message="Paste a YouTube video, playlist, or channel URL above. Select which videos to download as singles without subscribing to the full channel."
+          />
         </div>
       )}
 

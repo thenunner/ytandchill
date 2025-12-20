@@ -10,6 +10,7 @@ import { StickyBar, SearchInput, CardSizeSlider, SortDropdown } from '../compone
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
+import EmptyState from '../components/EmptyState';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -1286,13 +1287,11 @@ export default function Channels() {
       })()}
 
       {filteredAndSortedChannels.length === 0 && (
-        <div className="text-center py-20 text-text-secondary">
-          <svg className="w-16 h-16 mx-auto mb-4 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-          </svg>
-          <p className="text-lg font-medium">{searchInput ? 'No matching channels' : 'No channels yet'}</p>
-          <p className="text-sm mt-2">{searchInput ? 'Try a different search term' : 'Add a YouTube channel to get started'}</p>
-        </div>
+        <EmptyState
+          icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />}
+          title={searchInput ? 'No matching channels' : 'No channels yet'}
+          message={searchInput ? 'Try a different search term' : 'Add a YouTube channel to get started'}
+        />
       )}
 
       {/* Delete Confirmation Modal */}

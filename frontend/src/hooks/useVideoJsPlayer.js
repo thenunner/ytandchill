@@ -50,32 +50,13 @@ export function useVideoJsPlayer({
   }, [video, updateVideoMutation]);
 
   useEffect(() => {
-    console.log('[useVideoJsPlayer] Effect triggered:', {
-      hasVideoRef: !!videoRef.current,
-      hasVideo: !!video,
-      videoId: video?.id,
-      persistPlayer,
-      hasExistingPlayer: !!playerRef.current,
-      videoRefInDOM: videoRef.current ? document.contains(videoRef.current) : false
-    });
-
-    if (!videoRef.current) {
-      console.warn('[useVideoJsPlayer] No videoRef.current, skipping initialization');
-      return;
-    }
-
-    if (!video) {
-      console.warn('[useVideoJsPlayer] No video data, skipping initialization');
-      return;
-    }
+    if (!videoRef.current || !video) return;
 
     // For persistent players (playlists), don't reinitialize if player already exists
     if (persistPlayer && playerRef.current) {
-      console.log('[useVideoJsPlayer] Player already exists, skipping reinitialization');
       return;
     }
 
-    console.log('[useVideoJsPlayer] Starting player initialization...');
     const { isMobile, isIOS } = detectDeviceType();
 
     // Initialize player
