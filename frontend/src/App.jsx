@@ -29,6 +29,7 @@ function App() {
   const errorMessageRef = useRef(null);
   const [showKebabMenu, setShowKebabMenu] = useState(false);
   const kebabMenuRef = useRef(null);
+  const clearingCookieWarningRef = useRef(false); // Debounce flag to prevent duplicate API calls
 
   // Status bar visibility - sync with localStorage
   const [statusBarVisible, setStatusBarVisible] = useState(() => {
@@ -43,18 +44,19 @@ function App() {
       setStatusBarVisible(saved !== null ? saved === 'true' : true);
     };
 
+    // Storage event handles cross-tab changes
     window.addEventListener('storage', handleStorageChange);
-    // Also check on interval for same-tab changes
-    const interval = setInterval(handleStorageChange, 500);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      clearInterval(interval);
     };
   }, []);
 
-  // Check if current theme is a light theme
-  const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'debug';
+  // Check if current theme is a light theme (memoized to prevent recalculation)
+  const isLightTheme = useMemo(() =>
+    theme === 'online' || theme === 'pixel' || theme === 'debug',
+    [theme]
+  );
 
   // Handle new queue structure (must be defined before useEffect that uses it)
   const queue = queueData?.queue_items || queueData || [];
@@ -124,11 +126,14 @@ function App() {
     }
   }, [location.pathname, currentOperation?.type]);
 
-  // Clear cookie warning on any user interaction
+  // Clear cookie warning on any user interaction (debounced to prevent duplicate calls)
   useEffect(() => {
     if (!cookieWarning) return;
 
     const handleInteraction = async () => {
+      if (clearingCookieWarningRef.current) return; // Prevent duplicate calls
+      clearingCookieWarningRef.current = true;
+
       try {
         await fetch('/api/cookie-warning/clear', {
           method: 'POST',
@@ -137,6 +142,11 @@ function App() {
       } catch (error) {
         console.error('Failed to clear cookie warning:', error);
       }
+
+      // Reset debounce flag after 1 second
+      setTimeout(() => {
+        clearingCookieWarningRef.current = false;
+      }, 1000);
     };
 
     // Listen for clicks anywhere (once)
@@ -147,10 +157,13 @@ function App() {
     };
   }, [cookieWarning]);
 
-  // Also clear cookie warning on navigation/tab changes
+  // Also clear cookie warning on navigation/tab changes (debounced)
   useEffect(() => {
     if (cookieWarning) {
       const clearWarning = async () => {
+        if (clearingCookieWarningRef.current) return; // Prevent duplicate calls
+        clearingCookieWarningRef.current = true;
+
         try {
           await fetch('/api/cookie-warning/clear', {
             method: 'POST',
@@ -159,6 +172,11 @@ function App() {
         } catch (error) {
           console.error('Failed to clear cookie warning:', error);
         }
+
+        // Reset debounce flag after 1 second
+        setTimeout(() => {
+          clearingCookieWarningRef.current = false;
+        }, 1000);
       };
       clearWarning();
     }
@@ -252,7 +270,8 @@ function App() {
     }
   }, [location.pathname, pending, downloading, navigate]);
 
-  const navLinks = [
+  // Memoize navLinks to prevent recreating array on every render
+  const navLinks = useMemo(() => [
     {
       path: '/',
       label: 'Channels',
@@ -297,7 +316,7 @@ function App() {
         </svg>
       )
     },
-  ];
+  ], [pending, downloading]); // Only recalculate when badge count changes
 
   // Show loading screen while checking auth
   if (isLoading) {
@@ -460,6 +479,7 @@ function App() {
           <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
           <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
           <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
 
@@ -712,6 +732,21 @@ function App() {
           </div>
         </footer>
       )}
+    </div>
+  );
+}
+
+// 404 Not Found component
+function NotFound() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center">
+        <h1 className="text-4xl mb-4 text-text-primary">404</h1>
+        <p className="text-text-secondary mb-6">Page not found</p>
+        <Link to="/" className="text-accent hover:text-accent-hover hover:underline transition-colors">
+          Go Home
+        </Link>
+      </div>
     </div>
   );
 }

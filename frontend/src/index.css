@@ -30,9 +30,6 @@
   --scrollbar-track: 220 10% 8%;   /* Same as bg-secondary */
   --scrollbar-thumb: 220 6% 25%;   /* Same as bg-tertiary */
   --scrollbar-thumb-hover: 220 6% 37%; /* Same as bg-hover */
-
-  /* Plyr player */
-  --plyr-main: 210 60% 52%;        /* Same as accent */
 }
 
 /* Fatal Red Theme */
@@ -61,9 +58,6 @@
   --scrollbar-track: 0 8% 10%;
   --scrollbar-thumb: 0 20% 40%;    /* Red-tinted thumb */
   --scrollbar-thumb-hover: 0 25% 50%;
-
-  /* Plyr player */
-  --plyr-main: 0 100% 45%;         /* Same as accent */
 }
 
 /* Subnet Deep Blue Theme */
@@ -92,9 +86,6 @@
   --scrollbar-track: 220 45% 8%;
   --scrollbar-thumb: 220 50% 35%;  /* Overcast thumb */
   --scrollbar-thumb-hover: 220 50% 45%;
-
-  /* Plyr player */
-  --plyr-main: 220 55% 50%;        /* Same as accent */
 }
 
 /* Archive Brown Theme */
@@ -123,9 +114,6 @@
   --scrollbar-track: 25 28% 9%;
   --scrollbar-thumb: 95 22% 35%;   /* Sage thumb */
   --scrollbar-thumb-hover: 95 25% 45%;
-
-  /* Plyr player */
-  --plyr-main: 95 35% 50%;         /* Same as accent */
 }
 
 /* Buffer Gray/Beige Theme */
@@ -154,9 +142,6 @@
   --scrollbar-track: 215 12% 22%;
   --scrollbar-thumb: 30 15% 35%;
   --scrollbar-thumb-hover: 30 18% 45%;
-
-  /* Plyr player */
-  --plyr-main: 35 55% 45%;         /* Same as accent */
 }
 
 /* Catppuccin Mocha Theme */
@@ -185,9 +170,6 @@
   --scrollbar-track: 240 21% 15%;  /* Base #1e1e2e */
   --scrollbar-thumb: 237 16% 23%;  /* Surface0 #313244 */
   --scrollbar-thumb-hover: 235 16% 30%; /* Surface1 #45475a */
-
-  /* Plyr player */
-  --plyr-main: 217 92% 76%;        /* Blue #89b4fa */
 }
 
 /* Online Light Green Theme */
@@ -216,9 +198,6 @@
   --scrollbar-track: 105 30% 85%;
   --scrollbar-thumb: 105 30% 55%;
   --scrollbar-thumb-hover: 105 32% 45%;
-
-  /* Plyr player */
-  --plyr-main: 115 45% 32%;        /* Same as accent */
 }
 
 /* Pixel Light Pink/Cream Theme */
@@ -247,9 +226,6 @@
   --scrollbar-track: 330 45% 88%;
   --scrollbar-thumb: 330 45% 58%;
   --scrollbar-thumb-hover: 330 50% 50%;
-
-  /* Plyr player */
-  --plyr-main: 315 60% 38%;        /* Same as accent */
 }
 
 /* Debug Light Cream/Blue Theme */
@@ -278,9 +254,6 @@
   --scrollbar-track: 200 30% 82%;
   --scrollbar-thumb: 200 32% 52%;
   --scrollbar-thumb-hover: 200 35% 45%;
-
-  /* Plyr player */
-  --plyr-main: 210 45% 35%;        /* Same as accent */
 }
 /* ===== END THEME SYSTEM ===== */
 
@@ -464,243 +437,6 @@
 
 .animate-pulse-border {
   animation: pulse-border 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-/* Plyr customizations */
-.plyr {
-  @apply rounded-xl overflow-hidden;
-  --plyr-color-main: hsl(var(--plyr-main));
-  --plyr-range-fill-background: hsl(var(--plyr-main));
-  --plyr-video-control-background-hover: hsl(var(--plyr-main));
-  --plyr-badge-background: hsl(var(--plyr-main));
-  --plyr-menu-background: hsl(var(--bg-secondary));
-  --plyr-menu-color: hsl(var(--text-primary));
-  --plyr-control-color: hsl(var(--text-primary));
-  --plyr-tooltip-background: hsl(var(--bg-secondary));
-  --plyr-tooltip-color: hsl(var(--text-primary));
-  position: relative;
-}
-
-/* Ensure controls are always above video and clickable */
-.plyr__controls {
-  position: relative;
-  z-index: 3 !important;
-  pointer-events: auto !important;
-}
-
-.plyr__control {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-.plyr__progress {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-/* Ensure plyr video wrapper doesn't block controls */
-.plyr__video-wrapper {
-  pointer-events: none;
-}
-
-.plyr__video-wrapper video {
-  pointer-events: auto;
-}
-
-.plyr--video {
-  @apply bg-black;
-}
-
-.plyr__control--overlaid {
-  background: hsla(var(--plyr-main), 0.9);
-}
-
-.plyr__control--overlaid:hover {
-  background: hsla(var(--plyr-main), 0.95);
-}
-
-/* Theater mode button */
-.plyr__control[data-plyr="theater"] .icon--pressed {
-  display: none;
-}
-
-.plyr__control[data-plyr="theater"] .icon--not-pressed {
-  display: block;
-}
-
-.plyr__control[data-plyr="theater"][aria-pressed="true"] .icon--pressed {
-  display: block;
-}
-
-.plyr__control[data-plyr="theater"][aria-pressed="true"] .icon--not-pressed {
-  display: none;
-}
-
-/* Focus Visible for Accessibility */
-:focus-visible {
-  @apply outline-2 outline-offset-2 outline-accent;
-}
-
-/* Smooth Transitions for All Interactive Elements */
-button,
-a,
-input,
-textarea,
-select {
-  @apply transition-colors duration-200;
-}
-
-/* Hide scrollbar utility */
-@layer utilities {
-  .scrollbar-hide {
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
-  }
-
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Chrome, Safari and Opera */
-  }
-}
-
-/* ===== MOBILE TOUCH CONTROLS ===== */
-/* Visible touch controls for mobile devices only */
-.plyr-mobile-controls {
-  /* Container styling handled inline in JS */
-}
-
-.plyr-mobile-btn {
-  transition: all 0.2s ease;
-  -webkit-tap-highlight-color: transparent;
-}
-
-.plyr-mobile-btn:active {
-  transform: scale(0.9) !important;
-  background: rgba(0, 0, 0, 0.9) !important;
-}
-
-.plyr-mobile-btn svg {
-  width: 30px;
-  height: 30px;
-  margin-bottom: 4px;
-}
-
-.plyr-mobile-btn--play svg {
-  /* Play/pause button already has inline sizing */
-}
-
-.plyr-mobile-btn--exit:active {
-  transform: translateX(-50%) scale(0.9) !important;
-}
-
-/* YouTube-style touch overlay - ensure it works in fullscreen */
-.plyr-touch-overlay {
-  pointer-events: auto !important;
-  z-index: 150 !important;
-}
-
-.plyr-touch-overlay > div {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-/* Old touch overlay CSS removed - using new mobile controls instead */
-
-/* Note: Removed the rule that hid big play button in fullscreen to debug control bar issue */
-/* .plyr--fullscreen .plyr__control--overlaid {
-  display: none !important;
-} */
-
-/* Force Plyr controls to be visible and clickable on desktop (both fullscreen and normal mode) */
-/* This targets devices with fine pointer (mouse) - desktop/laptop devices */
-@media (pointer: fine) {
-  /* Ensure controls are clickable when visible */
-  .plyr__controls {
-    pointer-events: auto !important;
-    z-index: 999 !important;
-  }
-
-  /* Ensure individual control buttons are always clickable */
-  .plyr__control {
-    pointer-events: auto !important;
-  }
-}
-
-/* Additional rules for fullscreen mode to ensure controls work when visible */
-.plyr--fullscreen .plyr__controls {
-  pointer-events: auto !important;
-  z-index: 9999 !important; /* Even higher z-index in fullscreen */
-  position: relative !important;
-}
-
-.plyr--fullscreen .plyr__control {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-.plyr--fullscreen .plyr__progress {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-.plyr--fullscreen .plyr__progress input[type="range"] {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-.plyr--fullscreen .plyr__volume input[type="range"] {
-  pointer-events: auto !important;
-  cursor: pointer !important;
-}
-
-/* Ensure video doesn't capture clicks over controls in fullscreen */
-.plyr--fullscreen .plyr__video-wrapper {
-  pointer-events: none !important;
-}
-
-/* But keep the actual video element interactive for native controls fallback */
-.plyr--fullscreen .plyr__video-wrapper video {
-  pointer-events: auto !important;
-}
-
-/* Disable pointer events on poster in fullscreen so it doesn't block controls */
-.plyr--fullscreen .plyr__poster {
-  pointer-events: none !important;
-}
-
-/* Disable pointer events on captions wrapper in fullscreen */
-.plyr--fullscreen .plyr__captions {
-  pointer-events: none !important;
-}
-
-/* CRITICAL FIX: Disable pointer events on everything in fullscreen except controls */
-/* This is the nuclear option to ensure ONLY controls receive clicks */
-.plyr--fullscreen * {
-  pointer-events: none !important;
-}
-
-/* Re-enable ONLY on controls and their children */
-.plyr--fullscreen .plyr__controls,
-.plyr--fullscreen .plyr__controls *,
-.plyr--fullscreen .plyr__menu,
-.plyr--fullscreen .plyr__menu *,
-.plyr--fullscreen .plyr-touch-overlay,
-.plyr--fullscreen .plyr-touch-overlay * {
-  pointer-events: auto !important;
-}
-
-/* Allow controls to auto-hide in fullscreen when inactive */
-.plyr--fullscreen.plyr--hide-controls .plyr__controls {
-  opacity: 0 !important;
-  transform: translateY(10px) !important;
-  pointer-events: none !important;
-  transition: opacity 0.3s ease, transform 0.3s ease !important;
-}
-
-/* Show controls in fullscreen when active (mouse movement) */
-.plyr--fullscreen:not(.plyr--hide-controls) .plyr__controls {
-  opacity: 1 !important;
-  transform: translateY(0) !important;
-  transition: opacity 0.3s ease, transform 0.3s ease !important;
 }
 
 /* iOS-specific fixes for video.js controls */
