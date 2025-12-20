@@ -10,7 +10,7 @@ import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridU
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
-import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon } from '../components/icons';
+import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, FilterIcon, PlusIcon, TrashIcon } from '../components/icons';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
