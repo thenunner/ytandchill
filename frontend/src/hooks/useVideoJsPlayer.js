@@ -50,10 +50,17 @@ export function useVideoJsPlayer({
   }, [video, updateVideoMutation]);
 
   useEffect(() => {
-    if (!videoRef.current || !video) return;
+    console.log('[useVideoJsPlayer] Effect triggered. Video ID:', video?.id, 'persistPlayer:', persistPlayer);
+
+    if (!videoRef.current || !video) {
+      console.log('[useVideoJsPlayer] Early return - no videoRef or video');
+      return;
+    }
 
     // Verify the video element is actually a valid video/audio element
     const elem = videoRef.current;
+    console.log('[useVideoJsPlayer] Video element check. tagName:', elem.tagName, 'isConnected:', elem.isConnected);
+
     if (!elem.tagName || (elem.tagName !== 'VIDEO' && elem.tagName !== 'AUDIO')) {
       console.warn('[useVideoJsPlayer] Invalid element type:', elem.tagName);
       return;
@@ -61,8 +68,11 @@ export function useVideoJsPlayer({
 
     // For persistent players (playlists), don't reinitialize if player already exists
     if (persistPlayer && playerRef.current) {
+      console.log('[useVideoJsPlayer] Persistent player exists, skipping reinitialization');
       return;
     }
+
+    console.log('[useVideoJsPlayer] Initializing new video.js player');
 
     const { isMobile, isIOS } = detectDeviceType();
 
@@ -94,6 +104,7 @@ export function useVideoJsPlayer({
     });
 
     playerRef.current = player;
+    console.log('[useVideoJsPlayer] Player initialized successfully. Player ID:', player.id());
 
     // Set initial video source
     if (video.file_path) {
@@ -101,6 +112,8 @@ export function useVideoJsPlayer({
       if (videoSrc) {
         console.log('[useVideoJsPlayer] Setting initial video source:', videoSrc);
         player.src({ src: videoSrc, type: 'video/mp4' });
+      } else {
+        console.warn('[useVideoJsPlayer] No video source found for:', video.file_path);
       }
     }
 
@@ -282,6 +295,7 @@ export function useVideoJsPlayer({
 
     // Cleanup
     return () => {
+      console.log('[useVideoJsPlayer] Cleanup called for video:', video?.id);
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
       }
@@ -290,6 +304,7 @@ export function useVideoJsPlayer({
       }
       document.removeEventListener('keydown', handleKeyPress);
       if (playerRef.current) {
+        console.log('[useVideoJsPlayer] Disposing player');
         playerRef.current.dispose();
         playerRef.current = null;
       }
