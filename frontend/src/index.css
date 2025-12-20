@@ -3,7 +3,10 @@
 @tailwind utilities;
 
 /* ===== THEME SYSTEM ===== */
-/* Default theme (Dark Mode) */
+
+/* KERNEL THEME - Dark terminal theme with blue accents
+ * Default theme - Pure black background with cool blue highlights
+ * Inspired by Linux kernel development terminals */
 :root,
 .theme-kernel {
   /* Backgrounds */
@@ -32,7 +35,9 @@
   --scrollbar-thumb-hover: 220 6% 37%; /* Same as bg-hover */
 }
 
-/* Fatal Red Theme */
+/* FATAL THEME - Error console theme with red accents
+ * Critical system theme - Red-tinted for emergency/error states
+ * Inspired by system crash/kernel panic screens */
 .theme-fatal {
   /* Backgrounds */
   --bg-primary: 0 8% 7%;           /* Slightly red-tinted black */
@@ -60,7 +65,9 @@
   --scrollbar-thumb-hover: 0 25% 50%;
 }
 
-/* Subnet Deep Blue Theme */
+/* SUBNET THEME - Deep blue overcast theme
+ * Professional dark blue - Muted and sophisticated
+ * Inspired by network operations centers */
 .theme-subnet {
   /* Backgrounds */
   --bg-primary: 220 50% 5%;        /* Very deep blue-gray */
@@ -88,7 +95,9 @@
   --scrollbar-thumb-hover: 220 50% 45%;
 }
 
-/* Archive Brown Theme */
+/* ARCHIVE THEME - Warm brown earth tones with sage green accents
+ * Natural, warm theme - Easy on the eyes for long sessions
+ * Inspired by old library archives and paper documents */
 .theme-archive {
   /* Backgrounds */
   --bg-primary: 25 30% 6%;         /* Very deep bark brown */
@@ -116,7 +125,9 @@
   --scrollbar-thumb-hover: 95 25% 45%;
 }
 
-/* Buffer Gray/Beige Theme */
+/* BUFFER THEME - Industrial gray with warm orange accents
+ * Balanced theme - Cool gray backgrounds with warm orange highlights
+ * Inspired by industrial design and productivity tools */
 .theme-buffer {
   /* Backgrounds */
   --bg-primary: 215 15% 14%;       /* #222831 */
@@ -144,7 +155,9 @@
   --scrollbar-thumb-hover: 30 18% 45%;
 }
 
-/* Catppuccin Mocha Theme */
+/* CATPPUCCIN THEME - Popular pastel dark theme with blue accents
+ * Community favorite - Soft, comfortable colors from Catppuccin Mocha palette
+ * Inspired by the Catppuccin color scheme */
 .theme-catppuccin {
   /* Backgrounds */
   --bg-primary: 240 21% 6%;        /* Crust #11111b */
@@ -172,7 +185,9 @@
   --scrollbar-thumb-hover: 235 16% 30%; /* Surface1 #45475a */
 }
 
-/* Online Light Green Theme */
+/* ONLINE THEME - Light sage green theme (light mode)
+ * Soft light theme - Gentle on eyes with natural green tones
+ * Inspired by online status indicators and fresh starts */
 .theme-online {
   /* Backgrounds */
   --bg-primary: 105 35% 90%;       /* Light sage green background */
@@ -200,7 +215,9 @@
   --scrollbar-thumb-hover: 105 32% 45%;
 }
 
-/* Pixel Light Pink/Cream Theme */
+/* PIXEL THEME - Light pink/cream theme with magenta accents (light mode)
+ * Soft, playful light theme - Warm pinks and creamy backgrounds
+ * Inspired by retro pixel art and pastel aesthetics */
 .theme-pixel {
   /* Backgrounds */
   --bg-primary: 330 50% 92%;       /* Light pink background */
@@ -228,7 +245,9 @@
   --scrollbar-thumb-hover: 330 50% 50%;
 }
 
-/* Debug Light Cream/Blue Theme */
+/* DEBUG THEME - Light cream/blue theme with dark blue accents (light mode)
+ * Professional light theme - Cool blues for focused debugging sessions
+ * Inspired by IDE debug modes and console outputs */
 .theme-debug {
   /* Backgrounds */
   --bg-primary: 200 35% 88%;       /* Light desaturated blue background */
@@ -392,6 +411,41 @@
 
   .filter-btn.active {
     @apply bg-dark-tertiary border-dark-border-light text-text-primary font-medium;
+  }
+
+  /* Focus indicators for keyboard navigation (accessibility) */
+  .nav-tab:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent ring-0;
+  }
+
+  .filter-btn:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent ring-0;
+  }
+
+  .search-input:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  /* General button focus indicator */
+  button:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  /* Standardized text color utilities for status messages */
+  .text-success {
+    @apply text-green-400;
+  }
+
+  .text-error {
+    @apply text-red-400;
+  }
+
+  .text-warning {
+    @apply text-yellow-400;
+  }
+
+  .text-info {
+    @apply text-blue-400;
   }
 }
 
