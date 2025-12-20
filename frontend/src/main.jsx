@@ -8,6 +8,8 @@ import { CardSizeProvider } from './contexts/CardSizeContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import App from './App';
 import './index.css';
+import './styles/themes.css';
+import './styles/videojs-overrides.css';
 
 const queryClient = new QueryClient({
   defaultOptions: {

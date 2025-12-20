@@ -1,0 +1,260 @@
+/* iOS-specific fixes for video.js controls */
+@supports (-webkit-touch-callout: none) {
+  /* Force controls to be visible and clickable on iOS */
+  .video-js .vjs-control-bar {
+    display: flex !important;
+    pointer-events: auto !important;
+    z-index: 100 !important;
+  }
+
+  /* Keep controls visible when paused */
+  .video-js.vjs-paused .vjs-control-bar {
+    opacity: 1 !important;
+  }
+
+  /* Keep controls visible when user is active */
+  .video-js.vjs-user-active .vjs-control-bar,
+  .video-js.vjs-user-inactive.vjs-paused .vjs-control-bar {
+    opacity: 1 !important;
+  }
+
+  /* Hide loading spinner after video loads - but ONLY the spinner, not controls */
+  .video-js.vjs-has-started:not(.vjs-waiting) .vjs-loading-spinner {
+    display: none !important;
+  }
+
+  /* Ensure video element doesn't block controls */
+  .video-js .vjs-tech {
+    pointer-events: none !important;
+  }
+}
+
+/* ===== VIDEO.JS CUSTOM THEMING ===== */
+/* Override video.js default blue with our accent color */
+.video-js {
+  font-family: inherit;
+}
+
+/* Hide big play button - use control bar instead */
+.video-js .vjs-big-play-button {
+  display: none !important;
+}
+
+/* Control bar background */
+.video-js .vjs-control-bar {
+  background-color: hsla(var(--bg-secondary) / 0.9);
+  backdrop-filter: blur(8px);
+}
+
+/* Keep controls visible on load (before video starts) */
+.video-js:not(.vjs-has-started) .vjs-control-bar {
+  opacity: 1 !important;
+  display: flex !important;
+}
+
+/* Keep controls visible when paused */
+.video-js.vjs-paused .vjs-control-bar {
+  opacity: 1 !important;
+  display: flex !important;
+}
+
+/* Progress bar */
+.video-js .vjs-play-progress,
+.video-js .vjs-volume-level {
+  background-color: hsl(var(--accent));
+}
+
+.video-js .vjs-load-progress {
+  background-color: hsla(var(--accent) / 0.3);
+}
+
+.video-js .vjs-progress-holder {
+  background-color: hsla(var(--border) / 0.5);
+}
+
+/* Buttons */
+.video-js .vjs-button > .vjs-icon-placeholder:before {
+  line-height: 1.9em;
+}
+
+.video-js .vjs-button:hover {
+  color: hsl(var(--accent-text));
+}
+
+/* Volume slider */
+.video-js .vjs-volume-panel-horizontal:hover {
+  width: 8em;
+}
+
+/* Time display */
+.video-js .vjs-current-time,
+.video-js .vjs-time-divider,
+.video-js .vjs-duration {
+  color: hsl(var(--text-primary));
+  font-size: 1em;
+  line-height: 3em;
+}
+
+/* Menu */
+.video-js .vjs-menu-button .vjs-menu .vjs-menu-content {
+  background-color: hsl(var(--bg-secondary));
+  max-height: 20em;
+}
+
+.video-js .vjs-menu li {
+  color: hsl(var(--text-primary));
+  padding: 0.5em 1em;
+}
+
+.video-js .vjs-menu li:hover,
+.video-js .vjs-menu li.vjs-selected {
+  background-color: hsl(var(--bg-hover));
+  color: hsl(var(--accent-text));
+}
+
+/* Loading spinner */
+.video-js .vjs-loading-spinner {
+  border-color: hsla(var(--accent) / 0.8);
+}
+
+/* Error display */
+.video-js .vjs-error-display {
+  background-color: hsla(var(--bg-secondary) / 0.9);
+}
+
+.video-js .vjs-error-display:before {
+  color: hsl(var(--accent));
+}
+
+/* Responsive sizing */
+.video-js.vjs-fluid {
+  padding-top: 56.25%; /* 16:9 */
+}
+
+/* iOS fixes */
+.video-js .vjs-tech {
+  object-fit: contain;
+}
+
+/* Fullscreen mode - remove size constraints from player container only */
+.video-js.vjs-fullscreen {
+  max-width: none !important;
+  max-height: none !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Non-fullscreen: constrain video size to fit on screen */
+.video-js:not(.vjs-fullscreen) {
+  max-height: 60vh;
+}
+
+/* Theater mode button styling */
+.video-js .vjs-theater-button .vjs-icon-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.video-js .vjs-theater-button svg {
+  width: 1.5em;
+  height: 1.5em;
+  display: block;
+}
+
+.video-js .vjs-theater-button .vjs-icon-placeholder:before {
+  display: none;
+}
+
+/* ===== LARGER CONTROLS FOR BETTER USABILITY ===== */
+/* Increase control bar height on all devices */
+.video-js .vjs-control-bar {
+  height: 4em;
+  font-size: 14px;
+}
+
+/* Mobile/Tablet: Moderately larger controls (not too big) */
+/* Desktop/larger screens - larger controls */
+.video-js .vjs-button {
+  width: 3.5em;
+  height: 100%;
+}
+
+.video-js .vjs-icon-placeholder:before {
+  font-size: 2em;
+  line-height: 2em;
+}
+
+.video-js .vjs-current-time,
+.video-js .vjs-time-divider,
+.video-js .vjs-duration {
+  font-size: 1.3em;
+  line-height: 3em;
+  padding: 0 0.5em;
+}
+
+.video-js .vjs-progress-control {
+  min-height: 0.8em;
+}
+
+.video-js .vjs-progress-holder {
+  height: 0.8em;
+}
+
+.video-js .vjs-play-progress:before {
+  top: -0.3em;
+}
+
+.video-js .vjs-slider-handle {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.video-js .vjs-volume-bar {
+  height: 0.8em;
+}
+
+/* Mobile/tablet adjustments (consolidated) */
+@media (max-width: 1024px) {
+  .video-js .vjs-control-bar {
+    height: 3.5em;
+    font-size: 13px;
+    display: flex !important;
+    z-index: 100 !important;
+  }
+
+  /* Ensure controls are visible on mobile */
+  .video-js.vjs-paused .vjs-control-bar,
+  .video-js.vjs-playing .vjs-control-bar {
+    display: flex !important;
+  }
+
+  /* Adjust mobile touch targets (not too big) */
+  .video-js .vjs-button {
+    width: 3em;
+  }
+
+  .video-js .vjs-icon-placeholder:before {
+    font-size: 1.8em;
+  }
+
+  .video-js .vjs-current-time,
+  .video-js .vjs-time-divider,
+  .video-js .vjs-duration {
+    font-size: 1.2em;
+  }
+
+  .video-js .vjs-progress-control {
+    min-height: 0.7em;
+  }
+
+  .video-js .vjs-progress-holder {
+    height: 0.7em;
+  }
+
+  .video-js .vjs-play-progress:before {
+    top: -0.35em;
+  }
+}

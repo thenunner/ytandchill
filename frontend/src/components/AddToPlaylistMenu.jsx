@@ -30,27 +30,34 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
         const triggerRect = triggerRef.current.getBoundingClientRect();
         const menuWidth = 384; // max-w-sm = 384px
         const menuHeight = 500; // max-h-[500px]
-        const gap = 10;
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
 
         let left, top;
 
-        // Check if there's room on the right
-        if (triggerRect.right + gap + menuWidth < viewportWidth) {
-          // Position to the right
-          left = triggerRect.right + gap;
-        } else if (triggerRect.left - gap - menuWidth > 0) {
-          // Position to the left
-          left = triggerRect.left - gap - menuWidth;
-        } else {
-          // Center on screen if neither side has room
-          left = (viewportWidth - menuWidth) / 2;
+        // Center horizontally on screen by default
+        left = (viewportWidth - menuWidth) / 2;
+
+        // Ensure it doesn't go off screen edges
+        if (left < 10) {
+          left = 10;
+        } else if (left + menuWidth > viewportWidth - 10) {
+          left = viewportWidth - menuWidth - 10;
         }
 
-        // Position vertically, ensuring it doesn't go off screen
-        top = triggerRect.top;
-        if (top + menuHeight > viewportHeight) {
+        // Center vertically, or align with trigger if in upper half of screen
+        if (triggerRect.top < viewportHeight / 2) {
+          // Trigger is in upper half - align with trigger top
+          top = triggerRect.top;
+        } else {
+          // Trigger is in lower half - center on screen
+          top = (viewportHeight - menuHeight) / 2;
+        }
+
+        // Ensure it doesn't go off screen vertically
+        if (top < 10) {
+          top = 10;
+        } else if (top + menuHeight > viewportHeight - 10) {
           top = Math.max(10, viewportHeight - menuHeight - 10);
         }
 
