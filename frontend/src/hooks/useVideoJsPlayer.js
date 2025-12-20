@@ -295,7 +295,21 @@ export function useVideoJsPlayer({
 
     // Cleanup
     return () => {
-      console.log('[useVideoJsPlayer] Cleanup called for video:', video?.id);
+      console.log('[useVideoJsPlayer] Cleanup called for video:', video?.id, 'persistPlayer:', persistPlayer);
+
+      // For persistent players, DON'T dispose on video change - just clean up event listeners
+      if (persistPlayer) {
+        console.log('[useVideoJsPlayer] Persistent player - skipping disposal, keeping player alive');
+        // Still clean up timeouts and listeners, but keep the player
+        if (saveProgressTimeout.current) {
+          clearTimeout(saveProgressTimeout.current);
+        }
+        // Don't remove keyboard listener or dispose player for persistent players
+        return;
+      }
+
+      // Non-persistent players: full cleanup
+      console.log('[useVideoJsPlayer] Non-persistent player - full disposal');
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
       }
