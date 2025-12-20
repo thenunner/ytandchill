@@ -1,0 +1,283 @@
+import { useEffect, useRef } from 'react';
+import videojs from 'video.js';
+import {
+  SEEK_TIME_SECONDS,
+  PROGRESS_SAVE_DEBOUNCE_MS,
+  WATCHED_THRESHOLD,
+  detectDeviceType,
+  initializeMobileTouchControls,
+} from '../utils/videoPlayerUtils';
+import { createTheaterButton, updateTheaterButtonState } from '../utils/createTheaterButton';
+
+/**
+ * Custom hook for initializing and managing a video.js player
+ * Handles all common player setup, controls, and behaviors
+ *
+ * @param {Object} options - Configuration options
+ * @param {Object} options.video - Video data object
+ * @param {React.RefObject} options.videoRef - Ref to video element
+ * @param {boolean} options.saveProgress - Whether to save playback progress
+ * @param {Function} options.onEnded - Callback when video ends
+ * @param {Function} options.onWatched - Callback when video reaches watched threshold
+ * @param {Object} options.updateVideoMutation - React Query mutation for updating video
+ * @param {boolean} options.isTheaterMode - Current theater mode state
+ * @param {Function} options.setIsTheaterMode - Function to update theater mode state
+ * @returns {React.RefObject} Player reference
+ */
+export function useVideoJsPlayer({
+  video,
+  videoRef,
+  saveProgress = true,
+  onEnded = null,
+  onWatched = null,
+  updateVideoMutation = null,
+  isTheaterMode = false,
+  setIsTheaterMode = null,
+}) {
+  const playerRef = useRef(null);
+  const saveProgressTimeout = useRef(null);
+  const hasMarkedWatchedRef = useRef(false);
+  const videoDataRef = useRef(video);
+  const updateVideoRef = useRef(updateVideoMutation);
+
+  // Keep refs up to date
+  useEffect(() => {
+    videoDataRef.current = video;
+    updateVideoRef.current = updateVideoMutation;
+  }, [video, updateVideoMutation]);
+
+  useEffect(() => {
+    if (!videoRef.current || !video) return;
+
+    const { isMobile, isIOS } = detectDeviceType();
+
+    // Initialize player
+    const player = videojs(videoRef.current, {
+      controls: true,
+      fluid: true,
+      responsive: true,
+      playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+      controlBar: {
+        children: [
+          'playToggle',
+          'volumePanel',
+          'currentTimeDisplay',
+          'timeDivider',
+          'durationDisplay',
+          'progressControl',
+          'remainingTimeDisplay',
+          'playbackRateMenuButton',
+          'chaptersButton',
+          'descriptionsButton',
+          'subsCapsButton',
+          'audioTrackButton',
+          'TheaterButton',
+          'pictureInPictureToggle',
+          'fullscreenToggle',
+        ],
+      },
+    });
+
+    playerRef.current = player;
+
+    // iOS-specific handling
+    if (isIOS) {
+      player.tech(true).el().setAttribute('playsinline', 'true');
+      player.tech(true).el().setAttribute('webkit-playsinline', 'true');
+    }
+
+    // Add theater mode button
+    createTheaterButton((newMode) => {
+      if (setIsTheaterMode) {
+        setIsTheaterMode(newMode);
+      }
+    });
+
+    // Keyboard shortcuts
+    const handleKeyPress = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+      const key = e.key.toLowerCase();
+
+      switch (key) {
+        case ' ':
+        case 'k':
+          e.preventDefault();
+          if (player.paused()) {
+            player.play();
+          } else {
+            player.pause();
+          }
+          break;
+        case 'arrowleft':
+        case 'j':
+          e.preventDefault();
+          player.currentTime(Math.max(0, player.currentTime() - SEEK_TIME_SECONDS));
+          break;
+        case 'arrowright':
+        case 'l':
+          e.preventDefault();
+          player.currentTime(Math.min(player.duration(), player.currentTime() + SEEK_TIME_SECONDS));
+          break;
+        case 'f':
+          e.preventDefault();
+          if (player.isFullscreen()) {
+            player.exitFullscreen();
+          } else {
+            player.requestFullscreen();
+          }
+          break;
+        case 'm':
+          e.preventDefault();
+          player.muted(!player.muted());
+          break;
+        case '0':
+        case '1':
+        case '2':
+        case '3':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
+          e.preventDefault();
+          const percent = parseInt(key) / 10;
+          player.currentTime(player.duration() * percent);
+          break;
+        default:
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+
+    // Mobile touch controls
+    let cleanupTouchControls = null;
+    if (isMobile) {
+      cleanupTouchControls = initializeMobileTouchControls(player, isIOS);
+    }
+
+    // Error handling
+    player.on('error', () => {
+      const error = player.error();
+      if (!error) return;
+
+      console.error('Video.js error:', {
+        code: error.code,
+        message: error.message,
+        type: error.type,
+      });
+
+      let userMessage = 'Video playback error';
+
+      switch (error.code) {
+        case 1:
+          userMessage = 'Video loading was aborted';
+          break;
+        case 2:
+          userMessage = 'Network error occurred while loading video';
+          break;
+        case 3:
+          userMessage = 'Video decoding failed. The file may be corrupted';
+          break;
+        case 4:
+          userMessage = 'Video format not supported by your browser';
+          if (isIOS) {
+            userMessage += '. On iOS, try opening in Safari';
+          }
+          break;
+        default:
+          userMessage = error.message || 'Unknown video error';
+      }
+
+      console.error('User-facing error:', userMessage);
+    });
+
+    // Progress saving (if enabled)
+    if (saveProgress && updateVideoRef.current) {
+      player.on('timeupdate', () => {
+        if (!player || player.seeking()) return;
+
+        const currentTime = player.currentTime();
+        const currentTimeFloor = Math.floor(currentTime);
+
+        if (saveProgressTimeout.current) {
+          clearTimeout(saveProgressTimeout.current);
+        }
+
+        saveProgressTimeout.current = setTimeout(() => {
+          if (updateVideoRef.current && videoDataRef.current) {
+            updateVideoRef.current.mutate({
+              id: videoDataRef.current.id,
+              data: { playback_seconds: currentTimeFloor },
+            });
+          }
+        }, PROGRESS_SAVE_DEBOUNCE_MS);
+      });
+
+      // Restore saved position
+      player.on('loadedmetadata', () => {
+        const duration = player.duration();
+        const savedPosition = video.playback_seconds || 0;
+
+        if (savedPosition > 0 && savedPosition < duration - 5) {
+          console.log(`Restoring playback position: ${savedPosition}s`);
+          player.currentTime(savedPosition);
+        }
+      });
+    } else {
+      // Playlist mode - always start from beginning
+      player.on('loadedmetadata', () => {
+        console.log('Starting video from beginning (playlist mode)');
+        player.currentTime(0);
+      });
+    }
+
+    // Watched threshold detection
+    player.on('timeupdate', () => {
+      if (hasMarkedWatchedRef.current) return;
+
+      const currentTime = player.currentTime();
+      const duration = player.duration();
+
+      if (duration > 0 && currentTime / duration >= WATCHED_THRESHOLD) {
+        hasMarkedWatchedRef.current = true;
+        if (onWatched) {
+          onWatched();
+        }
+      }
+    });
+
+    // Handle video end
+    if (onEnded) {
+      player.on('ended', () => {
+        onEnded();
+      });
+    }
+
+    // Cleanup
+    return () => {
+      if (saveProgressTimeout.current) {
+        clearTimeout(saveProgressTimeout.current);
+      }
+      if (cleanupTouchControls) {
+        cleanupTouchControls();
+      }
+      document.removeEventListener('keydown', handleKeyPress);
+      if (playerRef.current) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+    };
+  }, [video?.id, videoRef, saveProgress, onEnded, onWatched, updateVideoMutation, setIsTheaterMode]);
+
+  // Update theater button state when mode changes
+  useEffect(() => {
+    if (playerRef.current) {
+      updateTheaterButtonState(playerRef.current, isTheaterMode);
+    }
+  }, [isTheaterMode]);
+
+  return playerRef;
+}

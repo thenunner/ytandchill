@@ -74,6 +74,8 @@ app.lock
 # Backup files
 *.bak
 *.backup
+.backups/
+frontend/.backups/
 
 # OS
 Thumbs.db

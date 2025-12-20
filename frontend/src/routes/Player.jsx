@@ -1,20 +1,13 @@
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { useEffect, useRef, useState } from 'react';
-import videojs from 'video.js';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import 'video.js/dist/video-js.css';
 import { useVideo, useUpdateVideo, useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
-import {
-  formatDuration,
-  SEEK_TIME_SECONDS,
-  DOUBLE_TAP_DELAY_MS,
-  BUTTON_HIDE_DELAY_MS,
-  PROGRESS_SAVE_DEBOUNCE_MS,
-  WATCHED_THRESHOLD
-} from '../utils/videoPlayerUtils';
+import { formatDuration, getVideoSource } from '../utils/videoPlayerUtils';
+import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
 
 export default function Player() {
   const { videoId } = useParams();
@@ -27,22 +20,11 @@ export default function Player() {
 
   // Player refs
   const videoRef = useRef(null);
-  const playerInstanceRef = useRef(null);
-  const saveProgressTimeout = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
 
   // Refs to hold latest values for event handlers (avoid stale closures)
-  const updateVideoRef = useRef(updateVideo);
   const showNotificationRef = useRef(showNotification);
   const videoDataRef = useRef(video);
-  const hasMarkedWatchedRef = useRef(video?.watched || false);
-
-  // Mobile touch control refs for cleanup
-  const hideTimeoutRef = useRef(null);
-  const mediaDoubleTapListenerRef = useRef(null);
-  const overlayTouchListenerRef = useRef(null);
-  const theaterButtonRef = useRef(null);
-  const touchOverlayRef = useRef(null);
 
   // State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -54,675 +36,69 @@ export default function Player() {
 
   // Keep refs updated with latest values
   useEffect(() => {
-    updateVideoRef.current = updateVideo;
     showNotificationRef.current = showNotification;
     videoDataRef.current = video;
-    hasMarkedWatchedRef.current = video?.watched || false;
   });
 
-  useEffect(() => {
-    // Only initialize if we have video data and no player exists yet
-    if (!video || !videoRef.current || playerInstanceRef.current) {
-      return;
+  // Handle watched callback
+  const handleWatched = useCallback(() => {
+    if (!video?.watched) {
+      updateVideo.mutateAsync({
+        id: video.id,
+        data: { watched: true },
+      }).then(() => {
+        showNotificationRef.current('Video marked as watched', 'success');
+      }).catch((error) => {
+        console.error('Error marking video as watched:', error);
+        showNotificationRef.current('Failed to mark as watched', 'error');
+      });
     }
+  }, [video?.id, video?.watched, updateVideo]);
 
-    console.log('Initializing video.js player...');
+  // Initialize video.js player using the hook
+  const playerRef = useVideoJsPlayer({
+    video: video,
+    videoRef: videoRef,
+    saveProgress: true,
+    onEnded: null,
+    onWatched: handleWatched,
+    updateVideoMutation: updateVideo,
+    isTheaterMode: isTheaterMode,
+    setIsTheaterMode: setIsTheaterMode,
+  });
 
-    // Construct video source path
-    const pathParts = video.file_path.replace(/\\/g, '/').split('/');
-    const downloadsIndex = pathParts.indexOf('downloads');
-    const relativePath = downloadsIndex >= 0
-      ? pathParts.slice(downloadsIndex + 1).join('/')
-      : pathParts.slice(-2).join('/');
-    const videoSrc = `/api/media/${relativePath}`;
-    console.log('Video source:', videoSrc);
+  // Set video source when player is ready
+  useEffect(() => {
+    if (!playerRef.current || !video?.file_path) return;
 
-    // Detect mobile and iOS devices
-    const isMobileDevice = () => {
-      const hasCoarsePointer = window.matchMedia('(pointer: coarse)').matches;
-      const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      return hasCoarsePointer && isMobileUA;
+    const player = playerRef.current;
+    const videoSrc = getVideoSource(video.file_path);
+
+    console.log('Setting video source:', videoSrc);
+
+    player.src({
+      src: videoSrc,
+      type: 'video/mp4'
+    });
+
+    // Add error notification
+    const handleError = () => {
+      const error = player.error();
+      if (error) {
+        console.error('Video error:', error);
+        showNotificationRef.current('Failed to load video', 'error');
+      }
     };
 
-    const isIOSDevice = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    console.log('Is iOS device:', isIOSDevice);
+    player.on('error', handleError);
 
-    // Initialize video.js on the JSX video element (like Plyr pattern)
-    let player;
-    try {
-      player = videojs(videoRef.current, {
-        controls: true,
-        playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-        fluid: true,
-        responsive: true,
-        preload: 'auto',  // Use auto for all platforms (works in PlaylistPlayer)
-        html5: {
-          vhs: {
-            overrideNative: !isIOSDevice  // Use native on iOS
-          },
-          nativeVideoTracks: isIOSDevice,  // Use native on iOS
-          nativeAudioTracks: isIOSDevice,  // Use native on iOS
-          nativeTextTracks: isIOSDevice    // Use native on iOS
-        },
-        techOrder: ['html5'],  // Explicitly prefer html5 tech
-        controlBar: {
-          children: [
-            'playToggle',
-            'skipBackward',
-            'skipForward',
-            'volumePanel',
-            'currentTimeDisplay',
-            'timeDivider',
-            'durationDisplay',
-            'progressControl',
-            'playbackRateMenuButton',
-            'pictureInPictureToggle',
-            'fullscreenToggle'
-          ]
-        },
-        userActions: {
-          hotkeys: function(event) {
-            if (isIOSDevice) return; // Disable hotkeys on iOS
-
-            // Space or K = play/pause
-            if (event.which === 32 || event.which === 75) {
-              event.preventDefault();
-              if (this.paused()) {
-                this.play();
-              } else {
-                this.pause();
-              }
-            }
-            // Left arrow or J = rewind
-            else if (event.which === 37 || event.which === 74) {
-              event.preventDefault();
-              this.currentTime(Math.max(0, this.currentTime() - SEEK_TIME_SECONDS));
-            }
-            // Right arrow or L = forward
-            else if (event.which === 39 || event.which === 76) {
-              event.preventDefault();
-              this.currentTime(Math.min(this.duration(), this.currentTime() + SEEK_TIME_SECONDS));
-            }
-            // F = fullscreen
-            else if (event.which === 70) {
-              event.preventDefault();
-              if (this.isFullscreen()) {
-                this.exitFullscreen();
-              } else {
-                this.requestFullscreen();
-              }
-            }
-            // M = mute
-            else if (event.which === 77) {
-              event.preventDefault();
-              this.muted(!this.muted());
-            }
-            // Up arrow = volume up
-            else if (event.which === 38) {
-              event.preventDefault();
-              this.volume(Math.min(1, this.volume() + 0.1));
-            }
-            // Down arrow = volume down
-            else if (event.which === 40) {
-              event.preventDefault();
-              this.volume(Math.max(0, this.volume() - 0.1));
-            }
-          }
-        }
-      });
-
-      console.log('Player initialized successfully');
-
-      // Store player reference
-      playerInstanceRef.current = player;
-
-      // Set source AFTER initialization (like Plyr pattern)
-      // Try simple MIME type first on iOS (explicit codecs can cause issues)
-      console.log('Setting video source:', videoSrc);
-      console.log('Using iOS-optimized settings:', isIOSDevice);
-
-      player.src({
-        src: videoSrc,
-        type: 'video/mp4'
-      });
-
-      console.log('Source set successfully');
-
-        // Prevent double-click from exiting fullscreen (but allow entering fullscreen)
-        player.on('dblclick', (event) => {
-          if (player.isFullscreen()) {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-        });
-
-        // Create custom theater mode button
-        const toggleTheaterMode = () => {
-          setIsTheaterMode(prev => {
-            const newValue = !prev;
-            localStorage.setItem('theaterMode', newValue.toString());
-            return newValue;
-          });
-        };
-
-        // Video.js Button Component for Theater Mode
-        const Button = videojs.getComponent('Button');
-        class TheaterButton extends Button {
-          constructor(player, options) {
-            super(player, options);
-            this.controlText('Theater mode');
-            this.addClass('vjs-theater-button');
-          }
-
-          buildCSSClass() {
-            return `vjs-control vjs-button ${super.buildCSSClass()}`;
-          }
-
-          handleClick() {
-            toggleTheaterMode();
-          }
-
-          createEl() {
-            const el = super.createEl('button', {
-              className: 'vjs-control vjs-button vjs-theater-button'
-            });
-
-            el.innerHTML = `
-              <span class="vjs-icon-placeholder" aria-hidden="true">
-                <svg class="vjs-theater-icon-pressed" viewBox="0 0 24 24" style="display: none;">
-                  <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
-                  <polygon points="15 7 9 12 15 17" fill="currentColor"/>
-                  <polygon points="9 7 15 12 9 17" fill="currentColor"/>
-                </svg>
-                <svg class="vjs-theater-icon-not-pressed" viewBox="0 0 24 24">
-                  <rect x="1" y="3" width="22" height="18" rx="2" fill="none" stroke="currentColor" stroke-width="2.5"/>
-                  <polygon points="9 7 5 12 9 17" fill="currentColor"/>
-                  <polygon points="15 7 19 12 15 17" fill="currentColor"/>
-                </svg>
-              </span>
-              <span class="vjs-control-text" aria-live="polite">Theater mode</span>
-            `;
-
-            return el;
-          }
-        }
-
-        videojs.registerComponent('TheaterButton', TheaterButton);
-        player.getChild('controlBar').addChild('TheaterButton', {},
-          player.getChild('controlBar').children().length - 1);
-
-        theaterButtonRef.current = player.getChild('controlBar').getChild('TheaterButton');
-
-        // ===== MOBILE TOUCH CONTROLS (YOUTUBE-STYLE) =====
-        if (isMobileDevice()) {
-          console.log('Initializing YouTube-style touch controls');
-
-          // Double-tap to enter fullscreen when NOT in fullscreen, prevent exit when IN fullscreen
-          let lastVideoTapTime = 0;
-          const mediaTouchHandler = (e) => {
-            const currentTime = Date.now();
-            const isDoubleTap = (currentTime - lastVideoTapTime) < DOUBLE_TAP_DELAY_MS;
-
-            if (!player.isFullscreen()) {
-              if (isDoubleTap) {
-                e.preventDefault();
-                player.requestFullscreen();
-              }
-            } else {
-              if (isDoubleTap) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }
-
-            lastVideoTapTime = currentTime;
-          };
-          player.el().querySelector('video').addEventListener('touchend', mediaTouchHandler);
-          mediaDoubleTapListenerRef.current = mediaTouchHandler;
-
-          // Create touch overlay that covers the video area
-          const touchOverlay = document.createElement('div');
-          touchOverlay.className = 'vjs-touch-overlay';
-          touchOverlay.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 60px;
-            display: none;
-            z-index: 150;
-            -webkit-tap-highlight-color: transparent;
-            pointer-events: auto !important;
-          `;
-
-          // Modern semi-transparent button style (YouTube-like)
-          const buttonStyle = (size = 100) => `
-            position: absolute;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 2px solid rgba(255, 255, 255, 0.25);
-            border-radius: 50%;
-            width: ${size}px;
-            height: ${size}px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            opacity: 0;
-            transform: scale(0.9);
-            transition: opacity 0.2s ease, transform 0.2s ease;
-            pointer-events: auto !important;
-            cursor: pointer;
-            z-index: 200;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-          `;
-
-          // Create buttons in fixed positions
-          const rewindBtn = document.createElement('button');
-          rewindBtn.className = 'vjs-mobile-btn';
-          rewindBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;">
-              <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
-            </svg>
-          `;
-          rewindBtn.style.cssText = buttonStyle(110) + `left: 20%; top: 50%; transform: translate(-50%, -50%) scale(0.9);`;
-
-          const playPauseBtn = document.createElement('button');
-          playPauseBtn.className = 'vjs-mobile-btn';
-          playPauseBtn.innerHTML = `
-            <svg class="play-icon" viewBox="0 0 24 24" fill="white" style="width: 50px; height: 50px;">
-              <polygon points="8 5 19 12 8 19 8 5"/>
-            </svg>
-            <svg class="pause-icon" viewBox="0 0 24 24" fill="white" style="width: 50px; height: 50px; display: none;">
-              <rect x="6" y="4" width="4" height="16" rx="2"/>
-              <rect x="14" y="4" width="4" height="16" rx="2"/>
-            </svg>
-          `;
-          playPauseBtn.style.cssText = buttonStyle(130) + `left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.9);`;
-
-          const forwardBtn = document.createElement('button');
-          forwardBtn.className = 'vjs-mobile-btn';
-          forwardBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;">
-              <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
-            </svg>
-          `;
-          forwardBtn.style.cssText = buttonStyle(110) + `right: 20%; top: 50%; transform: translate(50%, -50%) scale(0.9);`;
-
-          const exitBtn = document.createElement('button');
-          exitBtn.className = 'vjs-mobile-btn';
-          exitBtn.innerHTML = `
-            <svg viewBox="0 0 24 24" fill="white" style="width: 32px; height: 32px;">
-              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-            </svg>
-          `;
-          exitBtn.style.cssText = buttonStyle(100) + `left: 50%; top: 50px; transform: translate(-50%, 0) scale(0.9);`;
-
-          touchOverlay.appendChild(rewindBtn);
-          touchOverlay.appendChild(playPauseBtn);
-          touchOverlay.appendChild(forwardBtn);
-          touchOverlay.appendChild(exitBtn);
-          touchOverlayRef.current = touchOverlay;
-
-          let currentVisibleButton = null;
-          let lastTapTime = 0;
-          let lastTapZone = null;
-
-          const showButton = (button) => {
-            // Hide all buttons first
-            [rewindBtn, playPauseBtn, forwardBtn, exitBtn].forEach(btn => {
-              btn.style.opacity = '0';
-              if (btn === rewindBtn) btn.style.transform = 'translate(-50%, -50%) scale(0.9)';
-              else if (btn === forwardBtn) btn.style.transform = 'translate(50%, -50%) scale(0.9)';
-              else if (btn === exitBtn) btn.style.transform = 'translate(-50%, 0) scale(0.9)';
-              else btn.style.transform = 'translate(-50%, -50%) scale(0.9)';
-            });
-
-            // Show only the tapped zone's button
-            button.style.opacity = '1';
-            if (button === rewindBtn) button.style.transform = 'translate(-50%, -50%) scale(1)';
-            else if (button === forwardBtn) button.style.transform = 'translate(50%, -50%) scale(1)';
-            else if (button === exitBtn) button.style.transform = 'translate(-50%, 0) scale(1)';
-            else button.style.transform = 'translate(-50%, -50%) scale(1)';
-
-            currentVisibleButton = button;
-
-            if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
-            hideTimeoutRef.current = setTimeout(() => {
-              button.style.opacity = '0';
-              if (button === rewindBtn) button.style.transform = 'translate(-50%, -50%) scale(0.9)';
-              else if (button === forwardBtn) button.style.transform = 'translate(50%, -50%) scale(0.9)';
-              else if (button === exitBtn) button.style.transform = 'translate(-50%, 0) scale(0.9)';
-              else button.style.transform = 'translate(-50%, -50%) scale(0.9)';
-              currentVisibleButton = null;
-            }, BUTTON_HIDE_DELAY_MS);
-          };
-
-          const updatePlayPauseIcon = () => {
-            const playIcon = playPauseBtn.querySelector('.play-icon');
-            const pauseIcon = playPauseBtn.querySelector('.pause-icon');
-            if (!player.paused()) {
-              playIcon.style.display = 'none';
-              pauseIcon.style.display = 'block';
-            } else {
-              playIcon.style.display = 'block';
-              pauseIcon.style.display = 'none';
-            }
-          };
-
-          // Detect which zone was tapped
-          const overlayTouchHandler = (e) => {
-            e.preventDefault();
-
-            const touch = e.changedTouches[0];
-            const rect = touchOverlay.getBoundingClientRect();
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-            const width = rect.width;
-            const height = rect.height;
-
-            const currentTime = Date.now();
-            const isDoubleTap = (currentTime - lastTapTime) < DOUBLE_TAP_DELAY_MS;
-
-            let zone = null;
-            let button = null;
-            let action = null;
-
-            // Determine zone
-            if (y < height * 0.2) {
-              zone = 'exit';
-              button = exitBtn;
-              action = () => player.exitFullscreen();
-            } else if (x < width * 0.3) {
-              zone = 'rewind';
-              button = rewindBtn;
-              action = () => player.currentTime(Math.max(0, player.currentTime() - SEEK_TIME_SECONDS));
-            } else if (x > width * 0.7) {
-              zone = 'forward';
-              button = forwardBtn;
-              action = () => player.currentTime(Math.min(player.duration(), player.currentTime() + SEEK_TIME_SECONDS));
-            } else {
-              zone = 'center';
-              button = playPauseBtn;
-              action = () => {
-                if (player.paused()) {
-                  player.play();
-                } else {
-                  player.pause();
-                }
-              };
-            }
-
-            // Center zone = instant action
-            if (zone === 'center') {
-              action();
-              updatePlayPauseIcon();
-              showButton(button);
-            }
-            // Other zones: show on first tap, action on second tap or double-tap
-            else {
-              const isSameZone = lastTapZone === zone;
-
-              if (isDoubleTap && isSameZone) {
-                // Double tap = instant action
-                action();
-                showButton(button);
-              } else if (currentVisibleButton === button) {
-                // Button already visible, second tap = action
-                action();
-                showButton(button);
-              } else {
-                // First tap = show button only
-                showButton(button);
-              }
-            }
-
-            lastTapTime = currentTime;
-            lastTapZone = zone;
-          };
-          touchOverlay.addEventListener('touchend', overlayTouchHandler);
-          overlayTouchListenerRef.current = overlayTouchHandler;
-
-          player.on('play', updatePlayPauseIcon);
-          player.on('pause', updatePlayPauseIcon);
-          player.on('playing', updatePlayPauseIcon);
-
-          player.el().appendChild(touchOverlay);
-
-          // Show/hide overlay in fullscreen
-          player.on('fullscreenchange', () => {
-            if (player.isFullscreen()) {
-              touchOverlay.style.display = 'block';
-              updatePlayPauseIcon();
-            } else {
-              touchOverlay.style.display = 'none';
-            }
-          });
-        }
-
-        // ===== FORCE CONTROLS TO STAY VISIBLE IN FULLSCREEN =====
-        // Ensure video.js controls remain visible and clickable in fullscreen on desktop
-        player.on('fullscreenchange', () => {
-          if (player.isFullscreen()) {
-            console.log('Entered fullscreen - controls will auto-hide after inactivity');
-          } else {
-            console.log('Exited fullscreen');
-          }
-        });
-        // ===== END FULLSCREEN TOUCH CONTROLS =====
-
-      // Add error handling for video loading
-      player.on('error', () => {
-        console.error('video.js error event');
-        const error = player.error();
-        if (error) {
-          console.error('=== Video Playback Error ===');
-          console.error('Error code:', error.code);
-          console.error('Error message:', error.message);
-          console.error('Full error object:', error);
-          console.error('iOS Device:', isIOSDevice);
-          console.error('Video source URL:', videoSrc);
-          console.error('Player tech in use:', player.techName_);
-          console.error('Current source:', player.currentSrc());
-          console.error('Network state:', player.networkState());
-          console.error('Ready state:', player.readyState());
-          console.error('User Agent:', navigator.userAgent);
-
-          const errorMessages = {
-            1: 'Video loading aborted by user or browser',
-            2: 'Network error - failed to fetch video',
-            3: 'Video decoding failed - file may be corrupted or codec unsupported',
-            4: 'Video format or codec not supported by browser'
-          };
-
-          let errorMsg = errorMessages[error.code] || 'Video playback error';
-
-          if (isIOSDevice) {
-            if (error.code === 2) {
-              errorMsg = 'Network error on iOS - check server CORS and Content-Type headers';
-              console.error('iOS Network Error - Possible causes:');
-              console.error('1. Server not sending correct Content-Type header');
-              console.error('2. CORS configuration blocking iOS Safari');
-              console.error('3. Video file path is incorrect');
-              console.error('4. Server not responding to iOS user agent');
-            } else if (error.code === 4) {
-              errorMsg = 'Video codec not supported on iOS - check video encoding';
-              console.error('iOS Format Error - Video must be:');
-              console.error('- H.264 (AVC) video codec');
-              console.error('- AAC audio codec');
-              console.error('- MP4 container with moov atom at front');
-            }
-          }
-
-          showNotificationRef.current(errorMsg, 'error');
-        }
-      });
-
-      // Log successful loading events for debugging
-      player.on('loadstart', () => {
-        console.log('Video load started');
-      });
-
-      player.on('loadeddata', () => {
-        console.log('Video data loaded successfully');
-      });
-
-      // Restore playback position when metadata is loaded
-      player.on('loadedmetadata', () => {
-        console.log('Video metadata loaded successfully');
-        const savedPosition = video.playback_seconds;
-        const duration = player.duration();
-
-        console.log('Video duration:', duration);
-        console.log('Saved position:', savedPosition);
-
-        // Validate saved position before restoring
-        if (
-          savedPosition > 0 &&
-          !isNaN(savedPosition) &&
-          isFinite(savedPosition) &&
-          duration > 0 &&
-          savedPosition < duration
-        ) {
-          console.log('Restoring playback position to:', savedPosition);
-          player.currentTime(savedPosition);
-        }
-      });
-
-      // Consolidated timeupdate handler: save progress + check watched threshold
-      player.on('timeupdate', () => {
-        const currentTime = player.currentTime();
-        const duration = player.duration();
-
-        // Debounced progress save
-        if (saveProgressTimeout.current) {
-          clearTimeout(saveProgressTimeout.current);
-        }
-
-        saveProgressTimeout.current = setTimeout(() => {
-          const currentTimeFloor = Math.floor(player.currentTime());
-          const dur = player.duration();
-
-          if (
-            currentTimeFloor > 0 &&
-            !isNaN(currentTimeFloor) &&
-            isFinite(currentTimeFloor) &&
-            dur > 0 &&
-            currentTimeFloor < dur
-          ) {
-            updateVideoRef.current.mutate({
-              id: videoDataRef.current.id,
-              data: { playback_seconds: currentTimeFloor },
-            });
-          }
-        }, PROGRESS_SAVE_DEBOUNCE_MS);
-
-        // Check watched threshold
-        if (!hasMarkedWatchedRef.current && duration > 0 && currentTime >= duration * WATCHED_THRESHOLD) {
-          hasMarkedWatchedRef.current = true;
-          updateVideoRef.current.mutateAsync({
-            id: videoDataRef.current.id,
-            data: { watched: true },
-          }).then(() => {
-            showNotificationRef.current('Video marked as watched', 'success');
-          }).catch((error) => {
-            console.error('Error marking video as watched:', error);
-            showNotificationRef.current('Failed to mark as watched', 'error');
-          });
-        }
-      });
-
-      // Also check on ended event
-      player.on('ended', () => {
-        if (!hasMarkedWatchedRef.current) {
-          hasMarkedWatchedRef.current = true;
-          updateVideoRef.current.mutateAsync({
-            id: videoDataRef.current.id,
-            data: { watched: true },
-          }).then(() => {
-            showNotificationRef.current('Video marked as watched', 'success');
-          }).catch((error) => {
-            console.error('Error marking video as watched:', error);
-          });
-        }
-      });
-
-    } catch (error) {
-      console.error('Error in player initialization:', error);
-      showNotificationRef.current('Failed to initialize video player', 'error');
-    }
-
-    // Cleanup function (outside try-catch)
     return () => {
-      console.log('Cleaning up video.js player');
-
-      // Cancel any pending saves
-      if (saveProgressTimeout.current) {
-        clearTimeout(saveProgressTimeout.current);
-        saveProgressTimeout.current = null;
-      }
-
-      if (hideTimeoutRef.current) {
-        clearTimeout(hideTimeoutRef.current);
-        hideTimeoutRef.current = null;
-      }
-
-      // Save current position before cleanup
-      if (playerInstanceRef.current && !playerInstanceRef.current.isDisposed() && videoDataRef.current?.id) {
-        const currentTime = Math.floor(playerInstanceRef.current.currentTime());
-        if (currentTime > 0 && !isNaN(currentTime)) {
-          updateVideoRef.current.mutate({
-            id: videoDataRef.current.id,
-            data: { playback_seconds: currentTime },
-          });
-        }
-      }
-
-      // Clean up mobile touch event listeners
-      const videoEl = playerInstanceRef.current?.el()?.querySelector('video');
-      if (videoEl && mediaDoubleTapListenerRef.current) {
-        videoEl.removeEventListener('touchend', mediaDoubleTapListenerRef.current);
-        mediaDoubleTapListenerRef.current = null;
-      }
-
-      if (touchOverlayRef.current && overlayTouchListenerRef.current) {
-        touchOverlayRef.current.removeEventListener('touchend', overlayTouchListenerRef.current);
-        overlayTouchListenerRef.current = null;
-      }
-
-      // Remove touch overlay
-      if (touchOverlayRef.current && touchOverlayRef.current.parentNode) {
-        touchOverlayRef.current.parentNode.removeChild(touchOverlayRef.current);
-        touchOverlayRef.current = null;
-      }
-
-      // Dispose player and clean up
-      if (playerInstanceRef.current && !playerInstanceRef.current.isDisposed()) {
-        playerInstanceRef.current.dispose();
-      }
-      playerInstanceRef.current = null;
+      player.off('error', handleError);
     };
-  }, [video?.id]); // Only re-run when video ID changes
+  }, [playerRef, video?.file_path, video?.id]);
 
-  // Update theater mode button state when isTheaterMode changes
-  useEffect(() => {
-    if (playerInstanceRef.current && theaterButtonRef.current) {
-      const theaterButton = theaterButtonRef.current.el();
-      if (theaterButton) {
-        const pressedIcon = theaterButton.querySelector('.vjs-theater-icon-pressed');
-        const notPressedIcon = theaterButton.querySelector('.vjs-theater-icon-not-pressed');
-
-        if (isTheaterMode) {
-          if (pressedIcon) pressedIcon.style.display = 'block';
-          if (notPressedIcon) notPressedIcon.style.display = 'none';
-        } else {
-          if (pressedIcon) pressedIcon.style.display = 'none';
-          if (notPressedIcon) notPressedIcon.style.display = 'block';
-        }
-      }
-    }
-  }, [isTheaterMode]);
+  // For compatibility with existing code
+  const playerInstanceRef = playerRef;
 
   if (isLoading) {
     return <LoadingSpinner />;
