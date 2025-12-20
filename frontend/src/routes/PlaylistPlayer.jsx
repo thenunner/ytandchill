@@ -201,6 +201,7 @@ export default function PlaylistPlayer() {
     updateVideoMutation: updateVideo,
     isTheaterMode: isTheaterMode,
     setIsTheaterMode: handleTheaterModeChange,
+    persistPlayer: true, // Persist player across video changes, don't reinitialize
   });
 
   // Set initial index based on startVideoId (ONLY on first load, not on URL updates during navigation)

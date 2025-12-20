@@ -23,6 +23,7 @@ import { createTheaterButton, updateTheaterButtonState } from '../utils/createTh
  * @param {Object} options.updateVideoMutation - React Query mutation for updating video
  * @param {boolean} options.isTheaterMode - Current theater mode state
  * @param {Function} options.setIsTheaterMode - Function to update theater mode state
+ * @param {boolean} options.persistPlayer - If true, player persists across video changes (for playlists)
  * @returns {React.RefObject} Player reference
  */
 export function useVideoJsPlayer({
@@ -34,6 +35,7 @@ export function useVideoJsPlayer({
   updateVideoMutation = null,
   isTheaterMode = false,
   setIsTheaterMode = null,
+  persistPlayer = false,
 }) {
   const playerRef = useRef(null);
   const saveProgressTimeout = useRef(null);
@@ -49,6 +51,12 @@ export function useVideoJsPlayer({
 
   useEffect(() => {
     if (!videoRef.current || !video) return;
+
+    // For persistent players (playlists), don't reinitialize if player already exists
+    if (persistPlayer && playerRef.current) {
+      console.log('[useVideoJsPlayer] Player already exists, skipping reinitialization');
+      return;
+    }
 
     const { isMobile, isIOS } = detectDeviceType();
 
@@ -280,7 +288,10 @@ export function useVideoJsPlayer({
         playerRef.current = null;
       }
     };
-  }, [video?.id, videoRef, saveProgress, onEnded, onWatched, updateVideoMutation, setIsTheaterMode]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, persistPlayer
+    ? [videoRef, saveProgress, onEnded, onWatched, updateVideoMutation, setIsTheaterMode] // Persistent: init once
+    : [video?.id, videoRef, saveProgress, onEnded, onWatched, updateVideoMutation, setIsTheaterMode]); // Non-persistent: reinit on video change
 
   // Update theater button state when mode changes
   useEffect(() => {
