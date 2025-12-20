@@ -607,6 +607,7 @@ export default function Channels() {
                         onClick={() => { setSortBy('most_downloaded'); setShowSortMenu(false); }}
                         className={`p-1 rounded ${sortBy === 'most_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Most Downloaded"
+                        aria-label="Sort by most downloaded"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 5v14M5 12l7-7 7 7"></path>
@@ -616,6 +617,7 @@ export default function Channels() {
                         onClick={() => { setSortBy('least_downloaded'); setShowSortMenu(false); }}
                         className={`p-1 rounded ${sortBy === 'least_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Least Downloaded"
+                        aria-label="Sort by least downloaded"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 19V5M5 12l7 7 7-7"></path>
@@ -634,6 +636,7 @@ export default function Channels() {
                         onClick={() => { setSortBy('most_to_review'); setShowSortMenu(false); }}
                         className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Most To Review"
+                        aria-label="Sort by most to review"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 5v14M5 12l7-7 7 7"></path>
@@ -643,6 +646,7 @@ export default function Channels() {
                         onClick={() => { setSortBy('least_to_review'); setShowSortMenu(false); }}
                         className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Least To Review"
+                        aria-label="Sort by least to review"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 19V5M5 12l7 7 7-7"></path>
@@ -661,6 +665,7 @@ export default function Channels() {
                         onClick={() => { setSortBy('newest_scanned'); setShowSortMenu(false); }}
                         className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Newest Scanned"
+                        aria-label="Sort by newest scanned"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 5v14M5 12l7-7 7 7"></path>
@@ -670,6 +675,7 @@ export default function Channels() {
                         onClick={() => { setSortBy('oldest_scanned'); setShowSortMenu(false); }}
                         className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
                         title="Oldest Scanned"
+                        aria-label="Sort by oldest scanned"
                       >
                         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
                           <path d="M12 19V5M5 12l7 7 7-7"></path>
@@ -1435,6 +1441,7 @@ export default function Channels() {
                           onClick={() => setEditingCategory({ id: category.id, name: category.name })}
                           className="p-1 text-text-muted hover:text-text-primary"
                           title="Rename"
+                          aria-label="Rename category"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -1445,6 +1452,7 @@ export default function Channels() {
                           onClick={() => setDeleteCategoryConfirm(category)}
                           className="p-1 text-text-muted hover:text-red-400"
                           title="Delete"
+                          aria-label="Delete category"
                         >
                           <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="3 6 5 6 21 6"></polyline>

@@ -12,6 +12,7 @@ import {
   formatDuration,
   getVideoSource,
 } from '../utils/videoPlayerUtils';
+import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon } from '../components/icons';
 
 export default function PlaylistPlayer() {
   const { playlistId, categoryId } = useParams();
@@ -582,9 +583,7 @@ export default function PlaylistPlayer() {
                 title="Back"
                 aria-label="Go back to previous page"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
+                <ArrowLeftIcon className="w-5 h-5" />
               </button>
 
               <h1 className="text-2xl font-bold text-text-primary leading-tight">
@@ -615,9 +614,7 @@ export default function PlaylistPlayer() {
                 <>
                   <span>•</span>
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold">
-                    <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
+                    <CheckmarkIcon className="w-3.5 h-3.5" />
                     Watched
                   </span>
                 </>
@@ -632,9 +629,7 @@ export default function PlaylistPlayer() {
                 title="Back"
                 aria-label="Go back to previous page"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
+                <ArrowLeftIcon className="w-5 h-5" />
               </button>
 
               <button
@@ -644,9 +639,7 @@ export default function PlaylistPlayer() {
                 title="Add to playlist"
                 aria-label="Add video to playlist"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14m-7-7h14"></path>
-                </svg>
+                <PlusIcon className="w-5 h-5" />
               </button>
 
               <button
@@ -655,10 +648,7 @@ export default function PlaylistPlayer() {
                 title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
                 aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
+                <EyeIcon className="w-5 h-5" />
               </button>
 
               <button
@@ -667,10 +657,7 @@ export default function PlaylistPlayer() {
                 title="Delete video"
                 aria-label="Delete video permanently"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
+                <TrashIcon className="w-5 h-5" />
               </button>
 
               {/* Mobile Queue Button */}
@@ -722,9 +709,7 @@ export default function PlaylistPlayer() {
                   title="Add to playlist"
                   aria-label="Add video to playlist"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 5v14m-7-7h14"></path>
-                  </svg>
+                  <PlusIcon className="w-5 h-5" />
                 </button>
 
                 {/* Watched */}
@@ -734,10 +719,7 @@ export default function PlaylistPlayer() {
                   title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
                   aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                    <circle cx="12" cy="12" r="3"></circle>
-                  </svg>
+                  <EyeIcon className="w-5 h-5" />
                 </button>
 
                 {/* Delete */}
@@ -747,10 +729,7 @@ export default function PlaylistPlayer() {
                   title="Delete video"
                   aria-label="Delete video permanently"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                  </svg>
+                  <TrashIcon className="w-5 h-5" />
                 </button>
               </div>
             ) : (
@@ -772,9 +751,7 @@ export default function PlaylistPlayer() {
                     title="Hide queue"
                     aria-label="Hide video queue"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
+                    <ArrowLeftIcon className="w-5 h-5" />
                   </button>
                 </div>
 
@@ -841,9 +818,7 @@ export default function PlaylistPlayer() {
                     title="Add to playlist"
                     aria-label="Add video to playlist"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M12 5v14m-7-7h14"></path>
-                    </svg>
+                    <PlusIcon className="w-5 h-5" />
                   </button>
 
                   {/* Watched */}
@@ -853,10 +828,7 @@ export default function PlaylistPlayer() {
                     title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
                     aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                      <circle cx="12" cy="12" r="3"></circle>
-                    </svg>
+                    <EyeIcon className="w-5 h-5" />
                   </button>
 
                   {/* Delete */}
@@ -866,10 +838,7 @@ export default function PlaylistPlayer() {
                     title="Delete video"
                     aria-label="Delete video permanently"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
+                    <TrashIcon className="w-5 h-5" />
                   </button>
                 </div>
               </div>
@@ -908,9 +877,7 @@ export default function PlaylistPlayer() {
                       </div>
                       {video.watched && (
                         <div className="absolute top-1 left-1 bg-accent/90 text-accent-text text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
+                          <CheckmarkIcon className="w-3 h-3" />
                         </div>
                       )}
                     </div>
@@ -928,9 +895,7 @@ export default function PlaylistPlayer() {
 
                     {isCurrent && (
                       <div className="flex-shrink-0 flex items-center">
-                        <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
+                        <PlayIcon className="w-5 h-5 text-accent" />
                       </div>
                     )}
                   </button>
@@ -1011,9 +976,7 @@ export default function PlaylistPlayer() {
                       </div>
                       {video.watched && (
                         <div className="absolute top-1 left-1 bg-accent/90 text-accent-text text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                            <polyline points="20 6 9 17 4 12"></polyline>
-                          </svg>
+                          <CheckmarkIcon className="w-3 h-3" />
                         </div>
                       )}
                     </div>
@@ -1031,9 +994,7 @@ export default function PlaylistPlayer() {
 
                     {isCurrent && (
                       <div className="flex-shrink-0 flex items-center">
-                        <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
+                        <PlayIcon className="w-5 h-5 text-accent" />
                       </div>
                     )}
                   </button>
