@@ -50,16 +50,12 @@ export function useVideoJsPlayer({
   }, [video, updateVideoMutation]);
 
   useEffect(() => {
-    console.log('[useVideoJsPlayer] Effect triggered. Video ID:', video?.id, 'persistPlayer:', persistPlayer);
-
     if (!videoRef.current || !video) {
-      console.log('[useVideoJsPlayer] Early return - no videoRef or video');
       return;
     }
 
     // Verify the video element is actually a valid video/audio element
     const elem = videoRef.current;
-    console.log('[useVideoJsPlayer] Video element check. tagName:', elem.tagName, 'isConnected:', elem.isConnected);
 
     if (!elem.tagName || (elem.tagName !== 'VIDEO' && elem.tagName !== 'AUDIO')) {
       console.warn('[useVideoJsPlayer] Invalid element type:', elem.tagName);
@@ -295,11 +291,8 @@ export function useVideoJsPlayer({
 
     // Cleanup
     return () => {
-      console.log('[useVideoJsPlayer] Cleanup called for video:', video?.id, 'persistPlayer:', persistPlayer);
-
       // For persistent players, DON'T dispose on video change - just clean up event listeners
       if (persistPlayer) {
-        console.log('[useVideoJsPlayer] Persistent player - skipping disposal, keeping player alive');
         // Still clean up timeouts and listeners, but keep the player
         if (saveProgressTimeout.current) {
           clearTimeout(saveProgressTimeout.current);
@@ -309,7 +302,6 @@ export function useVideoJsPlayer({
       }
 
       // Non-persistent players: full cleanup
-      console.log('[useVideoJsPlayer] Non-persistent player - full disposal');
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
       }

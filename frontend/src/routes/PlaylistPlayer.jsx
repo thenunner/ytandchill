@@ -148,13 +148,6 @@ export default function PlaylistPlayer() {
       return videos[0];
     }
     const video = videos[actualIndex];
-    console.log('[PlaylistPlayer] Current video changed:', {
-      title: video.title,
-      id: video.id,
-      currentIndex,
-      actualIndex,
-      file_path: video.file_path
-    });
     return video;
   }, [videos, displayOrder, currentIndex]);
 
@@ -453,10 +446,7 @@ export default function PlaylistPlayer() {
 
   // Update video source when currentVideo changes (keep existing source update logic)
   useEffect(() => {
-    console.log('[PlaylistPlayer] Source update effect triggered. currentVideo:', currentVideo?.title, 'playerRef:', !!playerRef.current);
-
     if (!currentVideo || !playerRef.current) {
-      console.log('[PlaylistPlayer] Skipping source update - no video or no player');
       return;
     }
 
