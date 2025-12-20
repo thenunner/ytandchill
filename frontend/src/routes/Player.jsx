@@ -796,10 +796,62 @@ export default function Player() {
 
   return (
     <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
-      {/* Player Container */}
-      <div className={`md:max-w-[83.333%] transition-all duration-300 ease-in-out ${
-        isTheaterMode ? 'md:w-[83.333%]' : 'md:w-[60%]'
-      }`} style={{ willChange: 'width' }}>
+      {/* Flex Container: Buttons left, Player+Info right */}
+      <div className="flex flex-col md:flex-row md:gap-4 md:items-start">
+        {/* Control Buttons - Desktop: vertical column on left */}
+        <div className="hidden md:flex md:flex-col md:gap-3">
+          <button
+            onClick={handleBack}
+            className="icon-btn hover:bg-accent hover:border-accent"
+            title="Back"
+            aria-label="Go back to previous page"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+
+          <button
+            ref={addToPlaylistButtonRef}
+            onClick={() => setShowPlaylistMenu(true)}
+            className="icon-btn hover:bg-accent hover:border-accent"
+            title="Add to playlist"
+            aria-label="Add video to playlist"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 5v14m-7-7h14"></path>
+            </svg>
+          </button>
+
+          <button
+            onClick={toggleWatched}
+            className={`icon-btn hover:bg-accent hover:border-accent ${video.watched ? 'bg-accent' : ''}`}
+            title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
+            aria-label={video.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="icon-btn hover:bg-red-600 hover:border-red-700"
+            title="Delete video"
+            aria-label="Delete video permanently"
+          >
+            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+
+        {/* Player Container */}
+        <div className={`md:max-w-[83.333%] transition-all duration-300 ease-in-out ${
+          isTheaterMode ? 'md:w-[83.333%]' : 'md:w-[60%]'
+        }`} style={{ willChange: 'width' }}>
           <div className={`bg-black rounded-xl shadow-card-hover relative flex items-center justify-center ${
             isTheaterMode ? '' : 'max-h-[600px]'
           }`}>
@@ -850,8 +902,8 @@ export default function Player() {
               )}
             </div>
 
-            {/* Control Buttons */}
-            <div className="flex gap-3 mt-4">
+            {/* Control Buttons - Mobile: horizontal row below info */}
+            <div className="flex md:hidden gap-3 mt-4">
               <button
                 onClick={handleBack}
                 className="icon-btn hover:bg-accent hover:border-accent"
@@ -864,7 +916,6 @@ export default function Player() {
               </button>
 
               <button
-                ref={addToPlaylistButtonRef}
                 onClick={() => setShowPlaylistMenu(true)}
                 className="icon-btn hover:bg-accent hover:border-accent"
                 title="Add to playlist"
@@ -901,6 +952,7 @@ export default function Player() {
             </div>
           </div>
         </div>
+      </div>
 
         {/* Delete Confirmation Dialog */}
         <ConfirmDialog
