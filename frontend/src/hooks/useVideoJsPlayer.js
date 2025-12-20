@@ -6,6 +6,7 @@ import {
   WATCHED_THRESHOLD,
   detectDeviceType,
   initializeMobileTouchControls,
+  getVideoSource,
 } from '../utils/videoPlayerUtils';
 import { createTheaterButton, updateTheaterButtonState } from '../utils/createTheaterButton';
 
@@ -79,6 +80,15 @@ export function useVideoJsPlayer({
     });
 
     playerRef.current = player;
+
+    // Set initial video source
+    if (video.file_path) {
+      const videoSrc = getVideoSource(video.file_path);
+      if (videoSrc) {
+        console.log('[useVideoJsPlayer] Setting initial video source:', videoSrc);
+        player.src({ src: videoSrc, type: 'video/mp4' });
+      }
+    }
 
     // iOS-specific handling
     if (isIOS) {
