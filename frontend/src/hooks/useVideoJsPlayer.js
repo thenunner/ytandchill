@@ -50,7 +50,24 @@ export function useVideoJsPlayer({
   }, [video, updateVideoMutation]);
 
   useEffect(() => {
-    if (!videoRef.current || !video) return;
+    console.log('[useVideoJsPlayer] Effect triggered:', {
+      hasVideoRef: !!videoRef.current,
+      hasVideo: !!video,
+      videoId: video?.id,
+      persistPlayer,
+      hasExistingPlayer: !!playerRef.current,
+      videoRefInDOM: videoRef.current ? document.contains(videoRef.current) : false
+    });
+
+    if (!videoRef.current) {
+      console.warn('[useVideoJsPlayer] No videoRef.current, skipping initialization');
+      return;
+    }
+
+    if (!video) {
+      console.warn('[useVideoJsPlayer] No video data, skipping initialization');
+      return;
+    }
 
     // For persistent players (playlists), don't reinitialize if player already exists
     if (persistPlayer && playerRef.current) {
@@ -58,6 +75,7 @@ export function useVideoJsPlayer({
       return;
     }
 
+    console.log('[useVideoJsPlayer] Starting player initialization...');
     const { isMobile, isIOS } = detectDeviceType();
 
     // Initialize player
@@ -290,8 +308,8 @@ export function useVideoJsPlayer({
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, persistPlayer
-    ? [videoRef, saveProgress, onEnded, onWatched, updateVideoMutation, setIsTheaterMode] // Persistent: init once
-    : [video?.id, videoRef, saveProgress, onEnded, onWatched, updateVideoMutation, setIsTheaterMode]); // Non-persistent: reinit on video change
+    ? [video?.id] // Persistent: run when video first available, guard prevents reinit
+    : [video?.id]); // Non-persistent: reinit on video change
 
   // Update theater button state when mode changes
   useEffect(() => {
