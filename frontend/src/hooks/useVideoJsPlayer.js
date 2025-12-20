@@ -52,6 +52,12 @@ export function useVideoJsPlayer({
   useEffect(() => {
     if (!videoRef.current || !video) return;
 
+    // Verify the video element is actually in the DOM
+    if (!document.body.contains(videoRef.current)) {
+      console.warn('[useVideoJsPlayer] Video element not in DOM yet, waiting...');
+      return;
+    }
+
     // For persistent players (playlists), don't reinitialize if player already exists
     if (persistPlayer && playerRef.current) {
       return;

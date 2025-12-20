@@ -235,6 +235,8 @@ export default function Settings() {
     const newValue = !statusBarVisible;
     setStatusBarVisible(newValue);
     localStorage.setItem('statusBarVisible', newValue.toString());
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new CustomEvent('statusBarVisibilityChanged', { detail: { visible: newValue } }));
   };
 
   const handlePasswordChange = async (e) => {
@@ -460,7 +462,7 @@ export default function Settings() {
                 </button>
                 <button
                   onClick={toggleStatusBar}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary"
                 >
                   {statusBarVisible ? 'Hide Status Bar' : 'Show Status Bar'}
                 </button>

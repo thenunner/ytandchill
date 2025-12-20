@@ -46,11 +46,18 @@ function App() {
       setStatusBarVisible(saved !== null ? saved === 'true' : true);
     };
 
+    const handleCustomEvent = (e) => {
+      setStatusBarVisible(e.detail.visible);
+    };
+
     // Storage event handles cross-tab changes
     window.addEventListener('storage', handleStorageChange);
+    // Custom event handles same-tab changes
+    window.addEventListener('statusBarVisibilityChanged', handleCustomEvent);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('statusBarVisibilityChanged', handleCustomEvent);
     };
   }, []);
 
