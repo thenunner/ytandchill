@@ -11,6 +11,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
 import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, FilterIcon, PlusIcon, TrashIcon } from '../components/icons';
+import { formatFileSize } from '../utils/formatters';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
@@ -101,13 +102,6 @@ export default function Library() {
   useEffect(() => {
     localStorage.setItem('expandedCategories', JSON.stringify(expandedCategories));
   }, [expandedCategories]);
-
-  // Helper function to format file size
-  const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return '0 GB';
-    const gb = bytes / (1024 * 1024 * 1024);
-    return `${gb.toFixed(1)} GB`;
-  };
 
   // Helper function to format last added date
   const formatLastAdded = (dateString) => {

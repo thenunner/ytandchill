@@ -5,6 +5,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getTextSizes } from '../utils/gridUtils';
 import { formatDuration } from '../utils/videoPlayerUtils';
+import { formatDate, formatDateTime, formatFileSize } from '../utils/formatters';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import ConfirmDialog from './ConfirmDialog';
 import { ThreeDotsIcon, CheckmarkIcon, TrashIcon, PlusIcon } from './icons';
@@ -33,35 +34,6 @@ export default function VideoCard({
   const threeDotButtonRef = useRef(null);
   const videoPreviewRef = useRef(null);
   const previewTimeoutRef = useRef(null);
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const year = dateStr.slice(0, 4);
-    const month = dateStr.slice(4, 6);
-    const day = dateStr.slice(6, 8);
-    return `${month}/${day}/${year}`;
-  };
-
-  const formatDateTime = (dateTimeStr) => {
-    if (!dateTimeStr) return '';
-    const date = new Date(dateTimeStr);
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${month}/${day}/${year}`;
-  };
-
-  const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return '';
-    const gb = bytes / (1024 * 1024 * 1024);
-    const mb = bytes / (1024 * 1024);
-
-    if (gb >= 1) {
-      return `${gb.toFixed(2)} GB`;
-    } else {
-      return `${mb.toFixed(0)} MB`;
-    }
-  };
 
   const handleDelete = async () => {
     try {

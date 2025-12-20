@@ -12,7 +12,7 @@ import {
   formatDuration,
   getVideoSource,
 } from '../utils/videoPlayerUtils';
-import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon } from '../components/icons';
+import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/icons';
 
 export default function PlaylistPlayer() {
   const { playlistId, categoryId } = useParams();

@@ -7,6 +7,7 @@ import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { formatQueueError, getUserFriendlyError } from '../utils/errorMessages';
+import { formatFileSize } from '../utils/formatters';
 import { StickyBar } from '../components/stickybar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
@@ -187,16 +188,6 @@ export default function Queue() {
     if (!bytes) return 'N/A';
     const mb = bytes / (1024 * 1024);
     return `${mb.toFixed(1)} MB/s`;
-  };
-
-  const formatFileSize = (bytes) => {
-    if (!bytes || bytes === 0) return 'Unknown';
-    const mb = bytes / (1024 * 1024);
-    if (mb < 1024) {
-      return `${mb.toFixed(1)} MB`;
-    }
-    const gb = mb / 1024;
-    return `${gb.toFixed(2)} GB`;
   };
 
   const formatTime = (seconds) => {

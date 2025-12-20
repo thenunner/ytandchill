@@ -7,6 +7,7 @@ import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { formatDuration } from '../utils/videoPlayerUtils';
+import { formatDate } from '../utils/formatters';
 import EmptyState from '../components/EmptyState';
 
 export default function Videos() {
@@ -212,14 +213,6 @@ export default function Videos() {
     } finally {
       setIsQueueing(false);
     }
-  };
-
-  const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    const year = dateStr.slice(0, 4);
-    const month = dateStr.slice(4, 6);
-    const day = dateStr.slice(6, 8);
-    return `${month}/${day}/${year}`;
   };
 
   return (
