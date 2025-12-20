@@ -16,7 +16,7 @@ import logging
 import atexit
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
-from utils import parse_iso8601_duration, download_thumbnail, get_random_video_thumbnail, update_log_level
+from utils import parse_iso8601_duration, download_thumbnail, get_random_video_thumbnail, update_log_level, get_stored_credentials, check_auth_credentials
 from werkzeug.security import check_password_hash, generate_password_hash, safe_join
 import threading
 from queue import Queue
@@ -187,16 +187,7 @@ limiter = Limiter(
 )
 
 # Authentication helper functions
-def get_stored_credentials():
-    """Get stored username and password hash from database"""
-    username = settings_manager.get('auth_username', 'admin')
-    password_hash = settings_manager.get('auth_password_hash', generate_password_hash('admin'))
-    return username, password_hash
-
-def check_auth_credentials(username, password):
-    """Validate username and password against stored credentials"""
-    stored_username, stored_password_hash = get_stored_credentials()
-    return username == stored_username and check_password_hash(stored_password_hash, password)
+# Auth helper functions moved to utils.py to avoid duplication
 
 def is_authenticated():
     """Check if user is logged in via session"""

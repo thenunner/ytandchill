@@ -18,7 +18,7 @@ import yt_dlp
 from importlib.metadata import version as pkg_version
 
 from database import Setting, get_session
-from utils import update_log_level
+from utils import update_log_level, get_stored_credentials, check_auth_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -44,19 +44,7 @@ def init_settings_routes(session_factory, settings_manager, scheduler, download_
 # =============================================================================
 # Authentication Helper Functions
 # =============================================================================
-
-def get_stored_credentials():
-    """Get stored username and password hash from database"""
-    username = _settings_manager.get('auth_username', 'admin')
-    password_hash = _settings_manager.get('auth_password_hash', generate_password_hash('admin'))
-    return username, password_hash
-
-
-def check_auth_credentials(username, password):
-    """Validate username and password against stored credentials"""
-    stored_username, stored_password_hash = get_stored_credentials()
-    return username == stored_username and check_password_hash(stored_password_hash, password)
-
+# get_stored_credentials and check_auth_credentials moved to utils.py to avoid duplication
 
 def is_authenticated():
     """Check if user is logged in via session"""
@@ -299,10 +287,10 @@ def login():
         return jsonify({'error': 'Username and password are required'}), 400
 
     # Get stored credentials for comparison
-    stored_username, stored_password_hash = get_stored_credentials()
+    stored_username, stored_password_hash = get_stored_credentials(_settings_manager)
     logger.info(f"Stored username: {stored_username}, Checking password match...")
 
-    if check_auth_credentials(username, password):
+    if check_auth_credentials(_settings_manager, username, password):
         session['authenticated'] = True
         session.permanent = True
 
@@ -382,7 +370,7 @@ def change_auth():
         return jsonify({'error': 'Password must be at least 3 characters'}), 400
 
     # Verify current password
-    stored_username, stored_password_hash = get_stored_credentials()
+    stored_username, stored_password_hash = get_stored_credentials(_settings_manager)
     if not check_password_hash(stored_password_hash, current_password):
         return jsonify({'error': 'Current password is incorrect'}), 401
 

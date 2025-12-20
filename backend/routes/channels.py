@@ -12,6 +12,7 @@ Handles:
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timezone
 from googleapiclient.errors import HttpError
+from sqlalchemy.orm import joinedload
 import logging
 import os
 
@@ -54,8 +55,8 @@ def init_channels_routes(session_factory, limiter, serialize_channel, get_youtub
 @channels_bp.route('/api/channels', methods=['GET'])
 def get_channels():
     with get_session(_session_factory) as session:
-        # Filter out soft-deleted channels
-        channels = session.query(Channel).filter(Channel.deleted_at.is_(None)).all()
+        # Filter out soft-deleted channels - eager load videos to avoid N+1 queries
+        channels = session.query(Channel).options(joinedload(Channel.videos)).filter(Channel.deleted_at.is_(None)).all()
         result = [_serialize_channel(c) for c in channels]
         return jsonify(result)
 
@@ -314,7 +315,8 @@ def scan_channel(channel_id):
 def get_channel_categories():
     """Get all channel categories"""
     with get_session(_session_factory) as session:
-        categories = session.query(ChannelCategory).order_by(ChannelCategory.name).all()
+        # Eager load channels to avoid N+1 queries
+        categories = session.query(ChannelCategory).options(joinedload(ChannelCategory.channels)).order_by(ChannelCategory.name).all()
         result = [{
             'id': c.id,
             'name': c.name,

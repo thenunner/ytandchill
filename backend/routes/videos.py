@@ -42,6 +42,38 @@ def init_videos_routes(session_factory, download_worker, get_youtube_client,
 
 
 # =============================================================================
+# Helper Functions
+# =============================================================================
+
+def _get_or_create_singles_channel(session):
+    """
+    Get or create the special "Singles" pseudo-channel for imported videos.
+
+    This channel is used to hold videos imported via YouTube URLs that don't
+    belong to a specific tracked channel.
+
+    Args:
+        session: Database session to use
+
+    Returns:
+        Channel: The Singles channel object
+    """
+    singles_channel = session.query(Channel).filter(Channel.yt_id == '__singles__').first()
+    if not singles_channel:
+        singles_channel = Channel(
+            yt_id='__singles__',
+            title='Singles',
+            folder_name='Singles',
+            thumbnail=None,
+            auto_download=False
+        )
+        session.add(singles_channel)
+        session.flush()
+        logger.info(f"Created Singles pseudo-channel with ID: {singles_channel.id}")
+    return singles_channel
+
+
+# =============================================================================
 # YouTube Import Endpoints
 # =============================================================================
 
@@ -209,19 +241,7 @@ def queue_youtube_playlist_videos():
         skipped = 0
 
         # Get or create a special "Singles" channel to hold imported videos
-        # This is needed because the database schema requires a channel_id
-        singles_channel = session.query(Channel).filter(Channel.yt_id == '__singles__').first()
-        if not singles_channel:
-            singles_channel = Channel(
-                yt_id='__singles__',
-                title='Singles',
-                folder_name='Singles',
-                thumbnail=None,
-                auto_download=False
-            )
-            session.add(singles_channel)
-            session.flush()
-            logger.info(f"Created Singles pseudo-channel with ID: {singles_channel.id}")
+        singles_channel = _get_or_create_singles_channel(session)
 
         # Get max queue position once
         max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
@@ -299,17 +319,7 @@ def remove_youtube_playlist_videos():
         removed = 0
 
         # Get or create Singles channel (needed for channel_id)
-        singles_channel = session.query(Channel).filter(Channel.yt_id == '__singles__').first()
-        if not singles_channel:
-            singles_channel = Channel(
-                yt_id='__singles__',
-                title='Singles',
-                folder_name='Singles',
-                thumbnail=None,
-                auto_download=False
-            )
-            session.add(singles_channel)
-            session.flush()
+        singles_channel = _get_or_create_singles_channel(session)
 
         for v in videos_data:
             yt_id = v.get('yt_id') if isinstance(v, dict) else v

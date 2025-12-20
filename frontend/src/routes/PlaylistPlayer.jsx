@@ -917,20 +917,8 @@ export default function PlaylistPlayer() {
             if (player.isFullscreen()) {
               touchOverlay.style.display = 'block';
               updatePlayPauseIcon();
-
-              // Hide the big play button in fullscreen on mobile
-              const bigPlayButton = player.el().querySelector('.vjs-big-play-button');
-              if (bigPlayButton) {
-                bigPlayButton.style.display = 'none';
-              }
             } else {
               touchOverlay.style.display = 'none';
-
-              // Show the big play button again when exiting fullscreen
-              const bigPlayButton = player.el().querySelector('.vjs-big-play-button');
-              if (bigPlayButton) {
-                bigPlayButton.style.display = '';
-              }
             }
           });
         }

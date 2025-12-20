@@ -740,7 +740,7 @@ select {
   font-family: inherit;
 }
 
-/* Hide big play button - controls are always visible */
+/* Hide big play button - use control bar instead */
 .video-js .vjs-big-play-button {
   display: none !important;
 }
@@ -749,6 +749,18 @@ select {
 .video-js .vjs-control-bar {
   background-color: hsla(var(--bg-secondary) / 0.9);
   backdrop-filter: blur(8px);
+}
+
+/* Keep controls visible on load (before video starts) */
+.video-js:not(.vjs-has-started) .vjs-control-bar {
+  opacity: 1 !important;
+  display: flex !important;
+}
+
+/* Keep controls visible when paused */
+.video-js.vjs-paused .vjs-control-bar {
+  opacity: 1 !important;
+  display: flex !important;
 }
 
 /* Progress bar */

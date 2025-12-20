@@ -11,6 +11,7 @@ import time
 import threading
 import urllib.request
 from database import init_db, Setting
+from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # =============================================================================
@@ -74,6 +75,23 @@ def get_random_video_thumbnail(playlist_videos):
         return None
     random_video = random.choice(playlist_videos).video
     return random_video.thumb_url if random_video else None
+
+
+# =============================================================================
+# Authentication Helpers
+# =============================================================================
+
+def get_stored_credentials(settings_manager):
+    """Get stored username and password hash from database"""
+    username = settings_manager.get('auth_username', 'admin')
+    password_hash = settings_manager.get('auth_password_hash', generate_password_hash('admin'))
+    return username, password_hash
+
+
+def check_auth_credentials(settings_manager, username, password):
+    """Validate username and password against stored credentials"""
+    stored_username, stored_password_hash = get_stored_credentials(settings_manager)
+    return username == stored_username and check_password_hash(stored_password_hash, password)
 
 
 # =============================================================================

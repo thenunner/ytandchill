@@ -73,35 +73,53 @@ class DownloadWorker:
         logger.info("Download worker paused")
         self.paused = True
 
+    def _reset_stuck_videos(self, session, target_status, exclude_video_id=None, reset_queue_progress=False):
+        """
+        Reset stuck 'downloading' videos to a target status.
+
+        Args:
+            session: Database session to use
+            target_status: Status to set stuck videos to ('queued' or 'discovered')
+            exclude_video_id: Optional video ID to exclude from reset
+            reset_queue_progress: Whether to reset queue item progress to 0
+        """
+        query = session.query(Video).filter(Video.status == 'downloading')
+        if exclude_video_id:
+            query = query.filter(Video.id != exclude_video_id)
+
+        stuck_videos = query.all()
+
+        for video in stuck_videos:
+            logger.debug(f"Resetting stuck video {video.yt_id} from 'downloading' to '{target_status}'")
+            video.status = target_status
+
+            queue_item = session.query(QueueItem).filter(
+                QueueItem.video_id == video.id
+            ).first()
+
+            if queue_item:
+                if reset_queue_progress:
+                    queue_item.progress_pct = 0
+                    queue_item.speed_bps = 0
+                    queue_item.eta_seconds = 0
+                elif target_status == 'discovered':
+                    # When resetting to discovered, delete the queue item
+                    session.delete(queue_item)
+
+        if stuck_videos:
+            logger.info(f"Reset {len(stuck_videos)} stuck 'downloading' videos to '{target_status}'")
+        else:
+            logger.debug(f"No stuck videos found when resetting to '{target_status}'")
+
     def resume(self):
         logger.info("Download worker resuming")
         self.paused = False
 
         # Reset any stuck 'downloading' videos back to 'queued' when resuming
         with get_session(self.session_factory) as session:
-            stuck_videos = session.query(Video).filter(
-                Video.status == 'downloading'
-            ).all()
-            for video in stuck_videos:
-                logger.debug(f"Resetting stuck video {video.yt_id} from 'downloading' to 'queued'")
-                video.status = 'queued'
-
-                # Reset progress for the queue item
-                queue_item = session.query(QueueItem).filter(
-                    QueueItem.video_id == video.id
-                ).first()
-                if queue_item:
-                    queue_item.progress_pct = 0
-                    queue_item.speed_bps = 0
-                    queue_item.eta_seconds = 0
-
+            self._reset_stuck_videos(session, target_status='queued', reset_queue_progress=True)
             # DON'T clear queue_item.log - keep rate limit warnings visible
             # They will be cleared automatically when a download actually succeeds
-
-            if stuck_videos:
-                logger.info(f"Reset {len(stuck_videos)} stuck 'downloading' videos to 'queued'")
-            else:
-                logger.debug("No stuck videos found when resuming")
     
     def cancel_current(self):
         if self.current_download:
@@ -192,18 +210,7 @@ class DownloadWorker:
 
         # Reset any other stuck 'downloading' videos back to 'discovered'
         with get_session(self.session_factory) as temp_session:
-            stuck_videos = temp_session.query(Video).filter(
-                Video.status == 'downloading',
-                Video.id != video.id
-            ).all()
-            for stuck_video in stuck_videos:
-                stuck_video.status = 'discovered'
-                # Delete their queue items too
-                stuck_queue_item = temp_session.query(QueueItem).filter(
-                    QueueItem.video_id == stuck_video.id
-                ).first()
-                if stuck_queue_item:
-                    temp_session.delete(stuck_queue_item)
+            self._reset_stuck_videos(temp_session, target_status='discovered', exclude_video_id=video.id)
 
     def _worker_loop(self):
         logger.debug("Worker loop started")
