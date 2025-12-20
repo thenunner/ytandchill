@@ -70,32 +70,77 @@ export default function Player() {
 
   // Set video source when player is ready
   useEffect(() => {
-    if (!playerRef.current || !video?.file_path) return;
+    if (!playerRef.current || !video?.file_path) {
+      console.log('[Player] Skipping source update - no player or no video file path');
+      return;
+    }
 
-    const player = playerRef.current;
-    const videoSrc = getVideoSource(video.file_path);
+    try {
+      const player = playerRef.current;
 
-    console.log('Setting video source:', videoSrc);
-
-    player.src({
-      src: videoSrc,
-      type: 'video/mp4'
-    });
-
-    // Add error notification
-    const handleError = () => {
-      const error = player.error();
-      if (error) {
-        console.error('Video error:', error);
-        showNotificationRef.current('Failed to load video', 'error');
+      // Safety check: don't operate on disposed player
+      if (player.isDisposed && player.isDisposed()) {
+        console.error('[Player] ERROR: Attempted to update source on disposed player!');
+        return;
       }
-    };
 
-    player.on('error', handleError);
+      const videoSrc = getVideoSource(video.file_path);
 
-    return () => {
-      player.off('error', handleError);
-    };
+      if (!videoSrc) {
+        console.error('[Player] ERROR: No video source for:', video.file_path);
+        return;
+      }
+
+      console.log('[Player] ===== SETTING VIDEO SOURCE =====');
+      console.log('[Player] Video:', video.title);
+      console.log('[Player] Video ID:', video.id);
+      console.log('[Player] Source path:', videoSrc);
+      console.log('[Player] Player state before update:', {
+        paused: player.paused(),
+        currentTime: player.currentTime(),
+        duration: player.duration()
+      });
+
+      player.src({
+        src: videoSrc,
+        type: 'video/mp4'
+      });
+
+      console.log('[Player] Source set successfully to:', videoSrc);
+
+      // Add error notification
+      const handleError = () => {
+        const error = player.error();
+        if (error) {
+          console.error('[Player] Video playback error:', {
+            code: error.code,
+            message: error.message,
+            type: error.type
+          });
+          showNotificationRef.current('Failed to load video', 'error');
+        }
+      };
+
+      player.on('error', handleError);
+
+      // Log when metadata loads
+      player.one('loadedmetadata', () => {
+        console.log('[Player] Video metadata loaded:', {
+          title: video.title,
+          duration: player.duration(),
+          videoWidth: player.videoWidth(),
+          videoHeight: player.videoHeight()
+        });
+      });
+
+      return () => {
+        player.off('error', handleError);
+      };
+    } catch (error) {
+      console.error('[Player] FATAL ERROR setting video source:', error);
+      console.error('[Player] Error stack:', error.stack);
+      console.error('[Player] Video data:', video);
+    }
   }, [playerRef, video?.file_path, video?.id]);
 
   // For compatibility with existing code

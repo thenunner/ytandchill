@@ -52,9 +52,10 @@ export function useVideoJsPlayer({
   useEffect(() => {
     if (!videoRef.current || !video) return;
 
-    // Verify the video element is actually in the DOM
-    if (!document.body.contains(videoRef.current)) {
-      console.warn('[useVideoJsPlayer] Video element not in DOM yet, waiting...');
+    // Verify the video element is actually a valid video/audio element
+    const elem = videoRef.current;
+    if (!elem.tagName || (elem.tagName !== 'VIDEO' && elem.tagName !== 'AUDIO')) {
+      console.warn('[useVideoJsPlayer] Invalid element type:', elem.tagName);
       return;
     }
 

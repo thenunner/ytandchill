@@ -259,14 +259,23 @@ export default function PlaylistPlayer() {
   }, [currentIndex, displayOrder.length, isLooping, videos.length]);
 
   const goToVideo = useCallback((index) => {
-    console.log('[PlaylistPlayer] goToVideo called. Requested index:', index, 'displayOrder.length:', displayOrder.length);
-    if (index >= 0 && index < displayOrder.length) {
-      console.log('[PlaylistPlayer] Switching to video at index:', index);
-      setCurrentIndex(index);
-    } else {
-      console.warn('[PlaylistPlayer] Invalid index requested:', index);
+    try {
+      console.log('[PlaylistPlayer] goToVideo called. Requested index:', index, 'displayOrder.length:', displayOrder.length);
+      if (index >= 0 && index < displayOrder.length) {
+        const actualVideoIndex = displayOrder[index];
+        const targetVideo = videos[actualVideoIndex];
+        console.log('[PlaylistPlayer] Switching to video at index:', index);
+        console.log('[PlaylistPlayer] Target video:', targetVideo?.title);
+        console.log('[PlaylistPlayer] Video ID:', targetVideo?.id);
+        setCurrentIndex(index);
+      } else {
+        console.warn('[PlaylistPlayer] Invalid index requested:', index);
+      }
+    } catch (error) {
+      console.error('[PlaylistPlayer] ERROR in goToVideo:', error);
+      console.error('[PlaylistPlayer] Error stack:', error.stack);
     }
-  }, [displayOrder.length]);
+  }, [displayOrder.length, displayOrder, videos]);
 
   // Handler functions using useCallback
   const handleBack = useCallback(() => {
@@ -457,35 +466,41 @@ export default function PlaylistPlayer() {
       return;
     }
 
-    const videoSrc = getVideoSource(currentVideo.file_path);
-    if (!videoSrc) {
-      console.error('[PlaylistPlayer] ERROR: No video source for:', currentVideo.file_path);
-      return;
+    try {
+      const videoSrc = getVideoSource(currentVideo.file_path);
+      if (!videoSrc) {
+        console.error('[PlaylistPlayer] ERROR: No video source for:', currentVideo.file_path);
+        return;
+      }
+
+      console.log('[PlaylistPlayer] ===== UPDATING VIDEO SOURCE =====');
+      console.log('[PlaylistPlayer] New video:', currentVideo.title);
+      console.log('[PlaylistPlayer] Video ID:', currentVideo.id);
+      console.log('[PlaylistPlayer] Source path:', videoSrc);
+      console.log('[PlaylistPlayer] Player state before update:', {
+        paused: playerRef.current.paused(),
+        currentTime: playerRef.current.currentTime(),
+        duration: playerRef.current.duration()
+      });
+
+      // Reset player state before changing source
+      playerRef.current.pause();
+      console.log('[PlaylistPlayer] Player paused');
+
+      playerRef.current.src({
+        src: videoSrc,
+        type: 'video/mp4'
+      });
+      console.log('[PlaylistPlayer] Source set to:', videoSrc);
+
+      // Explicitly load the new source
+      playerRef.current.load();
+      console.log('[PlaylistPlayer] Load() called');
+    } catch (error) {
+      console.error('[PlaylistPlayer] FATAL ERROR updating video source:', error);
+      console.error('[PlaylistPlayer] Error stack:', error.stack);
+      console.error('[PlaylistPlayer] Current video:', currentVideo);
     }
-
-    console.log('[PlaylistPlayer] ===== UPDATING VIDEO SOURCE =====');
-    console.log('[PlaylistPlayer] New video:', currentVideo.title);
-    console.log('[PlaylistPlayer] Video ID:', currentVideo.id);
-    console.log('[PlaylistPlayer] Source path:', videoSrc);
-    console.log('[PlaylistPlayer] Player state before update:', {
-      paused: playerRef.current.paused(),
-      currentTime: playerRef.current.currentTime(),
-      duration: playerRef.current.duration()
-    });
-
-    // Reset player state before changing source
-    playerRef.current.pause();
-    console.log('[PlaylistPlayer] Player paused');
-
-    playerRef.current.src({
-      src: videoSrc,
-      type: 'video/mp4'
-    });
-    console.log('[PlaylistPlayer] Source set to:', videoSrc);
-
-    // Explicitly load the new source
-    playerRef.current.load();
-    console.log('[PlaylistPlayer] Load() called');
 
     // Restore position after source loads
     playerRef.current.one('loadedmetadata', () => {
