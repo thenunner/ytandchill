@@ -4,6 +4,7 @@ import { useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getTextSizes } from '../utils/gridUtils';
+import { formatDuration } from '../utils/videoPlayerUtils';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import ConfirmDialog from './ConfirmDialog';
 
@@ -31,15 +32,6 @@ export default function VideoCard({
   const threeDotButtonRef = useRef(null);
   const videoPreviewRef = useRef(null);
   const previewTimeoutRef = useRef(null);
-
-  const formatDuration = (seconds) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return hrs > 0
-      ? `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-      : `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '';

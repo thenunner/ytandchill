@@ -7,13 +7,14 @@ import { useNotification } from '../contexts/NotificationContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
-
-// Constants
-const SEEK_TIME_SECONDS = 10;
-const DOUBLE_TAP_DELAY_MS = 250;
-const BUTTON_HIDE_DELAY_MS = 1500;
-const PROGRESS_SAVE_DEBOUNCE_MS = 3000;
-const WATCHED_THRESHOLD = 0.9;
+import {
+  formatDuration,
+  SEEK_TIME_SECONDS,
+  DOUBLE_TAP_DELAY_MS,
+  BUTTON_HIDE_DELAY_MS,
+  PROGRESS_SAVE_DEBOUNCE_MS,
+  WATCHED_THRESHOLD
+} from '../utils/videoPlayerUtils';
 
 export default function Player() {
   const { videoId } = useParams();
@@ -722,15 +723,6 @@ export default function Player() {
       }
     }
   }, [isTheaterMode]);
-
-  const formatDuration = (seconds) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return hrs > 0
-      ? `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-      : `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   if (isLoading) {
     return <LoadingSpinner />;

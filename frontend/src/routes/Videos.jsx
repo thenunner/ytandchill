@@ -6,6 +6,7 @@ import { getGridClass } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
 import { getUserFriendlyError } from '../utils/errorMessages';
+import { formatDuration } from '../utils/videoPlayerUtils';
 
 export default function Videos() {
   const { showNotification } = useNotification();
@@ -210,15 +211,6 @@ export default function Videos() {
     } finally {
       setIsQueueing(false);
     }
-  };
-
-  const formatDuration = (seconds) => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return hrs > 0
-      ? `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-      : `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const formatDate = (dateStr) => {
