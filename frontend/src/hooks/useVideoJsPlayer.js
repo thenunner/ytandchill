@@ -320,6 +320,19 @@ export function useVideoJsPlayer({
     ? [video?.id] // Persistent: run when video first available, guard prevents reinit
     : [video?.id]); // Non-persistent: reinit on video change
 
+  // Component unmount cleanup: Always pause and dispose player when leaving the page
+  useEffect(() => {
+    return () => {
+      console.log('[useVideoJsPlayer] Component unmounting, cleaning up player');
+      if (playerRef.current && !playerRef.current.isDisposed()) {
+        console.log('[useVideoJsPlayer] Pausing and disposing player on unmount');
+        playerRef.current.pause();
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+    };
+  }, []); // Empty deps = only runs on component mount/unmount
+
   // Update theater button state when mode changes
   useEffect(() => {
     if (playerRef.current) {
