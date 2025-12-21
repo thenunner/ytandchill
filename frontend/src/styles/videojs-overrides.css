@@ -158,32 +158,23 @@
   max-height: 60vh;
 }
 
-/* Theater mode button styling */
-.video-js .vjs-theater-button .vjs-icon-placeholder {
-  display: flex !important; /* Override video.js default display: block */
-  align-items: center;
-  justify-content: center;
+/* Theater mode button styling - minimal, use video.js defaults */
+.video-js .vjs-theater-button .vjs-icon-placeholder:before {
+  display: none;
 }
 
 .video-js .vjs-theater-button svg {
-  width: 2em;
-  height: 2em;
-  display: block;
+  width: 1.5em;
+  height: 1.5em;
 }
 
 /* Theater mode active: Flip brackets inward [ >< ] */
 .video-js .vjs-theater-button.vjs-theater-mode-active .bracket-left {
   transform: scaleX(-1);
-  transform-origin: center;
 }
 
 .video-js .vjs-theater-button.vjs-theater-mode-active .bracket-right {
   transform: scaleX(-1);
-  transform-origin: center;
-}
-
-.video-js .vjs-theater-button .vjs-icon-placeholder:before {
-  display: none;
 }
 
 /* ===== LARGER CONTROLS FOR BETTER USABILITY ===== */
