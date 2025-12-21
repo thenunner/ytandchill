@@ -159,7 +159,14 @@
 }
 
 /* Theater mode button styling */
+.video-js .vjs-theater-button {
+  position: relative;
+}
+
 .video-js .vjs-theater-button .vjs-icon-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -171,6 +178,12 @@
   width: 1.5em;
   height: 1.5em;
   display: block;
+  pointer-events: none;
+}
+
+/* Hide pressed icon by default */
+.video-js .vjs-theater-button .theater-icon-pressed {
+  display: none;
 }
 
 .video-js .vjs-theater-button .vjs-icon-placeholder:before {
