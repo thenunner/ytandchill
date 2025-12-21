@@ -159,6 +159,12 @@
 }
 
 /* Theater mode button styling */
+.video-js .vjs-theater-button {
+  /* Ensure button stays in control bar flow */
+  position: relative;
+  display: inline-block;
+}
+
 .video-js .vjs-theater-button .vjs-icon-placeholder {
   display: flex;
   align-items: center;

@@ -100,23 +100,10 @@ export function useVideoJsPlayer({
             setIsTheaterMode(newMode);
           }
         }
-      });
+      }, 13); // Add at index 13 (before picture-in-picture which is typically at index 14)
 
-      console.log('[useVideoJsPlayer] Theater button created:', theaterButton);
+      console.log('[useVideoJsPlayer] Theater button created at index 13');
       console.log('[useVideoJsPlayer] Theater button element:', theaterButton.el());
-      console.log('[useVideoJsPlayer] Control bar element:', player.controlBar.el());
-
-      // Position it before fullscreen button
-      const fullscreenToggle = player.controlBar.getChild('fullscreenToggle');
-      if (fullscreenToggle) {
-        console.log('[useVideoJsPlayer] Positioning theater button before fullscreen');
-        player.controlBar.el().insertBefore(
-          theaterButton.el(),
-          fullscreenToggle.el()
-        );
-      } else {
-        console.warn('[useVideoJsPlayer] Fullscreen button not found');
-      }
     } catch (error) {
       console.error('[useVideoJsPlayer] Error adding theater button:', error);
     }
