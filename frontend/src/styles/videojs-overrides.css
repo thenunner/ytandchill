@@ -159,16 +159,23 @@
 }
 
 /* Theater mode button styling */
+.video-js .vjs-theater-button {
+  display: flex;
+  align-items: center;
+}
+
 .video-js .vjs-theater-button .vjs-icon-placeholder {
   display: flex !important; /* Override video.js default display: block */
   align-items: center;
   justify-content: center;
+  height: 100%;
 }
 
 .video-js .vjs-theater-button svg {
   width: 2em;
   height: 2em;
   display: block;
+  vertical-align: middle;
 }
 
 /* Theater mode active: Flip brackets inward [ >< ] */
