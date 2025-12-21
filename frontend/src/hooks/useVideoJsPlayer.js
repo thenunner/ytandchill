@@ -10,6 +10,9 @@ import {
 } from '../utils/videoPlayerUtils';
 import { createTheaterButton, updateTheaterButtonState } from '../utils/createTheaterButton';
 
+// Register theater button component once globally
+let theaterButtonRegistered = false;
+
 /**
  * Custom hook for initializing and managing a video.js player
  * Handles all common player setup, controls, and behaviors
@@ -72,12 +75,11 @@ export function useVideoJsPlayer({
 
     const { isMobile, isIOS } = detectDeviceType();
 
-    // Register theater mode button component BEFORE initializing player
-    createTheaterButton((newMode) => {
-      if (setIsTheaterMode) {
-        setIsTheaterMode(newMode);
-      }
-    });
+    // Register theater mode button component once globally
+    if (!theaterButtonRegistered) {
+      createTheaterButton();
+      theaterButtonRegistered = true;
+    }
 
     // Initialize player
     const player = videojs(videoRef.current, {
@@ -99,7 +101,14 @@ export function useVideoJsPlayer({
           'descriptionsButton',
           'subsCapsButton',
           'audioTrackButton',
-          'TheaterButton',
+          {
+            name: 'TheaterButton',
+            onToggle: (newMode) => {
+              if (setIsTheaterMode) {
+                setIsTheaterMode(newMode);
+              }
+            }
+          },
           'pictureInPictureToggle',
           'fullscreenToggle',
         ],

@@ -2,19 +2,23 @@ import videojs from 'video.js';
 
 const Button = videojs.getComponent('Button');
 
+// Global flag to ensure component is only registered once
+let componentRegistered = false;
+
 /**
- * Creates a custom theater mode button for video.js player
- * Theater mode makes the video player wider on desktop
- *
- * @param {Function} onToggle - Callback function when theater mode is toggled
- * @returns {Component} VideoJS Button component
+ * Registers the theater mode button component
  */
-export function createTheaterButton(onToggle) {
+export function registerTheaterButton() {
+  if (componentRegistered) return;
+
   class TheaterButton extends Button {
     constructor(player, options) {
       super(player, options);
       this.controlText('Theater mode');
       this.addClass('vjs-theater-button');
+
+      // Store callback from options
+      this.onToggleCallback = options?.onToggle;
 
       // Set initial state based on localStorage
       const isTheaterMode = localStorage.getItem('theaterMode') === 'true';
@@ -39,8 +43,8 @@ export function createTheaterButton(onToggle) {
         this.removeClass('vjs-theater-mode-active');
       }
 
-      if (onToggle) {
-        onToggle(newMode);
+      if (this.onToggleCallback) {
+        this.onToggleCallback(newMode);
       }
     }
 
@@ -66,7 +70,15 @@ export function createTheaterButton(onToggle) {
   }
 
   videojs.registerComponent('TheaterButton', TheaterButton);
-  return TheaterButton;
+  componentRegistered = true;
+}
+
+/**
+ * Creates a custom theater mode button for video.js player (deprecated - use registerTheaterButton)
+ * @deprecated Use registerTheaterButton() instead
+ */
+export function createTheaterButton(onToggle) {
+  registerTheaterButton();
 }
 
 /**
