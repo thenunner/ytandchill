@@ -87,36 +87,28 @@ export function useVideoJsPlayer({
       fluid: true,
       responsive: true,
       playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-      controlBar: {
-        children: [
-          'playToggle',
-          'volumePanel',
-          'currentTimeDisplay',
-          'timeDivider',
-          'durationDisplay',
-          'progressControl',
-          'remainingTimeDisplay',
-          'playbackRateMenuButton',
-          'chaptersButton',
-          'descriptionsButton',
-          'subsCapsButton',
-          'audioTrackButton',
-          {
-            name: 'TheaterButton',
-            onToggle: (newMode) => {
-              if (setIsTheaterMode) {
-                setIsTheaterMode(newMode);
-              }
-            }
-          },
-          'pictureInPictureToggle',
-          'fullscreenToggle',
-        ],
-      },
     });
 
     playerRef.current = player;
     console.log('[useVideoJsPlayer] Player initialized successfully. Player ID:', player.id());
+
+    // Add theater button to control bar manually with options
+    const theaterButton = player.controlBar.addChild('TheaterButton', {
+      onToggle: (newMode) => {
+        if (setIsTheaterMode) {
+          setIsTheaterMode(newMode);
+        }
+      }
+    });
+
+    // Position it before fullscreen button
+    const fullscreenToggle = player.controlBar.getChild('fullscreenToggle');
+    if (fullscreenToggle) {
+      player.controlBar.el().insertBefore(
+        theaterButton.el(),
+        fullscreenToggle.el()
+      );
+    }
 
     // Set initial video source
     if (video.file_path) {
