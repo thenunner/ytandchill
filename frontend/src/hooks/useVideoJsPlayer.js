@@ -93,21 +93,32 @@ export function useVideoJsPlayer({
     console.log('[useVideoJsPlayer] Player initialized successfully. Player ID:', player.id());
 
     // Add theater button to control bar manually with options
-    const theaterButton = player.controlBar.addChild('TheaterButton', {
-      onToggle: (newMode) => {
-        if (setIsTheaterMode) {
-          setIsTheaterMode(newMode);
+    try {
+      const theaterButton = player.controlBar.addChild('TheaterButton', {
+        onToggle: (newMode) => {
+          if (setIsTheaterMode) {
+            setIsTheaterMode(newMode);
+          }
         }
-      }
-    });
+      });
 
-    // Position it before fullscreen button
-    const fullscreenToggle = player.controlBar.getChild('fullscreenToggle');
-    if (fullscreenToggle) {
-      player.controlBar.el().insertBefore(
-        theaterButton.el(),
-        fullscreenToggle.el()
-      );
+      console.log('[useVideoJsPlayer] Theater button created:', theaterButton);
+      console.log('[useVideoJsPlayer] Theater button element:', theaterButton.el());
+      console.log('[useVideoJsPlayer] Control bar element:', player.controlBar.el());
+
+      // Position it before fullscreen button
+      const fullscreenToggle = player.controlBar.getChild('fullscreenToggle');
+      if (fullscreenToggle) {
+        console.log('[useVideoJsPlayer] Positioning theater button before fullscreen');
+        player.controlBar.el().insertBefore(
+          theaterButton.el(),
+          fullscreenToggle.el()
+        );
+      } else {
+        console.warn('[useVideoJsPlayer] Fullscreen button not found');
+      }
+    } catch (error) {
+      console.error('[useVideoJsPlayer] Error adding theater button:', error);
     }
 
     // Set initial video source
