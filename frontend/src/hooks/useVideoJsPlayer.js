@@ -94,7 +94,6 @@ export function useVideoJsPlayer({
 
     // Add theater button to control bar manually with options
     try {
-      // Add button without index - it will append to the end
       const theaterButton = player.controlBar.addChild('TheaterButton', {
         onToggle: (newMode) => {
           if (setIsTheaterMode) {
@@ -103,9 +102,14 @@ export function useVideoJsPlayer({
         }
       });
 
-      console.log('[useVideoJsPlayer] Theater button created');
-      console.log('[useVideoJsPlayer] Theater button parent:', theaterButton.el().parentElement);
-      console.log('[useVideoJsPlayer] Is button in control bar?', player.controlBar.el().contains(theaterButton.el()));
+      // Position it before fullscreen button
+      const fullscreenToggle = player.controlBar.getChild('fullscreenToggle');
+      if (fullscreenToggle) {
+        const controlBarEl = player.controlBar.el();
+        const fullscreenIndex = Array.from(controlBarEl.children).indexOf(fullscreenToggle.el());
+        controlBarEl.insertBefore(theaterButton.el(), fullscreenToggle.el());
+        console.log('[useVideoJsPlayer] Theater button positioned before fullscreen');
+      }
     } catch (error) {
       console.error('[useVideoJsPlayer] Error adding theater button:', error);
     }

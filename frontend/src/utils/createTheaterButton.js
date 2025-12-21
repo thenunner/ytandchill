@@ -53,13 +53,13 @@ export function registerTheaterButton() {
         className: this.buildCSSClass(),
       });
 
-      // Single icon that changes via CSS
+      // Single icon that changes via CSS (YouTube-style)
       const iconPlaceholder = videojs.dom.createEl('span', {
         className: 'vjs-icon-placeholder',
         innerHTML: `
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-            <path d="M7 6V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" class="theater-top"></path>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="7" width="18" height="10" rx="1" class="theater-rect"></rect>
+            <path d="M3 7L3 5L5 5M21 7L21 5L19 5M3 17L3 19L5 19M21 17L21 19L19 19" class="theater-corners"></path>
           </svg>
         `,
       });
