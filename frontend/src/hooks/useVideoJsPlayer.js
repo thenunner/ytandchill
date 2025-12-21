@@ -94,16 +94,18 @@ export function useVideoJsPlayer({
 
     // Add theater button to control bar manually with options
     try {
+      // Add button without index - it will append to the end
       const theaterButton = player.controlBar.addChild('TheaterButton', {
         onToggle: (newMode) => {
           if (setIsTheaterMode) {
             setIsTheaterMode(newMode);
           }
         }
-      }, 13); // Add at index 13 (before picture-in-picture which is typically at index 14)
+      });
 
-      console.log('[useVideoJsPlayer] Theater button created at index 13');
-      console.log('[useVideoJsPlayer] Theater button element:', theaterButton.el());
+      console.log('[useVideoJsPlayer] Theater button created');
+      console.log('[useVideoJsPlayer] Theater button parent:', theaterButton.el().parentElement);
+      console.log('[useVideoJsPlayer] Is button in control bar?', player.controlBar.el().contains(theaterButton.el()));
     } catch (error) {
       console.error('[useVideoJsPlayer] Error adding theater button:', error);
     }
