@@ -259,7 +259,6 @@ export default function Player() {
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered max-w-full h-auto block mx-auto"
-              style={{ maxHeight: '80vh' }}
               playsInline
               preload="auto"
             />

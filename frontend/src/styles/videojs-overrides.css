@@ -136,12 +136,21 @@
   object-fit: contain;
 }
 
-/* Fullscreen mode - remove size constraints from player container only */
+/* Fullscreen mode - remove size constraints from player container and video element */
 .video-js.vjs-fullscreen {
   max-width: none !important;
   max-height: none !important;
   width: 100% !important;
   height: 100% !important;
+}
+
+/* Fullscreen: Make the actual video element fill the screen */
+.video-js.vjs-fullscreen .vjs-tech {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
 }
 
 /* Non-fullscreen: constrain video size to fit on screen */
