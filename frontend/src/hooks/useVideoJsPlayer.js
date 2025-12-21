@@ -72,6 +72,13 @@ export function useVideoJsPlayer({
 
     const { isMobile, isIOS } = detectDeviceType();
 
+    // Register theater mode button component BEFORE initializing player
+    createTheaterButton((newMode) => {
+      if (setIsTheaterMode) {
+        setIsTheaterMode(newMode);
+      }
+    });
+
     // Initialize player
     const player = videojs(videoRef.current, {
       controls: true,
@@ -118,13 +125,6 @@ export function useVideoJsPlayer({
       player.tech(true).el().setAttribute('playsinline', 'true');
       player.tech(true).el().setAttribute('webkit-playsinline', 'true');
     }
-
-    // Add theater mode button
-    createTheaterButton((newMode) => {
-      if (setIsTheaterMode) {
-        setIsTheaterMode(newMode);
-      }
-    });
 
     // Keyboard shortcuts
     const handleKeyPress = (e) => {
