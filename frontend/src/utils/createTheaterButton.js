@@ -15,6 +15,12 @@ export function createTheaterButton(onToggle) {
       super(player, options);
       this.controlText('Theater mode');
       this.addClass('vjs-theater-button');
+
+      // Set initial state based on localStorage
+      const isTheaterMode = localStorage.getItem('theaterMode') === 'true';
+      if (isTheaterMode) {
+        this.addClass('vjs-theater-mode-active');
+      }
     }
 
     buildCSSClass() {
@@ -26,6 +32,13 @@ export function createTheaterButton(onToggle) {
       const newMode = !currentMode;
       localStorage.setItem('theaterMode', String(newMode));
 
+      // Toggle CSS class
+      if (newMode) {
+        this.addClass('vjs-theater-mode-active');
+      } else {
+        this.removeClass('vjs-theater-mode-active');
+      }
+
       if (onToggle) {
         onToggle(newMode);
       }
@@ -36,28 +49,18 @@ export function createTheaterButton(onToggle) {
         className: this.buildCSSClass(),
       });
 
-      const notPressedIcon = videojs.dom.createEl('span', {
-        className: 'vjs-icon-placeholder theater-icon-not-pressed',
+      // Single icon that changes via CSS
+      const iconPlaceholder = videojs.dom.createEl('span', {
+        className: 'vjs-icon-placeholder',
         innerHTML: `
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="2" y="6" width="20" height="12" rx="2"></rect>
-            <path d="M7 6V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2"></path>
+            <path d="M7 6V4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v2" class="theater-top"></path>
           </svg>
         `,
       });
 
-      const pressedIcon = videojs.dom.createEl('span', {
-        className: 'vjs-icon-placeholder theater-icon-pressed',
-        innerHTML: `
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="3" width="20" height="18" rx="2"></rect>
-          </svg>
-        `,
-      });
-
-      el.appendChild(notPressedIcon);
-      el.appendChild(pressedIcon);
-
+      el.appendChild(iconPlaceholder);
       return el;
     }
   }
@@ -75,17 +78,10 @@ export function updateTheaterButtonState(player, isTheaterMode) {
   const theaterButton = player.controlBar.getChild('TheaterButton');
   if (!theaterButton) return;
 
-  const el = theaterButton.el();
-  const pressedIcon = el.querySelector('.theater-icon-pressed');
-  const notPressedIcon = el.querySelector('.theater-icon-not-pressed');
-
-  if (pressedIcon && notPressedIcon) {
-    if (isTheaterMode) {
-      pressedIcon.style.display = 'block';
-      notPressedIcon.style.display = 'none';
-    } else {
-      pressedIcon.style.display = 'none';
-      notPressedIcon.style.display = 'block';
-    }
+  // Update button class based on mode
+  if (isTheaterMode) {
+    theaterButton.addClass('vjs-theater-mode-active');
+  } else {
+    theaterButton.removeClass('vjs-theater-mode-active');
   }
 }
