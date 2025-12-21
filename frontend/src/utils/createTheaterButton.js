@@ -53,13 +53,14 @@ export function registerTheaterButton() {
         className: this.buildCSSClass(),
       });
 
-      // Single icon that changes via CSS (YouTube-style)
+      // Rectangle with angle brackets [ <> ] or [ >< ]
       const iconPlaceholder = videojs.dom.createEl('span', {
         className: 'vjs-icon-placeholder',
         innerHTML: `
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-            <rect x="3" y="7" width="18" height="10" rx="1" class="theater-rect"></rect>
-            <path d="M3 7L3 5L5 5M21 7L21 5L19 5M3 17L3 19L5 19M21 17L21 19L19 19" class="theater-corners"></path>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="12" rx="1"></rect>
+            <polyline points="9,9 7,12 9,15" class="bracket-left"></polyline>
+            <polyline points="15,9 17,12 15,15" class="bracket-right"></polyline>
           </svg>
         `,
       });

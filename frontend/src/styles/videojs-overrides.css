@@ -166,15 +166,20 @@
 }
 
 .video-js .vjs-theater-button svg {
-  width: 1.5em;
-  height: 1.5em;
+  width: 2em;
+  height: 2em;
   display: block;
 }
 
-/* Theater mode active: Make rectangle taller (more vertical) */
-.video-js .vjs-theater-button.vjs-theater-mode-active .theater-rect {
-  y: 4;
-  height: 16;
+/* Theater mode active: Flip brackets inward [ >< ] */
+.video-js .vjs-theater-button.vjs-theater-mode-active .bracket-left {
+  transform: scaleX(-1);
+  transform-origin: center;
+}
+
+.video-js .vjs-theater-button.vjs-theater-mode-active .bracket-right {
+  transform: scaleX(-1);
+  transform-origin: center;
 }
 
 .video-js .vjs-theater-button .vjs-icon-placeholder:before {
