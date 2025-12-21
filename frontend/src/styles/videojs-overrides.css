@@ -158,14 +158,21 @@
   max-height: 60vh;
 }
 
-/* Theater mode button styling - minimal, use video.js defaults */
+/* Theater mode button styling */
+.video-js .vjs-theater-button .vjs-icon-placeholder {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
 .video-js .vjs-theater-button .vjs-icon-placeholder:before {
   display: none;
 }
 
 .video-js .vjs-theater-button svg {
-  width: 1.5em;
-  height: 1.5em;
+  width: 2em;
+  height: 2em;
+  display: block;
 }
 
 /* Theater mode active: Flip brackets inward [ >< ] */
