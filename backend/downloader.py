@@ -433,7 +433,27 @@ class DownloadWorker:
             'retries': 3,
             'continue': True,
             'noprogress': True,  # Disable progress bar (we use progress_hooks instead)
-            'concurrent_fragment_downloads': 3,  # Download 3 fragments in parallel for better performance
+
+            # aria2c external downloader for significantly improved download speeds
+            # Uses multi-connection parallelization (16 connections per server, 8 file segments)
+            # Expected performance: 2-5 MB/s vs 0.32 MB/s with fragment downloads
+            'external_downloader': 'aria2c',
+            'external_downloader_args': {
+                'aria2c': [
+                    '--max-connection-per-server=16',  # 16 parallel connections per server
+                    '--split=8',                       # Split each file into 8 segments
+                    '--min-split-size=1M',             # Minimum segment size 1MB
+                    '--max-concurrent-downloads=3',    # Download 3 files simultaneously
+                    '--connect-timeout=10',            # Connection timeout 10 seconds
+                    '--timeout=10',                    # Read timeout 10 seconds
+                    '--max-tries=3',                   # Retry 3 times on failure
+                    '--retry-wait=3',                  # Wait 3 seconds between retries
+                ]
+            },
+
+            # Keep existing fragment setting as fallback (when aria2c not used or unavailable)
+            'concurrent_fragment_downloads': 3,
+
             'merge_output_format': 'mp4',  # Force MP4 output to ensure faststart is applied
             'postprocessor_args': {
                 'ffmpeg': ['-movflags', '+faststart']  # Move MOOV atom to beginning for iPhone compatibility
