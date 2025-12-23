@@ -313,7 +313,7 @@ export default function Queue() {
       {/* Button Bar */}
       <StickyBar>
         <div className="flex items-center justify-center gap-4">
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 items-center">
           {/* Only show Resume when queue is paused AND has items */}
           {workerPaused && hasQueuedItems && (
             <button
@@ -331,6 +331,29 @@ export default function Queue() {
           >
             {clearQueue.isPending ? 'Clearing...' : 'Clear Queue'}
           </button>
+
+          {/* Download Progress Indicator */}
+          {currentDownload && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
+              <div className="flex gap-0.5">
+                {[...Array(10)].map((_, i) => {
+                  const segmentThreshold = (i + 1) * 10;
+                  const isFilled = (currentDownload.progress_pct || 0) >= segmentThreshold;
+                  return (
+                    <div
+                      key={i}
+                      className={`w-2 h-4 rounded-sm transition-colors ${
+                        isFilled ? 'bg-green-500' : 'bg-dark-tertiary'
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+              <span className="text-xs font-medium text-text-primary">
+                {(currentDownload.progress_pct || 0).toFixed(0)}%
+              </span>
+            </div>
+          )}
         </div>
         </div>
       </StickyBar>
