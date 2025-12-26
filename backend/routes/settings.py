@@ -471,7 +471,7 @@ def check_orphaned():
             } for v in not_found_videos]
 
             # Get deleted channels with no library videos
-            from sqlalchemy import func
+            from sqlalchemy import func, case
             deleted_channels = session.query(
                 Channel.id,
                 Channel.title,
@@ -479,7 +479,7 @@ def check_orphaned():
             ).outerjoin(Video).filter(
                 Channel.deleted_at.isnot(None)
             ).group_by(Channel.id).having(
-                func.sum(func.case((Video.status == 'library', 1), else_=0)) == 0
+                func.coalesce(func.sum(case((Video.status == 'library', 1), else_=0)), 0) == 0
             ).all()
 
             deletable_channels = [{
