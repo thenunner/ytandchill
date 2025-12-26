@@ -247,26 +247,42 @@ export default function Settings() {
   };
 
   const handleQueueRepair = async () => {
+    console.log('Queue/DB Repair button clicked');
+    showNotification('Checking queue database...', 'info');
     setIsCheckingRepair(true);
     try {
+      console.log('Fetching /api/queue/check-orphaned...');
       const response = await fetch('/api/queue/check-orphaned');
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        showNotification(`API error: ${response.status} ${response.statusText}`, 'error');
+        return;
+      }
+
       const data = await response.json();
+      console.log('Response data:', data);
 
       if (data.error) {
+        console.error('API error:', data.error);
         showNotification(data.error, 'error');
         return;
       }
 
       if (data.orphaned_count === 0) {
+        console.log('No orphaned items found');
         showNotification('Queue database is clean - no issues found', 'success');
         return;
       }
 
       // Show modal with orphaned items
+      console.log('Opening repair modal with', data.orphaned_count, 'items');
+      showNotification(`Found ${data.orphaned_count} orphaned item(s)`, 'info');
       setOrphanedData(data);
       setShowRepairModal(true);
     } catch (error) {
-      showNotification('Failed to check queue database', 'error');
+      console.error('Error checking queue database:', error);
+      showNotification(`Failed to check queue database: ${error.message}`, 'error');
     } finally {
       setIsCheckingRepair(false);
     }
