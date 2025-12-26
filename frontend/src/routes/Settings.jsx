@@ -10,9 +10,9 @@ export default function Settings() {
   const { data: health } = useHealth();
   const { data: logsData } = useLogs(500);
   const { data: channels } = useChannels();
-  const { data: discoveredVideos } = useVideos({ status: 'discovered' });
-  const { data: ignoredVideos } = useVideos({ status: 'ignored' });
-  const { data: libraryVideos } = useVideos({ status: 'library' });
+  const { data: discoveredVideos, refetch: refetchDiscovered } = useVideos({ status: 'discovered' });
+  const { data: ignoredVideos, refetch: refetchIgnored } = useVideos({ status: 'ignored' });
+  const { data: libraryVideos, refetch: refetchLibrary } = useVideos({ status: 'library' });
   const updateSettings = useUpdateSettings();
   const { showNotification } = useNotification();
   const { theme, setTheme } = useTheme();
@@ -260,6 +260,11 @@ export default function Settings() {
         showNotification(data.error, 'error');
         return;
       }
+
+      // Refetch video counts to show updated stats
+      refetchDiscovered();
+      refetchIgnored();
+      refetchLibrary();
 
       // Store data and show main modal with options
       setRepairData(data);
