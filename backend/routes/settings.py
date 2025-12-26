@@ -220,7 +220,8 @@ def health_check():
 
     # Calculate database size
     db_size = 0
-    db_path = '/appdata/data/youtube_downloader.db'
+    # Database path relative to backend directory
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'youtube_downloader.db')
     if os.path.exists(db_path):
         try:
             db_size = os.path.getsize(db_path)
