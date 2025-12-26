@@ -64,12 +64,13 @@ def get_videos():
             joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
         )
 
-        # Exclude videos from deleted channels (except for library videos which are downloaded)
+        # Exclude videos from deleted channels
+        # Exception: Keep library videos (already downloaded) even if channel was deleted
         query = query.join(Channel, Video.channel_id == Channel.id)
         query = query.filter(
             or_(
-                Channel.deleted_at.is_(None),  # Channel not deleted
-                and_(Channel.deleted_at.isnot(None), Video.status == 'library')  # Deleted channel but video is downloaded
+                Channel.deleted_at.is_(None),  # Channel not deleted - show all videos
+                Video.status == 'library'  # Channel deleted but video is in library - keep it
             )
         )
 
@@ -86,20 +87,26 @@ def get_videos():
             query = query.filter(Video.channel_id == channel_id)
         if folder_name:
             query = query.filter(Video.folder_name == folder_name)
-        # Handle ignored filter (includes both 'ignored' and 'geoblocked' statuses)
+        # Handle ignored filter (includes 'ignored' and 'geoblocked' statuses only)
+        # Note: 'not_found' is never included in any filter - only accessible via repair tool
         if ignored is not None:
             has_ignored = ignored.lower() == 'true'
             if has_ignored:
-                # Include both 'ignored' and 'geoblocked' videos in ignored filter
+                # Include ignored and geoblocked videos in ignored filter
                 query = query.filter(Video.status.in_(['ignored', 'geoblocked']))
             else:
-                # Exclude ignored/geoblocked videos, but still apply status filter if provided
-                query = query.filter(~Video.status.in_(['ignored', 'geoblocked']))
+                # Exclude ignored/geoblocked/not_found videos, but still apply status filter if provided
+                query = query.filter(~Video.status.in_(['ignored', 'geoblocked', 'not_found']))
                 if status:
                     query = query.filter(Video.status == status)
         elif status:
             # Apply status filter when ignored parameter is not present
             query = query.filter(Video.status == status)
+            # Always exclude 'not_found' from normal queries
+            query = query.filter(Video.status != 'not_found')
+        else:
+            # No status or ignored filter - exclude 'not_found' from normal queries
+            query = query.filter(Video.status != 'not_found')
         if watched is not None:
             query = query.filter(Video.watched == (watched.lower() == 'true'))
         if search:

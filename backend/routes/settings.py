@@ -218,6 +218,16 @@ def health_check():
         _download_worker.start()
         worker_alive = True
 
+    # Calculate database size
+    db_size = 0
+    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data.db')
+    if os.path.exists(db_path):
+        try:
+            db_size = os.path.getsize(db_path)
+        except (OSError, FileNotFoundError):
+            pass
+    database_size = format_bytes(db_size)
+
     return jsonify({
         'status': 'ok',
         'ffmpeg_available': ffmpeg_available,
@@ -229,7 +239,8 @@ def health_check():
         'cookies_available': cookies_available,
         'firefox_profile_mounted': firefox_profile_mounted,
         'firefox_has_cookies': firefox_has_cookies,
-        'total_storage': total_storage
+        'total_storage': total_storage,
+        'database_size': database_size
     })
 
 
@@ -398,87 +409,200 @@ def change_auth():
 
 @settings_bp.route('/api/queue/check-orphaned', methods=['GET'])
 def check_orphaned():
-    """Check for orphaned queue items and return details"""
-    from database import Video, QueueItem
+    """Recalculate stats, auto-clean orphaned queue items, and return cleanup options"""
+    from database import Video, QueueItem, Channel, Setting
 
     with get_session(_session_factory) as session:
         try:
-            # Find orphaned queue items (videos not in 'queued' or 'downloading' status)
-            orphaned = session.query(QueueItem, Video).join(Video).filter(
-                ~Video.status.in_(['queued', 'downloading'])
-            ).all()
-
-            details = []
-            for qi, v in orphaned:
-                details.append({
-                    'queue_item_id': qi.id,
-                    'video_id': v.id,
-                    'video_yt_id': v.yt_id,
-                    'video_title': v.title,
-                    'video_status': v.status,
-                    'progress_pct': qi.progress_pct
-                })
-
-            # Count discovered videos
-            discovered_total = session.query(Video).filter(Video.status == 'discovered').count()
-
-            # Count discovered videos that would show (not in queue)
-            queued_ids = [qi.video_id for qi in session.query(QueueItem).all()]
-            discovered_visible = session.query(Video).filter(
+            # Recalculate and update stats (always on button click)
+            discovered_count = session.query(Video).join(Channel).filter(
                 Video.status == 'discovered',
-                ~Video.id.in_(queued_ids) if queued_ids else True
+                Channel.deleted_at.is_(None)
             ).count()
 
-            return jsonify({
-                'orphaned_count': len(orphaned),
-                'orphaned_details': details,
-                'discovered_total': discovered_total,
-                'discovered_visible': discovered_visible,
-                'discovered_hidden': discovered_total - discovered_visible
-            })
+            ignored_count = session.query(Video).join(Channel).filter(
+                Video.status.in_(['ignored', 'geoblocked']),
+                Channel.deleted_at.is_(None)
+            ).count()
 
-        except Exception as e:
-            logger.error(f"Error checking orphaned queue items: {e}", exc_info=True)
-            return jsonify({'error': str(e)}), 500
+            library_count = session.query(Video).filter(
+                Video.status == 'library'
+            ).count()
 
+            # Update stored stats
+            stats_updated = []
+            for key, value in [
+                ('discovered_total', str(discovered_count)),
+                ('ignored_total', str(ignored_count)),
+                ('library_total', str(library_count))
+            ]:
+                setting = session.query(Setting).filter(Setting.key == key).first()
+                if setting:
+                    if setting.value != value:
+                        old_value = setting.value
+                        setting.value = value
+                        stats_updated.append(f"{key}: {old_value} → {value}")
+                else:
+                    setting = Setting(key=key, value=value)
+                    session.add(setting)
+                    stats_updated.append(f"{key}: created with value {value}")
 
-@settings_bp.route('/api/queue/cleanup-orphaned', methods=['POST'])
-def cleanup_orphaned():
-    """Clean up orphaned queue items"""
-    from database import Video, QueueItem
-
-    with get_session(_session_factory) as session:
-        try:
-            # Find orphaned queue items
+            # Auto-clean orphaned queue items (silently)
             orphaned = session.query(QueueItem, Video).join(Video).filter(
                 ~Video.status.in_(['queued', 'downloading'])
             ).all()
 
-            if not orphaned:
-                return jsonify({'cleaned': 0, 'details': []})
-
-            details = []
+            orphaned_cleaned = 0
             for qi, v in orphaned:
-                details.append({
-                    'queue_item_id': qi.id,
-                    'video_id': v.id,
-                    'video_yt_id': v.yt_id,
-                    'video_title': v.title,
-                    'video_status': v.status,
-                    'progress_pct': qi.progress_pct
-                })
-                logger.info(f"Deleting orphaned QueueItem {qi.id} for video {v.yt_id} (status: {v.status}, progress: {qi.progress_pct}%)")
+                logger.info(f"Auto-cleaning orphaned QueueItem {qi.id} for video {v.yt_id} (status: {v.status})")
                 session.delete(qi)
+                orphaned_cleaned += 1
+
+            # Get videos not found on YouTube
+            not_found_videos = session.query(Video).filter(
+                Video.status == 'not_found'
+            ).all()
+
+            not_found_list = [{
+                'id': v.id,
+                'yt_id': v.yt_id,
+                'title': v.title,
+                'channel_name': v.channel.title if v.channel else 'Unknown'
+            } for v in not_found_videos]
+
+            # Get deleted channels with no library videos
+            from sqlalchemy import func
+            deleted_channels = session.query(
+                Channel.id,
+                Channel.title,
+                func.count(Video.id).label('video_count')
+            ).outerjoin(Video).filter(
+                Channel.deleted_at.isnot(None)
+            ).group_by(Channel.id).having(
+                func.sum(func.case((Video.status == 'library', 1), else_=0)) == 0
+            ).all()
+
+            deletable_channels = [{
+                'id': ch.id,
+                'title': ch.title,
+                'video_count': ch.video_count
+            } for ch in deleted_channels]
 
             session.commit()
-            logger.info(f"Queue database repair completed: {len(orphaned)} items cleaned")
+
+            if stats_updated:
+                logger.info(f"Stats updated: {', '.join(stats_updated)}")
+            if orphaned_cleaned > 0:
+                logger.info(f"Auto-cleaned {orphaned_cleaned} orphaned queue items")
 
             return jsonify({
-                'cleaned': len(orphaned),
-                'details': details
+                'stats': {
+                    'discovered': discovered_count,
+                    'ignored': ignored_count,
+                    'library': library_count
+                },
+                'stats_updated': stats_updated,
+                'orphaned_cleaned': orphaned_cleaned,
+                'not_found_videos': not_found_list,
+                'deletable_channels': deletable_channels
             })
 
         except Exception as e:
             session.rollback()
-            logger.error(f"Error cleaning orphaned queue items: {e}", exc_info=True)
+            logger.error(f"Error in queue/DB repair check: {e}", exc_info=True)
+            return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/api/queue/remove-not-found', methods=['POST'])
+def remove_not_found_videos():
+    """Remove selected videos that were not found on YouTube"""
+    from database import Video
+
+    data = request.json
+    video_ids = data.get('video_ids', [])
+
+    if not video_ids:
+        return jsonify({'error': 'No video IDs provided'}), 400
+
+    with get_session(_session_factory) as session:
+        try:
+            removed_count = 0
+            for video_id in video_ids:
+                video = session.query(Video).filter(Video.id == video_id).first()
+                if video and video.status == 'not_found':
+                    logger.info(f"Removing not found video: {video.title} (yt_id: {video.yt_id})")
+                    session.delete(video)
+                    removed_count += 1
+
+            session.commit()
+            logger.info(f"Removed {removed_count} not found videos")
+
+            return jsonify({
+                'removed': removed_count
+            })
+
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error removing not found videos: {e}", exc_info=True)
+            return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/api/queue/purge-channels', methods=['POST'])
+def purge_deleted_channels():
+    """Permanently delete selected soft-deleted channels and all their videos"""
+    from database import Channel, Video, Playlist, PlaylistVideo
+
+    data = request.json
+    channel_ids = data.get('channel_ids', [])
+
+    if not channel_ids:
+        return jsonify({'error': 'No channel IDs provided'}), 400
+
+    with get_session(_session_factory) as session:
+        try:
+            purged_count = 0
+            total_videos_removed = 0
+
+            for channel_id in channel_ids:
+                channel = session.query(Channel).filter(Channel.id == channel_id).first()
+                if not channel or channel.deleted_at is None:
+                    continue
+
+                # Verify channel has no library videos (safety check)
+                library_count = session.query(Video).filter(
+                    Video.channel_id == channel_id,
+                    Video.status == 'library'
+                ).count()
+
+                if library_count > 0:
+                    logger.warning(f"Skipping channel {channel.title} - has {library_count} library videos")
+                    continue
+
+                # Count videos before deletion
+                video_count = session.query(Video).filter(Video.channel_id == channel_id).count()
+
+                # Delete all videos for this channel
+                session.query(Video).filter(Video.channel_id == channel_id).delete()
+
+                # Delete playlists
+                session.query(Playlist).filter(Playlist.channel_id == channel_id).delete()
+
+                # Delete the channel
+                session.delete(channel)
+
+                logger.info(f"Purged channel: {channel.title} ({video_count} videos)")
+                purged_count += 1
+                total_videos_removed += video_count
+
+            session.commit()
+            logger.info(f"Purged {purged_count} channels, removed {total_videos_removed} total videos")
+
+            return jsonify({
+                'purged_channels': purged_count,
+                'videos_removed': total_videos_removed
+            })
+
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error purging channels: {e}", exc_info=True)
             return jsonify({'error': str(e)}), 500

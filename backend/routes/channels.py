@@ -244,20 +244,14 @@ def delete_channel(channel_id):
             return jsonify({'error': 'Channel not found'}), 404
 
         # Soft delete: mark channel as deleted instead of removing
+        # Keep all videos (discovered, ignored, library) to preserve user's work
+        # Videos will be re-matched when channel is re-added
         channel.deleted_at = datetime.now(timezone.utc)
-
-        # Clean up non-library videos (discovered, ignored, queued, etc.)
-        # but keep library videos so they remain in the user's library
-        non_library_videos = session.query(Video).filter(
-            Video.channel_id == channel_id,
-            Video.status != 'library'
-        ).all()
-
-        for video in non_library_videos:
-            session.delete(video)
 
         # Also clean up any channel-specific playlists
         session.query(Playlist).filter(Playlist.channel_id == channel_id).delete()
+
+        session.commit()
 
         return '', 204
 

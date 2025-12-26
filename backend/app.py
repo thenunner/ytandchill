@@ -684,6 +684,25 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
 
     logger.debug(f"Scan results for '{channel.title}': {new_count} new, {ignored_count} ignored, {existing_count} already in database")
 
+    # Clean up videos removed from YouTube (only on full scans)
+    not_found_count = 0
+    if force_full:
+        # Collect all yt_ids found in this scan
+        scanned_yt_ids = {video_data['id'] for video_data in videos}
+
+        # Find all videos for this channel in DB
+        db_videos = session.query(Video).filter(Video.channel_id == channel.id).all()
+
+        # Mark videos not found in scan as 'not_found' (except library videos)
+        for db_video in db_videos:
+            if db_video.yt_id not in scanned_yt_ids and db_video.status != 'library':
+                db_video.status = 'not_found'
+                not_found_count += 1
+                logger.info(f"Marked as not found (removed from YouTube): '{db_video.title}'")
+
+        if not_found_count > 0:
+            logger.info(f"Marked {not_found_count} video(s) as 'not_found' (removed from YouTube)")
+
     # Update last scan time to the latest video upload date found
     # This ensures the next scan picks up from the last video, not the scan time
     if latest_upload_date:

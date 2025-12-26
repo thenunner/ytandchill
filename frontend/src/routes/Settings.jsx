@@ -64,9 +64,13 @@ export default function Settings() {
 
   // Queue/DB Repair state
   const [showRepairModal, setShowRepairModal] = useState(false);
-  const [orphanedData, setOrphanedData] = useState(null);
+  const [showNotFoundModal, setShowNotFoundModal] = useState(false);
+  const [showShrinkDBModal, setShowShrinkDBModal] = useState(false);
+  const [repairData, setRepairData] = useState(null);
+  const [selectedNotFoundVideos, setSelectedNotFoundVideos] = useState([]);
+  const [selectedChannels, setSelectedChannels] = useState([]);
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
-  const [isRepairing, setIsRepairing] = useState(false);
+  const [isRemoving, setIsRemoving] = useState(false);
 
   // Scroll to top on component mount
   useEffect(() => {
@@ -247,53 +251,41 @@ export default function Settings() {
   };
 
   const handleQueueRepair = async () => {
-    console.log('Queue/DB Repair button clicked');
-    showNotification('Checking queue database...', 'info');
     setIsCheckingRepair(true);
     try {
-      console.log('Fetching /api/queue/check-orphaned...');
       const response = await fetch('/api/queue/check-orphaned');
-      console.log('Response status:', response.status);
-
-      if (!response.ok) {
-        showNotification(`API error: ${response.status} ${response.statusText}`, 'error');
-        return;
-      }
-
       const data = await response.json();
-      console.log('Response data:', data);
 
       if (data.error) {
-        console.error('API error:', data.error);
         showNotification(data.error, 'error');
         return;
       }
 
-      if (data.orphaned_count === 0) {
-        console.log('No orphaned items found');
-        showNotification('Queue database is clean - no issues found', 'success');
-        return;
-      }
-
-      // Show modal with orphaned items
-      console.log('Opening repair modal with', data.orphaned_count, 'items');
-      showNotification(`Found ${data.orphaned_count} orphaned item(s)`, 'info');
-      setOrphanedData(data);
+      // Store data and show main modal with options
+      setRepairData(data);
       setShowRepairModal(true);
+
+      // Refresh stats to show updated counts
+      fetchStats();
     } catch (error) {
-      console.error('Error checking queue database:', error);
-      showNotification(`Failed to check queue database: ${error.message}`, 'error');
+      showNotification(`Failed to check database: ${error.message}`, 'error');
     } finally {
       setIsCheckingRepair(false);
     }
   };
 
-  const confirmRepair = async () => {
-    setIsRepairing(true);
+  const handleRemoveNotFoundVideos = async () => {
+    if (selectedNotFoundVideos.length === 0) {
+      showNotification('No videos selected', 'warning');
+      return;
+    }
+
+    setIsRemoving(true);
     try {
-      const response = await fetch('/api/queue/cleanup-orphaned', {
+      const response = await fetch('/api/queue/remove-not-found', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_ids: selectedNotFoundVideos })
       });
       const data = await response.json();
 
@@ -302,13 +294,47 @@ export default function Settings() {
         return;
       }
 
-      showNotification(`Queue database repaired - ${data.cleaned} item${data.cleaned !== 1 ? 's' : ''} cleaned`, 'success');
+      showNotification(`Removed ${data.removed} video${data.removed !== 1 ? 's' : ''}`, 'success');
+      setShowNotFoundModal(false);
       setShowRepairModal(false);
-      setOrphanedData(null);
+      setSelectedNotFoundVideos([]);
+      setRepairData(null);
     } catch (error) {
-      showNotification('Failed to repair queue database', 'error');
+      showNotification('Failed to remove videos', 'error');
     } finally {
-      setIsRepairing(false);
+      setIsRemoving(false);
+    }
+  };
+
+  const handlePurgeChannels = async () => {
+    if (selectedChannels.length === 0) {
+      showNotification('No channels selected', 'warning');
+      return;
+    }
+
+    setIsRemoving(true);
+    try {
+      const response = await fetch('/api/queue/purge-channels', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel_ids: selectedChannels })
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      showNotification(`Purged ${data.purged_channels} channel${data.purged_channels !== 1 ? 's' : ''}, freed ${data.videos_removed} video records`, 'success');
+      setShowShrinkDBModal(false);
+      setShowRepairModal(false);
+      setSelectedChannels([]);
+      setRepairData(null);
+    } catch (error) {
+      showNotification('Failed to purge channels', 'error');
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -427,11 +453,11 @@ export default function Settings() {
                 <span className="text-text-secondary w-24">YT and Chill</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.10.7</span>
               </div>
-              {/* Worker - Mobile: (2,1), Desktop: (2,1) */}
+              {/* Database - Mobile: (2,1), Desktop: (2,1) */}
               <div className="flex items-center justify-center gap-3 order-3 md:order-4">
-                <span className="text-text-secondary w-16">Worker</span>
-                <span className={`font-medium text-xs ${health?.download_worker_running ? 'text-text-primary' : 'text-red-400'}`}>
-                  {health?.download_worker_running ? 'Active' : 'Inactive'}
+                <span className="text-text-secondary w-20">Database</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
+                  {health?.database_size || 'N/A'}
                 </span>
               </div>
               {/* yt-dlp - Mobile: (1,2), Desktop: (2,2) */}
@@ -542,6 +568,7 @@ export default function Settings() {
                 <button
                   onClick={handleQueueRepair}
                   disabled={isCheckingRepair}
+                  title="Cleans up database count issues, orphaned queue items, ghost videos from deleted channels, and other inconsistencies"
                   className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCheckingRepair ? 'Checking...' : 'Queue/DB Repair'}
@@ -1283,45 +1310,180 @@ export default function Settings() {
         </div>
       )}
 
-      {/* Queue/DB Repair Modal */}
-      <ConfirmModal
-        isOpen={showRepairModal}
-        title="Queue Database Repair"
-        message={
-          orphanedData ? (
-            <div className="space-y-3">
-              <p className="font-semibold">
-                Found {orphanedData.orphaned_count} orphaned queue item{orphanedData.orphaned_count !== 1 ? 's' : ''}:
-              </p>
-              <div className="max-h-60 overflow-y-auto space-y-2 bg-dark-tertiary p-3 rounded-lg">
-                {orphanedData.orphaned_details?.map((item, idx) => (
-                  <div key={idx} className="text-xs border-b border-dark-border pb-2 last:border-0">
-                    <div className="font-medium text-text-primary truncate" title={item.video_title}>
-                      {item.video_title}
-                    </div>
-                    <div className="text-text-muted mt-1">
-                      Status: <span className="text-text-secondary">{item.video_status}</span> •
-                      Progress: <span className="text-text-secondary">{item.progress_pct}%</span>
+      {/* Main Queue/DB Repair Modal - Choose Action */}
+      {showRepairModal && repairData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRepairModal(false)} />
+          <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-md w-full">
+            <div className="px-6 py-4 border-b border-dark-border">
+              <h3 className="text-lg font-semibold text-text-primary">Database Maintenance</h3>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              {/* Show auto-cleaned info */}
+              {repairData.orphaned_cleaned > 0 && (
+                <div className="bg-dark-tertiary border border-dark-border rounded-lg p-3">
+                  <div className="text-sm text-text-primary">
+                    ✓ Auto-cleaned {repairData.orphaned_cleaned} orphaned item{repairData.orphaned_cleaned !== 1 ? 's' : ''}
+                  </div>
+                </div>
+              )}
+
+              <p className="text-sm text-text-secondary">Choose a maintenance option:</p>
+
+              {/* Option 1: Review Videos Not Found */}
+              <button
+                onClick={() => { setShowRepairModal(false); setShowNotFoundModal(true); }}
+                className="w-full p-4 bg-dark-tertiary hover:bg-dark-hover border border-dark-border-light rounded-lg text-left transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-text-primary">Review Videos Not Found</div>
+                    <div className="text-xs text-text-secondary mt-1">
+                      {repairData.not_found_videos?.length || 0} video{repairData.not_found_videos?.length !== 1 ? 's' : ''} removed from YouTube
                     </div>
                   </div>
-                ))}
-              </div>
-              <p className="text-sm text-text-secondary">
-                These queue items are for videos that are no longer being downloaded.
-                Cleaning them will fix the "Videos to Review" count.
-              </p>
+                  <div className="text-2xl text-text-muted">→</div>
+                </div>
+              </button>
+
+              {/* Option 2: Shrink Database */}
+              <button
+                onClick={() => { setShowRepairModal(false); setShowShrinkDBModal(true); }}
+                className="w-full p-4 bg-dark-tertiary hover:bg-dark-hover border border-dark-border-light rounded-lg text-left transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-text-primary">Shrink Database</div>
+                    <div className="text-xs text-text-secondary mt-1">
+                      {repairData.deletable_channels?.length || 0} deleted channel{repairData.deletable_channels?.length !== 1 ? 's' : ''} can be purged
+                    </div>
+                  </div>
+                  <div className="text-2xl text-text-muted">→</div>
+                </div>
+              </button>
             </div>
-          ) : null
-        }
-        confirmText={isRepairing ? 'Repairing...' : 'Repair Database'}
-        cancelText="Cancel"
-        confirmStyle="primary"
-        onConfirm={confirmRepair}
-        onCancel={() => {
-          setShowRepairModal(false);
-          setOrphanedData(null);
-        }}
-      />
+            <div className="px-6 py-4 border-t border-dark-border">
+              <button onClick={() => setShowRepairModal(false)} className="btn btn-secondary w-full">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Videos Not Found Modal */}
+      {showNotFoundModal && repairData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowNotFoundModal(false)} />
+          <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-2xl w-full">
+            <div className="px-6 py-4 border-b border-dark-border">
+              <h3 className="text-lg font-semibold text-text-primary">Videos Not Found on YouTube</h3>
+            </div>
+            <div className="px-6 py-4">
+              {repairData.not_found_videos?.length === 0 ? (
+                <p className="text-sm text-text-secondary">✓ No videos to remove</p>
+              ) : (
+                <>
+                  <p className="text-sm text-text-secondary mb-3">Select videos to remove from database:</p>
+                  <div className="max-h-96 overflow-y-auto space-y-2">
+                    {repairData.not_found_videos.map((video) => (
+                      <label key={video.id} className="flex items-start gap-3 p-3 bg-dark-tertiary hover:bg-dark-hover border border-dark-border rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedNotFoundVideos.includes(video.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedNotFoundVideos([...selectedNotFoundVideos, video.id]);
+                            } else {
+                              setSelectedNotFoundVideos(selectedNotFoundVideos.filter(id => id !== video.id));
+                            }
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-text-primary truncate">{video.title}</div>
+                          <div className="text-xs text-text-secondary">Channel: {video.channel_name}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-dark-border flex gap-3">
+              <button onClick={() => setShowNotFoundModal(false)} className="btn btn-secondary flex-1">
+                Cancel
+              </button>
+              {repairData.not_found_videos?.length > 0 && (
+                <button
+                  onClick={handleRemoveNotFoundVideos}
+                  disabled={selectedNotFoundVideos.length === 0 || isRemoving}
+                  className="btn bg-red-600 hover:bg-red-700 text-white flex-1 disabled:opacity-50"
+                >
+                  {isRemoving ? 'Removing...' : `Remove Selected (${selectedNotFoundVideos.length})`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Shrink Database Modal */}
+      {showShrinkDBModal && repairData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowShrinkDBModal(false)} />
+          <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-2xl w-full">
+            <div className="px-6 py-4 border-b border-dark-border">
+              <h3 className="text-lg font-semibold text-text-primary">Shrink Database</h3>
+            </div>
+            <div className="px-6 py-4">
+              {repairData.deletable_channels?.length === 0 ? (
+                <p className="text-sm text-text-secondary">✓ No channels to purge</p>
+              ) : (
+                <>
+                  <p className="text-sm text-text-secondary mb-3">Select deleted channels to permanently remove:</p>
+                  <div className="max-h-96 overflow-y-auto space-y-2">
+                    {repairData.deletable_channels.map((channel) => (
+                      <label key={channel.id} className="flex items-start gap-3 p-3 bg-dark-tertiary hover:bg-dark-hover border border-dark-border rounded-lg cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedChannels.includes(channel.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedChannels([...selectedChannels, channel.id]);
+                            } else {
+                              setSelectedChannels(selectedChannels.filter(id => id !== channel.id));
+                            }
+                          }}
+                          className="mt-1"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-text-primary truncate">{channel.title}</div>
+                          <div className="text-xs text-text-secondary">{channel.video_count} video{channel.video_count !== 1 ? 's' : ''} • No library videos</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-dark-border flex gap-3">
+              <button onClick={() => setShowShrinkDBModal(false)} className="btn btn-secondary flex-1">
+                Cancel
+              </button>
+              {repairData.deletable_channels?.length > 0 && (
+                <button
+                  onClick={handlePurgeChannels}
+                  disabled={selectedChannels.length === 0 || isRemoving}
+                  className="btn bg-red-600 hover:bg-red-700 text-white flex-1 disabled:opacity-50"
+                >
+                  {isRemoving ? 'Purging...' : `Purge Selected (${selectedChannels.length})`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
     </>
   );
