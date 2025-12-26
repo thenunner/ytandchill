@@ -399,25 +399,86 @@ def change_auth():
 @settings_bp.route('/api/queue/check-orphaned', methods=['GET'])
 def check_orphaned():
     """Check for orphaned queue items and return details"""
-    from cleanup_orphaned_queue import check_orphaned_queue_items
+    from database import Video, QueueItem
 
-    try:
-        stats = check_orphaned_queue_items()
-        return jsonify(stats)
-    except Exception as e:
-        logger.error(f"Error checking orphaned queue items: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+    with get_session(_session_factory) as session:
+        try:
+            # Find orphaned queue items (videos not in 'queued' or 'downloading' status)
+            orphaned = session.query(QueueItem, Video).join(Video).filter(
+                ~Video.status.in_(['queued', 'downloading'])
+            ).all()
+
+            details = []
+            for qi, v in orphaned:
+                details.append({
+                    'queue_item_id': qi.id,
+                    'video_id': v.id,
+                    'video_yt_id': v.yt_id,
+                    'video_title': v.title,
+                    'video_status': v.status,
+                    'progress_pct': qi.progress_pct
+                })
+
+            # Count discovered videos
+            discovered_total = session.query(Video).filter(Video.status == 'discovered').count()
+
+            # Count discovered videos that would show (not in queue)
+            queued_ids = [qi.video_id for qi in session.query(QueueItem).all()]
+            discovered_visible = session.query(Video).filter(
+                Video.status == 'discovered',
+                ~Video.id.in_(queued_ids) if queued_ids else True
+            ).count()
+
+            return jsonify({
+                'orphaned_count': len(orphaned),
+                'orphaned_details': details,
+                'discovered_total': discovered_total,
+                'discovered_visible': discovered_visible,
+                'discovered_hidden': discovered_total - discovered_visible
+            })
+
+        except Exception as e:
+            logger.error(f"Error checking orphaned queue items: {e}", exc_info=True)
+            return jsonify({'error': str(e)}), 500
 
 
 @settings_bp.route('/api/queue/cleanup-orphaned', methods=['POST'])
 def cleanup_orphaned():
     """Clean up orphaned queue items"""
-    from cleanup_orphaned_queue import cleanup_orphaned_queue_items
+    from database import Video, QueueItem
 
-    try:
-        result = cleanup_orphaned_queue_items()
-        logger.info(f"Queue database repair completed: {result['cleaned']} items cleaned")
-        return jsonify(result)
-    except Exception as e:
-        logger.error(f"Error cleaning orphaned queue items: {e}", exc_info=True)
-        return jsonify({'error': str(e)}), 500
+    with get_session(_session_factory) as session:
+        try:
+            # Find orphaned queue items
+            orphaned = session.query(QueueItem, Video).join(Video).filter(
+                ~Video.status.in_(['queued', 'downloading'])
+            ).all()
+
+            if not orphaned:
+                return jsonify({'cleaned': 0, 'details': []})
+
+            details = []
+            for qi, v in orphaned:
+                details.append({
+                    'queue_item_id': qi.id,
+                    'video_id': v.id,
+                    'video_yt_id': v.yt_id,
+                    'video_title': v.title,
+                    'video_status': v.status,
+                    'progress_pct': qi.progress_pct
+                })
+                logger.info(f"Deleting orphaned QueueItem {qi.id} for video {v.yt_id} (status: {v.status}, progress: {qi.progress_pct}%)")
+                session.delete(qi)
+
+            session.commit()
+            logger.info(f"Queue database repair completed: {len(orphaned)} items cleaned")
+
+            return jsonify({
+                'cleaned': len(orphaned),
+                'details': details
+            })
+
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error cleaning orphaned queue items: {e}", exc_info=True)
+            return jsonify({'error': str(e)}), 500
