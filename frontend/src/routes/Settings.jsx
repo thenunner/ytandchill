@@ -17,6 +17,16 @@ export default function Settings() {
   const { showNotification } = useNotification();
   const { theme, setTheme } = useTheme();
 
+  // Fetch stats (excludes Singles from discovered/ignored)
+  const [stats, setStats] = useState({ discovered: 0, ignored: 0, library: 0 });
+
+  useEffect(() => {
+    fetch('/api/stats')
+      .then(res => res.json())
+      .then(data => setStats(data))
+      .catch(err => console.error('Failed to fetch stats:', err));
+  }, []);
+
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshHour, setRefreshHour] = useState(3);
   const [refreshMinute, setRefreshMinute] = useState(0);
@@ -261,10 +271,11 @@ export default function Settings() {
         return;
       }
 
-      // Refetch video counts to show updated stats
-      refetchDiscovered();
-      refetchIgnored();
-      refetchLibrary();
+      // Refetch stats to show updated counts (excludes Singles)
+      fetch('/api/stats')
+        .then(res => res.json())
+        .then(data => setStats(data))
+        .catch(err => console.error('Failed to fetch stats:', err));
 
       // Store data and show main modal with options
       setRepairData(data);
@@ -424,20 +435,29 @@ export default function Settings() {
     <div className="animate-fade-in">
       {/* Single column layout for desktop */}
       <div className="flex flex-col gap-4 w-full">
-          {/* Card 1: System Status + Stats + Reset User */}
+          {/* Card 1: System Status and Stats + Reset User */}
           <div className="card p-4 w-full">
-            {/* System Status */}
-            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">System Status</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
-              {/* FFmpeg - Mobile: (1,1), Desktop: (1,1) */}
-              <div className="flex items-center justify-center gap-3 order-1 md:order-1">
+            {/* System Status and Stats */}
+            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">System Status and Stats</h3>
+
+            {/* System info grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm mb-4">
+              {/* FFmpeg */}
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary w-16">FFmpeg</span>
                 <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
                   {health?.ffmpeg_available ? 'Active' : 'Inactive'}
                 </span>
               </div>
-              {/* Cookies - Mobile: (3,1), Desktop: (1,2) */}
-              <div className="flex items-center justify-center gap-3 order-5 md:order-2">
+              {/* Database */}
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-text-secondary w-20">Database</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
+                  {health?.database_size || 'N/A'}
+                </span>
+              </div>
+              {/* Cookies */}
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary w-16">Cookies</span>
                 <span className={`font-medium text-xs ${
                   cookieSource === 'browser'
@@ -450,25 +470,18 @@ export default function Settings() {
                   }
                 </span>
               </div>
-              {/* YT and Chill - Mobile: (2,2), Desktop: (1,3) */}
-              <div className="flex items-center justify-center gap-3 order-4 md:order-3">
+              {/* YT and Chill */}
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.10.7</span>
               </div>
-              {/* Database - Mobile: (2,1), Desktop: (2,1) */}
-              <div className="flex items-center justify-center gap-3 order-3 md:order-4">
-                <span className="text-text-secondary w-20">Database</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
-                  {health?.database_size || 'N/A'}
-                </span>
-              </div>
-              {/* yt-dlp - Mobile: (1,2), Desktop: (2,2) */}
-              <div className="flex items-center justify-center gap-3 order-2 md:order-5">
+              {/* yt-dlp */}
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary w-16">yt-dlp</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
               {/* Google API */}
-              <div className="flex items-center justify-center gap-3 order-5 md:order-6">
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary w-24">Google API</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.google_api_version || 'Unknown'}</span>
               </div>
@@ -477,36 +490,31 @@ export default function Settings() {
             {/* Separator */}
             <div className="border-t border-dark-border my-4"></div>
 
-            {/* Stats */}
-            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Stats</h3>
+            {/* Stats grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
-              {/* Videos to Review - Mobile: (1,1), Desktop: (1,1) */}
-              <div className="flex items-center justify-center gap-3 order-1">
-                <span className="text-text-secondary">Videos to Review</span>
-                <span className="text-text-primary font-mono font-semibold">{discoveredVideos?.length || 0}</span>
-              </div>
-              {/* Videos Ignored - Mobile: (3,1), Desktop: (1,2) */}
-              <div className="flex items-center justify-center gap-3 order-5 md:order-2">
-                <span className="text-text-secondary">Videos Ignored</span>
-                <span className="text-text-primary font-mono font-semibold">{ignoredVideos?.length || 0}</span>
-              </div>
-              {/* Total Playlists - Mobile: (2,2), Desktop: (1,3) */}
-              <div className="flex items-center justify-center gap-3 order-4 md:order-3">
-                <span className="text-text-secondary">Total Playlists</span>
-                <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
-              </div>
-              {/* Videos in Library - Mobile: (2,1), Desktop: (2,1) */}
-              <div className="flex items-center justify-center gap-3 order-3 md:order-4">
+              {/* Row 1: Videos in Library, Videos to Review, Videos Ignored */}
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary">Videos in Library</span>
-                <span className="text-text-primary font-mono font-semibold">{libraryVideos?.length || 0}</span>
+                <span className="text-text-primary font-mono font-semibold">{stats.library}</span>
               </div>
-              {/* Total Channels - Mobile: (1,2), Desktop: (2,2) */}
-              <div className="flex items-center justify-center gap-3 order-2 md:order-5">
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-text-secondary">Videos to Review</span>
+                <span className="text-text-primary font-mono font-semibold">{stats.discovered}</span>
+              </div>
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-text-secondary">Videos Ignored</span>
+                <span className="text-text-primary font-mono font-semibold">{stats.ignored}</span>
+              </div>
+              {/* Row 2: Total Channels, Total Playlists, Total Storage */}
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary">Total Channels</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
-              {/* Total Storage - Mobile: (3,2), Desktop: (2,3) */}
-              <div className="flex items-center justify-center gap-3 order-6">
+              <div className="flex items-center justify-center gap-3">
+                <span className="text-text-secondary">Total Playlists</span>
+                <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
+              </div>
+              <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary">Total Storage</span>
                 <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
               </div>
@@ -651,8 +659,8 @@ export default function Settings() {
           <div className="card p-4 w-full">
             <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Theme</h3>
             <div className="flex flex-col items-center gap-3">
-          {/* Dark themes - Mobile: 4 cols (wraps to 2 rows), Desktop: 7 cols (1 row) */}
-          <div className="grid grid-cols-4 md:grid-cols-7 gap-3">
+          {/* Dark themes - Centered flex layout */}
+          <div className="flex flex-wrap justify-center gap-3">
             <button
               onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
               className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${

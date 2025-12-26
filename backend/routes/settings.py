@@ -408,6 +408,41 @@ def change_auth():
 # Queue Database Repair
 # =============================================================================
 
+@settings_bp.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Get video stats (excluding Singles channel from discovered/ignored)"""
+    from database import Video, Channel
+
+    with get_session(_session_factory) as session:
+        try:
+            # Calculate stats excluding Singles
+            discovered_count = session.query(Video).join(Channel).filter(
+                Video.status == 'discovered',
+                Channel.deleted_at.is_(None),
+                Channel.yt_id != '__singles__'
+            ).count()
+
+            ignored_count = session.query(Video).join(Channel).filter(
+                Video.status.in_(['ignored', 'geoblocked']),
+                Channel.deleted_at.is_(None),
+                Channel.yt_id != '__singles__'
+            ).count()
+
+            library_count = session.query(Video).filter(
+                Video.status == 'library'
+            ).count()
+
+            return jsonify({
+                'discovered': discovered_count,
+                'ignored': ignored_count,
+                'library': library_count
+            })
+
+        except Exception as e:
+            logger.error(f"Error fetching stats: {e}", exc_info=True)
+            return jsonify({'error': str(e)}), 500
+
+
 @settings_bp.route('/api/queue/check-orphaned', methods=['GET'])
 def check_orphaned():
     """Recalculate stats, auto-clean orphaned queue items, and return cleanup options"""
