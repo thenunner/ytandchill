@@ -416,14 +416,17 @@ def check_orphaned():
     with get_session(_session_factory) as session:
         try:
             # Recalculate and update stats (always on button click)
+            # Exclude Singles channel from discovered/ignored counts (one-off grabs, not subscriptions)
             discovered_count = session.query(Video).join(Channel).filter(
                 Video.status == 'discovered',
-                Channel.deleted_at.is_(None)
+                Channel.deleted_at.is_(None),
+                Channel.yt_id != '__singles__'  # Exclude Singles channel
             ).count()
 
             ignored_count = session.query(Video).join(Channel).filter(
                 Video.status.in_(['ignored', 'geoblocked']),
-                Channel.deleted_at.is_(None)
+                Channel.deleted_at.is_(None),
+                Channel.yt_id != '__singles__'  # Exclude Singles channel
             ).count()
 
             library_count = session.query(Video).filter(

@@ -64,7 +64,7 @@ def get_videos():
             joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
         )
 
-        # Exclude videos from deleted channels
+        # Exclude videos from deleted channels (except library videos)
         # Exception: Keep library videos (already downloaded) even if channel was deleted
         query = query.join(Channel, Video.channel_id == Channel.id)
         query = query.filter(
