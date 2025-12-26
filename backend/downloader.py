@@ -721,12 +721,26 @@ class DownloadWorker:
             logger.info(f'Download complete: {video.title[:50]} ({size_mb:.1f} MB) - saved to {folder_display}/')
             logger.debug(f'File path: {video_file_path}')
 
-            # Delete queue item - download complete
-            session.delete(queue_item)
+            # Delete queue item - download complete (with explicit error handling to prevent orphans)
+            try:
+                logger.debug(f'Deleting queue item {queue_item.id} for video {video.yt_id}')
+                session.delete(queue_item)
+                logger.debug(f'Queue item {queue_item.id} marked for deletion')
+            except Exception as delete_error:
+                logger.error(f'Failed to delete queue item {queue_item.id} for video {video.yt_id}: {delete_error}')
+                # Don't raise - we still want to commit the video status change
+                # The cleanup script can handle orphaned queue items later
 
         self.current_download = None
-        session.commit()
-        logger.debug(f'Download complete, current_download cleared')
+
+        # Commit with explicit error handling
+        try:
+            session.commit()
+            logger.debug(f'Download complete, current_download cleared, database committed')
+        except Exception as commit_error:
+            logger.error(f'Failed to commit download completion for video {video.yt_id}: {commit_error}')
+            session.rollback()
+            raise
 
     def _apply_inter_download_delay(self, download_success):
         """Set delay timer after successful download to avoid rate limiting."""

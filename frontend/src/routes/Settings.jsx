@@ -3,6 +3,7 @@ import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels, useVid
 import { useNotification } from '../contexts/NotificationContext';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import LoadingSpinner from '../components/LoadingSpinner';
+import ConfirmModal from '../components/ui/ConfirmModal';
 
 export default function Settings() {
   const { data: settings, isLoading } = useSettings();
@@ -60,6 +61,12 @@ export default function Settings() {
     const saved = localStorage.getItem('statusBarVisible');
     return saved !== null ? saved === 'true' : true; // Default: visible
   });
+
+  // Queue/DB Repair state
+  const [showRepairModal, setShowRepairModal] = useState(false);
+  const [orphanedData, setOrphanedData] = useState(null);
+  const [isCheckingRepair, setIsCheckingRepair] = useState(false);
+  const [isRepairing, setIsRepairing] = useState(false);
 
   // Scroll to top on component mount
   useEffect(() => {
@@ -237,6 +244,56 @@ export default function Settings() {
     localStorage.setItem('statusBarVisible', newValue.toString());
     // Dispatch custom event to notify other components
     window.dispatchEvent(new CustomEvent('statusBarVisibilityChanged', { detail: { visible: newValue } }));
+  };
+
+  const handleQueueRepair = async () => {
+    setIsCheckingRepair(true);
+    try {
+      const response = await fetch('/api/queue/check-orphaned');
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      if (data.orphaned_count === 0) {
+        showNotification('Queue database is clean - no issues found', 'success');
+        return;
+      }
+
+      // Show modal with orphaned items
+      setOrphanedData(data);
+      setShowRepairModal(true);
+    } catch (error) {
+      showNotification('Failed to check queue database', 'error');
+    } finally {
+      setIsCheckingRepair(false);
+    }
+  };
+
+  const confirmRepair = async () => {
+    setIsRepairing(true);
+    try {
+      const response = await fetch('/api/queue/cleanup-orphaned', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      showNotification(`Queue database repaired - ${data.cleaned} item${data.cleaned !== 1 ? 's' : ''} cleaned`, 'success');
+      setShowRepairModal(false);
+      setOrphanedData(null);
+    } catch (error) {
+      showNotification('Failed to repair queue database', 'error');
+    } finally {
+      setIsRepairing(false);
+    }
   };
 
   const handlePasswordChange = async (e) => {
@@ -452,8 +509,8 @@ export default function Settings() {
                 </label>
               </div>
 
-              {/* Reset User and Status Bar Toggle Buttons Row */}
-              <div className="flex gap-2">
+              {/* Reset User, Status Bar Toggle, and Queue/DB Repair Buttons Row */}
+              <div className="flex gap-2 justify-center">
                 <button
                   onClick={() => setShowPasswordChange(!showPasswordChange)}
                   className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
@@ -465,6 +522,13 @@ export default function Settings() {
                   className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary"
                 >
                   {statusBarVisible ? 'Hide Status Bar' : 'Show Status Bar'}
+                </button>
+                <button
+                  onClick={handleQueueRepair}
+                  disabled={isCheckingRepair}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCheckingRepair ? 'Checking...' : 'Queue/DB Repair'}
                 </button>
               </div>
             </div>
@@ -1202,6 +1266,46 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {/* Queue/DB Repair Modal */}
+      <ConfirmModal
+        isOpen={showRepairModal}
+        title="Queue Database Repair"
+        message={
+          orphanedData ? (
+            <div className="space-y-3">
+              <p className="font-semibold">
+                Found {orphanedData.orphaned_count} orphaned queue item{orphanedData.orphaned_count !== 1 ? 's' : ''}:
+              </p>
+              <div className="max-h-60 overflow-y-auto space-y-2 bg-dark-tertiary p-3 rounded-lg">
+                {orphanedData.orphaned_details?.map((item, idx) => (
+                  <div key={idx} className="text-xs border-b border-dark-border pb-2 last:border-0">
+                    <div className="font-medium text-text-primary truncate" title={item.video_title}>
+                      {item.video_title}
+                    </div>
+                    <div className="text-text-muted mt-1">
+                      Status: <span className="text-text-secondary">{item.video_status}</span> •
+                      Progress: <span className="text-text-secondary">{item.progress_pct}%</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-sm text-text-secondary">
+                These queue items are for videos that are no longer being downloaded.
+                Cleaning them will fix the "Videos to Review" count.
+              </p>
+            </div>
+          ) : null
+        }
+        confirmText={isRepairing ? 'Repairing...' : 'Repair Database'}
+        cancelText="Cancel"
+        confirmStyle="primary"
+        onConfirm={confirmRepair}
+        onCancel={() => {
+          setShowRepairModal(false);
+          setOrphanedData(null);
+        }}
+      />
     </div>
     </>
   );

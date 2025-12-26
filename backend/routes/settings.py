@@ -390,3 +390,34 @@ def change_auth():
     except Exception as e:
         logger.error(f"Error changing credentials: {str(e)}")
         return jsonify({'error': 'Failed to update credentials'}), 500
+
+
+# =============================================================================
+# Queue Database Repair
+# =============================================================================
+
+@settings_bp.route('/api/queue/check-orphaned', methods=['GET'])
+def check_orphaned():
+    """Check for orphaned queue items and return details"""
+    from cleanup_orphaned_queue import check_orphaned_queue_items
+
+    try:
+        stats = check_orphaned_queue_items()
+        return jsonify(stats)
+    except Exception as e:
+        logger.error(f"Error checking orphaned queue items: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
+
+
+@settings_bp.route('/api/queue/cleanup-orphaned', methods=['POST'])
+def cleanup_orphaned():
+    """Clean up orphaned queue items"""
+    from cleanup_orphaned_queue import cleanup_orphaned_queue_items
+
+    try:
+        result = cleanup_orphaned_queue_items()
+        logger.info(f"Queue database repair completed: {result['cleaned']} items cleaned")
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error cleaning orphaned queue items: {e}", exc_info=True)
+        return jsonify({'error': str(e)}), 500
