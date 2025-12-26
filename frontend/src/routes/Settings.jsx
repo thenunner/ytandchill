@@ -264,9 +264,6 @@ export default function Settings() {
       // Store data and show main modal with options
       setRepairData(data);
       setShowRepairModal(true);
-
-      // Refresh stats to show updated counts
-      fetchStats();
     } catch (error) {
       showNotification(`Failed to check database: ${error.message}`, 'error');
     } finally {
