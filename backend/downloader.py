@@ -250,6 +250,58 @@ class DownloadWorker:
 
             time.sleep(0.5)
 
+    def _aria2c_progress_monitor(self, video_id, channel_dir, queue_item_id, total_bytes):
+        """
+        Monitor .part file sizes for aria2c downloads and update progress.
+        Runs in a separate thread parallel to the download.
+        """
+        last_logged_progress = 0
+
+        while self.current_download and not self.current_download.get('cancelled'):
+            try:
+                # Find all .part files for this video
+                part_files = glob.glob(os.path.join(channel_dir, f'{video_id}.*.part'))
+
+                if not part_files:
+                    time.sleep(2)
+                    continue
+
+                # Sum up all .part file sizes (video + audio)
+                total_downloaded = sum(os.path.getsize(f) for f in part_files if os.path.exists(f))
+
+                if total_bytes > 0 and total_downloaded > 0:
+                    progress_pct = min((total_downloaded / total_bytes) * 100, 99)  # Cap at 99% until complete
+
+                    # Update progress in database
+                    with get_session(self.session_factory) as temp_session:
+                        temp_queue_item = temp_session.query(QueueItem).filter(
+                            QueueItem.id == queue_item_id
+                        ).first()
+
+                        if temp_queue_item:
+                            temp_queue_item.progress_pct = progress_pct
+                            temp_queue_item.total_bytes = total_bytes
+
+                            # Update last progress time for watchdog
+                            if self.current_download:
+                                self.current_download['last_progress_time'] = time.time()
+
+                            # Log progress every 5%
+                            progress_milestone = int(progress_pct // 5) * 5
+                            if progress_milestone > last_logged_progress and progress_milestone % 5 == 0:
+                                logger.info(f'Download progress: {video_id} - {progress_milestone}% ({total_downloaded / (1024*1024):.1f} MB / {total_bytes / (1024*1024):.1f} MB)')
+                                last_logged_progress = progress_milestone
+
+                        temp_session.commit()
+
+            except Exception as e:
+                logger.error(f'Error monitoring aria2c progress: {e}')
+
+            # Check every 2 seconds
+            time.sleep(2)
+
+        logger.debug(f'aria2c progress monitor exiting for {video_id}')
+
     def _watchdog_timer(self, video_id, video_title):
         """
         Monitors download progress and sets timeout flag if download stalls.
@@ -539,6 +591,31 @@ class DownloadWorker:
                     logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id}')
 
                 with yt_dlp.YoutubeDL(current_ydl_opts) as ydl:
+                    # First, extract info to get total file size for progress monitoring
+                    info = ydl.extract_info(f'https://www.youtube.com/watch?v={video.yt_id}', download=False)
+
+                    # Calculate total bytes for progress monitoring (video + audio if separate)
+                    total_bytes = 0
+                    if 'requested_formats' in info:
+                        # Separate video + audio
+                        for fmt in info['requested_formats']:
+                            total_bytes += fmt.get('filesize', 0) or fmt.get('filesize_approx', 0) or 0
+                    else:
+                        # Single format
+                        total_bytes = info.get('filesize', 0) or info.get('filesize_approx', 0) or 0
+
+                    # Start aria2c progress monitor thread if we have total size
+                    progress_monitor_thread = None
+                    if total_bytes > 0:
+                        progress_monitor_thread = threading.Thread(
+                            target=self._aria2c_progress_monitor,
+                            args=(video.yt_id, channel_dir, queue_item.id, total_bytes),
+                            daemon=True
+                        )
+                        progress_monitor_thread.start()
+                        logger.debug(f'Started aria2c progress monitor for {video.yt_id} ({total_bytes / (1024*1024):.1f} MB total)')
+
+                    # Now actually download
                     info = ydl.extract_info(f'https://www.youtube.com/watch?v={video.yt_id}', download=True)
                     ext = info['ext']
 
