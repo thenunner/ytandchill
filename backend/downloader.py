@@ -2,6 +2,8 @@ import threading
 import time
 import os
 import random
+import signal
+import subprocess
 from datetime import datetime, timezone
 import logging
 import yt_dlp
@@ -35,7 +37,7 @@ class YtDlpLogger:
 
 class DownloadWorker:
     # Timeout constants
-    PROGRESS_TIMEOUT = 1800  # 30 minutes of no progress triggers timeout
+    PROGRESS_TIMEOUT = 120   # 2 minutes of no progress triggers timeout (file not growing)
     HARD_TIMEOUT = 14400     # 4 hours maximum download time
 
     def __init__(self, session_factory, download_dir='downloads', settings_manager=None):
@@ -345,13 +347,33 @@ class DownloadWorker:
                 logger.warning(f'TIMEOUT: Download exceeded {self.HARD_TIMEOUT/3600:.1f} hour limit - {video_title[:50]}')
                 logger.warning(f'Total time: {elapsed_total/3600:.2f} hours')
                 self.current_download['timed_out'] = True
+
+                # Kill any running aria2c processes to force fallback
+                try:
+                    result = subprocess.run(['pkill', '-9', '-f', 'aria2c.*' + video_id],
+                                          capture_output=True, text=True, timeout=5)
+                    if result.returncode == 0:
+                        logger.info(f'Killed aria2c process for {video_id} (hard timeout)')
+                except Exception as e:
+                    logger.error(f'Failed to kill aria2c process: {e}')
+
                 break
 
             # Soft timeout: No progress for too long
             if time_since_progress > self.PROGRESS_TIMEOUT:
-                logger.warning(f'TIMEOUT: No progress for {self.PROGRESS_TIMEOUT/60:.0f} minutes - {video_title[:50]}')
-                logger.warning(f'Last progress: {time_since_progress/60:.1f} minutes ago')
+                logger.warning(f'TIMEOUT: No progress for {self.PROGRESS_TIMEOUT:.0f} seconds - {video_title[:50]}')
+                logger.warning(f'Last progress: {time_since_progress:.0f} seconds ago')
                 self.current_download['timed_out'] = True
+
+                # Kill any running aria2c processes to force fallback to yt-dlp native
+                try:
+                    result = subprocess.run(['pkill', '-9', '-f', 'aria2c.*' + video_id],
+                                          capture_output=True, text=True, timeout=5)
+                    if result.returncode == 0:
+                        logger.info(f'Killed stuck aria2c process for {video_id}')
+                except Exception as e:
+                    logger.error(f'Failed to kill aria2c process: {e}')
+
                 break
 
             # Check every 10 seconds
@@ -598,17 +620,26 @@ class DownloadWorker:
         rate_limited = False
         ext = None
         attempt = 1
-        max_attempts = 3  # Try with cookies twice, then without cookies once
+        max_attempts = 4  # Try with aria2c, then fallback to native yt-dlp, then without cookies
         tried_without_cookies = False
+        tried_without_aria2c = False
 
         # Retry loop
         while attempt <= max_attempts and not download_success:
             try:
-                # On 3rd attempt with 403 errors, try without cookies
                 current_ydl_opts = ydl_opts.copy()
-                if attempt == 3 and cookies_path and 'cookiefile' in ydl_opts:
+
+                # On attempt 3+, disable aria2c and use yt-dlp's native downloader (fallback after aria2c timeout/failure)
+                if attempt >= 3 and 'external_downloader' in current_ydl_opts:
+                    logger.warning(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id} (fallback to yt-dlp native downloader)')
+                    current_ydl_opts.pop('external_downloader', None)
+                    current_ydl_opts.pop('external_downloader_args', None)
+                    tried_without_aria2c = True
+                # On attempt 4, try without cookies as last resort
+                elif attempt == 4 and cookies_path and 'cookiefile' in ydl_opts:
                     logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id} (without cookies)')
                     current_ydl_opts.pop('cookiefile', None)
+                    current_ydl_opts.pop('cookiesfrombrowser', None)
                     tried_without_cookies = True
                 else:
                     logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id}')
@@ -645,8 +676,12 @@ class DownloadWorker:
                 logger.info(f'Download attempt {attempt} succeeded for {video.yt_id}')
                 download_success = True
 
+                # If succeeded with yt-dlp native after aria2c failed, log it
+                if tried_without_aria2c and attempt >= 3:
+                    logger.info('Download succeeded with yt-dlp native downloader after aria2c failed/timed out')
+
                 # If succeeded without cookies after failing with cookies, warn about stale cookies
-                if tried_without_cookies and attempt == 3:
+                if tried_without_cookies and attempt == 4:
                     logger.warning('Download succeeded without cookies after failing with cookies - cookies may be stale/invalid')
                     self.cookie_warning_message = 'Download succeeded but cookies.txt appears to be stale/invalid. Please update your cookies.txt file.'
 
