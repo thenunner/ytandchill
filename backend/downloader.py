@@ -444,10 +444,10 @@ class DownloadWorker:
                     '--split=8',                       # Split each file into 8 segments
                     '--min-split-size=1M',             # Minimum segment size 1MB
                     '--max-concurrent-downloads=3',    # Download 3 files simultaneously
-                    '--connect-timeout=10',            # Connection timeout 10 seconds
-                    '--timeout=10',                    # Read timeout 10 seconds
-                    '--max-tries=3',                   # Retry 3 times on failure
-                    '--retry-wait=3',                  # Wait 3 seconds between retries
+                    '--connect-timeout=30',            # Connection timeout 30 seconds
+                    '--timeout=60',                    # Read timeout 60 seconds (increased for large files)
+                    '--max-tries=5',                   # Retry 5 times on failure
+                    '--retry-wait=5',                  # Wait 5 seconds between retries
                 ]
             },
 
