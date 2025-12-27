@@ -2,15 +2,12 @@ import threading
 import time
 import os
 import random
-import signal
-import subprocess
 from datetime import datetime, timezone
 import logging
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
 from database import Video, QueueItem, Setting, get_session
 from utils import download_thumbnail
-import glob
 
 logger = logging.getLogger(__name__)
 
@@ -252,81 +249,6 @@ class DownloadWorker:
 
             time.sleep(0.5)
 
-    def _aria2c_progress_monitor(self, video_id, channel_dir, queue_item_id, total_bytes):
-        """
-        Monitor .part file sizes for aria2c downloads and update progress.
-        Runs in a separate thread parallel to the download.
-        """
-        last_logged_progress = 0
-        last_downloaded = 0
-        last_check_time = time.time()
-
-        while self.current_download and not self.current_download.get('cancelled'):
-            try:
-                # Find all .part files for this video
-                part_files = glob.glob(os.path.join(channel_dir, f'{video_id}.*.part'))
-
-                if not part_files:
-                    time.sleep(2)
-                    continue
-
-                # Sum up all .part file sizes (video + audio)
-                total_downloaded = sum(os.path.getsize(f) for f in part_files if os.path.exists(f))
-
-                if total_bytes > 0 and total_downloaded > 0:
-                    progress_pct = min((total_downloaded / total_bytes) * 100, 99)  # Cap at 99% until complete
-
-                    # Calculate speed and ETA
-                    current_time = time.time()
-                    time_diff = current_time - last_check_time
-                    bytes_diff = total_downloaded - last_downloaded
-
-                    speed_bps = 0
-                    eta_seconds = 0
-                    if time_diff > 0:
-                        speed_bps = bytes_diff / time_diff
-                        if speed_bps > 0:
-                            remaining_bytes = total_bytes - total_downloaded
-                            eta_seconds = remaining_bytes / speed_bps
-
-                    # Update progress in database
-                    with get_session(self.session_factory) as temp_session:
-                        temp_queue_item = temp_session.query(QueueItem).filter(
-                            QueueItem.id == queue_item_id
-                        ).first()
-
-                        if temp_queue_item:
-                            temp_queue_item.progress_pct = progress_pct
-                            temp_queue_item.total_bytes = total_bytes
-                            temp_queue_item.speed_bps = int(speed_bps)
-                            temp_queue_item.eta_seconds = int(eta_seconds)
-
-                            # Update last progress time for watchdog
-                            if self.current_download:
-                                self.current_download['last_progress_time'] = time.time()
-
-                            # Log progress every 5%
-                            progress_milestone = int(progress_pct // 5) * 5
-                            if progress_milestone > last_logged_progress and progress_milestone % 5 == 0:
-                                speed_mbps = speed_bps / (1024 * 1024)
-                                eta_min = eta_seconds / 60
-                                logger.info(f'Download progress: {video_id} - {progress_milestone}% ({speed_mbps:.2f} MB/s, ETA: {eta_min:.1f}min)')
-                                last_logged_progress = progress_milestone
-
-                        temp_session.commit()
-
-                    # Update tracking variables
-                    last_downloaded = total_downloaded
-                    last_check_time = current_time
-
-            except Exception as e:
-                logger.error(f'Error monitoring aria2c progress: {e}')
-
-            # Check every 2 seconds
-            time.sleep(2)
-
-        logger.debug(f'aria2c progress monitor exiting for {video_id}')
-
     def _watchdog_timer(self, video_id, video_title):
         """
         Monitors download progress and sets timeout flag if download stalls.
@@ -347,16 +269,6 @@ class DownloadWorker:
                 logger.warning(f'TIMEOUT: Download exceeded {self.HARD_TIMEOUT/3600:.1f} hour limit - {video_title[:50]}')
                 logger.warning(f'Total time: {elapsed_total/3600:.2f} hours')
                 self.current_download['timed_out'] = True
-
-                # Kill any running aria2c processes to force fallback
-                try:
-                    result = subprocess.run(['pkill', '-9', '-f', 'aria2c.*' + video_id],
-                                          capture_output=True, text=True, timeout=5)
-                    if result.returncode == 0:
-                        logger.info(f'Killed aria2c process for {video_id} (hard timeout)')
-                except Exception as e:
-                    logger.error(f'Failed to kill aria2c process: {e}')
-
                 break
 
             # Soft timeout: No progress for too long
@@ -364,16 +276,6 @@ class DownloadWorker:
                 logger.warning(f'TIMEOUT: No progress for {self.PROGRESS_TIMEOUT:.0f} seconds - {video_title[:50]}')
                 logger.warning(f'Last progress: {time_since_progress:.0f} seconds ago')
                 self.current_download['timed_out'] = True
-
-                # Kill any running aria2c processes to force fallback to yt-dlp native
-                try:
-                    result = subprocess.run(['pkill', '-9', '-f', 'aria2c.*' + video_id],
-                                          capture_output=True, text=True, timeout=5)
-                    if result.returncode == 0:
-                        logger.info(f'Killed stuck aria2c process for {video_id}')
-                except Exception as e:
-                    logger.error(f'Failed to kill aria2c process: {e}')
-
                 break
 
             # Check every 10 seconds
@@ -531,25 +433,11 @@ class DownloadWorker:
             'continue': True,
             'noprogress': True,  # Disable progress bar (we use progress_hooks instead)
 
-            # aria2c external downloader for significantly improved download speeds
-            # Uses multi-connection parallelization (16 connections per server, 8 file segments)
-            # Expected performance: 2-5 MB/s vs 0.32 MB/s with fragment downloads
-            'external_downloader': 'aria2c',
-            'external_downloader_args': {
-                'aria2c': [
-                    '--max-connection-per-server=16',  # 16 parallel connections per server
-                    '--split=8',                       # Split each file into 8 segments
-                    '--min-split-size=1M',             # Minimum segment size 1MB
-                    '--max-concurrent-downloads=3',    # Download 3 files simultaneously
-                    '--connect-timeout=30',            # Connection timeout 30 seconds
-                    '--timeout=60',                    # Read timeout 60 seconds (increased for large files)
-                    '--max-tries=5',                   # Retry 5 times on failure
-                    '--retry-wait=5',                  # Wait 5 seconds between retries
-                ]
-            },
+            # aria2c disabled - too aggressive for YouTube (triggers rate limiting)
+            # Using yt-dlp's native downloader with conservative settings to avoid bot detection
 
-            # Keep existing fragment setting as fallback (when aria2c not used or unavailable)
-            'concurrent_fragment_downloads': 3,
+            # Conservative concurrent downloads to avoid triggering YouTube rate limits
+            'concurrent_fragment_downloads': 3,  # Safe default (3-4 is optimal for YouTube)
 
             'merge_output_format': 'mp4',  # Force MP4 output to ensure faststart is applied
             'postprocessor_args': {
@@ -620,23 +508,16 @@ class DownloadWorker:
         rate_limited = False
         ext = None
         attempt = 1
-        max_attempts = 4  # Try with aria2c, then fallback to native yt-dlp, then without cookies
+        max_attempts = 3  # Try with cookies twice, then without cookies once
         tried_without_cookies = False
-        tried_without_aria2c = False
 
         # Retry loop
         while attempt <= max_attempts and not download_success:
             try:
                 current_ydl_opts = ydl_opts.copy()
 
-                # On attempt 3+, disable aria2c and use yt-dlp's native downloader (fallback after aria2c timeout/failure)
-                if attempt >= 3 and 'external_downloader' in current_ydl_opts:
-                    logger.warning(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id} (fallback to yt-dlp native downloader)')
-                    current_ydl_opts.pop('external_downloader', None)
-                    current_ydl_opts.pop('external_downloader_args', None)
-                    tried_without_aria2c = True
-                # On attempt 4, try without cookies as last resort
-                elif attempt == 4 and cookies_path and 'cookiefile' in ydl_opts:
+                # On 3rd attempt, try without cookies as last resort
+                if attempt == 3 and cookies_path and 'cookiefile' in ydl_opts:
                     logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id} (without cookies)')
                     current_ydl_opts.pop('cookiefile', None)
                     current_ydl_opts.pop('cookiesfrombrowser', None)
@@ -645,43 +526,14 @@ class DownloadWorker:
                     logger.info(f'Download attempt {attempt}/{max_attempts} for video {video.yt_id}')
 
                 with yt_dlp.YoutubeDL(current_ydl_opts) as ydl:
-                    # First, extract info to get total file size for progress monitoring
-                    info = ydl.extract_info(f'https://www.youtube.com/watch?v={video.yt_id}', download=False)
-
-                    # Calculate total bytes for progress monitoring (video + audio if separate)
-                    total_bytes = 0
-                    if 'requested_formats' in info:
-                        # Separate video + audio
-                        for fmt in info['requested_formats']:
-                            total_bytes += fmt.get('filesize', 0) or fmt.get('filesize_approx', 0) or 0
-                    else:
-                        # Single format
-                        total_bytes = info.get('filesize', 0) or info.get('filesize_approx', 0) or 0
-
-                    # Start aria2c progress monitor thread if we have total size
-                    progress_monitor_thread = None
-                    if total_bytes > 0:
-                        progress_monitor_thread = threading.Thread(
-                            target=self._aria2c_progress_monitor,
-                            args=(video.yt_id, channel_dir, queue_item.id, total_bytes),
-                            daemon=True
-                        )
-                        progress_monitor_thread.start()
-                        logger.debug(f'Started aria2c progress monitor for {video.yt_id} ({total_bytes / (1024*1024):.1f} MB total)')
-
-                    # Now actually download
                     info = ydl.extract_info(f'https://www.youtube.com/watch?v={video.yt_id}', download=True)
                     ext = info['ext']
 
                 logger.info(f'Download attempt {attempt} succeeded for {video.yt_id}')
                 download_success = True
 
-                # If succeeded with yt-dlp native after aria2c failed, log it
-                if tried_without_aria2c and attempt >= 3:
-                    logger.info('Download succeeded with yt-dlp native downloader after aria2c failed/timed out')
-
                 # If succeeded without cookies after failing with cookies, warn about stale cookies
-                if tried_without_cookies and attempt == 4:
+                if tried_without_cookies and attempt == 3:
                     logger.warning('Download succeeded without cookies after failing with cookies - cookies may be stale/invalid')
                     self.cookie_warning_message = 'Download succeeded but cookies.txt appears to be stale/invalid. Please update your cookies.txt file.'
 
