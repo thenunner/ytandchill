@@ -256,6 +256,8 @@ class DownloadWorker:
         Runs in a separate thread parallel to the download.
         """
         last_logged_progress = 0
+        last_downloaded = 0
+        last_check_time = time.time()
 
         while self.current_download and not self.current_download.get('cancelled'):
             try:
@@ -272,6 +274,19 @@ class DownloadWorker:
                 if total_bytes > 0 and total_downloaded > 0:
                     progress_pct = min((total_downloaded / total_bytes) * 100, 99)  # Cap at 99% until complete
 
+                    # Calculate speed and ETA
+                    current_time = time.time()
+                    time_diff = current_time - last_check_time
+                    bytes_diff = total_downloaded - last_downloaded
+
+                    speed_bps = 0
+                    eta_seconds = 0
+                    if time_diff > 0:
+                        speed_bps = bytes_diff / time_diff
+                        if speed_bps > 0:
+                            remaining_bytes = total_bytes - total_downloaded
+                            eta_seconds = remaining_bytes / speed_bps
+
                     # Update progress in database
                     with get_session(self.session_factory) as temp_session:
                         temp_queue_item = temp_session.query(QueueItem).filter(
@@ -281,6 +296,8 @@ class DownloadWorker:
                         if temp_queue_item:
                             temp_queue_item.progress_pct = progress_pct
                             temp_queue_item.total_bytes = total_bytes
+                            temp_queue_item.speed_bps = int(speed_bps)
+                            temp_queue_item.eta_seconds = int(eta_seconds)
 
                             # Update last progress time for watchdog
                             if self.current_download:
@@ -289,10 +306,16 @@ class DownloadWorker:
                             # Log progress every 5%
                             progress_milestone = int(progress_pct // 5) * 5
                             if progress_milestone > last_logged_progress and progress_milestone % 5 == 0:
-                                logger.info(f'Download progress: {video_id} - {progress_milestone}% ({total_downloaded / (1024*1024):.1f} MB / {total_bytes / (1024*1024):.1f} MB)')
+                                speed_mbps = speed_bps / (1024 * 1024)
+                                eta_min = eta_seconds / 60
+                                logger.info(f'Download progress: {video_id} - {progress_milestone}% ({speed_mbps:.2f} MB/s, ETA: {eta_min:.1f}min)')
                                 last_logged_progress = progress_milestone
 
                         temp_session.commit()
+
+                    # Update tracking variables
+                    last_downloaded = total_downloaded
+                    last_check_time = current_time
 
             except Exception as e:
                 logger.error(f'Error monitoring aria2c progress: {e}')
