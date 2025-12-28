@@ -157,8 +157,6 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   let lastTapTime = 0;
   let lastTapZone = null;
   let hideTimeoutId = null;
-  let isSeeking = false;
-  let seekDebounceTimeout = null;
 
   const showButton = (button) => {
     // Hide all buttons first
@@ -229,44 +227,51 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       zone = 'rewind';
       button = rewindBtn;
       action = () => {
-        // Debounce: ignore if already seeking
-        if (isSeeking) return;
+        // Use video.js's native seeking state - don't queue seeks
+        if (player.seeking()) {
+          console.log('[MobileControls] Ignoring rewind - player is already seeking');
+          return;
+        }
 
         const currentTime = player.currentTime();
-        if (!isNaN(currentTime)) {
-          isSeeking = true;
-          player.currentTime(Math.max(0, currentTime - SEEK_TIME_SECONDS));
+        const duration = player.duration();
 
-          // Clear existing timeout
-          if (seekDebounceTimeout) clearTimeout(seekDebounceTimeout);
+        // Safety checks
+        if (isNaN(currentTime) || isNaN(duration)) return;
 
-          // Allow next seek after short delay
-          seekDebounceTimeout = setTimeout(() => {
-            isSeeking = false;
-          }, 100); // 100ms debounce
-        }
+        const seekable = player.seekable();
+        if (!seekable || seekable.length === 0) return;
+
+        const newTime = Math.max(0, currentTime - SEEK_TIME_SECONDS);
+        const seekableStart = seekable.start(0);
+        const clampedTime = Math.max(seekableStart, newTime);
+
+        player.currentTime(clampedTime);
       };
     } else if (x > width * 0.7) {
       zone = 'forward';
       button = forwardBtn;
       action = () => {
-        // Debounce: ignore if already seeking
-        if (isSeeking) return;
+        // Use video.js's native seeking state - don't queue seeks
+        if (player.seeking()) {
+          console.log('[MobileControls] Ignoring forward - player is already seeking');
+          return;
+        }
 
         const currentTime = player.currentTime();
         const duration = player.duration();
-        if (!isNaN(currentTime) && !isNaN(duration) && duration > 0) {
-          isSeeking = true;
-          player.currentTime(Math.min(duration, currentTime + SEEK_TIME_SECONDS));
 
-          // Clear existing timeout
-          if (seekDebounceTimeout) clearTimeout(seekDebounceTimeout);
+        // Safety checks
+        if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
 
-          // Allow next seek after short delay
-          seekDebounceTimeout = setTimeout(() => {
-            isSeeking = false;
-          }, 100); // 100ms debounce
-        }
+        const seekable = player.seekable();
+        if (!seekable || seekable.length === 0) return;
+
+        const newTime = Math.min(duration, currentTime + SEEK_TIME_SECONDS);
+        const seekableEnd = seekable.end(seekable.length - 1);
+        const clampedTime = Math.min(seekableEnd, newTime);
+
+        player.currentTime(clampedTime);
       };
     } else {
       zone = 'center';
@@ -329,7 +334,6 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   // Return cleanup function
   return () => {
     if (hideTimeoutId) clearTimeout(hideTimeoutId);
-    if (seekDebounceTimeout) clearTimeout(seekDebounceTimeout);
     videoElement.removeEventListener('touchend', mediaTouchHandler);
     touchOverlay.removeEventListener('touchend', overlayTouchHandler);
     if (touchOverlay.parentNode) {

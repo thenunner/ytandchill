@@ -45,8 +45,6 @@ export function useVideoJsPlayer({
   const hasMarkedWatchedRef = useRef(false);
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
-  const seekDebounceTimeout = useRef(null);
-  const isSeekingRef = useRef(false);
 
   // Keep refs up to date
   useEffect(() => {
@@ -133,36 +131,42 @@ export function useVideoJsPlayer({
       player.tech(true).el().setAttribute('webkit-playsinline', 'true');
     }
 
-    // Debounced seek function to prevent rapid seeks from causing errors
+    // Proper seek function using video.js's native seeking state
     const debouncedSeek = (offsetSeconds) => {
-      if (isSeekingRef.current) return; // Ignore if already seeking
+      // CRITICAL: Use video.js's seeking() method to check if player is already seeking
+      // This prevents queuing multiple seeks before the first one completes
+      if (player.seeking()) {
+        console.log('[useVideoJsPlayer] Ignoring seek - player is already seeking');
+        return;
+      }
 
       const currentTime = player.currentTime();
       const duration = player.duration();
 
-      // Safety check: Don't seek if metadata hasn't loaded yet (duration would be NaN or 0)
+      // Safety check: Don't seek if metadata hasn't loaded yet
       if (!duration || isNaN(duration) || isNaN(currentTime)) {
         console.warn('[useVideoJsPlayer] Cannot seek - metadata not loaded yet');
         return;
       }
 
-      isSeekingRef.current = true;
+      // Additional check: Ensure we have seekable ranges
+      const seekable = player.seekable();
+      if (!seekable || seekable.length === 0) {
+        console.warn('[useVideoJsPlayer] Cannot seek - no seekable ranges available');
+        return;
+      }
 
       const newTime = offsetSeconds > 0
         ? Math.min(duration, currentTime + offsetSeconds)
         : Math.max(0, currentTime + offsetSeconds);
 
-      player.currentTime(newTime);
+      // Ensure newTime is within seekable range
+      const seekableStart = seekable.start(0);
+      const seekableEnd = seekable.end(seekable.length - 1);
+      const clampedTime = Math.max(seekableStart, Math.min(seekableEnd, newTime));
 
-      // Clear existing timeout
-      if (seekDebounceTimeout.current) {
-        clearTimeout(seekDebounceTimeout.current);
-      }
-
-      // Allow next seek after short delay
-      seekDebounceTimeout.current = setTimeout(() => {
-        isSeekingRef.current = false;
-      }, 100); // 100ms debounce
+      console.log(`[useVideoJsPlayer] Seeking from ${currentTime.toFixed(2)}s to ${clampedTime.toFixed(2)}s`);
+      player.currentTime(clampedTime);
     };
 
     // Keyboard shortcuts
@@ -339,9 +343,6 @@ export function useVideoJsPlayer({
         if (saveProgressTimeout.current) {
           clearTimeout(saveProgressTimeout.current);
         }
-        if (seekDebounceTimeout.current) {
-          clearTimeout(seekDebounceTimeout.current);
-        }
         // Don't remove keyboard listener or dispose player for persistent players
         return;
       }
@@ -349,9 +350,6 @@ export function useVideoJsPlayer({
       // Non-persistent players: full cleanup
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
-      }
-      if (seekDebounceTimeout.current) {
-        clearTimeout(seekDebounceTimeout.current);
       }
       if (cleanupTouchControls) {
         cleanupTouchControls();
