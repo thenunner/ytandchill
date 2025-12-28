@@ -45,6 +45,8 @@ export function useVideoJsPlayer({
   const hasMarkedWatchedRef = useRef(false);
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
+  const seekDebounceTimeout = useRef(null);
+  const isSeekingRef = useRef(false);
 
   // Keep refs up to date
   useEffect(() => {
@@ -131,6 +133,31 @@ export function useVideoJsPlayer({
       player.tech(true).el().setAttribute('webkit-playsinline', 'true');
     }
 
+    // Debounced seek function to prevent rapid seeks from causing errors
+    const debouncedSeek = (offsetSeconds) => {
+      if (isSeekingRef.current) return; // Ignore if already seeking
+
+      isSeekingRef.current = true;
+
+      const currentTime = player.currentTime();
+      const duration = player.duration();
+      const newTime = offsetSeconds > 0
+        ? Math.min(duration, currentTime + offsetSeconds)
+        : Math.max(0, currentTime + offsetSeconds);
+
+      player.currentTime(newTime);
+
+      // Clear existing timeout
+      if (seekDebounceTimeout.current) {
+        clearTimeout(seekDebounceTimeout.current);
+      }
+
+      // Allow next seek after short delay
+      seekDebounceTimeout.current = setTimeout(() => {
+        isSeekingRef.current = false;
+      }, 100); // 100ms debounce
+    };
+
     // Keyboard shortcuts
     const handleKeyPress = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -150,12 +177,12 @@ export function useVideoJsPlayer({
         case 'arrowleft':
         case 'j':
           e.preventDefault();
-          player.currentTime(Math.max(0, player.currentTime() - SEEK_TIME_SECONDS));
+          debouncedSeek(-SEEK_TIME_SECONDS);
           break;
         case 'arrowright':
         case 'l':
           e.preventDefault();
-          player.currentTime(Math.min(player.duration(), player.currentTime() + SEEK_TIME_SECONDS));
+          debouncedSeek(SEEK_TIME_SECONDS);
           break;
         case 'f':
           e.preventDefault();
@@ -302,6 +329,9 @@ export function useVideoJsPlayer({
         if (saveProgressTimeout.current) {
           clearTimeout(saveProgressTimeout.current);
         }
+        if (seekDebounceTimeout.current) {
+          clearTimeout(seekDebounceTimeout.current);
+        }
         // Don't remove keyboard listener or dispose player for persistent players
         return;
       }
@@ -309,6 +339,9 @@ export function useVideoJsPlayer({
       // Non-persistent players: full cleanup
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
+      }
+      if (seekDebounceTimeout.current) {
+        clearTimeout(seekDebounceTimeout.current);
       }
       if (cleanupTouchControls) {
         cleanupTouchControls();
