@@ -157,6 +157,8 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   let lastTapTime = 0;
   let lastTapZone = null;
   let hideTimeoutId = null;
+  let isSeeking = false;
+  let seekDebounceTimeout = null;
 
   const showButton = (button) => {
     // Hide all buttons first
@@ -227,19 +229,43 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       zone = 'rewind';
       button = rewindBtn;
       action = () => {
+        // Debounce: ignore if already seeking
+        if (isSeeking) return;
+
         const currentTime = player.currentTime();
         if (!isNaN(currentTime)) {
+          isSeeking = true;
           player.currentTime(Math.max(0, currentTime - SEEK_TIME_SECONDS));
+
+          // Clear existing timeout
+          if (seekDebounceTimeout) clearTimeout(seekDebounceTimeout);
+
+          // Allow next seek after short delay
+          seekDebounceTimeout = setTimeout(() => {
+            isSeeking = false;
+          }, 100); // 100ms debounce
         }
       };
     } else if (x > width * 0.7) {
       zone = 'forward';
       button = forwardBtn;
       action = () => {
+        // Debounce: ignore if already seeking
+        if (isSeeking) return;
+
         const currentTime = player.currentTime();
         const duration = player.duration();
         if (!isNaN(currentTime) && !isNaN(duration) && duration > 0) {
+          isSeeking = true;
           player.currentTime(Math.min(duration, currentTime + SEEK_TIME_SECONDS));
+
+          // Clear existing timeout
+          if (seekDebounceTimeout) clearTimeout(seekDebounceTimeout);
+
+          // Allow next seek after short delay
+          seekDebounceTimeout = setTimeout(() => {
+            isSeeking = false;
+          }, 100); // 100ms debounce
         }
       };
     } else {
@@ -303,6 +329,7 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   // Return cleanup function
   return () => {
     if (hideTimeoutId) clearTimeout(hideTimeoutId);
+    if (seekDebounceTimeout) clearTimeout(seekDebounceTimeout);
     videoElement.removeEventListener('touchend', mediaTouchHandler);
     touchOverlay.removeEventListener('touchend', overlayTouchHandler);
     if (touchOverlay.parentNode) {
