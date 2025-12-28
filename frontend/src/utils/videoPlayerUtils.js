@@ -226,11 +226,22 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
     } else if (x < width * 0.3) {
       zone = 'rewind';
       button = rewindBtn;
-      action = () => player.currentTime(Math.max(0, player.currentTime() - SEEK_TIME_SECONDS));
+      action = () => {
+        const currentTime = player.currentTime();
+        if (!isNaN(currentTime)) {
+          player.currentTime(Math.max(0, currentTime - SEEK_TIME_SECONDS));
+        }
+      };
     } else if (x > width * 0.7) {
       zone = 'forward';
       button = forwardBtn;
-      action = () => player.currentTime(Math.min(player.duration(), player.currentTime() + SEEK_TIME_SECONDS));
+      action = () => {
+        const currentTime = player.currentTime();
+        const duration = player.duration();
+        if (!isNaN(currentTime) && !isNaN(duration) && duration > 0) {
+          player.currentTime(Math.min(duration, currentTime + SEEK_TIME_SECONDS));
+        }
+      };
     } else {
       zone = 'center';
       button = playPauseBtn;

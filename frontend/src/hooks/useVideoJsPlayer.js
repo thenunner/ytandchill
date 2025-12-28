@@ -137,10 +137,17 @@ export function useVideoJsPlayer({
     const debouncedSeek = (offsetSeconds) => {
       if (isSeekingRef.current) return; // Ignore if already seeking
 
-      isSeekingRef.current = true;
-
       const currentTime = player.currentTime();
       const duration = player.duration();
+
+      // Safety check: Don't seek if metadata hasn't loaded yet (duration would be NaN or 0)
+      if (!duration || isNaN(duration) || isNaN(currentTime)) {
+        console.warn('[useVideoJsPlayer] Cannot seek - metadata not loaded yet');
+        return;
+      }
+
+      isSeekingRef.current = true;
+
       const newTime = offsetSeconds > 0
         ? Math.min(duration, currentTime + offsetSeconds)
         : Math.max(0, currentTime + offsetSeconds);
@@ -207,8 +214,11 @@ export function useVideoJsPlayer({
         case '8':
         case '9':
           e.preventDefault();
-          const percent = parseInt(key) / 10;
-          player.currentTime(player.duration() * percent);
+          const duration = player.duration();
+          if (duration && !isNaN(duration)) {
+            const percent = parseInt(key) / 10;
+            player.currentTime(duration * percent);
+          }
           break;
         default:
           break;
