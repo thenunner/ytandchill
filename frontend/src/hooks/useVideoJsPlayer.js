@@ -133,40 +133,62 @@ export function useVideoJsPlayer({
 
     // Proper seek function using video.js's native seeking state
     const debouncedSeek = (offsetSeconds) => {
-      // CRITICAL: Use video.js's seeking() method to check if player is already seeking
-      // This prevents queuing multiple seeks before the first one completes
-      if (player.seeking()) {
-        console.log('[useVideoJsPlayer] Ignoring seek - player is already seeking');
-        return;
+      try {
+        // Check if player is ready and not disposed
+        if (!player || player.isDisposed || player.isDisposed()) {
+          console.warn('[useVideoJsPlayer] Cannot seek - player not ready or disposed');
+          return;
+        }
+
+        // Check player ready state
+        if (player.readyState() < 1) {
+          console.warn('[useVideoJsPlayer] Cannot seek - player metadata not loaded (readyState: ' + player.readyState() + ')');
+          return;
+        }
+
+        // CRITICAL: Use video.js's seeking() method to check if player is already seeking
+        if (player.seeking && player.seeking()) {
+          console.log('[useVideoJsPlayer] Ignoring seek - player is already seeking');
+          return;
+        }
+
+        const currentTime = player.currentTime();
+        const duration = player.duration();
+
+        // Safety check: Don't seek if metadata hasn't loaded yet
+        if (!duration || isNaN(duration) || isNaN(currentTime) || duration === 0) {
+          console.warn('[useVideoJsPlayer] Cannot seek - invalid duration or currentTime');
+          return;
+        }
+
+        // Calculate new time with simple bounds checking
+        const newTime = offsetSeconds > 0
+          ? Math.min(duration, currentTime + offsetSeconds)
+          : Math.max(0, currentTime + offsetSeconds);
+
+        // Additional safety: check seekable ranges if available
+        try {
+          const seekable = player.seekable();
+          if (seekable && seekable.length > 0) {
+            const seekableStart = seekable.start(0);
+            const seekableEnd = seekable.end(seekable.length - 1);
+            const clampedTime = Math.max(seekableStart, Math.min(seekableEnd, newTime));
+            console.log(`[useVideoJsPlayer] Seeking from ${currentTime.toFixed(2)}s to ${clampedTime.toFixed(2)}s (clamped to seekable range)`);
+            player.currentTime(clampedTime);
+          } else {
+            // No seekable ranges, just use simple bounds
+            console.log(`[useVideoJsPlayer] Seeking from ${currentTime.toFixed(2)}s to ${newTime.toFixed(2)}s`);
+            player.currentTime(newTime);
+          }
+        } catch (seekableError) {
+          // If seekable() throws, fall back to simple bounds
+          console.warn('[useVideoJsPlayer] Seekable check failed, using simple bounds:', seekableError);
+          player.currentTime(newTime);
+        }
+      } catch (error) {
+        console.error('[useVideoJsPlayer] Error during seek operation:', error);
+        // Don't throw - just log and return
       }
-
-      const currentTime = player.currentTime();
-      const duration = player.duration();
-
-      // Safety check: Don't seek if metadata hasn't loaded yet
-      if (!duration || isNaN(duration) || isNaN(currentTime)) {
-        console.warn('[useVideoJsPlayer] Cannot seek - metadata not loaded yet');
-        return;
-      }
-
-      // Additional check: Ensure we have seekable ranges
-      const seekable = player.seekable();
-      if (!seekable || seekable.length === 0) {
-        console.warn('[useVideoJsPlayer] Cannot seek - no seekable ranges available');
-        return;
-      }
-
-      const newTime = offsetSeconds > 0
-        ? Math.min(duration, currentTime + offsetSeconds)
-        : Math.max(0, currentTime + offsetSeconds);
-
-      // Ensure newTime is within seekable range
-      const seekableStart = seekable.start(0);
-      const seekableEnd = seekable.end(seekable.length - 1);
-      const clampedTime = Math.max(seekableStart, Math.min(seekableEnd, newTime));
-
-      console.log(`[useVideoJsPlayer] Seeking from ${currentTime.toFixed(2)}s to ${clampedTime.toFixed(2)}s`);
-      player.currentTime(clampedTime);
     };
 
     // Keyboard shortcuts

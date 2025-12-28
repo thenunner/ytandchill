@@ -227,51 +227,59 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       zone = 'rewind';
       button = rewindBtn;
       action = () => {
-        // Use video.js's native seeking state - don't queue seeks
-        if (player.seeking()) {
-          console.log('[MobileControls] Ignoring rewind - player is already seeking');
-          return;
+        try {
+          // Check player ready state
+          if (!player || player.readyState() < 1) {
+            console.warn('[MobileControls] Cannot seek - player not ready');
+            return;
+          }
+
+          // Use video.js's native seeking state - don't queue seeks
+          if (player.seeking && player.seeking()) {
+            console.log('[MobileControls] Ignoring rewind - player is already seeking');
+            return;
+          }
+
+          const currentTime = player.currentTime();
+          const duration = player.duration();
+
+          // Safety checks
+          if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
+
+          const newTime = Math.max(0, currentTime - SEEK_TIME_SECONDS);
+          player.currentTime(newTime);
+        } catch (error) {
+          console.error('[MobileControls] Error during rewind:', error);
         }
-
-        const currentTime = player.currentTime();
-        const duration = player.duration();
-
-        // Safety checks
-        if (isNaN(currentTime) || isNaN(duration)) return;
-
-        const seekable = player.seekable();
-        if (!seekable || seekable.length === 0) return;
-
-        const newTime = Math.max(0, currentTime - SEEK_TIME_SECONDS);
-        const seekableStart = seekable.start(0);
-        const clampedTime = Math.max(seekableStart, newTime);
-
-        player.currentTime(clampedTime);
       };
     } else if (x > width * 0.7) {
       zone = 'forward';
       button = forwardBtn;
       action = () => {
-        // Use video.js's native seeking state - don't queue seeks
-        if (player.seeking()) {
-          console.log('[MobileControls] Ignoring forward - player is already seeking');
-          return;
+        try {
+          // Check player ready state
+          if (!player || player.readyState() < 1) {
+            console.warn('[MobileControls] Cannot seek - player not ready');
+            return;
+          }
+
+          // Use video.js's native seeking state - don't queue seeks
+          if (player.seeking && player.seeking()) {
+            console.log('[MobileControls] Ignoring forward - player is already seeking');
+            return;
+          }
+
+          const currentTime = player.currentTime();
+          const duration = player.duration();
+
+          // Safety checks
+          if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
+
+          const newTime = Math.min(duration, currentTime + SEEK_TIME_SECONDS);
+          player.currentTime(newTime);
+        } catch (error) {
+          console.error('[MobileControls] Error during forward:', error);
         }
-
-        const currentTime = player.currentTime();
-        const duration = player.duration();
-
-        // Safety checks
-        if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
-
-        const seekable = player.seekable();
-        if (!seekable || seekable.length === 0) return;
-
-        const newTime = Math.min(duration, currentTime + SEEK_TIME_SECONDS);
-        const seekableEnd = seekable.end(seekable.length - 1);
-        const clampedTime = Math.min(seekableEnd, newTime);
-
-        player.currentTime(clampedTime);
       };
     } else {
       zone = 'center';
