@@ -228,28 +228,18 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       button = rewindBtn;
       action = () => {
         try {
-          // Check player ready state
-          if (!player || player.readyState() < 1) {
-            console.warn('[MobileControls] Cannot seek - player not ready');
-            return;
-          }
-
-          // Use video.js's native seeking state - don't queue seeks
-          if (player.seeking && player.seeking()) {
-            console.log('[MobileControls] Ignoring rewind - player is already seeking');
-            return;
-          }
+          if (!player) return;
 
           const currentTime = player.currentTime();
           const duration = player.duration();
 
-          // Safety checks
           if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
+          if (player.seeking && player.seeking()) return;
 
           const newTime = Math.max(0, currentTime - SEEK_TIME_SECONDS);
           player.currentTime(newTime);
         } catch (error) {
-          console.error('[MobileControls] Error during rewind:', error);
+          console.error('[MobileControls] Rewind error:', error);
         }
       };
     } else if (x > width * 0.7) {
@@ -257,28 +247,18 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       button = forwardBtn;
       action = () => {
         try {
-          // Check player ready state
-          if (!player || player.readyState() < 1) {
-            console.warn('[MobileControls] Cannot seek - player not ready');
-            return;
-          }
-
-          // Use video.js's native seeking state - don't queue seeks
-          if (player.seeking && player.seeking()) {
-            console.log('[MobileControls] Ignoring forward - player is already seeking');
-            return;
-          }
+          if (!player) return;
 
           const currentTime = player.currentTime();
           const duration = player.duration();
 
-          // Safety checks
           if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
+          if (player.seeking && player.seeking()) return;
 
           const newTime = Math.min(duration, currentTime + SEEK_TIME_SECONDS);
           player.currentTime(newTime);
         } catch (error) {
-          console.error('[MobileControls] Error during forward:', error);
+          console.error('[MobileControls] Forward error:', error);
         }
       };
     } else {

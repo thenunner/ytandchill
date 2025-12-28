@@ -131,63 +131,33 @@ export function useVideoJsPlayer({
       player.tech(true).el().setAttribute('webkit-playsinline', 'true');
     }
 
-    // Proper seek function using video.js's native seeking state
+    // Simplified seek with only essential checks
     const debouncedSeek = (offsetSeconds) => {
       try {
-        // Check if player is ready and not disposed
-        if (!player || player.isDisposed || player.isDisposed()) {
-          console.warn('[useVideoJsPlayer] Cannot seek - player not ready or disposed');
-          return;
-        }
-
-        // Check player ready state
-        if (player.readyState() < 1) {
-          console.warn('[useVideoJsPlayer] Cannot seek - player metadata not loaded (readyState: ' + player.readyState() + ')');
-          return;
-        }
-
-        // CRITICAL: Use video.js's seeking() method to check if player is already seeking
-        if (player.seeking && player.seeking()) {
-          console.log('[useVideoJsPlayer] Ignoring seek - player is already seeking');
-          return;
-        }
+        // Only check if player exists and has valid duration
+        if (!player) return;
 
         const currentTime = player.currentTime();
         const duration = player.duration();
 
-        // Safety check: Don't seek if metadata hasn't loaded yet
+        // Don't seek if we don't have valid duration/currentTime
         if (!duration || isNaN(duration) || isNaN(currentTime) || duration === 0) {
-          console.warn('[useVideoJsPlayer] Cannot seek - invalid duration or currentTime');
           return;
         }
 
-        // Calculate new time with simple bounds checking
+        // Don't seek if already seeking (prevents rapid seeks)
+        if (player.seeking && player.seeking()) {
+          return;
+        }
+
+        // Calculate new time with bounds checking
         const newTime = offsetSeconds > 0
           ? Math.min(duration, currentTime + offsetSeconds)
           : Math.max(0, currentTime + offsetSeconds);
 
-        // Additional safety: check seekable ranges if available
-        try {
-          const seekable = player.seekable();
-          if (seekable && seekable.length > 0) {
-            const seekableStart = seekable.start(0);
-            const seekableEnd = seekable.end(seekable.length - 1);
-            const clampedTime = Math.max(seekableStart, Math.min(seekableEnd, newTime));
-            console.log(`[useVideoJsPlayer] Seeking from ${currentTime.toFixed(2)}s to ${clampedTime.toFixed(2)}s (clamped to seekable range)`);
-            player.currentTime(clampedTime);
-          } else {
-            // No seekable ranges, just use simple bounds
-            console.log(`[useVideoJsPlayer] Seeking from ${currentTime.toFixed(2)}s to ${newTime.toFixed(2)}s`);
-            player.currentTime(newTime);
-          }
-        } catch (seekableError) {
-          // If seekable() throws, fall back to simple bounds
-          console.warn('[useVideoJsPlayer] Seekable check failed, using simple bounds:', seekableError);
-          player.currentTime(newTime);
-        }
+        player.currentTime(newTime);
       } catch (error) {
-        console.error('[useVideoJsPlayer] Error during seek operation:', error);
-        // Don't throw - just log and return
+        console.error('[useVideoJsPlayer] Seek error:', error);
       }
     };
 
