@@ -88,7 +88,7 @@ export function useVideoJsPlayer({
       responsive: true,
       playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
       preload: 'metadata', // Preload metadata to show first frame
-      poster: video.thumb_url || '', // Set thumbnail as poster (used during loading)
+      poster: isMobile ? (video.thumb_url || '') : '', // Only show poster on mobile devices
     });
 
     playerRef.current = player;
@@ -123,21 +123,40 @@ export function useVideoJsPlayer({
         console.log('[useVideoJsPlayer] Setting initial video source:', videoSrc);
         player.src({ src: videoSrc, type: 'video/mp4' });
 
-        // Restore saved progress position when metadata loads
-        if (video.progress_sec && video.progress_sec > 0) {
-          player.one('loadedmetadata', () => {
-            try {
-              const duration = player.duration();
-              // Only restore if progress is valid and not at the very end
-              if (duration && video.progress_sec < duration * 0.95) {
-                console.log(`[useVideoJsPlayer] Restoring progress to ${video.progress_sec}s`);
-                player.currentTime(video.progress_sec);
-              }
-            } catch (err) {
-              console.warn('[useVideoJsPlayer] Failed to restore progress:', err);
+        // When metadata loads, restore progress and prepare video frame
+        player.one('loadedmetadata', () => {
+          try {
+            const duration = player.duration();
+
+            // Restore saved progress position or start at beginning
+            const startTime = (video.progress_sec && video.progress_sec > 0 && video.progress_sec < duration * 0.95)
+              ? video.progress_sec
+              : 0;
+
+            if (startTime > 0) {
+              console.log(`[useVideoJsPlayer] Restoring progress to ${startTime}s`);
             }
-          });
-        }
+
+            player.currentTime(startTime);
+
+            // On desktop: ensure video frame shows (no poster to remove since we didn't set one)
+            // On mobile: poster will show until user taps play (iOS/mobile behavior)
+            if (!isMobile) {
+              // Load video to show first frame on desktop
+              player.load();
+              // Mark as started to ensure video frame is visible
+              setTimeout(() => {
+                try {
+                  player.hasStarted(true);
+                } catch (err) {
+                  console.warn('[useVideoJsPlayer] Failed to mark as started:', err);
+                }
+              }, 100);
+            }
+          } catch (err) {
+            console.warn('[useVideoJsPlayer] Failed to restore progress:', err);
+          }
+        });
       } else {
         console.warn('[useVideoJsPlayer] No video source found for:', video.file_path);
       }
