@@ -552,12 +552,27 @@ export default function Channels() {
             </button>
           </div>
 
-          <SearchInput
-            value={searchInput}
-            onChange={setSearchInput}
-            placeholder="Search channels..."
-            className="w-full sm:w-[200px]"
-          />
+          {/* Show scanning progress OR search input */}
+          {isScanRunning && currentOperation?.progress !== undefined ? (
+            <div className="flex items-center gap-3 px-4 py-2 bg-dark-secondary border border-dark-border-light rounded-lg w-full sm:w-auto">
+              <span className="text-sm font-medium text-yellow-500 whitespace-nowrap">
+                Scanning: {currentOperation.progress}%
+              </span>
+              <div className="flex-1 sm:w-[120px] bg-dark-tertiary rounded-full h-2 overflow-hidden">
+                <div
+                  className="bg-yellow-500 h-full transition-all duration-300"
+                  style={{ width: `${currentOperation.progress}%` }}
+                ></div>
+              </div>
+            </div>
+          ) : (
+            <SearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder="Search channels..."
+              className="w-full sm:w-[200px]"
+            />
+          )}
 
           {/* Sort Button */}
           <div className="relative" ref={sortMenuRef}>
