@@ -87,7 +87,8 @@ export function useVideoJsPlayer({
       fluid: true,
       responsive: true,
       playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-      poster: video.thumb_url || '', // Set thumbnail as poster
+      preload: 'metadata', // Preload metadata to show first frame
+      poster: video.thumb_url || '', // Set thumbnail as poster (used during loading)
     });
 
     playerRef.current = player;
@@ -121,6 +122,22 @@ export function useVideoJsPlayer({
       if (videoSrc) {
         console.log('[useVideoJsPlayer] Setting initial video source:', videoSrc);
         player.src({ src: videoSrc, type: 'video/mp4' });
+
+        // Restore saved progress position when metadata loads
+        if (video.progress_sec && video.progress_sec > 0) {
+          player.one('loadedmetadata', () => {
+            try {
+              const duration = player.duration();
+              // Only restore if progress is valid and not at the very end
+              if (duration && video.progress_sec < duration * 0.95) {
+                console.log(`[useVideoJsPlayer] Restoring progress to ${video.progress_sec}s`);
+                player.currentTime(video.progress_sec);
+              }
+            } catch (err) {
+              console.warn('[useVideoJsPlayer] Failed to restore progress:', err);
+            }
+          });
+        }
       } else {
         console.warn('[useVideoJsPlayer] No video source found for:', video.file_path);
       }
