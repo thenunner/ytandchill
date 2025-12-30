@@ -437,7 +437,7 @@ class DownloadWorker:
             # Using yt-dlp's native downloader with conservative settings to avoid bot detection
 
             # Conservative concurrent downloads to avoid triggering YouTube rate limits
-            'concurrent_fragment_downloads': 3,  # Safe default (3-4 is optimal for YouTube)
+            'concurrent_fragment_downloads': 4,  # Optimal for YouTube (3-4 is safe range)
 
             'merge_output_format': 'mp4',  # Force MP4 output to ensure faststart is applied
             'postprocessor_args': {
