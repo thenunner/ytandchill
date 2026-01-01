@@ -45,6 +45,8 @@ export function useVideoJsPlayer({
   const hasMarkedWatchedRef = useRef(false);
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
+  const lastSeekTime = useRef(0);
+  const SEEK_COOLDOWN_MS = 300; // Minimum 300ms between seeks to prevent buffer corruption
 
   // Keep refs up to date
   useEffect(() => {
@@ -168,11 +170,25 @@ export function useVideoJsPlayer({
       player.tech(true).el().setAttribute('webkit-playsinline', 'true');
     }
 
-    // Simplified seek with only essential checks
+    // Robust seek with cooldown to prevent buffer corruption
     const debouncedSeek = (offsetSeconds) => {
       try {
-        // Only check if player exists and has valid duration
+        // Check if player exists
         if (!player) return;
+
+        // CRITICAL: Enforce cooldown between seeks to prevent buffer corruption
+        const now = Date.now();
+        if (now - lastSeekTime.current < SEEK_COOLDOWN_MS) {
+          console.log('[useVideoJsPlayer] Seek ignored - cooldown active');
+          return;
+        }
+
+        // Check if metadata is loaded (readyState >= 1)
+        const readyState = player.readyState();
+        if (readyState < 1) {
+          console.warn('[useVideoJsPlayer] Cannot seek - metadata not loaded');
+          return;
+        }
 
         const currentTime = player.currentTime();
         const duration = player.duration();
@@ -182,16 +198,21 @@ export function useVideoJsPlayer({
           return;
         }
 
-        // Don't seek if already seeking (prevents rapid seeks)
+        // Don't seek if already seeking
         if (player.seeking && player.seeking()) {
+          console.log('[useVideoJsPlayer] Seek ignored - already seeking');
           return;
         }
+
+        // Update last seek time BEFORE seeking
+        lastSeekTime.current = now;
 
         // Calculate new time with bounds checking
         const newTime = offsetSeconds > 0
           ? Math.min(duration, currentTime + offsetSeconds)
           : Math.max(0, currentTime + offsetSeconds);
 
+        console.log(`[useVideoJsPlayer] Seeking: ${currentTime.toFixed(1)}s → ${newTime.toFixed(1)}s`);
         player.currentTime(newTime);
       } catch (error) {
         console.error('[useVideoJsPlayer] Seek error:', error);

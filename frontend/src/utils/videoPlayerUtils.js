@@ -157,6 +157,8 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   let lastTapTime = 0;
   let lastTapZone = null;
   let hideTimeoutId = null;
+  let lastSeekTime = 0;
+  const SEEK_COOLDOWN_MS = 300; // Minimum 300ms between seeks to prevent buffer corruption
 
   const showButton = (button) => {
     // Hide all buttons first
@@ -230,12 +232,26 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
         try {
           if (!player) return;
 
+          // Enforce cooldown to prevent buffer corruption
+          const now = Date.now();
+          if (now - lastSeekTime < SEEK_COOLDOWN_MS) {
+            console.log('[MobileControls] Rewind ignored - cooldown active');
+            return;
+          }
+
+          // Check readyState
+          if (player.readyState() < 1) {
+            console.warn('[MobileControls] Cannot seek - metadata not loaded');
+            return;
+          }
+
           const currentTime = player.currentTime();
           const duration = player.duration();
 
           if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
           if (player.seeking && player.seeking()) return;
 
+          lastSeekTime = now;
           const newTime = Math.max(0, currentTime - SEEK_TIME_SECONDS);
           player.currentTime(newTime);
         } catch (error) {
@@ -249,12 +265,26 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
         try {
           if (!player) return;
 
+          // Enforce cooldown to prevent buffer corruption
+          const now = Date.now();
+          if (now - lastSeekTime < SEEK_COOLDOWN_MS) {
+            console.log('[MobileControls] Forward ignored - cooldown active');
+            return;
+          }
+
+          // Check readyState
+          if (player.readyState() < 1) {
+            console.warn('[MobileControls] Cannot seek - metadata not loaded');
+            return;
+          }
+
           const currentTime = player.currentTime();
           const duration = player.duration();
 
           if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
           if (player.seeking && player.seeking()) return;
 
+          lastSeekTime = now;
           const newTime = Math.min(duration, currentTime + SEEK_TIME_SECONDS);
           player.currentTime(newTime);
         } catch (error) {
