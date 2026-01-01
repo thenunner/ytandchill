@@ -170,8 +170,24 @@ export function useVideoJsPlayer({
       player.tech(true).el().setAttribute('webkit-playsinline', 'true');
     }
 
-    // Robust seek with cooldown to prevent buffer corruption
-    const debouncedSeek = (offsetSeconds) => {
+    // Immediate progress save function
+    const saveProgressNow = () => {
+      if (!saveProgress || !updateVideoRef.current || !videoDataRef.current || !player) return;
+
+      try {
+        const currentTime = Math.floor(player.currentTime());
+        console.log(`[useVideoJsPlayer] Saving progress immediately: ${currentTime}s`);
+        updateVideoRef.current.mutate({
+          id: videoDataRef.current.id,
+          data: { playback_seconds: currentTime },
+        });
+      } catch (error) {
+        console.warn('[useVideoJsPlayer] Failed to save progress:', error);
+      }
+    };
+
+    // Safe seek function with cooldown to prevent buffer corruption
+    const safeSeek = (newTime) => {
       try {
         // Check if player exists
         if (!player) return;
@@ -207,16 +223,29 @@ export function useVideoJsPlayer({
         // Update last seek time BEFORE seeking
         lastSeekTime.current = now;
 
-        // Calculate new time with bounds checking
-        const newTime = offsetSeconds > 0
-          ? Math.min(duration, currentTime + offsetSeconds)
-          : Math.max(0, currentTime + offsetSeconds);
+        // Clamp to valid range
+        const clampedTime = Math.max(0, Math.min(duration, newTime));
 
-        console.log(`[useVideoJsPlayer] Seeking: ${currentTime.toFixed(1)}s → ${newTime.toFixed(1)}s`);
-        player.currentTime(newTime);
+        console.log(`[useVideoJsPlayer] Seeking: ${currentTime.toFixed(1)}s → ${clampedTime.toFixed(1)}s`);
+        player.currentTime(clampedTime);
       } catch (error) {
         console.error('[useVideoJsPlayer] Seek error:', error);
       }
+    };
+
+    // Relative seek helper (for arrow keys and j/l)
+    const debouncedSeek = (offsetSeconds) => {
+      if (!player) return;
+      const currentTime = player.currentTime();
+      const duration = player.duration();
+
+      if (!duration || isNaN(duration) || isNaN(currentTime)) return;
+
+      const newTime = offsetSeconds > 0
+        ? Math.min(duration, currentTime + offsetSeconds)
+        : Math.max(0, currentTime + offsetSeconds);
+
+      safeSeek(newTime);
     };
 
     // Keyboard shortcuts
@@ -271,7 +300,8 @@ export function useVideoJsPlayer({
           const duration = player.duration();
           if (duration && !isNaN(duration)) {
             const percent = parseInt(key) / 10;
-            player.currentTime(duration * percent);
+            const targetTime = duration * percent;
+            safeSeek(targetTime);
           }
           break;
         default:
@@ -325,6 +355,12 @@ export function useVideoJsPlayer({
 
     // Progress saving (if enabled)
     if (saveProgress && updateVideoRef.current) {
+      // Save immediately after any seek operation completes
+      player.on('seeked', () => {
+        saveProgressNow();
+      });
+
+      // Debounced save during normal playback
       player.on('timeupdate', () => {
         if (!player || player.seeking()) return;
 
@@ -343,6 +379,11 @@ export function useVideoJsPlayer({
             });
           }
         }, PROGRESS_SAVE_DEBOUNCE_MS);
+      });
+
+      // Save on pause as well
+      player.on('pause', () => {
+        saveProgressNow();
       });
 
       // Restore saved position
@@ -415,6 +456,29 @@ export function useVideoJsPlayer({
   }, persistPlayer
     ? [video?.id] // Persistent: run when video first available, guard prevents reinit
     : [video?.id]); // Non-persistent: reinit on video change
+
+  // Save progress before page unload (refresh/close)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (playerRef.current && !playerRef.current.isDisposed() && saveProgress && updateVideoRef.current && videoDataRef.current) {
+        try {
+          const currentTime = Math.floor(playerRef.current.currentTime());
+          console.log(`[useVideoJsPlayer] Saving progress on page unload: ${currentTime}s`);
+          updateVideoRef.current.mutate({
+            id: videoDataRef.current.id,
+            data: { playback_seconds: currentTime },
+          });
+        } catch (error) {
+          console.warn('[useVideoJsPlayer] Failed to save progress on unload:', error);
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [saveProgress]);
 
   // Component unmount cleanup: Always pause and dispose player when leaving the page
   useEffect(() => {
