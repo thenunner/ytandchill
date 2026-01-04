@@ -333,7 +333,8 @@ export function useVideoJsPlayer({
       if (error.code === 3 && !recoveryAttempted) {
         recoveryAttempted = true;
         const currentTime = player.currentTime();
-        console.log(`[useVideoJsPlayer] Attempting auto-recovery from decode error at ${currentTime}s`);
+        const wasPlaying = !player.paused(); // Check if video was playing before error
+        console.log(`[useVideoJsPlayer] Attempting auto-recovery from decode error at ${currentTime}s (was playing: ${wasPlaying})`);
 
         // Clear the error first
         player.error(null);
@@ -343,6 +344,15 @@ export function useVideoJsPlayer({
         player.one('loadedmetadata', () => {
           console.log(`[useVideoJsPlayer] Auto-recovery: restoring position to ${currentTime}s`);
           player.currentTime(currentTime);
+
+          // Only auto-resume if video was playing before the error
+          // This respects user intent and avoids autoplay issues on iOS
+          if (wasPlaying) {
+            player.play().catch(err => {
+              console.warn('[useVideoJsPlayer] Auto-resume failed (likely iOS restriction):', err);
+            });
+          }
+
           recoveryAttempted = false; // Reset for future errors
         });
 
