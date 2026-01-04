@@ -329,6 +329,14 @@ export function useVideoJsPlayer({
         type: error.type,
       });
 
+      // Debug: Check recovery conditions
+      console.log('[useVideoJsPlayer] Recovery check:', {
+        errorCode: error.code,
+        errorCodeType: typeof error.code,
+        recoveryAttempted: recoveryAttempted,
+        willAttemptRecovery: error.code === 3 && !recoveryAttempted
+      });
+
       // Auto-recovery for MEDIA_ERR_DECODE (code 3) - usually caused by H.264 Baseline profile seeking
       if (error.code === 3 && !recoveryAttempted) {
         recoveryAttempted = true;
