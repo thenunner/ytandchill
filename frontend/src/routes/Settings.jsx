@@ -473,7 +473,7 @@ export default function Settings() {
               {/* YT and Chill */}
               <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary w-24">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.10.7</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.10.8</span>
               </div>
               {/* yt-dlp */}
               <div className="flex items-center justify-center gap-3">

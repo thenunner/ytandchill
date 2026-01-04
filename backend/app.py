@@ -952,17 +952,22 @@ def serve_frontend(path):
     return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
-    # FORCE DEBUG MODE OFF - Triple protection:
-    # 1. Environment variables set to production at startup
-    # 2. app.debug and app.config['DEBUG'] set to False
-    # 3. Explicit debug=False and use_reloader=False here
-    # This prevents auto-restart which would bypass the lock file
+    from waitress import serve
+
+    # Use Waitress production WSGI server instead of Flask dev server
+    # Benefits: Better concurrency, proper thread pooling, handles byte-range requests well
     port = int(os.environ.get('PORT', 4099))
-    app.run(
-        debug=False,              # Never enable debug mode
-        use_reloader=False,       # Never auto-reload on file changes
+
+    logger.info(f"Starting Waitress server on 0.0.0.0:{port}")
+    print(f"🚀 Server starting on http://0.0.0.0:{port}")
+
+    serve(
+        app,
         host='0.0.0.0',
         port=port,
-        threaded=True             # Handle multiple requests efficiently
+        threads=6,                # Thread pool size (good for video streaming)
+        channel_timeout=300,      # 5 minute timeout for long requests (large videos)
+        cleanup_interval=30,      # Clean up inactive threads every 30s
+        asyncore_use_poll=True    # Better performance on Linux
     )
 
