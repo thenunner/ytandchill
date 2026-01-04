@@ -84,7 +84,7 @@ def serve_media(filename):
         response.headers['Content-Length'] = str(length)
         response.headers['Content-Type'] = mime_type
         response.headers['Cache-Control'] = 'public, max-age=3600'
-        response.headers['Connection'] = 'keep-alive'
+        # Connection header removed - WSGI servers (Waitress) manage this automatically per PEP 3333
         response.headers['Access-Control-Allow-Origin'] = '*'
 
         logger.info(f"Serving range: {filename} ({mime_type}) bytes {start}-{end}/{file_size}")
