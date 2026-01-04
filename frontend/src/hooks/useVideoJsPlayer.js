@@ -227,16 +227,20 @@ export function useVideoJsPlayer({
           return;
         }
 
-        // Check buffer health - if buffer is too fragmented, wait
-        try {
-          const buffered = player.buffered();
-          if (buffered && buffered.length > 5) {
-            // More than 5 buffered ranges indicates fragmented buffer (stress)
-            console.warn(`[useVideoJsPlayer] Seek ignored - buffer fragmented (${buffered.length} ranges)`);
-            return;
+        // Check buffer health - but only if we recently seeked (within 10s)
+        // After 10s of no seeking, allow seek even if fragmented (buffer may not auto-consolidate)
+        const timeSinceLastSeek = now - lastSeekTime.current;
+        if (timeSinceLastSeek < 10000) {
+          try {
+            const buffered = player.buffered();
+            if (buffered && buffered.length > 5) {
+              // More than 5 buffered ranges indicates fragmented buffer (stress)
+              console.warn(`[useVideoJsPlayer] Seek ignored - buffer fragmented (${buffered.length} ranges)`);
+              return;
+            }
+          } catch (e) {
+            // buffered() can throw, ignore and proceed
           }
-        } catch (e) {
-          // buffered() can throw, ignore and proceed
         }
 
         // Update last seek time BEFORE seeking

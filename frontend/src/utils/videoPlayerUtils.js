@@ -251,15 +251,18 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
           if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
           if (player.seeking && player.seeking()) return;
 
-          // Check buffer health
-          try {
-            const buffered = player.buffered();
-            if (buffered && buffered.length > 5) {
-              console.warn(`[MobileControls] Rewind ignored - buffer fragmented (${buffered.length} ranges)`);
-              return;
+          // Check buffer health - only if recently seeked (within 10s)
+          const timeSinceLastSeek = now - lastSeekTime;
+          if (timeSinceLastSeek < 10000) {
+            try {
+              const buffered = player.buffered();
+              if (buffered && buffered.length > 5) {
+                console.warn(`[MobileControls] Rewind ignored - buffer fragmented (${buffered.length} ranges)`);
+                return;
+              }
+            } catch (e) {
+              // buffered() can throw, ignore and proceed
             }
-          } catch (e) {
-            // buffered() can throw, ignore and proceed
           }
 
           lastSeekTime = now;
@@ -295,15 +298,18 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
           if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
           if (player.seeking && player.seeking()) return;
 
-          // Check buffer health
-          try {
-            const buffered = player.buffered();
-            if (buffered && buffered.length > 5) {
-              console.warn(`[MobileControls] Forward ignored - buffer fragmented (${buffered.length} ranges)`);
-              return;
+          // Check buffer health - only if recently seeked (within 10s)
+          const timeSinceLastSeek = now - lastSeekTime;
+          if (timeSinceLastSeek < 10000) {
+            try {
+              const buffered = player.buffered();
+              if (buffered && buffered.length > 5) {
+                console.warn(`[MobileControls] Forward ignored - buffer fragmented (${buffered.length} ranges)`);
+                return;
+              }
+            } catch (e) {
+              // buffered() can throw, ignore and proceed
             }
-          } catch (e) {
-            // buffered() can throw, ignore and proceed
           }
 
           lastSeekTime = now;
