@@ -46,7 +46,7 @@ export function useVideoJsPlayer({
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
   const lastSeekTime = useRef(0);
-  const SEEK_COOLDOWN_MS = 300; // Minimum 300ms between seeks to prevent buffer corruption
+  const SEEK_COOLDOWN_MS = 750; // Minimum 750ms between seeks to prevent buffer corruption
 
   // Keep refs up to date
   useEffect(() => {
@@ -317,7 +317,8 @@ export function useVideoJsPlayer({
       cleanupTouchControls = initializeMobileTouchControls(player, isIOS);
     }
 
-    // Error handling
+    // Error handling with auto-recovery for decode errors
+    let recoveryAttempted = false;
     player.on('error', () => {
       const error = player.error();
       if (!error) return;
@@ -327,6 +328,26 @@ export function useVideoJsPlayer({
         message: error.message,
         type: error.type,
       });
+
+      // Auto-recovery for MEDIA_ERR_DECODE (code 3) - usually caused by H.264 Baseline profile seeking
+      if (error.code === 3 && !recoveryAttempted) {
+        recoveryAttempted = true;
+        const currentTime = player.currentTime();
+        console.log(`[useVideoJsPlayer] Attempting auto-recovery from decode error at ${currentTime}s`);
+
+        // Clear the error first
+        player.error(null);
+
+        // Reload the video and restore position
+        player.load();
+        player.one('loadedmetadata', () => {
+          console.log(`[useVideoJsPlayer] Auto-recovery: restoring position to ${currentTime}s`);
+          player.currentTime(currentTime);
+          recoveryAttempted = false; // Reset for future errors
+        });
+
+        return; // Don't show error message if we're recovering
+      }
 
       let userMessage = 'Video playback error';
 

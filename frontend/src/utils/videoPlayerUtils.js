@@ -158,7 +158,7 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   let lastTapZone = null;
   let hideTimeoutId = null;
   let lastSeekTime = 0;
-  const SEEK_COOLDOWN_MS = 300; // Minimum 300ms between seeks to prevent buffer corruption
+  const SEEK_COOLDOWN_MS = 750; // Minimum 750ms between seeks to prevent buffer corruption
 
   const showButton = (button) => {
     // Hide all buttons first
