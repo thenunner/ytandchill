@@ -46,7 +46,8 @@ export function useVideoJsPlayer({
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
   const lastSeekTime = useRef(0);
-  const SEEK_COOLDOWN_MS = 750; // Minimum 750ms between seeks to prevent buffer corruption
+  const isBuffering = useRef(false);
+  const SEEK_COOLDOWN_MS = 2000; // Minimum 2000ms between seeks to prevent buffer corruption
 
   // Keep refs up to date
   useEffect(() => {
@@ -199,6 +200,12 @@ export function useVideoJsPlayer({
           return;
         }
 
+        // Don't seek if still buffering from previous seek
+        if (isBuffering.current) {
+          console.log('[useVideoJsPlayer] Seek ignored - still buffering');
+          return;
+        }
+
         // Check if metadata is loaded (readyState >= 1)
         const readyState = player.readyState();
         if (readyState < 1) {
@@ -218,6 +225,18 @@ export function useVideoJsPlayer({
         if (player.seeking && player.seeking()) {
           console.log('[useVideoJsPlayer] Seek ignored - already seeking');
           return;
+        }
+
+        // Check buffer health - if buffer is too fragmented, wait
+        try {
+          const buffered = player.buffered();
+          if (buffered && buffered.length > 5) {
+            // More than 5 buffered ranges indicates fragmented buffer (stress)
+            console.warn(`[useVideoJsPlayer] Seek ignored - buffer fragmented (${buffered.length} ranges)`);
+            return;
+          }
+        } catch (e) {
+          // buffered() can throw, ignore and proceed
         }
 
         // Update last seek time BEFORE seeking
@@ -311,14 +330,24 @@ export function useVideoJsPlayer({
 
     document.addEventListener('keydown', handleKeyPress);
 
+    // Track buffering state to prevent seeks during buffer
+    player.on('waiting', () => {
+      isBuffering.current = true;
+      console.log('[useVideoJsPlayer] Buffering started');
+    });
+
+    player.on('canplay', () => {
+      isBuffering.current = false;
+      console.log('[useVideoJsPlayer] Buffering ended');
+    });
+
     // Mobile touch controls
     let cleanupTouchControls = null;
     if (isMobile) {
       cleanupTouchControls = initializeMobileTouchControls(player, isIOS);
     }
 
-    // Error handling with auto-recovery for decode errors
-    let recoveryAttempted = false;
+    // Error handling
     player.on('error', () => {
       const error = player.error();
       if (!error) return;
@@ -328,44 +357,6 @@ export function useVideoJsPlayer({
         message: error.message,
         type: error.type,
       });
-
-      // Debug: Check recovery conditions
-      console.log('[useVideoJsPlayer] Recovery check:', {
-        errorCode: error.code,
-        errorCodeType: typeof error.code,
-        recoveryAttempted: recoveryAttempted,
-        willAttemptRecovery: error.code === 3 && !recoveryAttempted
-      });
-
-      // Auto-recovery for MEDIA_ERR_DECODE (code 3) - usually caused by H.264 Baseline profile seeking
-      if (error.code === 3 && !recoveryAttempted) {
-        recoveryAttempted = true;
-        const currentTime = player.currentTime();
-        const wasPlaying = !player.paused(); // Check if video was playing before error
-        console.log(`[useVideoJsPlayer] Attempting auto-recovery from decode error at ${currentTime}s (was playing: ${wasPlaying})`);
-
-        // Clear the error first
-        player.error(null);
-
-        // Reload the video and restore position
-        player.load();
-        player.one('loadedmetadata', () => {
-          console.log(`[useVideoJsPlayer] Auto-recovery: restoring position to ${currentTime}s`);
-          player.currentTime(currentTime);
-
-          // Only auto-resume if video was playing before the error
-          // This respects user intent and avoids autoplay issues on iOS
-          if (wasPlaying) {
-            player.play().catch(err => {
-              console.warn('[useVideoJsPlayer] Auto-resume failed (likely iOS restriction):', err);
-            });
-          }
-
-          recoveryAttempted = false; // Reset for future errors
-        });
-
-        return; // Don't show error message if we're recovering
-      }
 
       let userMessage = 'Video playback error';
 

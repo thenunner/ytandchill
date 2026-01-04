@@ -158,7 +158,7 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   let lastTapZone = null;
   let hideTimeoutId = null;
   let lastSeekTime = 0;
-  const SEEK_COOLDOWN_MS = 750; // Minimum 750ms between seeks to prevent buffer corruption
+  const SEEK_COOLDOWN_MS = 2000; // Minimum 2000ms between seeks to prevent buffer corruption
 
   const showButton = (button) => {
     // Hide all buttons first
@@ -251,6 +251,17 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
           if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
           if (player.seeking && player.seeking()) return;
 
+          // Check buffer health
+          try {
+            const buffered = player.buffered();
+            if (buffered && buffered.length > 5) {
+              console.warn(`[MobileControls] Rewind ignored - buffer fragmented (${buffered.length} ranges)`);
+              return;
+            }
+          } catch (e) {
+            // buffered() can throw, ignore and proceed
+          }
+
           lastSeekTime = now;
           const newTime = Math.max(0, currentTime - SEEK_TIME_SECONDS);
           player.currentTime(newTime);
@@ -283,6 +294,17 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
 
           if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
           if (player.seeking && player.seeking()) return;
+
+          // Check buffer health
+          try {
+            const buffered = player.buffered();
+            if (buffered && buffered.length > 5) {
+              console.warn(`[MobileControls] Forward ignored - buffer fragmented (${buffered.length} ranges)`);
+              return;
+            }
+          } catch (e) {
+            // buffered() can throw, ignore and proceed
+          }
 
           lastSeekTime = now;
           const newTime = Math.min(duration, currentTime + SEEK_TIME_SECONDS);
