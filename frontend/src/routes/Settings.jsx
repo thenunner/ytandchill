@@ -435,30 +435,16 @@ export default function Settings() {
     <div className="animate-fade-in">
       {/* Single column layout for desktop */}
       <div className="flex flex-col gap-4 w-full">
-          {/* Card 1: System Status and Stats + Reset User */}
+          {/* Card 1: Info */}
           <div className="card p-4 w-full">
-            {/* System Status and Stats */}
-            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">System Status and Stats</h3>
+            {/* Info */}
+            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Info</h3>
 
             {/* System info grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm mb-4">
-              {/* FFmpeg */}
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary w-16">FFmpeg</span>
-                <span className={`font-medium text-xs ${health?.ffmpeg_available ? 'text-text-primary' : 'text-red-400'}`}>
-                  {health?.ffmpeg_available ? 'Active' : 'Inactive'}
-                </span>
-              </div>
-              {/* Database */}
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary w-20">Database</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
-                  {health?.database_size || 'N/A'}
-                </span>
-              </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3 text-sm mb-4">
               {/* Cookies */}
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary w-16">Cookies</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">Cookies</span>
                 <span className={`font-medium text-xs ${
                   cookieSource === 'none'
                     ? 'text-yellow-400'
@@ -467,27 +453,29 @@ export default function Settings() {
                     : (health?.cookies_available ? 'text-text-primary' : 'text-yellow-400')
                 }`}>
                   {cookieSource === 'none'
-                    ? 'Anonymous Mode'
+                    ? 'Anonymous'
                     : cookieSource === 'browser'
-                    ? (health?.firefox_has_cookies ? 'Firefox Profile' : health?.firefox_profile_mounted ? 'No YouTube Login' : 'Not Mounted')
+                    ? (health?.firefox_has_cookies ? 'Firefox' : health?.firefox_profile_mounted ? 'No Login' : 'Not Mounted')
                     : (health?.cookies_available ? 'cookies.txt' : 'Inactive')
                   }
                 </span>
               </div>
               {/* YT and Chill */}
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary w-24">YT and Chill</span>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">YT and Chill</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.10.8</span>
               </div>
-              {/* yt-dlp */}
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary w-16">yt-dlp</span>
+              {/* YT-DLP */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">YT-DLP</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.ytdlp_version || 'Unknown'}</span>
               </div>
-              {/* Google API */}
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary w-24">Google API</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>{health?.google_api_version || 'Unknown'}</span>
+              {/* Database */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">Database</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
+                  {health?.database_size || 'N/A'}
+                </span>
               </div>
             </div>
 
@@ -495,31 +483,30 @@ export default function Settings() {
             <div className="border-t border-dark-border my-4"></div>
 
             {/* Stats grid */}
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-2 text-sm">
-              {/* Row 1: Videos in Library, Videos to Review, Videos Ignored */}
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary">Videos in Library</span>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-3 text-sm">
+              {/* In Library */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">In Library</span>
                 <span className="text-text-primary font-mono font-semibold">{stats.library}</span>
               </div>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary">Videos to Review</span>
+              {/* To Review */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">To Review</span>
                 <span className="text-text-primary font-mono font-semibold">{stats.discovered}</span>
               </div>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary">Videos Ignored</span>
+              {/* Ignored */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">Ignored</span>
                 <span className="text-text-primary font-mono font-semibold">{stats.ignored}</span>
               </div>
-              {/* Row 2: Total Channels, Total Playlists, Total Storage */}
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary">Total Channels</span>
+              {/* Channels */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">Channels</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary">Total Playlists</span>
-                <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
-              </div>
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-text-secondary">Total Storage</span>
+              {/* Storage */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">Storage</span>
                 <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
               </div>
             </div>
@@ -588,7 +575,7 @@ export default function Settings() {
                   onClick={toggleStatusBar}
                   className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary"
                 >
-                  {statusBarVisible ? 'Hide Status Bar' : 'Show Status Bar'}
+                  {statusBarVisible ? 'Hide Status' : 'Show Status'}
                 </button>
                 <button
                   onClick={handleQueueRepair}
@@ -673,9 +660,7 @@ export default function Settings() {
           {/* Card 2: Theme */}
           <div className="card p-4 w-full">
             <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Theme</h3>
-            <div className="flex flex-col items-center gap-3">
-          {/* Dark themes - Centered flex layout */}
-          <div className="flex flex-wrap justify-center gap-3">
+            <div className="flex flex-wrap justify-center gap-3">
             <button
               onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
               className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -754,13 +739,6 @@ export default function Settings() {
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#89b4fa' }}></div>
               Catppuccin
             </button>
-          </div>
-
-          {/* Separator between dark and light themes */}
-          <div className="border-t border-dark-border"></div>
-
-          {/* Light themes - Centered flex layout */}
-          <div className="flex flex-wrap justify-center gap-3">
             <button
               onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
               className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
@@ -800,7 +778,6 @@ export default function Settings() {
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
               Debug
             </button>
-          </div>
             </div>
           </div>
 

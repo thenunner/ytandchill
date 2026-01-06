@@ -140,6 +140,32 @@ export default function Queue() {
   // Check if current theme is a light theme
   const isLightTheme = theme === 'online' || theme === 'pixel' || theme === 'debug';
 
+  // Status bar visibility - sync with localStorage
+  const [statusBarVisible, setStatusBarVisible] = useState(() => {
+    const saved = localStorage.getItem('statusBarVisible');
+    return saved !== null ? saved === 'true' : true; // Default: visible
+  });
+
+  // Listen for status bar visibility changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('statusBarVisible');
+      setStatusBarVisible(saved !== null ? saved === 'true' : true);
+    };
+
+    const handleCustomEvent = (e) => {
+      setStatusBarVisible(e.detail.visible);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('statusBarVisibilityChanged', handleCustomEvent);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('statusBarVisibilityChanged', handleCustomEvent);
+    };
+  }, []);
+
   // Track scroll position to preserve it during queue updates from move operations
   const scrollPositionRef = useRef(null);
   const preserveScrollRef = useRef(false);
@@ -332,6 +358,15 @@ export default function Queue() {
             {clearQueue.isPending ? 'Clearing...' : 'Clear Queue'}
           </button>
 
+          {/* Delay Countdown Indicator - shown next to Clear Queue when status bar is hidden */}
+          {!statusBarVisible && queue?.delay_info?.remaining_seconds > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
+              <span className="text-xs font-medium text-yellow-500">
+                [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
+              </span>
+            </div>
+          )}
+
           {/* Download Progress Indicator */}
           {currentDownload && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
@@ -355,8 +390,8 @@ export default function Queue() {
             </div>
           )}
 
-          {/* Delay Countdown Indicator */}
-          {queue?.delay_info?.remaining_seconds > 0 && (
+          {/* Delay Countdown Indicator - shown in status bar when status bar is visible */}
+          {statusBarVisible && queue?.delay_info?.remaining_seconds > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
               <span className="text-xs font-medium text-yellow-500">
                 [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
