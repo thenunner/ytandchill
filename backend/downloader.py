@@ -764,10 +764,7 @@ class DownloadWorker:
 
         # Still in delay period - update status and wait
         remaining_int = int(remaining)
-        if remaining_int >= 60:
-            self.delay_info = f"Delayed {remaining_int//60} min {remaining_int%60} sec to avoid rate limiting"
-        else:
-            self.delay_info = f"Delayed {remaining_int} sec to avoid rate limiting"
+        self.delay_info = f"Delayed {remaining_int} sec"
 
         # Log occasionally
         if remaining_int % 30 == 0:

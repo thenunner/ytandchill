@@ -359,10 +359,10 @@ export default function Queue() {
             </button>
 
             {/* Delay Countdown Indicator - shown next to Clear Queue when status bar is hidden */}
-            {queue?.delay_info?.remaining_seconds > 0 && (
+            {queue?.delay_info && (
               <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
                 <span className="text-xs font-medium text-yellow-500">
-                  [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
+                  [{queue.delay_info}]
                 </span>
               </div>
             )}
@@ -417,10 +417,10 @@ export default function Queue() {
               )}
 
               {/* Delay Countdown Indicator - shown in status bar when status bar is visible */}
-              {queue?.delay_info?.remaining_seconds > 0 && (
+              {queue?.delay_info && (
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
                   <span className="text-xs font-medium text-yellow-500">
-                    [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
+                    [{queue.delay_info}]
                   </span>
                 </div>
               )}
