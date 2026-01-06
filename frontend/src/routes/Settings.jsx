@@ -460,11 +460,15 @@ export default function Settings() {
               <div className="flex items-center justify-center gap-3">
                 <span className="text-text-secondary w-16">Cookies</span>
                 <span className={`font-medium text-xs ${
-                  cookieSource === 'browser'
+                  cookieSource === 'none'
+                    ? 'text-yellow-400'
+                    : cookieSource === 'browser'
                     ? (health?.firefox_has_cookies ? 'text-text-primary' : health?.firefox_profile_mounted ? 'text-yellow-400' : 'text-red-400')
                     : (health?.cookies_available ? 'text-text-primary' : 'text-yellow-400')
                 }`}>
-                  {cookieSource === 'browser'
+                  {cookieSource === 'none'
+                    ? 'Anonymous Mode'
+                    : cookieSource === 'browser'
                     ? (health?.firefox_has_cookies ? 'Firefox Profile' : health?.firefox_profile_mounted ? 'No YouTube Login' : 'Not Mounted')
                     : (health?.cookies_available ? 'cookies.txt' : 'Inactive')
                   }
@@ -558,6 +562,17 @@ export default function Settings() {
                     className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
                   />
                   <span className="text-sm text-text-primary font-medium">Firefox</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="cookieSource"
+                    value="none"
+                    checked={cookieSource === 'none'}
+                    onChange={(e) => handleCookieSourceChange(e.target.value)}
+                    className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                  />
+                  <span className="text-sm text-text-primary font-medium">No Cookies <span className="text-xs text-text-muted">(Anonymous)</span></span>
                 </label>
               </div>
 

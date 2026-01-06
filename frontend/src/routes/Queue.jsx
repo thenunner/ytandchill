@@ -359,7 +359,7 @@ export default function Queue() {
           {queue?.delay_info?.remaining_seconds > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
               <span className="text-xs font-medium text-yellow-500">
-                Delay {formatTime(queue.delay_info.remaining_seconds)}
+                [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
               </span>
             </div>
           )}

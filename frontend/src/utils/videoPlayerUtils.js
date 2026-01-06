@@ -158,7 +158,10 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   let lastTapZone = null;
   let hideTimeoutId = null;
   let lastSeekTime = 0;
-  const SEEK_COOLDOWN_MS = 2000; // Minimum 2000ms between seeks to prevent buffer corruption
+  const SEEK_COOLDOWN_MS = 1250; // Minimum 1250ms between seeks to prevent buffer corruption
+  let pendingSeekOffset = 0;
+  let seekDebounceTimer = null;
+  const SEEK_DEBOUNCE_MS = 400;
 
   const showButton = (button) => {
     // Hide all buttons first
@@ -202,6 +205,47 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
     }
   };
 
+  // Debounced mobile seek - accumulates rapid taps into one seek
+  const debouncedMobileSeek = (offsetSeconds) => {
+    // Accumulate offset
+    pendingSeekOffset += offsetSeconds;
+
+    // Clear existing timer
+    if (seekDebounceTimer) clearTimeout(seekDebounceTimer);
+
+    // Execute after inactivity
+    seekDebounceTimer = setTimeout(() => {
+      const totalOffset = pendingSeekOffset;
+      pendingSeekOffset = 0;
+
+      if (!player || totalOffset === 0) return;
+
+      const currentTime = player.currentTime();
+      const duration = player.duration();
+
+      if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
+
+      // Apply all safety checks
+      const now = Date.now();
+      if (now - lastSeekTime < SEEK_COOLDOWN_MS) return;
+      if (player.readyState() < 1) return;
+      if (player.seeking && player.seeking()) return;
+
+      // Buffer health check
+      const timeSinceLastSeek = now - lastSeekTime;
+      if (timeSinceLastSeek < 10000) {
+        try {
+          const buffered = player.buffered();
+          if (buffered && buffered.length > 5) return;
+        } catch (e) {}
+      }
+
+      lastSeekTime = now;
+      const newTime = Math.max(0, Math.min(duration, currentTime + totalOffset));
+      player.currentTime(newTime);
+    }, SEEK_DEBOUNCE_MS);
+  };
+
   // Detect which zone was tapped
   const overlayTouchHandler = (e) => {
     e.preventDefault();
@@ -231,43 +275,7 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       action = () => {
         try {
           if (!player) return;
-
-          // Enforce cooldown to prevent buffer corruption
-          const now = Date.now();
-          if (now - lastSeekTime < SEEK_COOLDOWN_MS) {
-            console.log('[MobileControls] Rewind ignored - cooldown active');
-            return;
-          }
-
-          // Check readyState
-          if (player.readyState() < 1) {
-            console.warn('[MobileControls] Cannot seek - metadata not loaded');
-            return;
-          }
-
-          const currentTime = player.currentTime();
-          const duration = player.duration();
-
-          if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
-          if (player.seeking && player.seeking()) return;
-
-          // Check buffer health - only if recently seeked (within 10s)
-          const timeSinceLastSeek = now - lastSeekTime;
-          if (timeSinceLastSeek < 10000) {
-            try {
-              const buffered = player.buffered();
-              if (buffered && buffered.length > 5) {
-                console.warn(`[MobileControls] Rewind ignored - buffer fragmented (${buffered.length} ranges)`);
-                return;
-              }
-            } catch (e) {
-              // buffered() can throw, ignore and proceed
-            }
-          }
-
-          lastSeekTime = now;
-          const newTime = Math.max(0, currentTime - SEEK_TIME_SECONDS);
-          player.currentTime(newTime);
+          debouncedMobileSeek(-SEEK_TIME_SECONDS);
         } catch (error) {
           console.error('[MobileControls] Rewind error:', error);
         }
@@ -278,43 +286,7 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       action = () => {
         try {
           if (!player) return;
-
-          // Enforce cooldown to prevent buffer corruption
-          const now = Date.now();
-          if (now - lastSeekTime < SEEK_COOLDOWN_MS) {
-            console.log('[MobileControls] Forward ignored - cooldown active');
-            return;
-          }
-
-          // Check readyState
-          if (player.readyState() < 1) {
-            console.warn('[MobileControls] Cannot seek - metadata not loaded');
-            return;
-          }
-
-          const currentTime = player.currentTime();
-          const duration = player.duration();
-
-          if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
-          if (player.seeking && player.seeking()) return;
-
-          // Check buffer health - only if recently seeked (within 10s)
-          const timeSinceLastSeek = now - lastSeekTime;
-          if (timeSinceLastSeek < 10000) {
-            try {
-              const buffered = player.buffered();
-              if (buffered && buffered.length > 5) {
-                console.warn(`[MobileControls] Forward ignored - buffer fragmented (${buffered.length} ranges)`);
-                return;
-              }
-            } catch (e) {
-              // buffered() can throw, ignore and proceed
-            }
-          }
-
-          lastSeekTime = now;
-          const newTime = Math.min(duration, currentTime + SEEK_TIME_SECONDS);
-          player.currentTime(newTime);
+          debouncedMobileSeek(SEEK_TIME_SECONDS);
         } catch (error) {
           console.error('[MobileControls] Forward error:', error);
         }

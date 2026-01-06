@@ -47,7 +47,10 @@ export function useVideoJsPlayer({
   const updateVideoRef = useRef(updateVideoMutation);
   const lastSeekTime = useRef(0);
   const isBuffering = useRef(false);
-  const SEEK_COOLDOWN_MS = 2000; // Minimum 2000ms between seeks to prevent buffer corruption
+  const SEEK_COOLDOWN_MS = 1250; // Minimum 1250ms between seeks to prevent buffer corruption
+  const pendingSeekOffset = useRef(0);
+  const seekDebounceTimer = useRef(null);
+  const SEEK_DEBOUNCE_MS = 400; // Wait 400ms of inactivity before seeking
 
   // Keep refs up to date
   useEffect(() => {
@@ -200,6 +203,13 @@ export function useVideoJsPlayer({
           return;
         }
 
+        // Cancel any pending debounced seeks when executing a direct seek
+        if (seekDebounceTimer.current) {
+          clearTimeout(seekDebounceTimer.current);
+          seekDebounceTimer.current = null;
+          pendingSeekOffset.current = 0;
+        }
+
         // Don't seek if still buffering from previous seek
         if (isBuffering.current) {
           console.log('[useVideoJsPlayer] Seek ignored - still buffering');
@@ -256,19 +266,37 @@ export function useVideoJsPlayer({
       }
     };
 
-    // Relative seek helper (for arrow keys and j/l)
+    // True debounced seek - accumulates multiple rapid seeks into one
     const debouncedSeek = (offsetSeconds) => {
       if (!player) return;
-      const currentTime = player.currentTime();
-      const duration = player.duration();
 
-      if (!duration || isNaN(duration) || isNaN(currentTime)) return;
+      // Accumulate the seek offset
+      pendingSeekOffset.current += offsetSeconds;
 
-      const newTime = offsetSeconds > 0
-        ? Math.min(duration, currentTime + offsetSeconds)
-        : Math.max(0, currentTime + offsetSeconds);
+      console.log(`[useVideoJsPlayer] Seek offset accumulated: ${offsetSeconds}s (total pending: ${pendingSeekOffset.current}s)`);
 
-      safeSeek(newTime);
+      // Clear existing debounce timer
+      if (seekDebounceTimer.current) {
+        clearTimeout(seekDebounceTimer.current);
+      }
+
+      // Set new timer - execute after user stops pressing keys
+      seekDebounceTimer.current = setTimeout(() => {
+        const totalOffset = pendingSeekOffset.current;
+        pendingSeekOffset.current = 0; // Reset accumulator
+
+        if (totalOffset === 0) return;
+
+        const currentTime = player.currentTime();
+        const duration = player.duration();
+
+        if (!duration || isNaN(duration) || isNaN(currentTime)) return;
+
+        const newTime = Math.max(0, Math.min(duration, currentTime + totalOffset));
+
+        console.log(`[useVideoJsPlayer] Executing accumulated seek: ${totalOffset}s (${currentTime.toFixed(1)}s → ${newTime.toFixed(1)}s)`);
+        safeSeek(newTime);
+      }, SEEK_DEBOUNCE_MS);
     };
 
     // Keyboard shortcuts
@@ -468,6 +496,9 @@ export function useVideoJsPlayer({
         if (saveProgressTimeout.current) {
           clearTimeout(saveProgressTimeout.current);
         }
+        if (seekDebounceTimer.current) {
+          clearTimeout(seekDebounceTimer.current);
+        }
         // Don't remove keyboard listener or dispose player for persistent players
         return;
       }
@@ -475,6 +506,9 @@ export function useVideoJsPlayer({
       // Non-persistent players: full cleanup
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
+      }
+      if (seekDebounceTimer.current) {
+        clearTimeout(seekDebounceTimer.current);
       }
       if (cleanupTouchControls) {
         cleanupTouchControls();

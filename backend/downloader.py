@@ -459,7 +459,11 @@ class DownloadWorker:
         # Check cookie source setting (default: 'file' for backward compatibility)
         cookie_source = self.settings_manager.get('cookie_source', 'file')
 
-        if cookie_source == 'browser':
+        if cookie_source == 'none':
+            logger.info('Downloads using anonymous access (no cookies)')
+            # Don't set cookiefile or cookiesfrombrowser - yt-dlp will use anonymous access
+
+        elif cookie_source == 'browser':
             browser_type = self.settings_manager.get('cookie_browser', 'firefox')
             try:
                 # yt-dlp format: (browser_name, profile, keyring, container)
@@ -469,15 +473,18 @@ class DownloadWorker:
                 logger.info(f'Using cookies from {browser_type} browser at {firefox_profile_path}')
             except Exception as e:
                 logger.warning(f'Failed to extract cookies from browser: {e}')
-                # Fallback to cookies.txt
-                cookie_source = 'file'
+                logger.warning('Browser cookie extraction failed - continuing without cookies')
 
-        if cookie_source == 'file':
+        elif cookie_source == 'file':
             if os.path.exists(cookies_path):
                 ydl_opts['cookiefile'] = cookies_path
                 logger.info('Using cookies.txt file for authentication')
             else:
                 logger.warning('No cookies.txt file found - downloads may be rate-limited')
+
+        else:
+            # Fallback for unknown values (shouldn't happen)
+            logger.warning(f'Unknown cookie_source: {cookie_source}, using anonymous access')
 
         # Add SponsorBlock if enabled
         try:
