@@ -1167,7 +1167,7 @@ export default function Settings() {
                                 setIntervalModeHours(newInterval);
                               }}
                               className="input text-sm font-mono py-1.5 px-2"
-                              style={{ minWidth: '185px' }}
+                              style={{ width: 'fit-content' }}
                             >
                               <option value={6}>Every 6 hours (4x daily)</option>
                               <option value={8}>Every 8 hours (3x daily)</option>
@@ -1180,23 +1180,28 @@ export default function Settings() {
 
                     {/* Right Column */}
                     {autoRefresh && (
-                      <div className="flex-1 flex flex-col gap-3">
-                        {/* Row 1: Time inputs 1 & 2 */}
-                        <div className="flex items-center justify-center gap-4">
-                          {renderTimeBox(displayTimes[0], 0)}
-                          {renderTimeBox(displayTimes[1], 1)}
-                        </div>
-
-                        {/* Row 2: Time inputs 3 & 4 + Save button */}
-                        <div className="flex items-center justify-center gap-4">
-                          {renderTimeBox(displayTimes[2], 2)}
-                          {renderTimeBox(displayTimes[3], 3)}
-                          <button
-                            onClick={handleSaveAutoRefresh}
-                            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                          >
-                            Save
-                          </button>
+                      <div className="flex-1 flex flex-col items-center gap-3">
+                        {/* 3-Column Grid: Times in columns 1 & 2, Save button in column 3 at bottom */}
+                        <div className="grid grid-cols-3 gap-4 items-end">
+                          {/* Column 1: Times 1 & 3 */}
+                          <div className="flex flex-col gap-2">
+                            {renderTimeBox(displayTimes[0], 0)}
+                            {renderTimeBox(displayTimes[2], 2)}
+                          </div>
+                          {/* Column 2: Times 2 & 4 */}
+                          <div className="flex flex-col gap-2">
+                            {renderTimeBox(displayTimes[1], 1)}
+                            {renderTimeBox(displayTimes[3], 3)}
+                          </div>
+                          {/* Column 3: Save button at bottom */}
+                          <div className="flex items-end">
+                            <button
+                              onClick={handleSaveAutoRefresh}
+                              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+                            >
+                              Save
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}

@@ -336,71 +336,98 @@ export default function Queue() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Button Bar */}
-      <StickyBar>
-        <div className="flex items-center justify-center gap-4">
+      {/* Button Bar - shown at top when StickyBar is hidden */}
+      {!statusBarVisible && (
+        <div className="flex items-center justify-center gap-4 py-4">
           <div className="flex space-x-2 items-center">
-          {/* Only show Resume when queue is paused AND has items */}
-          {workerPaused && hasQueuedItems && (
+            {/* Only show Resume when queue is paused AND has items */}
+            {workerPaused && hasQueuedItems && (
+              <button
+                onClick={handleResume}
+                disabled={resumeQueue.isPending}
+                className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-accent hover:bg-accent-hover text-white rounded transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {resumeQueue.isPending ? 'Resuming...' : 'Resume'}
+              </button>
+            )}
             <button
-              onClick={handleResume}
-              disabled={resumeQueue.isPending}
-              className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-accent hover:bg-accent-hover text-white rounded transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => setShowClearConfirm(true)}
+              disabled={clearQueue.isPending}
+              className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {resumeQueue.isPending ? 'Resuming...' : 'Resume'}
+              {clearQueue.isPending ? 'Clearing...' : 'Clear Queue'}
             </button>
-          )}
-          <button
-            onClick={() => setShowClearConfirm(true)}
-            disabled={clearQueue.isPending}
-            className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {clearQueue.isPending ? 'Clearing...' : 'Clear Queue'}
-          </button>
 
-          {/* Delay Countdown Indicator - shown next to Clear Queue when status bar is hidden */}
-          {!statusBarVisible && queue?.delay_info?.remaining_seconds > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
-              <span className="text-xs font-medium text-yellow-500">
-                [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
-              </span>
-            </div>
-          )}
-
-          {/* Download Progress Indicator */}
-          {currentDownload && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
-              <div className="flex gap-0.5">
-                {[...Array(10)].map((_, i) => {
-                  const segmentThreshold = (i + 1) * 10;
-                  const isFilled = (currentDownload.progress_pct || 0) >= segmentThreshold;
-                  return (
-                    <div
-                      key={i}
-                      className={`w-2 h-4 rounded-sm transition-colors ${
-                        isFilled ? 'bg-green-500' : 'bg-dark-tertiary'
-                      }`}
-                    />
-                  );
-                })}
+            {/* Delay Countdown Indicator - shown next to Clear Queue when status bar is hidden */}
+            {queue?.delay_info?.remaining_seconds > 0 && (
+              <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
+                <span className="text-xs font-medium text-yellow-500">
+                  [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
+                </span>
               </div>
-              <span className="text-xs font-medium text-text-primary">
-                {(currentDownload.progress_pct || 0).toFixed(0)}%
-              </span>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
+      )}
 
-          {/* Delay Countdown Indicator - shown in status bar when status bar is visible */}
-          {statusBarVisible && queue?.delay_info?.remaining_seconds > 0 && (
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
-              <span className="text-xs font-medium text-yellow-500">
-                [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
-              </span>
+      {/* StickyBar - shown when statusBarVisible is true */}
+      {statusBarVisible && (
+        <StickyBar>
+          <div className="flex items-center justify-center gap-4">
+            <div className="flex space-x-2 items-center">
+              {/* Only show Resume when queue is paused AND has items */}
+              {workerPaused && hasQueuedItems && (
+                <button
+                  onClick={handleResume}
+                  disabled={resumeQueue.isPending}
+                  className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-accent hover:bg-accent-hover text-white rounded transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resumeQueue.isPending ? 'Resuming...' : 'Resume'}
+                </button>
+              )}
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                disabled={clearQueue.isPending}
+                className="px-2 md:px-4 py-1 md:py-1.5 text-xs md:text-sm bg-dark-hover hover:bg-dark-tertiary border border-dark-border-light rounded text-text-primary transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {clearQueue.isPending ? 'Clearing...' : 'Clear Queue'}
+              </button>
+
+              {/* Download Progress Indicator */}
+              {currentDownload && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
+                  <div className="flex gap-0.5">
+                    {[...Array(10)].map((_, i) => {
+                      const segmentThreshold = (i + 1) * 10;
+                      const isFilled = (currentDownload.progress_pct || 0) >= segmentThreshold;
+                      return (
+                        <div
+                          key={i}
+                          className={`w-2 h-4 rounded-sm transition-colors ${
+                            isFilled ? 'bg-green-500' : 'bg-dark-tertiary'
+                          }`}
+                        />
+                      );
+                    })}
+                  </div>
+                  <span className="text-xs font-medium text-text-primary">
+                    {(currentDownload.progress_pct || 0).toFixed(0)}%
+                  </span>
+                </div>
+              )}
+
+              {/* Delay Countdown Indicator - shown in status bar when status bar is visible */}
+              {queue?.delay_info?.remaining_seconds > 0 && (
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-dark-secondary border border-dark-border-light rounded">
+                  <span className="text-xs font-medium text-yellow-500">
+                    [Delayed {Math.floor(queue.delay_info.remaining_seconds)} Sec]
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        </div>
-      </StickyBar>
+          </div>
+        </StickyBar>
+      )}
 
       {/* Show message if worker is paused with items in queue */}
       {workerPaused && hasQueuedItems && (
