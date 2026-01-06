@@ -437,8 +437,6 @@ export default function Settings() {
       <div className="flex flex-col gap-4 w-full">
           {/* Card 1: Info */}
           <div className="card p-4 w-full">
-            {/* Info */}
-            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Info</h3>
 
             {/* System info grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3 text-sm mb-4">
@@ -586,6 +584,128 @@ export default function Settings() {
                   {isCheckingRepair ? 'Checking...' : 'Queue/DB Repair'}
                 </button>
               </div>
+
+              {/* Theme Selection */}
+              <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
+                <span className="text-sm font-semibold text-text-primary">Theme:</span>
+                <button
+                  onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'kernel'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Dark theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
+                  Kernel
+                </button>
+                <button
+                  onClick={() => { setTheme('fatal'); showNotification('Theme changed to Fatal', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'fatal'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Dark theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
+                  Fatal
+                </button>
+                <button
+                  onClick={() => { setTheme('subnet'); showNotification('Theme changed to Subnet', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'subnet'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Dark theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
+                  Subnet
+                </button>
+                <button
+                  onClick={() => { setTheme('archive'); showNotification('Theme changed to Archive', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'archive'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Dark theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
+                  Archive
+                </button>
+                <button
+                  onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'buffer'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Dark theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
+                  Buffer
+                </button>
+                <button
+                  onClick={() => { setTheme('catppuccin'); showNotification('Theme changed to Catppuccin', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'catppuccin'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-purple-300'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Dark theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#89b4fa' }}></div>
+                  Catppuccin
+                </button>
+                <button
+                  onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'online'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Light theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
+                  Online
+                </button>
+                <button
+                  onClick={() => { setTheme('pixel'); showNotification('Theme changed to Pixel', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'pixel'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Light theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
+                  Pixel
+                </button>
+                <button
+                  onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
+                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
+                    theme === 'debug'
+                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
+                      : ''
+                  }`}
+                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
+                  title="Light theme"
+                >
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
+                  Debug
+                </button>
+              </div>
             </div>
 
             {/* Password Change Form */}
@@ -657,137 +777,23 @@ export default function Settings() {
             )}
           </div>
 
-          {/* Card 2: Theme */}
-          <div className="card p-4 w-full">
-            <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">Theme</h3>
-            <div className="flex flex-wrap justify-center gap-3">
-            <button
-              onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'kernel'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Dark theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
-              Kernel
-            </button>
-            <button
-              onClick={() => { setTheme('fatal'); showNotification('Theme changed to Fatal', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'fatal'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Dark theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-              Fatal
-            </button>
-            <button
-              onClick={() => { setTheme('subnet'); showNotification('Theme changed to Subnet', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'subnet'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Dark theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
-              Subnet
-            </button>
-            <button
-              onClick={() => { setTheme('archive'); showNotification('Theme changed to Archive', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'archive'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Dark theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
-              Archive
-            </button>
-            <button
-              onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'buffer'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Dark theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
-              Buffer
-            </button>
-            <button
-              onClick={() => { setTheme('catppuccin'); showNotification('Theme changed to Catppuccin', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'catppuccin'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-purple-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Dark theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#89b4fa' }}></div>
-              Catppuccin
-            </button>
-            <button
-              onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'online'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Light theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
-              Online
-            </button>
-            <button
-              onClick={() => { setTheme('pixel'); showNotification('Theme changed to Pixel', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'pixel'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Light theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
-              Pixel
-            </button>
-            <button
-              onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
-              className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                theme === 'debug'
-                  ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
-                  : ''
-              }`}
-              style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-              title="Light theme"
-            >
-              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
-              Debug
-            </button>
-            </div>
-          </div>
-
-          {/* Card 3: YouTube API Key + Auto-Scan Daily */}
+          {/* Card 2: YouTube API Key + Auto-Scan Daily */}
           <div className="card p-4 w-full">
             <div className="flex flex-col md:flex-row gap-6">
               {/* YouTube API Key Section */}
               <div className="flex-1 flex flex-col items-center">
-                <h3 className="text-sm font-semibold text-text-primary mb-3 text-center">YouTube Data API Key</h3>
-                <div className="flex gap-2 mb-2 w-full md:w-auto">
+                <h3 className="text-sm font-semibold text-text-primary mb-3 text-center flex items-center justify-center gap-2">
+                  YouTube Data API Key
+                  <a
+                    href="https://console.cloud.google.com/apis/credentials"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs text-accent-text hover:text-accent-hover font-normal underline"
+                  >
+                    [Key at Google Cloud Console]
+                  </a>
+                </h3>
+                <div className="flex gap-2 w-full md:w-auto">
                   <input
                     type="text"
                     value={youtubeApiKey}
@@ -802,17 +808,6 @@ export default function Settings() {
                     Save
                   </button>
                 </div>
-                <p className="text-sm text-text-secondary font-medium">
-                  Get your key at{' '}
-                  <a
-                    href="https://console.cloud.google.com/apis/credentials"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-accent-text hover:underline font-semibold"
-                  >
-                    Google Cloud Console
-                  </a>
-                </p>
               </div>
 
               {/* SponsorBlock Section */}
@@ -827,7 +822,7 @@ export default function Settings() {
                     ?
                   </button>
                 </h3>
-                <div className="flex flex-col gap-2 items-center">
+                <div className="flex flex-wrap items-center justify-center gap-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -835,8 +830,9 @@ export default function Settings() {
                       onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
                       className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
                     />
-                    <span className="text-sm text-text-primary font-medium">Remove Sponsors</span>
+                    <span className="text-sm text-text-primary font-medium">Sponsors</span>
                   </label>
+                  <span className="text-text-secondary">•</span>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -844,8 +840,9 @@ export default function Settings() {
                       onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
                       className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
                     />
-                    <span className="text-sm text-text-primary font-medium">Remove Self-Promo</span>
+                    <span className="text-sm text-text-primary font-medium">Self-Promo</span>
                   </label>
+                  <span className="text-text-secondary">•</span>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -853,7 +850,7 @@ export default function Settings() {
                       onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
                       className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
                     />
-                    <span className="text-sm text-text-primary font-medium">Remove Like/Sub Requests</span>
+                    <span className="text-sm text-text-primary font-medium">Like/Sub Requests</span>
                   </label>
                 </div>
               </div>
@@ -862,252 +859,351 @@ export default function Settings() {
 
           {/* Card 4: Auto-Scan Daily */}
           <div className="card p-4 w-full">
-            {/* Header: Title with Help Icon and ON/OFF Toggle */}
-            <div className={`flex items-center justify-center gap-4 ${autoRefresh ? 'mb-3' : ''}`}>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-text-primary">Auto-Scan Daily</h3>
-                <button
-                  className="text-text-secondary hover:text-text-primary transition-colors"
-                  title="Automatically scan your channels daily to discover new videos. Choose specific times or interval-based scanning."
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                  </svg>
-                </button>
-              </div>
-              <div className="flex border border-dark-border rounded-md overflow-hidden">
-                <button
-                  onClick={async () => {
-                    setAutoRefresh(false);
-                    try {
-                      await updateSettings.mutateAsync({
-                        auto_refresh_enabled: 'false',
-                        auto_refresh_config: JSON.stringify({
-                          mode: scanMode,
-                          times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
-                          interval_hours: scanMode === 'interval' ? scanInterval : null,
-                          interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
-                        })
-                      });
-                      showNotification('Auto-scan disabled', 'success');
-                    } catch (error) {
-                      showNotification(error.message || 'Failed to disable auto-scan', 'error');
-                    }
-                  }}
-                  className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                    !autoRefresh
-                      ? 'bg-accent text-white'
-                      : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                  }`}
-                >
-                  OFF
-                </button>
-                <button
-                  onClick={async () => {
-                    setAutoRefresh(true);
-                    try {
-                      await updateSettings.mutateAsync({
-                        auto_refresh_enabled: 'true',
-                        auto_refresh_config: JSON.stringify({
-                          mode: scanMode,
-                          times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
-                          interval_hours: scanMode === 'interval' ? scanInterval : null,
-                          interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
-                        })
-                      });
-                      showNotification('Auto-scan enabled', 'success');
-                    } catch (error) {
-                      showNotification(error.message || 'Failed to enable auto-scan', 'error');
-                    }
-                  }}
-                  className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                    autoRefresh
-                      ? 'bg-accent text-white'
-                      : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                  }`}
-                >
-                  ON
-                </button>
-              </div>
-            </div>
+            {/* Helper function for rendering time boxes */}
+            {(() => {
+              const displayTimes = getPreviewTimes();
+              while (displayTimes.length < 4) {
+                displayTimes.push({ hour: 0, minute: 0 });
+              }
 
-            {/* Show content only when ON */}
-            {autoRefresh && (
-              <>
-                {/* Row 1: Mode Selector + Interval Dropdown */}
-                <div className="flex flex-col md:flex-row md:items-center md:justify-center gap-2 md:gap-3 mb-3">
-                  {/* Mode Selector Buttons */}
-                  <div className="flex gap-2 justify-center">
-                    <button
-                      onClick={() => handleModeSwitch('times')}
-                      className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
-                        scanMode === 'times'
-                          ? 'bg-accent text-white'
-                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+              const renderTimeBox = (time, index, mobileWidth = false) => {
+                const isDisabled = scanMode === 'interval' && index > 0;
+                return (
+                  <div key={index} className="flex items-center gap-1.5">
+                    <span className="text-text-primary text-sm font-bold w-4">{index + 1}.</span>
+                    <select
+                      value={time.hour}
+                      onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
+                      disabled={isDisabled}
+                      className={`input text-sm font-mono py-1.5 ${mobileWidth ? 'px-1 w-12' : 'px-1.5 w-14'} ${
+                        isDisabled ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
-                      Manual
-                    </button>
-                    <button
-                      onClick={() => handleModeSwitch('interval')}
-                      className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
-                        scanMode === 'interval'
-                          ? 'bg-accent text-white'
-                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      {Array.from({ length: 24 }, (_, i) => (
+                        <option key={i} value={i}>
+                          {i.toString().padStart(2, '0')}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="text-text-primary text-sm font-bold">:</span>
+                    <select
+                      value={time.minute}
+                      onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
+                      disabled={isDisabled}
+                      className={`input text-sm font-mono py-1.5 ${mobileWidth ? 'px-1 w-12' : 'px-1.5 w-14'} ${
+                        isDisabled ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
-                      Repeat
-                    </button>
+                      {Array.from({ length: 60 }, (_, i) => (
+                        <option key={i} value={i}>
+                          {i.toString().padStart(2, '0')}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                );
+              };
+
+              return (
+                <>
+                  {/* Mobile Layout (<md) */}
+                  <div className="md:hidden flex flex-col">
+                    {/* Header: Title with Help Icon and ON/OFF Toggle */}
+                    <div className={`flex items-center justify-center gap-4 ${autoRefresh ? 'mb-3' : ''}`}>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-text-primary">Auto-Scan Daily</h3>
+                        <button
+                          className="text-text-secondary hover:text-text-primary transition-colors"
+                          title="Automatically scan your channels daily to discover new videos. Choose specific times or interval-based scanning."
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex border border-dark-border rounded-md overflow-hidden">
+                        <button
+                          onClick={async () => {
+                            setAutoRefresh(false);
+                            try {
+                              await updateSettings.mutateAsync({
+                                auto_refresh_enabled: 'false',
+                                auto_refresh_config: JSON.stringify({
+                                  mode: scanMode,
+                                  times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
+                                  interval_hours: scanMode === 'interval' ? scanInterval : null,
+                                  interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
+                                })
+                              });
+                              showNotification('Auto-scan disabled', 'success');
+                            } catch (error) {
+                              showNotification(error.message || 'Failed to disable auto-scan', 'error');
+                            }
+                          }}
+                          className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                            !autoRefresh
+                              ? 'bg-accent text-white'
+                              : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                          }`}
+                        >
+                          OFF
+                        </button>
+                        <button
+                          onClick={async () => {
+                            setAutoRefresh(true);
+                            try {
+                              await updateSettings.mutateAsync({
+                                auto_refresh_enabled: 'true',
+                                auto_refresh_config: JSON.stringify({
+                                  mode: scanMode,
+                                  times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
+                                  interval_hours: scanMode === 'interval' ? scanInterval : null,
+                                  interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
+                                })
+                              });
+                              showNotification('Auto-scan enabled', 'success');
+                            } catch (error) {
+                              showNotification(error.message || 'Failed to enable auto-scan', 'error');
+                            }
+                          }}
+                          className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                            autoRefresh
+                              ? 'bg-accent text-white'
+                              : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                          }`}
+                        >
+                          ON
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Show content only when ON */}
+                    {autoRefresh && (
+                      <>
+                        {/* Mode Selector + Interval Dropdown */}
+                        <div className="flex flex-col gap-2 mb-3">
+                          {/* Mode Selector Buttons */}
+                          <div className="flex gap-2 justify-center">
+                            <button
+                              onClick={() => handleModeSwitch('times')}
+                              className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
+                                scanMode === 'times'
+                                  ? 'bg-accent text-white'
+                                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                              }`}
+                            >
+                              Manual
+                            </button>
+                            <button
+                              onClick={() => handleModeSwitch('interval')}
+                              className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
+                                scanMode === 'interval'
+                                  ? 'bg-accent text-white'
+                                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                              }`}
+                            >
+                              Repeat
+                            </button>
+                          </div>
+
+                          {/* Interval Dropdown (only visible in Repeat mode) */}
+                          {scanMode === 'interval' && (
+                            <div className="flex justify-center">
+                              <select
+                                value={scanInterval}
+                                onChange={(e) => {
+                                  const newInterval = parseInt(e.target.value);
+                                  setScanInterval(newInterval);
+                                  setIntervalModeHours(newInterval);
+                                }}
+                                className="input text-sm font-mono py-1.5 px-2 w-full"
+                                style={{ maxWidth: '158px' }}
+                              >
+                                <option value={6}>Every 6 hours (4x daily)</option>
+                                <option value={8}>Every 8 hours (3x daily)</option>
+                                <option value={12}>Every 12 hours (2x daily)</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Time Boxes + Save Button */}
+                        <div className="flex flex-col gap-2">
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Column 1: Time boxes 1 and 2 */}
+                            <div className="flex flex-col gap-2">
+                              {renderTimeBox(displayTimes[0], 0, true)}
+                              {renderTimeBox(displayTimes[1], 1, true)}
+                            </div>
+                            {/* Column 2: Time boxes 3 and 4 */}
+                            <div className="flex flex-col gap-2">
+                              {renderTimeBox(displayTimes[2], 2, true)}
+                              {renderTimeBox(displayTimes[3], 3, true)}
+                            </div>
+                          </div>
+
+                          {/* Save Button */}
+                          <div className="flex justify-center">
+                            <button
+                              onClick={handleSaveAutoRefresh}
+                              className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3"
+                              style={{ width: 'fit-content' }}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  {/* Interval Dropdown (only visible in Repeat mode) */}
-                  {scanMode === 'interval' && (
-                    <select
-                      value={scanInterval}
-                      onChange={(e) => {
-                        const newInterval = parseInt(e.target.value);
-                        setScanInterval(newInterval);
-                        setIntervalModeHours(newInterval);
-                      }}
-                      className="input text-sm font-mono py-1.5 px-2 w-full md:w-auto"
-                      style={{ maxWidth: '158px' }}
-                    >
-                      <option value={6}>Every 6 hours (4x daily)</option>
-                      <option value={8}>Every 8 hours (3x daily)</option>
-                      <option value={12}>Every 12 hours (2x daily)</option>
-                    </select>
-                  )}
-                </div>
-
-                {/* Row 2: Time Boxes + Save Button */}
-                <div className="flex justify-center">
-                <div>
-                {(() => {
-                  const displayTimes = getPreviewTimes();
-                  while (displayTimes.length < 4) {
-                    displayTimes.push({ hour: 0, minute: 0 });
-                  }
-
-                  const renderTimeBox = (time, index, mobileWidth = false) => {
-                    const isDisabled = scanMode === 'interval' && index > 0;
-                    return (
-                      <div key={index} className="flex items-center gap-1.5">
-                        <span className="text-text-primary text-sm font-bold w-4">{index + 1}.</span>
-                        <select
-                          value={time.hour}
-                          onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
-                          disabled={isDisabled}
-                          className={`input text-sm font-mono py-1.5 ${mobileWidth ? 'px-1 w-12' : 'px-1.5 w-14'} ${
-                            isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
-                        >
-                          {Array.from({ length: 24 }, (_, i) => (
-                            <option key={i} value={i}>
-                              {i.toString().padStart(2, '0')}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="text-text-primary text-sm font-bold">:</span>
-                        <select
-                          value={time.minute}
-                          onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
-                          disabled={isDisabled}
-                          className={`input text-sm font-mono py-1.5 ${mobileWidth ? 'px-1 w-12' : 'px-1.5 w-14'} ${
-                            isDisabled ? 'opacity-50 cursor-not-allowed' : ''
-                          }`}
-                        >
-                          {Array.from({ length: 60 }, (_, i) => (
-                            <option key={i} value={i}>
-                              {i.toString().padStart(2, '0')}
-                            </option>
-                          ))}
-                        </select>
+                  {/* Desktop/Tablet Layout (md+) */}
+                  <div className="hidden md:flex md:flex-row gap-6">
+                    {/* Left Column */}
+                    <div className="flex-1 flex flex-col gap-3">
+                      {/* Row 1: Title + Help Icon + ON/OFF Toggle */}
+                      <div className="flex items-center justify-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-sm font-semibold text-text-primary">Auto-Scan Daily</h3>
+                          <button
+                            className="text-text-secondary hover:text-text-primary transition-colors"
+                            title="Automatically scan your channels daily to discover new videos. Choose specific times or interval-based scanning."
+                          >
+                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="flex border border-dark-border rounded-md overflow-hidden">
+                          <button
+                            onClick={async () => {
+                              setAutoRefresh(false);
+                              try {
+                                await updateSettings.mutateAsync({
+                                  auto_refresh_enabled: 'false',
+                                  auto_refresh_config: JSON.stringify({
+                                    mode: scanMode,
+                                    times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
+                                    interval_hours: scanMode === 'interval' ? scanInterval : null,
+                                    interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
+                                  })
+                                });
+                                showNotification('Auto-scan disabled', 'success');
+                              } catch (error) {
+                                showNotification(error.message || 'Failed to disable auto-scan', 'error');
+                              }
+                            }}
+                            className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                              !autoRefresh
+                                ? 'bg-accent text-white'
+                                : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                            }`}
+                          >
+                            OFF
+                          </button>
+                          <button
+                            onClick={async () => {
+                              setAutoRefresh(true);
+                              try {
+                                await updateSettings.mutateAsync({
+                                  auto_refresh_enabled: 'true',
+                                  auto_refresh_config: JSON.stringify({
+                                    mode: scanMode,
+                                    times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
+                                    interval_hours: scanMode === 'interval' ? scanInterval : null,
+                                    interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
+                                  })
+                                });
+                                showNotification('Auto-scan enabled', 'success');
+                              } catch (error) {
+                                showNotification(error.message || 'Failed to enable auto-scan', 'error');
+                              }
+                            }}
+                            className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                              autoRefresh
+                                ? 'bg-accent text-white'
+                                : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                            }`}
+                          >
+                            ON
+                          </button>
+                        </div>
                       </div>
-                    );
-                  };
 
-                  return (
-                    <>
-                      {/* Desktop (lg+): Single row with grouped boxes [1,2] [spacer] [3,4] [Save] */}
-                      <div className="hidden lg:flex lg:items-center lg:justify-center gap-6">
-                        {/* Group 1: Boxes 1-2 */}
-                        <div className="flex items-center gap-6">
+                      {/* Row 2: Mode Selector + Interval Dropdown (when autoRefresh is ON) */}
+                      {autoRefresh && (
+                        <div className="flex items-center justify-center gap-3">
+                          {/* Mode Selector Buttons */}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleModeSwitch('times')}
+                              className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
+                                scanMode === 'times'
+                                  ? 'bg-accent text-white'
+                                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                              }`}
+                            >
+                              Manual
+                            </button>
+                            <button
+                              onClick={() => handleModeSwitch('interval')}
+                              className={`px-3 py-1.5 text-sm font-bold rounded transition-all ${
+                                scanMode === 'interval'
+                                  ? 'bg-accent text-white'
+                                  : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                              }`}
+                            >
+                              Repeat
+                            </button>
+                          </div>
+
+                          {/* Interval Dropdown (only visible in Repeat mode) */}
+                          {scanMode === 'interval' && (
+                            <select
+                              value={scanInterval}
+                              onChange={(e) => {
+                                const newInterval = parseInt(e.target.value);
+                                setScanInterval(newInterval);
+                                setIntervalModeHours(newInterval);
+                              }}
+                              className="input text-sm font-mono py-1.5 px-2"
+                              style={{ minWidth: '185px' }}
+                            >
+                              <option value={6}>Every 6 hours (4x daily)</option>
+                              <option value={8}>Every 8 hours (3x daily)</option>
+                              <option value={12}>Every 12 hours (2x daily)</option>
+                            </select>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column */}
+                    {autoRefresh && (
+                      <div className="flex-1 flex flex-col gap-3">
+                        {/* Row 1: Time inputs 1 & 2 */}
+                        <div className="flex items-center justify-center gap-4">
                           {renderTimeBox(displayTimes[0], 0)}
                           {renderTimeBox(displayTimes[1], 1)}
                         </div>
 
-                        {/* Visual separator between groups */}
-                        <div className="w-12"></div>
-
-                        {/* Group 2: Boxes 3-4 */}
-                        <div className="flex items-center gap-6">
+                        {/* Row 2: Time inputs 3 & 4 + Save button */}
+                        <div className="flex items-center justify-center gap-4">
                           {renderTimeBox(displayTimes[2], 2)}
                           {renderTimeBox(displayTimes[3], 3)}
-                        </div>
-
-                        {/* Save button inline after time boxes */}
-                        <button
-                          onClick={handleSaveAutoRefresh}
-                          className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 ml-6"
-                        >
-                          Save
-                        </button>
-                      </div>
-
-                      {/* Tablet (sm to lg): 2x2 grid with proper grouping [1,2] / [3,4] [Save] */}
-                      <div className="hidden sm:flex lg:hidden items-center justify-center gap-6">
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-center justify-center gap-6">
-                            {renderTimeBox(displayTimes[0], 0)}
-                            {renderTimeBox(displayTimes[1], 1)}
-                          </div>
-                          <div className="flex items-center justify-center gap-6">
-                            {renderTimeBox(displayTimes[2], 2)}
-                            {renderTimeBox(displayTimes[3], 3)}
-                          </div>
-                        </div>
-                        {/* Save button inline after time boxes */}
-                        <button
-                          onClick={handleSaveAutoRefresh}
-                          className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                        >
-                          Save
-                        </button>
-                      </div>
-
-                      {/* Mobile (<sm): Two columns - Column 1: 1 & 2, Column 2: 3 & 4 */}
-                      <div className="flex sm:hidden flex-col gap-2">
-                        <div className="grid grid-cols-2 gap-4">
-                          {/* Column 1: Time boxes 1 and 2 */}
-                          <div className="flex flex-col gap-2">
-                            {renderTimeBox(displayTimes[0], 0, true)}
-                            {renderTimeBox(displayTimes[1], 1, true)}
-                          </div>
-                          {/* Column 2: Time boxes 3 and 4 */}
-                          <div className="flex flex-col gap-2">
-                            {renderTimeBox(displayTimes[2], 2, true)}
-                            {renderTimeBox(displayTimes[3], 3, true)}
-                          </div>
-                        </div>
-
-                        {/* Save Button */}
-                        <div className="flex justify-center">
                           <button
                             onClick={handleSaveAutoRefresh}
-                            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3"
-                            style={{ width: 'fit-content' }}
+                            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
                           >
                             Save
                           </button>
                         </div>
                       </div>
-                    </>
-                  );
-                })()}
-                </div>
-                </div>
-              </>
-            )}
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
 
           {/* Card 5: Logging */}
