@@ -47,7 +47,6 @@ export function useVideoJsPlayer({
   const updateVideoRef = useRef(updateVideoMutation);
   const lastSeekTime = useRef(0);
   const isBuffering = useRef(false);
-  const SEEK_COOLDOWN_MS = 1250; // Minimum 1250ms between seeks to prevent buffer corruption
   const pendingSeekOffset = useRef(0);
   const seekDebounceTimer = useRef(null);
   const SEEK_DEBOUNCE_MS = 400; // Wait 400ms of inactivity before seeking
@@ -93,7 +92,7 @@ export function useVideoJsPlayer({
       fluid: true,
       responsive: true,
       playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-      preload: 'metadata', // Preload metadata to show first frame
+      preload: 'auto', // Preload video data for smoother playback
       poster: isMobile ? (video.thumb_url || '') : '', // Only show poster on mobile devices
     });
 
@@ -190,18 +189,13 @@ export function useVideoJsPlayer({
       }
     };
 
-    // Safe seek function with cooldown to prevent buffer corruption
+    // Safe seek function - debouncing handles rapid seeks
     const safeSeek = (newTime) => {
       try {
         // Check if player exists
         if (!player) return;
 
-        // CRITICAL: Enforce cooldown between seeks to prevent buffer corruption
         const now = Date.now();
-        if (now - lastSeekTime.current < SEEK_COOLDOWN_MS) {
-          console.log('[useVideoJsPlayer] Seek ignored - cooldown active');
-          return;
-        }
 
         // Cancel any pending debounced seeks when executing a direct seek
         if (seekDebounceTimer.current) {
