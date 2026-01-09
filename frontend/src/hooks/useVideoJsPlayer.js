@@ -204,12 +204,6 @@ export function useVideoJsPlayer({
           pendingSeekOffset.current = 0;
         }
 
-        // Don't seek if still buffering from previous seek
-        if (isBuffering.current) {
-          console.log('[useVideoJsPlayer] Seek ignored - still buffering');
-          return;
-        }
-
         // Check if metadata is loaded (readyState >= 1)
         const readyState = player.readyState();
         if (readyState < 1) {
@@ -223,28 +217,6 @@ export function useVideoJsPlayer({
         // Don't seek if we don't have valid duration/currentTime
         if (!duration || isNaN(duration) || isNaN(currentTime) || duration === 0) {
           return;
-        }
-
-        // Don't seek if already seeking
-        if (player.seeking && player.seeking()) {
-          console.log('[useVideoJsPlayer] Seek ignored - already seeking');
-          return;
-        }
-
-        // Check buffer health - but only if we recently seeked (within 10s)
-        // After 10s of no seeking, allow seek even if fragmented (buffer may not auto-consolidate)
-        const timeSinceLastSeek = now - lastSeekTime.current;
-        if (timeSinceLastSeek < 10000) {
-          try {
-            const buffered = player.buffered();
-            if (buffered && buffered.length > 5) {
-              // More than 5 buffered ranges indicates fragmented buffer (stress)
-              console.warn(`[useVideoJsPlayer] Seek ignored - buffer fragmented (${buffered.length} ranges)`);
-              return;
-            }
-          } catch (e) {
-            // buffered() can throw, ignore and proceed
-          }
         }
 
         // Update last seek time BEFORE seeking
