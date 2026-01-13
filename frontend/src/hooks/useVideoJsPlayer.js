@@ -9,6 +9,8 @@ import {
   getVideoSource,
 } from '../utils/videoPlayerUtils';
 import { createTheaterButton, updateTheaterButtonState } from '../utils/createTheaterButton';
+import '../plugins/videojs-seek-coordinator'; // Register plugin
+import { SeekBackward10Button, SeekForward10Button } from '../utils/createSeekButtons'; // Register buttons
 
 // Register theater button component once globally
 let theaterButtonRegistered = false;
@@ -45,11 +47,6 @@ export function useVideoJsPlayer({
   const hasMarkedWatchedRef = useRef(false);
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
-  const lastSeekTime = useRef(0);
-  const isBuffering = useRef(false);
-  const pendingSeekOffset = useRef(0);
-  const seekDebounceTimer = useRef(null);
-  const SEEK_DEBOUNCE_MS = 400; // Wait 400ms of inactivity before seeking
 
   // Keep refs up to date
   useEffect(() => {
@@ -92,12 +89,53 @@ export function useVideoJsPlayer({
       fluid: true,
       responsive: true,
       playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-      preload: 'auto', // Preload video data for smoother playback
+      preload: 'metadata', // Load metadata for seeking optimization
       poster: isMobile ? (video.thumb_url || '') : '', // Only show poster on mobile devices
+      inactivityTimeout: 0, // Prevent control bar auto-hide during seeks
+      html5: {
+        vhs: {
+          overrideNative: false,
+        },
+        nativeVideoTracks: true,
+        nativeAudioTracks: true,
+      },
     });
 
     playerRef.current = player;
     console.log('[useVideoJsPlayer] Player initialized successfully. Player ID:', player.id());
+
+    // Enable seek coordinator plugin
+    player.seekCoordinator({
+      snapBackward: 0.4,    // Snap 400ms backward for keyframes
+      settleTime: 100,      // Wait 100ms after seeks (Chrome decoder settling)
+      enabled: true,        // Enable plugin
+      debug: false,         // Set to true for console logging
+    });
+
+    console.log('[useVideoJsPlayer] Seek coordinator plugin enabled');
+
+    // Add custom seek buttons to control bar (desktop/tablet)
+    if (!isMobile) {
+      try {
+        // Get control bar
+        const controlBar = player.controlBar;
+
+        // Add seek backward 10s button (after play button)
+        const playButton = controlBar.getChild('playToggle');
+        const seekBackBtn = controlBar.addChild('SeekBackward10Button', {},
+          controlBar.children().indexOf(playButton) + 1
+        );
+
+        // Add seek forward 10s button (after seek backward)
+        const seekFwdBtn = controlBar.addChild('SeekForward10Button', {},
+          controlBar.children().indexOf(seekBackBtn) + 1
+        );
+
+        console.log('[useVideoJsPlayer] Added +10/-10 seek buttons to control bar');
+      } catch (error) {
+        console.error('[useVideoJsPlayer] Error adding seek buttons:', error);
+      }
+    }
 
     // Add theater button to control bar manually with options
     try {
@@ -189,82 +227,6 @@ export function useVideoJsPlayer({
       }
     };
 
-    // Safe seek function - debouncing handles rapid seeks
-    const safeSeek = (newTime) => {
-      try {
-        // Check if player exists
-        if (!player) return;
-
-        const now = Date.now();
-
-        // Cancel any pending debounced seeks when executing a direct seek
-        if (seekDebounceTimer.current) {
-          clearTimeout(seekDebounceTimer.current);
-          seekDebounceTimer.current = null;
-          pendingSeekOffset.current = 0;
-        }
-
-        // Check if metadata is loaded (readyState >= 1)
-        const readyState = player.readyState();
-        if (readyState < 1) {
-          console.warn('[useVideoJsPlayer] Cannot seek - metadata not loaded');
-          return;
-        }
-
-        const currentTime = player.currentTime();
-        const duration = player.duration();
-
-        // Don't seek if we don't have valid duration/currentTime
-        if (!duration || isNaN(duration) || isNaN(currentTime) || duration === 0) {
-          return;
-        }
-
-        // Update last seek time BEFORE seeking
-        lastSeekTime.current = now;
-
-        // Clamp to valid range
-        const clampedTime = Math.max(0, Math.min(duration, newTime));
-
-        console.log(`[useVideoJsPlayer] Seeking: ${currentTime.toFixed(1)}s → ${clampedTime.toFixed(1)}s`);
-        player.currentTime(clampedTime);
-      } catch (error) {
-        console.error('[useVideoJsPlayer] Seek error:', error);
-      }
-    };
-
-    // True debounced seek - accumulates multiple rapid seeks into one
-    const debouncedSeek = (offsetSeconds) => {
-      if (!player) return;
-
-      // Accumulate the seek offset
-      pendingSeekOffset.current += offsetSeconds;
-
-      console.log(`[useVideoJsPlayer] Seek offset accumulated: ${offsetSeconds}s (total pending: ${pendingSeekOffset.current}s)`);
-
-      // Clear existing debounce timer
-      if (seekDebounceTimer.current) {
-        clearTimeout(seekDebounceTimer.current);
-      }
-
-      // Set new timer - execute after user stops pressing keys
-      seekDebounceTimer.current = setTimeout(() => {
-        const totalOffset = pendingSeekOffset.current;
-        pendingSeekOffset.current = 0; // Reset accumulator
-
-        if (totalOffset === 0) return;
-
-        const currentTime = player.currentTime();
-        const duration = player.duration();
-
-        if (!duration || isNaN(duration) || isNaN(currentTime)) return;
-
-        const newTime = Math.max(0, Math.min(duration, currentTime + totalOffset));
-
-        console.log(`[useVideoJsPlayer] Executing accumulated seek: ${totalOffset}s (${currentTime.toFixed(1)}s → ${newTime.toFixed(1)}s)`);
-        safeSeek(newTime);
-      }, SEEK_DEBOUNCE_MS);
-    };
-
     // Keyboard shortcuts
     const handleKeyPress = (e) => {
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
@@ -284,12 +246,14 @@ export function useVideoJsPlayer({
         case 'arrowleft':
         case 'j':
           e.preventDefault();
-          debouncedSeek(-SEEK_TIME_SECONDS);
+          // Plugin handles the seek via wrapped currentTime()
+          player.currentTime(player.currentTime() - SEEK_TIME_SECONDS);
           break;
         case 'arrowright':
         case 'l':
           e.preventDefault();
-          debouncedSeek(SEEK_TIME_SECONDS);
+          // Plugin handles the seek via wrapped currentTime()
+          player.currentTime(player.currentTime() + SEEK_TIME_SECONDS);
           break;
         case 'f':
           e.preventDefault();
@@ -318,7 +282,8 @@ export function useVideoJsPlayer({
           if (duration && !isNaN(duration)) {
             const percent = parseInt(key) / 10;
             const targetTime = duration * percent;
-            safeSeek(targetTime);
+            // Plugin handles the seek via wrapped currentTime()
+            player.currentTime(targetTime);
           }
           break;
         default:
@@ -327,17 +292,6 @@ export function useVideoJsPlayer({
     };
 
     document.addEventListener('keydown', handleKeyPress);
-
-    // Track buffering state to prevent seeks during buffer
-    player.on('waiting', () => {
-      isBuffering.current = true;
-      console.log('[useVideoJsPlayer] Buffering started');
-    });
-
-    player.on('canplay', () => {
-      isBuffering.current = false;
-      console.log('[useVideoJsPlayer] Buffering ended');
-    });
 
     // Mobile touch controls
     let cleanupTouchControls = null;
@@ -462,9 +416,6 @@ export function useVideoJsPlayer({
         if (saveProgressTimeout.current) {
           clearTimeout(saveProgressTimeout.current);
         }
-        if (seekDebounceTimer.current) {
-          clearTimeout(seekDebounceTimer.current);
-        }
         // Don't remove keyboard listener or dispose player for persistent players
         return;
       }
@@ -472,9 +423,6 @@ export function useVideoJsPlayer({
       // Non-persistent players: full cleanup
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
-      }
-      if (seekDebounceTimer.current) {
-        clearTimeout(seekDebounceTimer.current);
       }
       if (cleanupTouchControls) {
         cleanupTouchControls();

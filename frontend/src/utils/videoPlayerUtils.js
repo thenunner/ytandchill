@@ -111,9 +111,12 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   const rewindBtn = document.createElement('button');
   rewindBtn.className = 'vjs-mobile-btn';
   rewindBtn.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;">
-      <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
-    </svg>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg viewBox="0 0 24 24" fill="white" style="width: 32px; height: 32px;">
+        <path d="M11.5 12L20 18V6M11 18V6l-8.5 6"/>
+      </svg>
+      <span style="font-size: 14px; font-weight: bold;">-10</span>
+    </div>
   `;
   rewindBtn.style.cssText = buttonStyle(110) + `left: 20%; top: 50%; transform: translate(-50%, -50%) scale(0.9);`;
 
@@ -133,9 +136,12 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   const forwardBtn = document.createElement('button');
   forwardBtn.className = 'vjs-mobile-btn';
   forwardBtn.innerHTML = `
-    <svg viewBox="0 0 24 24" fill="white" style="width: 40px; height: 40px;">
-      <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
-    </svg>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 4px;">
+      <svg viewBox="0 0 24 24" fill="white" style="width: 32px; height: 32px;">
+        <path d="M4 18l8.5-6L4 6v12zm9-12v12l8.5-6L13 6z"/>
+      </svg>
+      <span style="font-size: 14px; font-weight: bold;">+10</span>
+    </div>
   `;
   forwardBtn.style.cssText = buttonStyle(110) + `right: 20%; top: 50%; transform: translate(50%, -50%) scale(0.9);`;
 
@@ -157,11 +163,6 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
   let lastTapTime = 0;
   let lastTapZone = null;
   let hideTimeoutId = null;
-  let lastSeekTime = 0;
-  const SEEK_COOLDOWN_MS = 1250; // Minimum 1250ms between seeks to prevent buffer corruption
-  let pendingSeekOffset = 0;
-  let seekDebounceTimer = null;
-  const SEEK_DEBOUNCE_MS = 400;
 
   const showButton = (button) => {
     // Hide all buttons first
@@ -205,47 +206,6 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
     }
   };
 
-  // Debounced mobile seek - accumulates rapid taps into one seek
-  const debouncedMobileSeek = (offsetSeconds) => {
-    // Accumulate offset
-    pendingSeekOffset += offsetSeconds;
-
-    // Clear existing timer
-    if (seekDebounceTimer) clearTimeout(seekDebounceTimer);
-
-    // Execute after inactivity
-    seekDebounceTimer = setTimeout(() => {
-      const totalOffset = pendingSeekOffset;
-      pendingSeekOffset = 0;
-
-      if (!player || totalOffset === 0) return;
-
-      const currentTime = player.currentTime();
-      const duration = player.duration();
-
-      if (isNaN(currentTime) || isNaN(duration) || duration === 0) return;
-
-      // Apply all safety checks
-      const now = Date.now();
-      if (now - lastSeekTime < SEEK_COOLDOWN_MS) return;
-      if (player.readyState() < 1) return;
-      if (player.seeking && player.seeking()) return;
-
-      // Buffer health check
-      const timeSinceLastSeek = now - lastSeekTime;
-      if (timeSinceLastSeek < 10000) {
-        try {
-          const buffered = player.buffered();
-          if (buffered && buffered.length > 5) return;
-        } catch (e) {}
-      }
-
-      lastSeekTime = now;
-      const newTime = Math.max(0, Math.min(duration, currentTime + totalOffset));
-      player.currentTime(newTime);
-    }, SEEK_DEBOUNCE_MS);
-  };
-
   // Detect which zone was tapped
   const overlayTouchHandler = (e) => {
     e.preventDefault();
@@ -275,7 +235,9 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       action = () => {
         try {
           if (!player) return;
-          debouncedMobileSeek(-SEEK_TIME_SECONDS);
+          // Plugin handles the seek via wrapped currentTime()
+          const currentTime = player.currentTime();
+          player.currentTime(currentTime - SEEK_TIME_SECONDS);
         } catch (error) {
           console.error('[MobileControls] Rewind error:', error);
         }
@@ -286,7 +248,9 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
       action = () => {
         try {
           if (!player) return;
-          debouncedMobileSeek(SEEK_TIME_SECONDS);
+          // Plugin handles the seek via wrapped currentTime()
+          const currentTime = player.currentTime();
+          player.currentTime(currentTime + SEEK_TIME_SECONDS);
         } catch (error) {
           console.error('[MobileControls] Forward error:', error);
         }
