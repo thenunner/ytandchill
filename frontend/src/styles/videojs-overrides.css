@@ -7,14 +7,8 @@
     z-index: 100 !important;
   }
 
-  /* Keep controls visible when paused */
-  .video-js.vjs-paused .vjs-control-bar {
-    opacity: 1 !important;
-  }
-
-  /* Keep controls visible when user is active */
-  .video-js.vjs-user-active .vjs-control-bar,
-  .video-js.vjs-user-inactive.vjs-paused .vjs-control-bar {
+  /* Keep controls visible when user is active (mouse/touch interaction) */
+  .video-js.vjs-user-active .vjs-control-bar {
     opacity: 1 !important;
   }
 
@@ -48,12 +42,6 @@
 
 /* Keep controls visible on load (before video starts) */
 .video-js:not(.vjs-has-started) .vjs-control-bar {
-  opacity: 1 !important;
-  display: flex !important;
-}
-
-/* Keep controls visible when paused */
-.video-js.vjs-paused .vjs-control-bar {
   opacity: 1 !important;
   display: flex !important;
 }
@@ -399,9 +387,4 @@
     padding: 0 3px;
   }
 
-  /* Ensure controls visible on mobile */
-  .video-js.vjs-paused .vjs-control-bar,
-  .video-js.vjs-playing .vjs-control-bar {
-    display: flex !important;
-  }
 }

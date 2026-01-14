@@ -88,9 +88,14 @@ export function useVideoJsPlayer({
       controls: true,
       fluid: true,
       responsive: true,
-      playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
       preload: 'metadata', // Load metadata for seeking optimization
       poster: isMobile ? (video.thumb_url || '') : '', // Only show poster on mobile devices
+      // Device-specific inactivity timeout for auto-hiding controls
+      // Mobile: 0 = never auto-hide (controls always visible, except fullscreen)
+      // Desktop/Tablet: 2000ms = hide after 2 seconds of inactivity
+      inactivityTimeout: isMobile ? 0 : 2000,
+      // Disable browser's native touch controls (we handle our own)
+      nativeControlsForTouch: false,
       html5: {
         vhs: {
           overrideNative: false,
@@ -112,6 +117,75 @@ export function useVideoJsPlayer({
     });
 
     console.log('[useVideoJsPlayer] Seek coordinator plugin enabled');
+
+    // ============================================
+    // DEVICE-SPECIFIC CONTROL VISIBILITY BEHAVIOR
+    // ============================================
+    if (isMobile) {
+      // Mobile: Controls always visible EXCEPT in fullscreen (YouTube-style)
+      let mobileFullscreenTimeout = null;
+      const MOBILE_FULLSCREEN_HIDE_DELAY = 2000;
+
+      const showControlsTemporarily = () => {
+        player.userActive(true);
+        if (mobileFullscreenTimeout) {
+          clearTimeout(mobileFullscreenTimeout);
+        }
+        mobileFullscreenTimeout = setTimeout(() => {
+          if (player.isFullscreen() && !player.paused()) {
+            player.userActive(false);
+          }
+        }, MOBILE_FULLSCREEN_HIDE_DELAY);
+      };
+
+      // Fullscreen change: toggle auto-hide behavior
+      player.on('fullscreenchange', () => {
+        if (player.isFullscreen()) {
+          console.log('[useVideoJsPlayer] Mobile fullscreen: enabling auto-hide');
+          showControlsTemporarily();
+        } else {
+          console.log('[useVideoJsPlayer] Mobile exit fullscreen: controls always visible');
+          if (mobileFullscreenTimeout) {
+            clearTimeout(mobileFullscreenTimeout);
+          }
+          player.userActive(true);
+        }
+      });
+
+      // Touch in fullscreen shows controls temporarily
+      player.on('touchstart', () => {
+        if (player.isFullscreen()) {
+          showControlsTemporarily();
+        }
+      });
+
+      // Play in fullscreen starts hide timer
+      player.on('play', () => {
+        if (player.isFullscreen()) {
+          showControlsTemporarily();
+        }
+      });
+
+      // Pause in fullscreen keeps controls visible
+      player.on('pause', () => {
+        if (player.isFullscreen()) {
+          if (mobileFullscreenTimeout) {
+            clearTimeout(mobileFullscreenTimeout);
+          }
+          player.userActive(true);
+        }
+      });
+
+      // Cleanup on dispose
+      player.on('dispose', () => {
+        if (mobileFullscreenTimeout) {
+          clearTimeout(mobileFullscreenTimeout);
+        }
+      });
+    } else {
+      // Desktop/Tablet: Video.js handles auto-hide via inactivityTimeout: 2000
+      console.log('[useVideoJsPlayer] Desktop/Tablet: auto-hide controls after 2s inactivity');
+    }
 
     // Add custom seek buttons to control bar (desktop/tablet)
     if (!isMobile) {
