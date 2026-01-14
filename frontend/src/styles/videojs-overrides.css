@@ -46,6 +46,20 @@
   display: flex !important;
 }
 
+/* Hide controls when user is inactive (after video has started) */
+.video-js.vjs-has-started.vjs-user-inactive .vjs-control-bar {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+/* Show controls when user is active */
+.video-js.vjs-has-started.vjs-user-active .vjs-control-bar {
+  opacity: 1;
+  pointer-events: auto;
+  transition: opacity 0.3s ease;
+}
+
 /* Progress bar */
 .video-js .vjs-play-progress,
 .video-js .vjs-volume-level {
