@@ -183,8 +183,48 @@ export function useVideoJsPlayer({
         }
       });
     } else {
-      // Desktop/Tablet: Video.js handles auto-hide via inactivityTimeout: 2000
-      console.log('[useVideoJsPlayer] Desktop/Tablet: auto-hide controls after 2s inactivity');
+      // Desktop/Tablet: Auto-hide controls even when paused
+      // Video.js default keeps controls visible when paused, we override this
+      let desktopHideTimeout = null;
+      const DESKTOP_HIDE_DELAY = 2000;
+
+      const hideControlsAfterDelay = () => {
+        if (desktopHideTimeout) {
+          clearTimeout(desktopHideTimeout);
+        }
+        desktopHideTimeout = setTimeout(() => {
+          player.userActive(false);
+        }, DESKTOP_HIDE_DELAY);
+      };
+
+      // When paused, start timer to hide controls
+      player.on('pause', () => {
+        hideControlsAfterDelay();
+      });
+
+      // When playing, let Video.js handle via inactivityTimeout
+      player.on('play', () => {
+        if (desktopHideTimeout) {
+          clearTimeout(desktopHideTimeout);
+          desktopHideTimeout = null;
+        }
+      });
+
+      // When user becomes active (mouse move), reset timer if paused
+      player.on('useractive', () => {
+        if (player.paused()) {
+          hideControlsAfterDelay();
+        }
+      });
+
+      // Cleanup on dispose
+      player.on('dispose', () => {
+        if (desktopHideTimeout) {
+          clearTimeout(desktopHideTimeout);
+        }
+      });
+
+      console.log('[useVideoJsPlayer] Desktop/Tablet: auto-hide controls after 2s (including when paused)');
     }
 
     // Add custom seek buttons to control bar (desktop/tablet)
