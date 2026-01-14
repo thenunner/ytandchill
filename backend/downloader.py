@@ -1,6 +1,7 @@
 import threading
 import time
 import os
+import glob
 import random
 from datetime import datetime, timezone
 import logging
@@ -36,6 +37,10 @@ class DownloadWorker:
     # Timeout constants
     PROGRESS_TIMEOUT = 120   # 2 minutes of no progress triggers timeout (file not growing)
     HARD_TIMEOUT = 14400     # 4 hours maximum download time
+
+    # Inter-download delay range (seconds) - prevents rate limiting
+    DELAY_MIN = 45           # Minimum delay between downloads
+    DELAY_MAX = 120          # Maximum delay between downloads (2 minutes)
 
     def __init__(self, session_factory, download_dir='downloads', settings_manager=None):
         self.session_factory = session_factory
@@ -740,8 +745,8 @@ class DownloadWorker:
     def _apply_inter_download_delay(self, download_success):
         """Set delay timer after successful download to avoid rate limiting."""
         if download_success:
-            # Random delay: 45 seconds to 2 minutes (45-120 seconds)
-            self.next_download_delay = random.randint(45, 120)
+            # Random delay between downloads to avoid rate limiting
+            self.next_download_delay = random.randint(self.DELAY_MIN, self.DELAY_MAX)
             self.last_download_time = time.time()
             logger.info(f"Next download will wait {self.next_download_delay} seconds ({self.next_download_delay/60:.1f} min) to avoid rate limiting")
         else:

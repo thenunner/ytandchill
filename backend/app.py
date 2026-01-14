@@ -71,12 +71,12 @@ def check_single_instance():
             if lock_file_handle:
                 try:
                     lock_file_handle.close()
-                except:
+                except OSError:
                     pass
             if os.path.exists(LOCK_FILE):
                 try:
                     os.remove(LOCK_FILE)
-                except:
+                except OSError:
                     pass
         atexit.register(cleanup)
 
@@ -326,8 +326,8 @@ def _scan_worker():
             # Get next scan job from queue (blocking with timeout)
             try:
                 scan_job = scan_queue.get(timeout=1.0)
-            except:
-                # Timeout - no job available, continue loop
+            except Exception:
+                # Timeout (queue.Empty) - no job available, continue loop
                 # Just reset counters if queue is empty (completion message already set)
                 if scan_queue.empty():
                     scan_total_channels = 0

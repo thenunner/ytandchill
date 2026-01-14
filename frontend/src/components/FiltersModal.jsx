@@ -40,9 +40,9 @@ export default function FiltersModal({ isOpen, onClose, filters, onFilterChange,
       onClick={onClose}
     >
       <div
-        className={`bg-dark-secondary rounded-xl border border-dark-border w-full ${
-          isPlaylistMode ? 'max-w-[400px]' : 'max-w-[920px]'
-        } max-h-[90vh] overflow-hidden animate-scale-in`}
+        className={`bg-dark-secondary rounded-xl border border-dark-border w-full max-w-[90vw] ${
+          isPlaylistMode ? 'sm:max-w-[400px]' : 'sm:max-w-[920px]'
+        } max-h-[85vh] overflow-y-auto animate-slide-up`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

@@ -37,21 +37,22 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
       className={`card p-3 cursor-pointer hover:bg-dark-hover transition-colors group ${index % 2 === 0 ? 'bg-dark-secondary' : 'bg-dark-tertiary'}`}
     >
       <div className="flex items-stretch gap-3">
-        {/* Drag Handle */}
+        {/* Drag Handle - Touch friendly with visual feedback */}
         <div
           {...attributes}
           {...listeners}
           onClick={(e) => e.stopPropagation()}
-          className="flex items-center flex-shrink-0 cursor-grab active:cursor-grabbing text-text-secondary hover:text-text-primary transition-colors px-2 md:px-1 touch-none"
+          className="flex items-center flex-shrink-0 cursor-grab active:cursor-grabbing text-text-muted hover:text-text-primary active:text-accent transition-colors px-2 md:px-1 touch-none rounded hover:bg-dark-hover active:bg-dark-tertiary"
           style={{ touchAction: 'none' }}
+          title="Hold and drag to reorder"
         >
-          <svg className="w-8 h-8 md:w-7 md:h-7" viewBox="0 0 24 24" fill="currentColor">
-            <circle cx="9" cy="5" r="1.5"></circle>
-            <circle cx="9" cy="12" r="1.5"></circle>
-            <circle cx="9" cy="19" r="1.5"></circle>
-            <circle cx="15" cy="5" r="1.5"></circle>
-            <circle cx="15" cy="12" r="1.5"></circle>
-            <circle cx="15" cy="19" r="1.5"></circle>
+          <svg className="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="9" cy="5" r="2"></circle>
+            <circle cx="9" cy="12" r="2"></circle>
+            <circle cx="9" cy="19" r="2"></circle>
+            <circle cx="15" cy="5" r="2"></circle>
+            <circle cx="15" cy="12" r="2"></circle>
+            <circle cx="15" cy="19" r="2"></circle>
           </svg>
         </div>
 
@@ -60,8 +61,8 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
           {index + 1}
         </div>
 
-        {/* Thumbnail */}
-        <div className="hidden md:block flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden">
+        {/* Thumbnail - Smaller on mobile */}
+        <div className="flex-shrink-0 w-[60px] h-[34px] md:w-[100px] md:h-[56px] bg-dark-tertiary rounded overflow-hidden">
           {item.video?.thumb_url ? (
             <img
               src={item.video.thumb_url}
@@ -70,7 +71,7 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 md:w-8 md:h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
                 <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
               </svg>
             </div>

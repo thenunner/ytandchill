@@ -122,6 +122,12 @@ export function useVideoJsPlayer({
     // DEVICE-SPECIFIC CONTROL VISIBILITY BEHAVIOR
     // ============================================
     if (isMobile) {
+      // Remove playback rate button on mobile
+      const playbackRateBtn = player.controlBar.getChild('playbackRateMenuButton');
+      if (playbackRateBtn) {
+        player.controlBar.removeChild(playbackRateBtn);
+        console.log('[useVideoJsPlayer] Removed playback rate button for mobile');
+      }
       // Mobile: Controls always visible EXCEPT in fullscreen (YouTube-style)
       let mobileFullscreenTimeout = null;
       const MOBILE_FULLSCREEN_HIDE_DELAY = 2000;

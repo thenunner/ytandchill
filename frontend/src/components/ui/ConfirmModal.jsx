@@ -42,12 +42,12 @@ export default function ConfirmModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
         onClick={onCancel}
       />
 
       {/* Modal */}
-      <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-md w-full animate-fade-in">
+      <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-[90vw] sm:max-w-md w-full animate-slide-up">
         {/* Header */}
         <div className="px-6 py-4 border-b border-dark-border">
           <h3 className={`text-lg font-semibold ${isLightTheme ? 'text-black' : 'text-text-primary'}`}>

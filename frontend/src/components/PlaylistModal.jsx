@@ -53,7 +53,7 @@ export default function PlaylistModal({ playlist, onClose }) {
       onClick={onClose}
     >
       <div
-        className="bg-dark-secondary rounded-xl border border-dark-border p-6 w-full max-w-md animate-scale-in"
+        className="bg-dark-secondary rounded-xl border border-dark-border p-6 w-full max-w-[90vw] sm:max-w-md max-h-[85vh] overflow-y-auto animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-xl font-semibold text-text-primary mb-4">

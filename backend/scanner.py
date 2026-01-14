@@ -218,8 +218,8 @@ class YouTubeAPIClient:
                         channel_id = response['items'][0]['id']
                         logger.debug(f'Resolved @{handle} to {channel_id} via forUsername')
                         return channel_id
-                except HttpError:
-                    pass
+                except HttpError as e:
+                    logger.debug(f'forUsername lookup failed for @{handle}, falling back to search: {e}')
 
                 # Last resort: Use search with exact query match
                 search_response = self.youtube.search().list(

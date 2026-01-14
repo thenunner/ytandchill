@@ -139,7 +139,7 @@ def health_check():
     try:
         result = subprocess.run(['ffmpeg', '-version'], capture_output=True, timeout=5)
         ffmpeg_available = result.returncode == 0
-    except:
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
         pass
 
     # Check yt-dlp version

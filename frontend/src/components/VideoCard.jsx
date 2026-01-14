@@ -217,11 +217,27 @@ export default function VideoCard({
           </>
         )}
 
-        {/* Selection Checkmark - Top Right (Show when selection is active) */}
-        {isSelected && onToggleSelect && (
-          <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
-            <CheckmarkIcon className="w-4 h-4 text-accent-text" strokeWidth="3" />
+        {/* Selection Checkbox - Top Right */}
+        {/* In edit mode: always show checkbox (empty when not selected, filled when selected) */}
+        {/* Otherwise: only show checkmark when selected */}
+        {editMode ? (
+          <div className={`absolute top-2 right-2 rounded-md p-0.5 shadow-lg z-10 transition-colors ${
+            isSelected
+              ? 'bg-accent text-white'
+              : 'bg-black/60 text-white/60 border-2 border-white/40'
+          }`}>
+            {isSelected ? (
+              <CheckmarkIcon className="w-5 h-5" strokeWidth="3" />
+            ) : (
+              <div className="w-5 h-5" />
+            )}
           </div>
+        ) : (
+          isSelected && onToggleSelect && (
+            <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
+              <CheckmarkIcon className="w-4 h-4 text-accent-text" strokeWidth="3" />
+            </div>
+          )
         )}
 
         {/* Status Badge - For non-library videos (channels view) */}

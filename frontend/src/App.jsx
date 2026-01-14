@@ -16,6 +16,7 @@ import PlaylistPlayer from './routes/PlaylistPlayer';
 import Setup from './routes/Setup';
 import Login from './routes/Login';
 import NavItem from './components/NavItem';
+import ErrorBoundary from './components/ErrorBoundary';
 import { SettingsIcon } from './components/icons';
 
 function App() {
@@ -457,22 +458,24 @@ function App() {
 
       {/* Main Content */}
       <main className={`flex-1 w-full ${isAuthPage ? '' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
-        <Routes>
-          <Route path="/setup" element={<Setup />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
-          <Route path="/videos" element={isAuthenticated ? <Videos /> : <Navigate to="/login" replace />} />
-          <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
-          <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
-          <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
-          <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
-          <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
-          <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
-          <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
-          <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
-          <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/setup" element={<Setup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
+            <Route path="/videos" element={isAuthenticated ? <Videos /> : <Navigate to="/login" replace />} />
+            <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
+            <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+            <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+            <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
+            <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
+            <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
+            <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
+            <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
+            <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </ErrorBoundary>
       </main>
 
       {/* Footer Status Bar - Hidden on auth pages and mobile, or when user hides it */}

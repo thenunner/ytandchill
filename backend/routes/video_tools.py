@@ -195,9 +195,9 @@ def delete_video(video_id):
         if video.file_path and os.path.exists(video.file_path):
             try:
                 os.remove(video.file_path)
-                print(f"Deleted video file: {video.file_path}")
+                logger.info(f"Deleted video file: {video.file_path}")
             except Exception as e:
-                print(f"Error deleting video file: {e}")
+                logger.error(f"Error deleting video file: {e}")
 
         # Delete thumbnail if it exists (typically same name as video with .jpg extension)
         if video.file_path:
@@ -205,22 +205,22 @@ def delete_video(video_id):
             if os.path.exists(thumb_path):
                 try:
                     os.remove(thumb_path)
-                    print(f"Deleted thumbnail: {thumb_path}")
+                    logger.debug(f"Deleted thumbnail: {thumb_path}")
                 except Exception as e:
-                    print(f"Error deleting thumbnail: {e}")
+                    logger.error(f"Error deleting thumbnail: {e}")
 
         # Remove from queue if present
         queue_item = session.query(QueueItem).filter(QueueItem.video_id == video.id).first()
         if queue_item:
             session.delete(queue_item)
-            print(f"Removed video from queue")
+            logger.debug(f"Removed video from queue")
 
         if is_singles:
             # Hard delete Singles videos - allows re-downloading
             # Remove from any playlists first
             session.query(PlaylistVideo).filter(PlaylistVideo.video_id == video.id).delete()
             session.delete(video)
-            print(f"Hard deleted Singles video: {video.yt_id}")
+            logger.info(f"Hard deleted Singles video: {video.yt_id}")
         else:
             # Soft-delete for channel videos: Set status to 'ignored'
             # This prevents the video from being re-queued on future scans
