@@ -274,3 +274,32 @@
     top: -0.35em;
   }
 }
+
+/* Seek +10/-10 buttons - match size with other control bar buttons */
+.video-js .vjs-seek-backward-10 .vjs-icon-placeholder,
+.video-js .vjs-seek-forward-10 .vjs-icon-placeholder {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-js .vjs-seek-backward-10 .vjs-icon-placeholder:before,
+.video-js .vjs-seek-forward-10 .vjs-icon-placeholder:before {
+  display: none;
+}
+
+.video-js .vjs-seek-backward-10 svg,
+.video-js .vjs-seek-forward-10 svg {
+  width: 2em;
+  height: 2em;
+  display: block;
+}
+
+/* Mobile adjustments for seek buttons */
+@media (max-width: 1024px) {
+  .video-js .vjs-seek-backward-10 svg,
+  .video-js .vjs-seek-forward-10 svg {
+    width: 1.8em;
+    height: 1.8em;
+  }
+}
