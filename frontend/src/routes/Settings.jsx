@@ -61,6 +61,10 @@ export default function Settings() {
   const [removeInteraction, setRemoveInteraction] = useState(false);
   const [showSponsorBlockHelp, setShowSponsorBlockHelp] = useState(false);
 
+  // Import Rules state
+  const [reencodeMkv, setReencodeMkv] = useState(false);
+  const [showImportHelp, setShowImportHelp] = useState(false);
+
   // Initialize showLogs from localStorage, default to true (open) if not set
   const [showLogs, setShowLogs] = useState(() => {
     const saved = localStorage.getItem('logsVisible');
@@ -146,6 +150,8 @@ export default function Settings() {
       setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
       // Load cookie source setting
       setCookieSource(settings.cookie_source || 'file');
+      // Load Import Rules settings
+      setReencodeMkv(settings.import_reencode_mkv === 'true');
     }
   }, [settings]);
 
@@ -177,6 +183,23 @@ export default function Settings() {
     } catch (error) {
       console.error(`Failed to save ${setting}:`, error);
       setValue(currentValue); // Revert on error
+    }
+  };
+
+  const handleReencodeMkvToggle = async () => {
+    const newValue = !reencodeMkv;
+    setReencodeMkv(newValue);
+    try {
+      await updateSettings.mutateAsync({
+        import_reencode_mkv: newValue ? 'true' : 'false',
+      });
+      showNotification(
+        newValue ? 'MKV re-encoding enabled' : 'MKV re-encoding disabled',
+        'success'
+      );
+    } catch (error) {
+      setReencodeMkv(!newValue); // Revert on error
+      showNotification('Failed to save setting', 'error');
     }
   };
 
@@ -791,19 +814,44 @@ export default function Settings() {
             )}
           </div>
 
-          {/* Card 2: SponsorBlock */}
+          {/* Card 2: Import Rules + SponsorBlock */}
           <div className="card p-4 w-full">
-            <div className="flex flex-col items-center">
-                <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center justify-center gap-2">
-                  SponsorBlock
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left Column - Import Rules */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-text-primary">Import Rules</h3>
+                  <button
+                    onClick={() => setShowImportHelp(true)}
+                    className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                    title="What is this?"
+                  >
+                    ?
+                  </button>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={reencodeMkv}
+                    onChange={handleReencodeMkvToggle}
+                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                  />
+                  <span className="text-sm text-text-primary font-medium">Re-encode MKVs for Web</span>
+                </label>
+              </div>
+
+              {/* Right Column - SponsorBlock */}
+              <div className="flex flex-col items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-text-primary">SponsorBlock</h3>
                   <button
                     onClick={() => setShowSponsorBlockHelp(true)}
-                    className="ml-1 w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                    className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
                     title="What is SponsorBlock?"
                   >
                     ?
                   </button>
-                </h3>
+                </div>
                 <div className="flex flex-wrap items-center justify-center gap-2">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -835,6 +883,7 @@ export default function Settings() {
                     <span className="text-sm text-text-primary font-medium">Like/Sub Requests</span>
                   </label>
                 </div>
+              </div>
             </div>
           </div>
 
@@ -1386,6 +1435,32 @@ export default function Settings() {
               <p className="text-xs text-text-muted mt-4">
                 Data provided by <a href="https://sponsor.ajay.app" target="_blank" rel="noopener noreferrer" className="text-accent-text hover:underline">SponsorBlock API</a> - a community-driven project.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Import Rules Help Modal */}
+      {showImportHelp && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowImportHelp(false)}>
+          <div className="card p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-text-primary">Import Rules</h2>
+              <button
+                onClick={() => setShowImportHelp(false)}
+                className="text-text-muted hover:text-text-primary transition-colors"
+              >
+                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            </div>
+            <div className="space-y-4 text-sm text-text-secondary">
+              <div className="bg-dark-tertiary p-3 rounded-lg">
+                <h3 className="font-semibold text-text-primary mb-2">Re-encode MKVs for Web</h3>
+                <p className="mb-2">When enabled, MKV files in the import folder will be re-encoded to MP4 (H.264 + AAC) for browser compatibility.</p>
+                <p className="text-xs text-text-muted">This process may take several minutes depending on file size. The original MKV is deleted after successful conversion.</p>
+              </div>
             </div>
           </div>
         </div>

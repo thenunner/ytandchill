@@ -24,6 +24,7 @@
   --accent: 210 60% 52%;           /* Blue - for buttons/backgrounds */
   --accent-hover: 210 65% 62%;     /* Lighter blue on hover */
   --accent-text: 210 65% 65%;      /* Brighter blue for text readability */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 220 10% 8%;   /* Same as bg-secondary */
@@ -54,6 +55,7 @@
   --accent: 0 100% 45%;            /* Darker red for buttons/backgrounds */
   --accent-hover: 0 100% 55%;      /* Lighter red on hover */
   --accent-text: 0 100% 60%;       /* Brighter red for text readability */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 0 8% 10%;
@@ -84,6 +86,7 @@
   --accent: 220 55% 50%;           /* Blue - for buttons/backgrounds */
   --accent-hover: 220 55% 60%;     /* Lighter on hover */
   --accent-text: 220 60% 65%;      /* Brighter blue for text readability */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 220 45% 8%;
@@ -114,6 +117,7 @@
   --accent: 95 35% 50%;            /* Sage - for buttons/backgrounds */
   --accent-hover: 95 38% 60%;      /* Brighter sage hover */
   --accent-text: 95 45% 58%;       /* Brighter sage for text readability */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 25 28% 9%;
@@ -144,6 +148,7 @@
   --accent: 35 55% 45%;            /* Orange - for buttons/backgrounds */
   --accent-hover: 35 60% 55%;      /* Brighter hover */
   --accent-text: 35 60% 58%;       /* Brighter orange for text readability */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 215 12% 22%;
@@ -170,10 +175,11 @@
   --text-secondary: 228 24% 79%;   /* Subtext0 #a6adc8 */
   --text-muted: 233 12% 56%;       /* Overlay1 #7f849c */
 
-  /* Accent (Blue) */
-  --accent: 217 92% 76%;           /* Blue #89b4fa */
-  --accent-hover: 187 67% 73%;     /* Sky #89dceb - lighter blue for hover */
-  --accent-text: 217 92% 76%;      /* Blue #89b4fa - same as accent for links */
+  /* Accent (Blue) - Darkened for dark mode focus */
+  --accent: 217 70% 45%;           /* Darker blue for buttons */
+  --accent-hover: 217 75% 55%;     /* Slightly brighter on hover */
+  --accent-text: 217 92% 76%;      /* Blue #89b4fa - brighter for text links */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 240 21% 15%;  /* Base #1e1e2e */
@@ -204,6 +210,7 @@
   --accent: 115 45% 32%;           /* Dark green for buttons/backgrounds */
   --accent-hover: 115 50% 40%;     /* Slightly brighter on hover */
   --accent-text: 115 50% 25%;      /* Darker green for text on light bg */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 105 30% 85%;
@@ -234,6 +241,7 @@
   --accent: 315 60% 38%;           /* Dark pink for buttons/backgrounds */
   --accent-hover: 315 65% 48%;     /* Slightly brighter on hover */
   --accent-text: 315 65% 30%;      /* Darker pink for text on light bg */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 330 45% 88%;
@@ -264,6 +272,7 @@
   --accent: 210 45% 35%;           /* Dark blue for buttons/backgrounds */
   --accent-hover: 210 50% 45%;     /* Slightly brighter on hover */
   --accent-text: 210 50% 28%;      /* Darker blue for text on light bg */
+  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
 
   /* Scrollbar */
   --scrollbar-track: 200 30% 82%;

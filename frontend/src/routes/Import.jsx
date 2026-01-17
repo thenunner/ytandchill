@@ -8,12 +8,10 @@ import {
   useResetImport,
   useSmartIdentify,
   useExecuteSmartImport,
+  useSettings,
 } from '../api/queries';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { CheckmarkIcon } from '../components/icons';
-
-// Supported video extensions (browser-playable formats only, must match backend)
-const VIDEO_EXTENSIONS = /\.(mp4|webm|m4v)$/i;
 
 // Max file size (must match backend MAX_CONTENT_LENGTH)
 const MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024; // 50GB
@@ -34,6 +32,12 @@ export default function Import() {
   // Queries
   const { data: scanData, isLoading: scanLoading, refetch: refetchScan } = useScanImportFolder();
   const { data: stateData, refetch: refetchState } = useImportState();
+  const { data: settings } = useSettings();
+
+  // Dynamic extensions based on MKV re-encode setting
+  const reencodeMkv = settings?.import_reencode_mkv === 'true';
+  const allowedExtensions = reencodeMkv ? ['.mkv', '.mp4', '.m4v', '.webm'] : ['.mp4', '.m4v', '.webm'];
+  const VIDEO_EXTENSIONS_REGEX = reencodeMkv ? /\.(mp4|webm|m4v|mkv)$/i : /\.(mp4|webm|m4v)$/i;
 
   // Mutations
   const smartIdentify = useSmartIdentify();
@@ -58,6 +62,14 @@ export default function Import() {
   const [rejectionError, setRejectionError] = useState(null); // {files: [], countdown: 4}
   const rejectionTimerRef = useRef(null);
   const abortControllerRef = useRef(null);
+
+  // Poll for encoding progress updates
+  useEffect(() => {
+    if (stateData?.status === 'encoding') {
+      const interval = setInterval(() => refetchState(), 500);
+      return () => clearInterval(interval);
+    }
+  }, [stateData?.status, refetchState]);
 
   // Auto-dismiss rejection error after countdown
   useEffect(() => {
@@ -217,8 +229,8 @@ export default function Import() {
     const allFiles = Array.from(e.dataTransfer.files);
 
     // Filter by extension
-    const videoFiles = allFiles.filter(f => VIDEO_EXTENSIONS.test(f.name));
-    const unsupportedFiles = allFiles.filter(f => !VIDEO_EXTENSIONS.test(f.name));
+    const videoFiles = allFiles.filter(f => VIDEO_EXTENSIONS_REGEX.test(f.name));
+    const unsupportedFiles = allFiles.filter(f => !VIDEO_EXTENSIONS_REGEX.test(f.name));
 
     // Track skipped files for inline display
     setSkippedFiles(unsupportedFiles.map(f => f.name));
@@ -234,7 +246,7 @@ export default function Import() {
 
     if (unsupportedFiles.length > 0) {
       const names = unsupportedFiles.map(f => f.name).join(', ');
-      showNotification(`${unsupportedFiles.length} file(s) skipped (unsupported format): ${names}. Supported: .mp4, .webm, .m4v`, 'warning');
+      showNotification(`${unsupportedFiles.length} file(s) skipped (unsupported format): ${names}. Supported: ${allowedExtensions.join(', ')}`, 'warning');
     }
 
     if (videoFiles.length === 0) {
@@ -478,7 +490,7 @@ export default function Import() {
                     {skippedFiles.length > 3 && ` +${skippedFiles.length - 3} more`}
                   </div>
                   <div className="text-xs text-text-muted mt-1">
-                    Supported: .mp4, .webm, .m4v
+                    Supported: {allowedExtensions.join(', ')}
                   </div>
                 </div>
               </div>
@@ -524,7 +536,7 @@ export default function Import() {
                 )}
               </div>
               <div className="text-sm text-text-muted mb-6">
-                Supported: <span className="text-text-secondary">.mp4, .webm, .m4v</span>
+                Supported: <span className="text-text-secondary">{allowedExtensions.join(', ')}</span>
               </div>
               {/* Countdown bar */}
               <div className="w-48 mx-auto h-1 bg-dark-tertiary rounded-full overflow-hidden">
@@ -545,7 +557,7 @@ export default function Import() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <div className="text-xl font-semibold text-accent-text">Drop files to upload</div>
-              <div className="text-sm text-text-secondary mt-2">.mp4, .webm, .m4v (max 50 GB)</div>
+              <div className="text-sm text-text-secondary mt-2">{allowedExtensions.join(', ')} (max 50 GB)</div>
             </div>
           </div>
         )}
@@ -575,6 +587,11 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
           <p className="text-text-muted text-xs mt-2">
             Max file size: 50 GB
           </p>
+          <div className="mt-3 pt-3 border-t border-dark-border">
+            <p className="text-text-muted text-xs">
+              <strong className="text-text-secondary">Local server?</strong> Copy files directly to the imports folder for instant transfers. Drag-and-drop uploads via browser are slower for large files.
+            </p>
+          </div>
         </div>
         <button
           onClick={() => refetchScan()}
@@ -746,6 +763,43 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
     );
   }
 
+  // State: Encoding MKV to MP4 (with real-time progress)
+  if (stateData?.status === 'encoding') {
+    const encodeProgress = stateData?.encode_progress || 0;
+    const encodeMessage = stateData?.message || 'Preparing...';
+
+    return (
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-6" />
+          <h2 className="text-xl font-semibold text-text-primary mb-4">
+            Re-encoding for Web
+          </h2>
+
+          {/* Progress card */}
+          <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 mb-4">
+            <div className="text-text-primary font-medium mb-3 truncate">
+              {encodeMessage}
+            </div>
+            <div className="h-3 bg-dark-tertiary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-accent transition-all duration-300"
+                style={{ width: `${encodeProgress}%` }}
+              />
+            </div>
+            <div className="text-sm text-text-muted mt-2">
+              {encodeProgress}% complete
+            </div>
+          </div>
+
+          <p className="text-text-secondary text-sm">
+            Converting to H.264 + AAC for browser playback
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // State: Identifying / Importing progress
   if (currentStep === 'identifying' || currentStep === 'importing') {
     return (
@@ -795,7 +849,7 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
                 {skippedFiles.length > 3 && ` +${skippedFiles.length - 3} more`}
               </div>
               <div className="text-xs text-text-muted mt-1">
-                Supported: .mp4, .webm, .m4v
+                Supported: {allowedExtensions.join(', ')}
               </div>
             </div>
             <button

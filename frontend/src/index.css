@@ -43,8 +43,8 @@
   }
 
   .btn-primary {
-    @apply bg-accent text-accent-text border border-accent;
-    @apply hover:bg-accent/80 hover:border-accent/80;
+    @apply bg-accent text-btn-primary-text border border-accent;
+    @apply hover:bg-accent-hover hover:border-accent-hover;
     @apply focus:ring-accent;
   }
 
