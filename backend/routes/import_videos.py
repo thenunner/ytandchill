@@ -19,7 +19,7 @@ import json
 import shutil
 import subprocess
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 import requests
@@ -597,15 +597,17 @@ def execute_import(file_path, video_info, channel_info, match_type):
         ).first()
 
         if not channel:
-            # Create channel
+            # Create channel but immediately soft-delete it
+            # This way videos appear in Library but channel doesn't show in Channels tab
             channel = Channel(
                 yt_id=channel_info['channel_id'],
                 title=channel_info['channel_title'],
                 folder_name=safe_title,
+                deleted_at=datetime.now(timezone.utc),  # Soft-delete immediately
             )
             session.add(channel)
             session.commit()
-            logger.info(f"Created channel: {channel_info['channel_title']}")
+            logger.info(f"Created soft-deleted channel for import: {channel_info['channel_title']}")
 
         # Create channel folder with proper permissions
         downloads_folder = get_downloads_folder()
@@ -622,16 +624,11 @@ def execute_import(file_path, video_info, channel_info, match_type):
         # Download thumbnail
         thumb_path = download_thumbnail(video_id, channel_folder)
 
-        # Parse upload date
-        upload_date = None
-        if video_info.get('upload_date'):
-            try:
-                upload_date = datetime.strptime(video_info['upload_date'], '%Y%m%d')
-            except ValueError:
-                pass
+        # Get upload date (keep as string in YYYYMMDD format)
+        upload_date = video_info.get('upload_date')
 
         # Check if video already exists
-        existing = session.query(Video).filter(Video.youtube_id == video_id).first()
+        existing = session.query(Video).filter(Video.yt_id == video_id).first()
         if existing:
             logger.warning(f"Video {video_id} already exists in database")
             # Update to library status if not already
@@ -640,7 +637,7 @@ def execute_import(file_path, video_info, channel_info, match_type):
                 existing.file_path = new_file_path
                 existing.file_size_bytes = os.path.getsize(new_file_path)
                 if thumb_path:
-                    existing.thumb_path = thumb_path
+                    existing.thumb_url = thumb_path
                 session.commit()
             # Remove source file
             os.remove(file_path)
@@ -648,20 +645,19 @@ def execute_import(file_path, video_info, channel_info, match_type):
 
         # Create video record
         video = Video(
-            youtube_id=video_id,
+            yt_id=video_id,
             title=video_info['title'],
             channel_id=channel.id,
-            channel_title=channel_info['channel_title'],
             status='library',
             file_path=new_file_path,
             file_size_bytes=os.path.getsize(new_file_path),
-            duration_sec=video_info.get('duration'),
+            duration_sec=video_info.get('duration', 0),
             upload_date=upload_date,
-            downloaded_at=datetime.utcnow(),
+            downloaded_at=datetime.now(timezone.utc),
         )
 
         if thumb_path:
-            video.thumb_path = thumb_path
+            video.thumb_url = thumb_path
 
         session.add(video)
         session.commit()
