@@ -63,7 +63,8 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
     # Initialize and register videos blueprint (YouTube import - Videos tab)
     if set_operation and clear_operation and parse_iso8601_duration:
         init_videos_routes(session_factory, download_worker,
-                          set_operation, clear_operation, parse_iso8601_duration)
+                          set_operation, clear_operation, parse_iso8601_duration,
+                          settings_manager)
         app.register_blueprint(videos_bp)
 
     # Initialize and register library blueprint (playlists and categories)

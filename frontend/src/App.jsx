@@ -18,7 +18,9 @@ import Login from './routes/Login';
 import Import from './routes/Import';
 import NavItem from './components/NavItem';
 import ErrorBoundary from './components/ErrorBoundary';
+import UpdateModal from './components/UpdateModal';
 import { SettingsIcon } from './components/icons';
+import { version as APP_VERSION } from '../package.json';
 
 function App() {
   const location = useLocation();
@@ -34,6 +36,11 @@ function App() {
   const [showKebabMenu, setShowKebabMenu] = useState(false);
   const kebabMenuRef = useRef(null);
   const clearingCookieWarningRef = useRef(false); // Debounce flag to prevent duplicate API calls
+
+  // Update modal state
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [latestVersion, setLatestVersion] = useState(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
   // Status bar visibility - sync with localStorage
   const [statusBarVisible, setStatusBarVisible] = useState(() => {
@@ -62,6 +69,48 @@ function App() {
       window.removeEventListener('statusBarVisibilityChanged', handleCustomEvent);
     };
   }, []);
+
+  // Track if user has interacted (navigated) since last check
+  const hasInteractedRef = useRef(false);
+  const previousPathRef = useRef(location.pathname);
+
+  // Update latest version from health API (populated by backend scan operations)
+  useEffect(() => {
+    if (health?.latest_version) {
+      const latest = health.latest_version;
+      setLatestVersion(latest);
+
+      if (latest && latest !== APP_VERSION && latest > APP_VERSION) {
+        setUpdateAvailable(true);
+      }
+    }
+  }, [health?.latest_version]);
+
+  // Show update modal on route change when update is available and not dismissed
+  useEffect(() => {
+    // Only trigger on actual route changes
+    if (location.pathname === previousPathRef.current) {
+      return;
+    }
+    previousPathRef.current = location.pathname;
+
+    // Check if update is available and not dismissed
+    if (updateAvailable && latestVersion) {
+      const dismissedVersion = localStorage.getItem('dismissedUpdateVersion');
+      if (dismissedVersion !== latestVersion) {
+        // Show modal on navigation
+        setShowUpdateModal(true);
+      }
+    }
+  }, [location.pathname, updateAvailable, latestVersion]);
+
+  // Handle update modal close - store dismissed version
+  const handleUpdateModalClose = () => {
+    setShowUpdateModal(false);
+    if (latestVersion) {
+      localStorage.setItem('dismissedUpdateVersion', latestVersion);
+    }
+  };
 
   // Check if current theme is a light theme (memoized to prevent recalculation)
   const isLightTheme = useMemo(() =>
@@ -737,6 +786,14 @@ function App() {
           </div>
         </footer>
       )}
+
+      {/* Update Available Modal */}
+      <UpdateModal
+        isOpen={showUpdateModal}
+        onClose={handleUpdateModalClose}
+        currentVersion={APP_VERSION}
+        latestVersion={latestVersion}
+      />
     </div>
   );
 }

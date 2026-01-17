@@ -3,11 +3,36 @@ from datetime import datetime, timezone, timedelta
 import subprocess
 import os
 import json
+import requests
 from database import Channel, Video, Setting, QueueItem, get_session
 from sqlalchemy import func
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def check_for_app_update(settings_manager):
+    """
+    Check GitHub for the latest version and store it in settings.
+    Called at the end of auto-scan.
+    """
+    try:
+        response = requests.get(
+            'https://api.github.com/repos/thenunner/ytandchill/releases/latest',
+            timeout=10,
+            headers={'Accept': 'application/vnd.github.v3+json'}
+        )
+        if response.status_code == 200:
+            data = response.json()
+            tag_name = data.get('tag_name', '')
+            latest_version = tag_name.lstrip('v') if tag_name else None
+            if latest_version:
+                settings_manager.set('latest_version', latest_version)
+                logger.info(f"Auto-scan: Update check complete - latest version is {latest_version}")
+                return latest_version
+    except Exception as e:
+        logger.debug(f"Auto-scan: Update check failed: {e}")
+    return None
 
 
 class AutoRefreshScheduler:
@@ -329,6 +354,10 @@ class AutoRefreshScheduler:
                 logger.debug(f"Auto-scan: Successfully queued {queued_count}/{len(channels)} channels")
                 if self.set_operation:
                     self.set_operation('auto_refresh', f'Auto-scan: Queued {queued_count} channels')
+
+            # Check for app updates at the end of auto-scan
+            if self.settings_manager:
+                check_for_app_update(self.settings_manager)
 
             if self.clear_operation:
                 self.clear_operation()

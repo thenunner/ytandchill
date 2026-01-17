@@ -22,7 +22,7 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from flask import Blueprint, jsonify, request
-import requests
+import requests as http_requests
 import yt_dlp
 
 from werkzeug.utils import secure_filename
@@ -62,6 +62,25 @@ def init_import_routes(session_factory, settings_manager):
     global _session_factory, _settings_manager
     _session_factory = session_factory
     _settings_manager = settings_manager
+
+
+def _check_for_app_update():
+    """Check GitHub for latest version and store in settings."""
+    try:
+        response = http_requests.get(
+            'https://api.github.com/repos/thenunner/ytandchill/releases/latest',
+            timeout=10,
+            headers={'Accept': 'application/vnd.github.v3+json'}
+        )
+        if response.status_code == 200:
+            data = response.json()
+            tag_name = data.get('tag_name', '')
+            latest_version = tag_name.lstrip('v') if tag_name else None
+            if latest_version and _settings_manager:
+                _settings_manager.set('latest_version', latest_version)
+                logger.debug(f"Import: Update check complete - latest version is {latest_version}")
+    except Exception as e:
+        logger.debug(f"Import: Update check failed: {e}")
 
 
 def get_downloads_folder():
@@ -555,7 +574,7 @@ def download_thumbnail(video_id, channel_folder):
     thumb_path = os.path.join(channel_folder, f"{video_id}.jpg")
 
     try:
-        response = requests.get(thumb_url, timeout=10)
+        response = http_requests.get(thumb_url, timeout=10)
         if response.status_code == 200:
             with open(thumb_path, 'wb') as f:
                 f.write(response.content)
@@ -563,7 +582,7 @@ def download_thumbnail(video_id, channel_folder):
 
         # Try hqdefault if maxres not available
         thumb_url = f"https://img.youtube.com/vi/{video_id}/hqdefault.jpg"
-        response = requests.get(thumb_url, timeout=10)
+        response = http_requests.get(thumb_url, timeout=10)
         if response.status_code == 200:
             with open(thumb_path, 'wb') as f:
                 f.write(response.content)
@@ -1018,6 +1037,9 @@ def execute_smart_import():
                 'success': False,
                 'error': str(e),
             })
+
+    # Check for app updates after import operation
+    _check_for_app_update()
 
     return jsonify({
         'results': results,
