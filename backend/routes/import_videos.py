@@ -332,10 +332,15 @@ def search_video_by_title(title, expected_duration=None, num_results=20):
         search_query = re.sub(r'[\"\`]', '', search_query)  # Remove quotes that break shell
         search_query = re.sub(r'\s+', ' ', search_query).strip()
 
-        # Try full title search first
-        raw_results = _execute_youtube_search(search_query, num_results)
+        # Try exact phrase search first (quoted)
+        raw_results = _execute_youtube_search(f'"{search_query}"', num_results)
 
-        # If no results, try with first 5 words only
+        # If no results, try without quotes
+        if not raw_results:
+            logger.info(f"No exact match, trying unquoted search")
+            raw_results = _execute_youtube_search(search_query, num_results)
+
+        # If still no results, try with first 5 words only
         if not raw_results:
             words = search_query.split()[:5]
             if len(words) >= 2:
