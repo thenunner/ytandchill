@@ -41,6 +41,7 @@ _settings_manager = None
 
 # Supported video extensions (browser-playable formats only)
 VIDEO_EXTENSIONS = {'.mp4', '.webm', '.m4v'}
+MKV_EXTENSION = '.mkv'  # Handled conditionally when re-encode enabled
 
 # Import state (in-memory for session)
 _import_state = {
@@ -51,9 +52,10 @@ _import_state = {
     'skipped': [],  # Skipped files with reasons
     'known_channel_ids': set(),  # Channel IDs from channels.txt for prioritization
     'current_channel_idx': 0,
-    'status': 'idle',  # idle, fetching, matching, importing, complete
+    'status': 'idle',  # idle, fetching, matching, importing, encoding, complete
     'progress': 0,
     'message': '',
+    'encode_progress': None,  # 0-100 when encoding MKV
 }
 
 
@@ -153,6 +155,10 @@ def scan_import_folder():
     """Scan import folder for video files and channel URL files."""
     import_folder = get_import_folder()
 
+    # Get MKV re-encode setting
+    reencode_mkv = _settings_manager.get('import_reencode_mkv', 'false') == 'true'
+    allowed_extensions = VIDEO_EXTENSIONS | ({MKV_EXTENSION} if reencode_mkv else set())
+
     # Accepted channel file names (one URL per line)
     CHANNEL_FILE_NAMES = {'channels.txt', 'channels.csv', 'channels.list', 'urls.txt', 'urls.csv'}
 
@@ -168,7 +174,7 @@ def scan_import_folder():
         if os.path.isfile(filepath):
             ext = os.path.splitext(filename)[1].lower()
 
-            if ext in VIDEO_EXTENSIONS:
+            if ext in allowed_extensions:
                 files.append({
                     'name': filename,
                     'path': filepath,
@@ -594,6 +600,59 @@ def download_thumbnail(video_id, channel_folder):
     return None
 
 
+def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
+    """Re-encode MKV to web-compatible MP4 with progress tracking.
+
+    Uses ffmpeg's -progress flag to get machine-readable progress,
+    updates _import_state with percentage for frontend polling.
+    """
+    global _import_state
+
+    filename = os.path.basename(input_path)
+
+    args = [
+        'ffmpeg', '-y',
+        '-i', input_path,
+        '-c:v', 'libx264',
+        '-preset', 'medium',
+        '-crf', '23',
+        '-c:a', 'aac',
+        '-b:a', '192k',
+        '-movflags', '+faststart',
+        '-progress', 'pipe:1',  # Machine-readable progress to stdout
+        output_path
+    ]
+
+    try:
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        for line in process.stdout:
+            if line.startswith('out_time_ms='):
+                try:
+                    current_ms = int(line.split('=')[1])
+                    current_sec = current_ms / 1000000  # Microseconds to seconds
+                    if total_duration and total_duration > 0:
+                        percent = min(99, int((current_sec / total_duration) * 100))
+                        _import_state['message'] = f"Encoding: {filename} ({percent}%)"
+                        _import_state['encode_progress'] = percent
+                except ValueError:
+                    pass
+
+        process.wait()
+
+        if process.returncode != 0:
+            stderr = process.stderr.read()
+            logger.error(f"FFmpeg error: {stderr}")
+            return False
+
+        _import_state['encode_progress'] = 100
+        return True
+
+    except Exception as e:
+        logger.error(f"Re-encoding failed: {e}")
+        return False
+
+
 def execute_import(file_path, video_info, channel_info, match_type):
     """Execute the import for a single file.
 
@@ -604,11 +663,38 @@ def execute_import(file_path, video_info, channel_info, match_type):
     5. Add to database
     6. Delete from import folder
     """
-    global _session_factory
+    global _session_factory, _import_state
 
     video_id = video_info['id']
     filename = os.path.basename(file_path)
     ext = os.path.splitext(filename)[1]
+
+    # Check if MKV needs re-encoding
+    if ext.lower() == '.mkv':
+        reencode_enabled = _settings_manager.get('import_reencode_mkv', 'false') == 'true'
+        if reencode_enabled:
+            mp4_path = file_path.rsplit('.', 1)[0] + '.mp4'
+
+            # Get duration for progress tracking (video_info has it from identify phase)
+            total_duration = video_info.get('duration') or get_video_duration(file_path)
+
+            # Set encoding state for frontend
+            _import_state['status'] = 'encoding'
+            _import_state['encode_progress'] = 0
+            _import_state['message'] = f"Encoding: {filename} (0%)"
+            logger.info(f"Re-encoding MKV to MP4: {filename} (duration: {total_duration}s)")
+
+            if reencode_mkv_to_mp4(file_path, mp4_path, total_duration):
+                os.remove(file_path)  # Delete original MKV
+                file_path = mp4_path
+                ext = '.mp4'
+                _import_state['status'] = 'importing'
+                _import_state['encode_progress'] = None
+                logger.info(f"Re-encoding complete: {mp4_path}")
+            else:
+                _import_state['status'] = 'idle'
+                _import_state['encode_progress'] = None
+                raise ValueError(f"Failed to re-encode MKV file: {filename}")
 
     with get_session(_session_factory) as session:
         # Sanitize channel title for folder name
@@ -768,11 +854,15 @@ def upload_import_file():
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
 
+    # Get MKV re-encode setting
+    reencode_mkv = _settings_manager.get('import_reencode_mkv', 'false') == 'true'
+    allowed_extensions = VIDEO_EXTENSIONS | ({MKV_EXTENSION} if reencode_mkv else set())
+
     # Check extension
     ext = os.path.splitext(file.filename)[1].lower()
-    if ext not in VIDEO_EXTENSIONS:
+    if ext not in allowed_extensions:
         return jsonify({
-            'error': f'Invalid file type: {ext}. Supported: {", ".join(sorted(VIDEO_EXTENSIONS))}'
+            'error': f'Invalid file type: {ext}. Supported: {", ".join(sorted(allowed_extensions))}'
         }), 400
 
     # Save to import folder
@@ -1390,6 +1480,7 @@ def get_state():
     return jsonify({
         'status': _import_state['status'],
         'message': _import_state['message'],
+        'encode_progress': _import_state.get('encode_progress'),
         'channels': [{
             'url': ch['url'],
             'channel_info': ch.get('channel_info'),
@@ -1404,6 +1495,19 @@ def get_state():
         'imported': _import_state['imported'],
         'pending': _import_state['pending'],
         'skipped': _import_state['skipped'],
+    })
+
+
+@import_bp.route('/api/import/allowed-extensions', methods=['GET'])
+def get_allowed_extensions():
+    """Return currently allowed video extensions based on settings."""
+    reencode_mkv = _settings_manager.get('import_reencode_mkv', 'false') == 'true'
+    extensions = list(VIDEO_EXTENSIONS)
+    if reencode_mkv:
+        extensions.append(MKV_EXTENSION)
+    return jsonify({
+        'extensions': sorted(extensions),
+        'reencode_mkv': reencode_mkv
     })
 
 
@@ -1422,6 +1526,7 @@ def reset_state():
         'status': 'idle',
         'progress': 0,
         'message': '',
+        'encode_progress': None,
     }
 
     return jsonify({'success': True})

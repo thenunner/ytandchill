@@ -13,6 +13,9 @@ export default {
           hover: 'hsl(var(--accent-hover))',
           text: 'hsl(var(--accent-text))',
         },
+        btn: {
+          'primary-text': 'hsl(var(--btn-primary-text))',
+        },
         dark: {
           primary: 'hsl(var(--bg-primary))',
           secondary: 'hsl(var(--bg-secondary))',
