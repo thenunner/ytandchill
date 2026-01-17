@@ -230,6 +230,127 @@ def normalize_title(title):
     return re.sub(r'[^\w\s]', '', title.lower()).strip()
 
 
+def identify_video_by_id(video_id):
+    """Get video metadata directly using yt-dlp.
+
+    Args:
+        video_id: YouTube video ID (11 characters)
+
+    Returns:
+        dict with video info including channel, or None if not found
+    """
+    try:
+        cmd = [
+            'yt-dlp',
+            '--dump-json',
+            '--no-warnings',
+            '--no-playlist',
+            f'https://youtube.com/watch?v={video_id}'
+        ]
+
+        cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+        if os.path.exists(cookies_path):
+            cmd.extend(['--cookies', cookies_path])
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+
+        if result.returncode != 0:
+            return None
+
+        data = json.loads(result.stdout.strip())
+
+        return {
+            'id': data.get('id'),
+            'title': data.get('title'),
+            'duration': data.get('duration'),
+            'channel_id': data.get('channel_id'),
+            'channel_title': data.get('channel') or data.get('uploader'),
+            'channel_url': f"https://youtube.com/channel/{data.get('channel_id')}",
+            'upload_date': data.get('upload_date'),
+        }
+    except Exception as e:
+        logger.error(f"Failed to identify video {video_id}: {e}")
+        return None
+
+
+def search_video_by_title(title, expected_duration=None, num_results=10):
+    """Search YouTube for a video by title using yt-dlp.
+
+    Args:
+        title: Video title to search for
+        expected_duration: Expected duration in seconds (for matching)
+        num_results: Number of search results to fetch
+
+    Returns:
+        list of matching videos, best matches first
+    """
+    try:
+        # Clean up title for search
+        search_query = re.sub(r'[_\-\.]', ' ', title).strip()
+
+        cmd = [
+            'yt-dlp',
+            '--flat-playlist',
+            '--dump-json',
+            '--no-warnings',
+            f'ytsearch{num_results}:{search_query}'
+        ]
+
+        cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+        if os.path.exists(cookies_path):
+            cmd.extend(['--cookies', cookies_path])
+
+        logger.info(f"Searching YouTube for: {search_query}")
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+
+        if result.returncode != 0:
+            logger.error(f"YouTube search failed: {result.stderr}")
+            return []
+
+        matches = []
+        for line in result.stdout.strip().split('\n'):
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+                video_duration = data.get('duration')
+
+                match_info = {
+                    'id': data.get('id'),
+                    'title': data.get('title'),
+                    'duration': video_duration,
+                    'channel_id': data.get('channel_id'),
+                    'channel_title': data.get('channel') or data.get('uploader'),
+                    'upload_date': data.get('upload_date'),
+                    'match_type': 'search',
+                    'duration_match': False,
+                }
+
+                # Check duration match (within 2 seconds tolerance)
+                if expected_duration and video_duration:
+                    if abs(video_duration - expected_duration) <= 2:
+                        match_info['duration_match'] = True
+                        match_info['match_type'] = 'search+duration'
+
+                matches.append(match_info)
+
+            except json.JSONDecodeError:
+                continue
+
+        # Sort: duration matches first, then by order
+        matches.sort(key=lambda x: (not x['duration_match'], matches.index(x)))
+
+        logger.info(f"Found {len(matches)} search results, {sum(1 for m in matches if m['duration_match'])} with duration match")
+        return matches
+
+    except subprocess.TimeoutExpired:
+        logger.error("YouTube search timed out")
+        return []
+    except Exception as e:
+        logger.error(f"YouTube search error: {e}")
+        return []
+
+
 def find_match(file_path, filename, local_duration, channel_videos):
     """Match a file to channel videos.
 
@@ -427,6 +548,185 @@ def scan_folder():
     }
 
     return jsonify(result)
+
+
+@import_bp.route('/api/import/smart-identify', methods=['POST'])
+def smart_identify():
+    """Identify videos directly without scanning channels.
+
+    This is MUCH faster than channel-by-channel scanning.
+    Uses yt-dlp to either:
+    1. Get video info directly (if filename is video ID)
+    2. Search YouTube by title and match by duration
+
+    Returns ready-to-import matches.
+    """
+    global _import_state
+
+    if not _import_state['files']:
+        return jsonify({'error': 'No files to identify. Run scan first.'}), 400
+
+    results = []
+    identified = []
+    pending = []  # Multiple matches needing user selection
+    failed = []
+
+    for file_info in _import_state['files']:
+        file_path = file_info['path']
+        filename = file_info['name']
+        name_without_ext = os.path.splitext(filename)[0]
+
+        # Get local file duration
+        local_duration = get_video_duration(file_path)
+
+        # Method 1: Filename is video ID (11 chars)
+        if re.match(r'^[a-zA-Z0-9_-]{11}$', name_without_ext):
+            logger.info(f"Identifying by video ID: {name_without_ext}")
+            video_info = identify_video_by_id(name_without_ext)
+
+            if video_info:
+                identified.append({
+                    'file': file_path,
+                    'filename': filename,
+                    'video': video_info,
+                    'match_type': 'video_id',
+                    'channel_info': {
+                        'channel_id': video_info['channel_id'],
+                        'channel_title': video_info['channel_title'],
+                        'channel_url': video_info.get('channel_url', f"https://youtube.com/channel/{video_info['channel_id']}"),
+                    },
+                })
+                continue
+            else:
+                failed.append({
+                    'file': file_path,
+                    'filename': filename,
+                    'reason': 'Video ID not found on YouTube',
+                })
+                continue
+
+        # Method 2: Search by title
+        logger.info(f"Searching by title: {name_without_ext}")
+        search_results = search_video_by_title(name_without_ext, expected_duration=local_duration)
+
+        if not search_results:
+            failed.append({
+                'file': file_path,
+                'filename': filename,
+                'reason': 'No search results found',
+            })
+            continue
+
+        # Check for duration matches
+        duration_matches = [r for r in search_results if r.get('duration_match')]
+
+        if len(duration_matches) == 1:
+            # Single duration match - confident match
+            match = duration_matches[0]
+            identified.append({
+                'file': file_path,
+                'filename': filename,
+                'video': match,
+                'match_type': 'search+duration',
+                'channel_info': {
+                    'channel_id': match['channel_id'],
+                    'channel_title': match['channel_title'],
+                    'channel_url': f"https://youtube.com/channel/{match['channel_id']}",
+                },
+            })
+        elif len(duration_matches) > 1:
+            # Multiple duration matches - user needs to choose
+            pending.append({
+                'file': file_path,
+                'filename': filename,
+                'matches': duration_matches,
+                'match_type': 'multiple_duration',
+                'local_duration': local_duration,
+            })
+        elif search_results:
+            # No duration match, but have search results - user can choose
+            pending.append({
+                'file': file_path,
+                'filename': filename,
+                'matches': search_results[:5],  # Top 5 results
+                'match_type': 'search_only',
+                'local_duration': local_duration,
+            })
+
+    # Update import state
+    _import_state['pending'] = pending
+
+    return jsonify({
+        'identified': identified,
+        'pending': pending,
+        'failed': failed,
+        'summary': {
+            'total': len(_import_state['files']),
+            'identified': len(identified),
+            'pending': len(pending),
+            'failed': len(failed),
+        }
+    })
+
+
+@import_bp.route('/api/import/execute-smart', methods=['POST'])
+def execute_smart_import():
+    """Execute import for smart-identified files.
+
+    Expects matches from smart-identify endpoint.
+    """
+    global _import_state
+
+    data = request.json
+    matches = data.get('matches', [])
+
+    if not matches:
+        return jsonify({'error': 'No matches to import'}), 400
+
+    results = []
+
+    for match in matches:
+        file_path = match['file']
+        video_info = match['video']
+        channel_info = match['channel_info']
+        match_type = match.get('match_type', 'smart')
+
+        try:
+            success, video_id = execute_import(
+                file_path, video_info, channel_info, match_type
+            )
+
+            if success:
+                _import_state['imported'].append({
+                    'file': file_path,
+                    'filename': match['filename'],
+                    'video': video_info,
+                    'match_type': match_type,
+                    'channel': channel_info['channel_title'],
+                })
+                results.append({
+                    'file': match['filename'],
+                    'success': True,
+                    'video_id': video_id,
+                })
+            else:
+                results.append({
+                    'file': match['filename'],
+                    'success': False,
+                    'error': 'Import failed',
+                })
+        except Exception as e:
+            logger.error(f"Smart import error for {file_path}: {e}")
+            results.append({
+                'file': match['filename'],
+                'success': False,
+                'error': str(e),
+            })
+
+    return jsonify({
+        'results': results,
+        'imported_count': len([r for r in results if r['success']]),
+    })
 
 
 @import_bp.route('/api/import/add-channel', methods=['POST'])

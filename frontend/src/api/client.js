@@ -445,6 +445,19 @@ class APIClient {
       method: 'POST',
     });
   }
+
+  smartIdentify() {
+    return this.request('/import/smart-identify', {
+      method: 'POST',
+    });
+  }
+
+  executeSmartImport(matches) {
+    return this.request('/import/execute-smart', {
+      method: 'POST',
+      body: JSON.stringify({ matches }),
+    });
+  }
 }
 
 export default new APIClient();

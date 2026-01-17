@@ -578,3 +578,25 @@ export function useResetImport() {
   });
 }
 
+export function useSmartIdentify() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.smartIdentify(),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+    },
+  });
+}
+
+export function useExecuteSmartImport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (matches) => api.executeSmartImport(matches),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries(['channels']);
+    },
+  });
+}
+
