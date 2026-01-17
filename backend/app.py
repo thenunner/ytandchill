@@ -5,7 +5,6 @@ import secrets
 from datetime import datetime, timezone, timedelta
 import os
 import yt_dlp
-import subprocess
 from database import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, ChannelCategory, get_session
 from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
@@ -146,6 +145,9 @@ app.config['SECRET_KEY'] = get_or_create_secret_key()
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = 7776000  # 90 days (default without "Remember Me")
+
+# File upload configuration - allow large video files (50GB max)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024 * 1024  # 50GB
 
 # CORS configuration - using after_request to allow credentials from any origin
 @app.after_request

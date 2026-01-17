@@ -10,6 +10,8 @@ import { formatDuration, getVideoSource } from '../utils/videoPlayerUtils';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
 import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon } from '../components/icons';
 
+const DEBUG = false; // Set to true to enable console logging
+
 export default function Player() {
   const { videoId } = useParams();
   const navigate = useNavigate();
@@ -71,7 +73,7 @@ export default function Player() {
   // Set video source when player is ready
   useEffect(() => {
     if (!playerRef.current || !video?.file_path) {
-      console.log('[Player] Skipping source update - no player or no video file path');
+      if (DEBUG) console.log('[Player] Skipping source update - no player or no video file path');
       return;
     }
 
@@ -80,39 +82,41 @@ export default function Player() {
 
       // Safety check: don't operate on disposed player
       if (player.isDisposed && player.isDisposed()) {
-        console.error('[Player] ERROR: Attempted to update source on disposed player!');
+        if (DEBUG) console.error('[Player] ERROR: Attempted to update source on disposed player!');
         return;
       }
 
       const videoSrc = getVideoSource(video.file_path);
 
       if (!videoSrc) {
-        console.error('[Player] ERROR: No video source for:', video.file_path);
+        if (DEBUG) console.error('[Player] ERROR: No video source for:', video.file_path);
         return;
       }
 
-      console.log('[Player] ===== SETTING VIDEO SOURCE =====');
-      console.log('[Player] Video:', video.title);
-      console.log('[Player] Video ID:', video.id);
-      console.log('[Player] Source path:', videoSrc);
-      console.log('[Player] Player state before update:', {
-        paused: player.paused(),
-        currentTime: player.currentTime(),
-        duration: player.duration()
-      });
+      if (DEBUG) {
+        console.log('[Player] ===== SETTING VIDEO SOURCE =====');
+        console.log('[Player] Video:', video.title);
+        console.log('[Player] Video ID:', video.id);
+        console.log('[Player] Source path:', videoSrc);
+        console.log('[Player] Player state before update:', {
+          paused: player.paused(),
+          currentTime: player.currentTime(),
+          duration: player.duration()
+        });
+      }
 
       player.src({
         src: videoSrc,
         type: 'video/mp4'
       });
 
-      console.log('[Player] Source set successfully to:', videoSrc);
+      if (DEBUG) console.log('[Player] Source set successfully to:', videoSrc);
 
       // Add error notification
       const handleError = () => {
         const error = player.error();
         if (error) {
-          console.error('[Player] Video playback error:', {
+          if (DEBUG) console.error('[Player] Video playback error:', {
             code: error.code,
             message: error.message,
             type: error.type
@@ -125,7 +129,7 @@ export default function Player() {
 
       // Log when metadata loads
       player.one('loadedmetadata', () => {
-        console.log('[Player] Video metadata loaded:', {
+        if (DEBUG) console.log('[Player] Video metadata loaded:', {
           title: video.title,
           duration: player.duration(),
           videoWidth: player.videoWidth(),
@@ -137,9 +141,11 @@ export default function Player() {
         player.off('error', handleError);
       };
     } catch (error) {
-      console.error('[Player] FATAL ERROR setting video source:', error);
-      console.error('[Player] Error stack:', error.stack);
-      console.error('[Player] Video data:', video);
+      if (DEBUG) {
+        console.error('[Player] FATAL ERROR setting video source:', error);
+        console.error('[Player] Error stack:', error.stack);
+        console.error('[Player] Video data:', video);
+      }
     }
   }, [playerRef, video?.file_path, video?.id]);
 

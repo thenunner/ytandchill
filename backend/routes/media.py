@@ -5,7 +5,7 @@ Handles:
 - GET /api/media/<path:filename> - Serve video/media files
 """
 
-from flask import Blueprint, jsonify, send_from_directory, request, Response
+from flask import Blueprint, send_from_directory, request, Response
 from werkzeug.utils import safe_join
 import logging
 import os

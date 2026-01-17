@@ -18,6 +18,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 # Helper Functions
 # =============================================================================
 
+logger = logging.getLogger(__name__)
+
 def makedirs_777(path):
     """Create directory with 777 permissions for remote access.
 
@@ -27,8 +29,8 @@ def makedirs_777(path):
     os.makedirs(path, exist_ok=True)
     try:
         os.chmod(path, 0o777)
-    except OSError:
-        pass  # May fail on some systems, but folder is created
+    except OSError as e:
+        logger.debug(f"Could not set 777 permissions on {path}: {e}")
 
 
 def parse_iso8601_duration(duration):
@@ -101,8 +103,8 @@ def ensure_channel_thumbnail(channel_id, downloads_folder):
         if channel_info and channel_info.get('thumbnail'):
             if download_thumbnail(channel_info['thumbnail'], thumb_path):
                 return relative_path
-    except Exception:
-        pass  # Fall through to return None
+    except Exception as e:
+        logger.debug(f"Failed to fetch channel thumbnail for {channel_id}: {e}")
 
     return None
 

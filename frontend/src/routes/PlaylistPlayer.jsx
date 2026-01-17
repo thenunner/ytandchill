@@ -14,6 +14,8 @@ import {
 } from '../utils/videoPlayerUtils';
 import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/icons';
 
+const DEBUG = false; // Set to true to enable console logging
+
 export default function PlaylistPlayer() {
   const { playlistId, categoryId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -137,14 +139,14 @@ export default function PlaylistPlayer() {
   // Current video based on index
   const currentVideo = useMemo(() => {
     if (videos.length === 0) {
-      console.log('[PlaylistPlayer] No videos available');
+      if (DEBUG) console.log('[PlaylistPlayer] No videos available');
       return null;
     }
     // Ensure currentIndex is valid
     const safeIndex = Math.min(currentIndex, displayOrder.length - 1);
     const actualIndex = displayOrder[safeIndex];
     if (actualIndex === undefined || actualIndex >= videos.length) {
-      console.warn('[PlaylistPlayer] Invalid video index:', actualIndex, 'falling back to first video');
+      if (DEBUG) console.warn('[PlaylistPlayer] Invalid video index:', actualIndex, 'falling back to first video');
       return videos[0];
     }
     const video = videos[actualIndex];
@@ -175,7 +177,7 @@ export default function PlaylistPlayer() {
           // Find where this video is in the display order
           const displayIdx = displayOrder.findIndex(i => i === actualIdx);
           if (displayIdx !== -1) {
-            console.log(`Setting initial video: ID=${videoId}, actualIdx=${actualIdx}, displayIdx=${displayIdx}`);
+            if (DEBUG) console.log(`Setting initial video: ID=${videoId}, actualIdx=${actualIdx}, displayIdx=${displayIdx}`);
             setCurrentIndex(displayIdx);
           } else {
             // Fallback: if not in display order yet, use actual index
@@ -220,53 +222,57 @@ export default function PlaylistPlayer() {
 
   // Navigation functions
   const goToNext = useCallback(() => {
-    console.log('[PlaylistPlayer] goToNext called. currentIndex:', currentIndex, 'displayOrder.length:', displayOrder.length);
+    if (DEBUG) console.log('[PlaylistPlayer] goToNext called. currentIndex:', currentIndex, 'displayOrder.length:', displayOrder.length);
     if (videos.length === 0) return;
     if (currentIndex < displayOrder.length - 1) {
       const newIndex = currentIndex + 1;
-      console.log('[PlaylistPlayer] Moving to next video. New index:', newIndex);
+      if (DEBUG) console.log('[PlaylistPlayer] Moving to next video. New index:', newIndex);
       setCurrentIndex(newIndex);
     } else if (isLooping) {
-      console.log('[PlaylistPlayer] Looping back to first video');
+      if (DEBUG) console.log('[PlaylistPlayer] Looping back to first video');
       setCurrentIndex(0);
       showNotification('Playlist restarted', 'info');
     } else {
-      console.log('[PlaylistPlayer] At end of playlist, not looping');
+      if (DEBUG) console.log('[PlaylistPlayer] At end of playlist, not looping');
     }
   }, [currentIndex, displayOrder.length, isLooping, videos.length, showNotification]);
 
   const goToPrevious = useCallback(() => {
-    console.log('[PlaylistPlayer] goToPrevious called. currentIndex:', currentIndex);
+    if (DEBUG) console.log('[PlaylistPlayer] goToPrevious called. currentIndex:', currentIndex);
     if (videos.length === 0) return;
     if (currentIndex > 0) {
       const newIndex = currentIndex - 1;
-      console.log('[PlaylistPlayer] Moving to previous video. New index:', newIndex);
+      if (DEBUG) console.log('[PlaylistPlayer] Moving to previous video. New index:', newIndex);
       setCurrentIndex(newIndex);
     } else if (isLooping) {
       const newIndex = displayOrder.length - 1;
-      console.log('[PlaylistPlayer] Looping to last video. New index:', newIndex);
+      if (DEBUG) console.log('[PlaylistPlayer] Looping to last video. New index:', newIndex);
       setCurrentIndex(newIndex);
     } else {
-      console.log('[PlaylistPlayer] At beginning of playlist, not looping');
+      if (DEBUG) console.log('[PlaylistPlayer] At beginning of playlist, not looping');
     }
   }, [currentIndex, displayOrder.length, isLooping, videos.length]);
 
   const goToVideo = useCallback((index) => {
     try {
-      console.log('[PlaylistPlayer] goToVideo called. Requested index:', index, 'displayOrder.length:', displayOrder.length);
+      if (DEBUG) console.log('[PlaylistPlayer] goToVideo called. Requested index:', index, 'displayOrder.length:', displayOrder.length);
       if (index >= 0 && index < displayOrder.length) {
         const actualVideoIndex = displayOrder[index];
         const targetVideo = videos[actualVideoIndex];
-        console.log('[PlaylistPlayer] Switching to video at index:', index);
-        console.log('[PlaylistPlayer] Target video:', targetVideo?.title);
-        console.log('[PlaylistPlayer] Video ID:', targetVideo?.id);
+        if (DEBUG) {
+          console.log('[PlaylistPlayer] Switching to video at index:', index);
+          console.log('[PlaylistPlayer] Target video:', targetVideo?.title);
+          console.log('[PlaylistPlayer] Video ID:', targetVideo?.id);
+        }
         setCurrentIndex(index);
       } else {
-        console.warn('[PlaylistPlayer] Invalid index requested:', index);
+        if (DEBUG) console.warn('[PlaylistPlayer] Invalid index requested:', index);
       }
     } catch (error) {
-      console.error('[PlaylistPlayer] ERROR in goToVideo:', error);
-      console.error('[PlaylistPlayer] Error stack:', error.stack);
+      if (DEBUG) {
+        console.error('[PlaylistPlayer] ERROR in goToVideo:', error);
+        console.error('[PlaylistPlayer] Error stack:', error.stack);
+      }
     }
   }, [displayOrder.length, displayOrder, videos]);
 
@@ -336,7 +342,7 @@ export default function PlaylistPlayer() {
     }).then(() => {
       showNotification('Video marked as watched', 'success');
     }).catch((error) => {
-      console.error('Error marking video as watched:', error);
+      if (DEBUG) console.error('Error marking video as watched:', error);
       showNotification('Failed to mark as watched', 'error');
     });
   }, [currentVideo?.id, currentVideo?.watched, updateVideo, showNotification]);
@@ -437,7 +443,7 @@ export default function PlaylistPlayer() {
     if (nextVideo && preloadVideoRef.current) {
       const nextSrc = getVideoSource(nextVideo.file_path);
       if (nextSrc) {
-        console.log('Preloading next video:', nextVideo.title);
+        if (DEBUG) console.log('Preloading next video:', nextVideo.title);
         preloadVideoRef.current.src = nextSrc;
         preloadVideoRef.current.load();
       }
@@ -452,83 +458,90 @@ export default function PlaylistPlayer() {
 
     // Safety check: don't operate on disposed player
     if (playerRef.current.isDisposed && playerRef.current.isDisposed()) {
-      console.error('[PlaylistPlayer] ERROR: Attempted to update source on disposed player!');
+      if (DEBUG) console.error('[PlaylistPlayer] ERROR: Attempted to update source on disposed player!');
       return;
     }
 
+    let videoSrc;
     try {
-      const videoSrc = getVideoSource(currentVideo.file_path);
+      videoSrc = getVideoSource(currentVideo.file_path);
       if (!videoSrc) {
-        console.error('[PlaylistPlayer] ERROR: No video source for:', currentVideo.file_path);
+        if (DEBUG) console.error('[PlaylistPlayer] ERROR: No video source for:', currentVideo.file_path);
         return;
       }
 
-      console.log('[PlaylistPlayer] ===== UPDATING VIDEO SOURCE =====');
-      console.log('[PlaylistPlayer] New video:', currentVideo.title);
-      console.log('[PlaylistPlayer] Video ID:', currentVideo.id);
-      console.log('[PlaylistPlayer] Source path:', videoSrc);
-      console.log('[PlaylistPlayer] Player state before update:', {
-        paused: playerRef.current.paused(),
-        currentTime: playerRef.current.currentTime(),
-        duration: playerRef.current.duration()
-      });
+      if (DEBUG) {
+        console.log('[PlaylistPlayer] ===== UPDATING VIDEO SOURCE =====');
+        console.log('[PlaylistPlayer] New video:', currentVideo.title);
+        console.log('[PlaylistPlayer] Video ID:', currentVideo.id);
+        console.log('[PlaylistPlayer] Source path:', videoSrc);
+        console.log('[PlaylistPlayer] Player state before update:', {
+          paused: playerRef.current.paused(),
+          currentTime: playerRef.current.currentTime(),
+          duration: playerRef.current.duration()
+        });
+      }
 
       // Reset player state before changing source
       playerRef.current.pause();
-      console.log('[PlaylistPlayer] Player paused');
+      if (DEBUG) console.log('[PlaylistPlayer] Player paused');
 
       playerRef.current.src({
         src: videoSrc,
         type: 'video/mp4'
       });
-      console.log('[PlaylistPlayer] Source set to:', videoSrc);
+      if (DEBUG) console.log('[PlaylistPlayer] Source set to:', videoSrc);
 
       // Explicitly load the new source
       playerRef.current.load();
-      console.log('[PlaylistPlayer] Load() called');
+      if (DEBUG) console.log('[PlaylistPlayer] Load() called');
     } catch (error) {
-      console.error('[PlaylistPlayer] FATAL ERROR updating video source:', error);
-      console.error('[PlaylistPlayer] Error stack:', error.stack);
-      console.error('[PlaylistPlayer] Current video:', currentVideo);
+      if (DEBUG) {
+        console.error('[PlaylistPlayer] FATAL ERROR updating video source:', error);
+        console.error('[PlaylistPlayer] Error stack:', error.stack);
+        console.error('[PlaylistPlayer] Current video:', currentVideo);
+      }
     }
 
     // Restore position after source loads
     playerRef.current.one('loadedmetadata', () => {
-      console.log('[PlaylistPlayer] loadedmetadata event fired');
-      const duration = playerRef.current.duration();
-
-      console.log('[PlaylistPlayer] Video metadata loaded:', {
-        title: currentVideo.title,
-        duration: duration,
-        videoWidth: playerRef.current.videoWidth(),
-        videoHeight: playerRef.current.videoHeight()
-      });
+      if (DEBUG) {
+        console.log('[PlaylistPlayer] loadedmetadata event fired');
+        console.log('[PlaylistPlayer] Video metadata loaded:', {
+          title: currentVideo.title,
+          duration: playerRef.current.duration(),
+          videoWidth: playerRef.current.videoWidth(),
+          videoHeight: playerRef.current.videoHeight()
+        });
+      }
 
       // In playlist mode, ALWAYS start from beginning (don't restore saved position)
       // This allows watching playlists start-to-finish without jumping to saved positions
-      console.log('[PlaylistPlayer] Starting from beginning (playlist mode - ignore saved position)');
+      if (DEBUG) console.log('[PlaylistPlayer] Starting from beginning (playlist mode - ignore saved position)');
       playerRef.current.currentTime(0);
 
       // Autoplay on desktop and tablet (not mobile)
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       if (!isMobile) {
-        console.log('[PlaylistPlayer] Attempting autoplay (desktop/tablet)');
+        if (DEBUG) console.log('[PlaylistPlayer] Attempting autoplay (desktop/tablet)');
         playerRef.current.play().catch(e => {
-          console.warn('[PlaylistPlayer] Autoplay prevented:', e);
+          if (DEBUG) console.warn('[PlaylistPlayer] Autoplay prevented:', e);
         });
       } else {
-        console.log('[PlaylistPlayer] Skipping autoplay (mobile device)');
+        if (DEBUG) console.log('[PlaylistPlayer] Skipping autoplay (mobile device)');
       }
     });
 
     // Add error handler
     playerRef.current.one('error', (e) => {
-      console.error('[PlaylistPlayer] ERROR: Video error event:', e);
-      console.error('[PlaylistPlayer] Error details:', {
-        error: playerRef.current.error(),
-        src: videoSrc,
-        readyState: playerRef.current.readyState()
-      });
+      if (DEBUG) {
+        console.error('[PlaylistPlayer] ERROR: Video error event:', e);
+        console.error('[PlaylistPlayer] Error details:', {
+          error: playerRef.current.error(),
+          src: videoSrc,
+          readyState: playerRef.current.readyState()
+        });
+      }
     });
   }, [currentVideo?.id, playerRef]);
 

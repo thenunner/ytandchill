@@ -1,7 +1,6 @@
 import threading
 import time
 import os
-import glob
 import random
 from datetime import datetime, timezone
 import logging
@@ -49,6 +48,7 @@ class DownloadWorker:
         self.running = False
         self.thread = None
         self.current_download = None
+        self._download_lock = threading.Lock()  # Protects access to current_download
         self.paused = True  # Start paused by default to prevent auto-start on backend restart
         self.delay_info = None  # For tracking delay status
         self.rate_limit_message = None  # Persistent rate limit message for UI
@@ -126,9 +126,10 @@ class DownloadWorker:
             # They will be cleared automatically when a download actually succeeds
     
     def cancel_current(self):
-        if self.current_download:
-            logger.info(f"Cancelling current download: {self.current_download}")
-            self.current_download['cancelled'] = True
+        with self._download_lock:
+            if self.current_download:
+                logger.info(f"Cancelling current download: {self.current_download}")
+                self.current_download['cancelled'] = True
 
     def _set_discoveries_flag(self, session):
         """Set the new discoveries flag using the existing session to avoid database locks."""
@@ -259,31 +260,31 @@ class DownloadWorker:
         Monitors download progress and sets timeout flag if download stalls.
         Runs in a separate thread parallel to the download.
         """
-        while self.current_download and not self.current_download.get('cancelled'):
-            current_time = time.time()
+        while True:
+            with self._download_lock:
+                download = self.current_download
+                if not download or download.get('cancelled'):
+                    break
 
-            # Check if download has been removed (completed/failed)
-            if not self.current_download:
-                break
+                current_time = time.time()
+                elapsed_total = current_time - download.get('start_time', current_time)
+                time_since_progress = current_time - download.get('last_progress_time', current_time)
 
-            elapsed_total = current_time - self.current_download['start_time']
-            time_since_progress = current_time - self.current_download['last_progress_time']
+                # Hard timeout: Maximum download duration exceeded
+                if elapsed_total > self.HARD_TIMEOUT:
+                    logger.warning(f'TIMEOUT: Download exceeded {self.HARD_TIMEOUT/3600:.1f} hour limit - {video_title[:50]}')
+                    logger.warning(f'Total time: {elapsed_total/3600:.2f} hours')
+                    download['timed_out'] = True
+                    break
 
-            # Hard timeout: Maximum download duration exceeded
-            if elapsed_total > self.HARD_TIMEOUT:
-                logger.warning(f'TIMEOUT: Download exceeded {self.HARD_TIMEOUT/3600:.1f} hour limit - {video_title[:50]}')
-                logger.warning(f'Total time: {elapsed_total/3600:.2f} hours')
-                self.current_download['timed_out'] = True
-                break
+                # Soft timeout: No progress for too long
+                if time_since_progress > self.PROGRESS_TIMEOUT:
+                    logger.warning(f'TIMEOUT: No progress for {self.PROGRESS_TIMEOUT:.0f} seconds - {video_title[:50]}')
+                    logger.warning(f'Last progress: {time_since_progress:.0f} seconds ago')
+                    download['timed_out'] = True
+                    break
 
-            # Soft timeout: No progress for too long
-            if time_since_progress > self.PROGRESS_TIMEOUT:
-                logger.warning(f'TIMEOUT: No progress for {self.PROGRESS_TIMEOUT:.0f} seconds - {video_title[:50]}')
-                logger.warning(f'Last progress: {time_since_progress:.0f} seconds ago')
-                self.current_download['timed_out'] = True
-                break
-
-            # Check every 10 seconds
+            # Check every 10 seconds (outside lock to not block other threads)
             time.sleep(10)
 
         logger.debug(f'Watchdog timer exiting for {video_id}')
@@ -339,13 +340,14 @@ class DownloadWorker:
             tuple: (watchdog_thread, progress_hook_function)
         """
         # Setup progress tracking with timeout watchdog
-        self.current_download = {
-            'cancelled': False,
-            'queue_item_id': queue_item.id,
-            'last_progress_time': time.time(),
-            'start_time': time.time(),
-            'timed_out': False
-        }
+        with self._download_lock:
+            self.current_download = {
+                'cancelled': False,
+                'queue_item_id': queue_item.id,
+                'last_progress_time': time.time(),
+                'start_time': time.time(),
+                'timed_out': False
+            }
 
         # Start watchdog timer thread
         watchdog_thread = threading.Thread(
@@ -360,11 +362,13 @@ class DownloadWorker:
         last_logged_progress = [0]  # Use list for mutable closure variable
 
         def progress_hook(d):
-            if self.current_download and self.current_download.get('cancelled'):
-                raise Exception('Download cancelled by user')
+            with self._download_lock:
+                download = self.current_download
+                if download and download.get('cancelled'):
+                    raise Exception('Download cancelled by user')
 
-            if self.current_download and self.current_download.get('timed_out'):
-                raise Exception('Download timed out - no progress for too long')
+                if download and download.get('timed_out'):
+                    raise Exception('Download timed out - no progress for too long')
 
             # Check if queue was paused during download
             if self.paused:
@@ -372,8 +376,9 @@ class DownloadWorker:
 
             if d['status'] == 'downloading':
                 # Update last activity time
-                if self.current_download:
-                    self.current_download['last_progress_time'] = time.time()
+                with self._download_lock:
+                    if self.current_download:
+                        self.current_download['last_progress_time'] = time.time()
                 try:
                     # Update progress in database
                     with get_session(self.session_factory) as temp_session:

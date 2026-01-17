@@ -33,15 +33,13 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
     <div
       ref={setNodeRef}
       style={style}
-      onClick={() => onRemove(item.id)}
-      className={`card p-3 cursor-pointer hover:bg-dark-hover transition-colors group ${index % 2 === 0 ? 'bg-dark-secondary' : 'bg-dark-tertiary'}`}
+      className={`card p-3 transition-colors ${index % 2 === 0 ? 'bg-dark-secondary' : 'bg-dark-tertiary'}`}
     >
       <div className="flex items-stretch gap-3">
         {/* Drag Handle - Touch friendly with visual feedback */}
         <div
           {...attributes}
           {...listeners}
-          onClick={(e) => e.stopPropagation()}
           className="flex items-center flex-shrink-0 cursor-grab active:cursor-grabbing text-text-muted hover:text-text-primary active:text-accent transition-colors px-2 md:px-1 touch-none rounded hover:bg-dark-hover active:bg-dark-tertiary"
           style={{ touchAction: 'none' }}
           title="Hold and drag to reorder"
@@ -61,63 +59,73 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
           {index + 1}
         </div>
 
-        {/* Thumbnail - Smaller on mobile */}
-        <div className="flex-shrink-0 w-[60px] h-[34px] md:w-[100px] md:h-[56px] bg-dark-tertiary rounded overflow-hidden">
-          {item.video?.thumb_url ? (
-            <img
-              src={item.video.thumb_url}
-              alt={item.video.title}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <svg className="w-5 h-5 md:w-8 md:h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-              </svg>
-            </div>
-          )}
+        {/* Center Clickable Area - Thumbnail + Title (click to cancel) */}
+        <div
+          onClick={() => onRemove(item.id)}
+          className="group flex-1 flex items-center gap-3 cursor-pointer hover:bg-red-950/30 rounded-lg px-2 -mx-2 transition-colors"
+        >
+          {/* Thumbnail - Smaller on mobile */}
+          <div className="flex-shrink-0 w-[60px] h-[34px] md:w-[100px] md:h-[56px] bg-dark-tertiary rounded overflow-hidden">
+            {item.video?.thumb_url ? (
+              <img
+                src={item.video.thumb_url}
+                alt={item.video.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <svg className="w-5 h-5 md:w-8 md:h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {/* Video Info */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-red-400 transition-colors" title={item.video?.title}>
+              {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
+            </p>
+            {/* Click to cancel - appears on hover, centered */}
+            <p className="text-xs text-red-400 text-center opacity-0 group-hover:opacity-100 transition-opacity mt-1">
+              Click to cancel
+            </p>
+          </div>
         </div>
 
-        {/* Video Info */}
-        <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-          <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate" title={item.video?.title}>
-            {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
-          </p>
+        {/* Action Buttons - Full Height */}
+        <div className="flex flex-shrink-0 gap-1 -my-3">
+          {/* Move to Top - Full height bar */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.currentTarget.blur();
+              onMoveToTop(item.id);
+            }}
+            className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary transition-colors"
+            title="Move to top"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="17 11 12 6 7 11"></polyline>
+              <polyline points="17 18 12 13 7 18"></polyline>
+            </svg>
+          </button>
 
-          {/* Action Buttons - Full Height */}
-          <div className="flex flex-shrink-0 gap-1 -my-3">
-            {/* Move to Top - Full height bar */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.currentTarget.blur();
-                onMoveToTop(item.id);
-              }}
-              className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary transition-colors"
-              title="Move to top"
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="17 11 12 6 7 11"></polyline>
-                <polyline points="17 18 12 13 7 18"></polyline>
-              </svg>
-            </button>
-
-            {/* Move to Bottom - Full height bar */}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.currentTarget.blur();
-                onMoveToBottom(item.id);
-              }}
-              className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary transition-colors"
-              title="Move to bottom"
-            >
-              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="17 13 12 18 7 13"></polyline>
-                <polyline points="17 6 12 11 7 6"></polyline>
-              </svg>
-            </button>
-          </div>
+          {/* Move to Bottom - Full height bar */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              e.currentTarget.blur();
+              onMoveToBottom(item.id);
+            }}
+            className="flex items-center justify-center px-2 text-text-secondary hover:text-text-primary hover:bg-dark-tertiary transition-colors"
+            title="Move to bottom"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="17 13 12 18 7 13"></polyline>
+              <polyline points="17 6 12 11 7 6"></polyline>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

@@ -43,8 +43,8 @@
   }
 
   .btn-primary {
-    @apply bg-dark-primary/95 text-text-primary border border-dark-border;
-    @apply hover:bg-dark-tertiary/50 hover:border-dark-border-light;
+    @apply bg-accent text-accent-text border border-accent;
+    @apply hover:bg-accent/80 hover:border-accent/80;
     @apply focus:ring-accent;
   }
 

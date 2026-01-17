@@ -35,7 +35,7 @@ export function useCreateChannel() {
   return useMutation({
     mutationFn: (data) => api.createChannel(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['channels']);
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
     },
   });
 }
@@ -45,7 +45,7 @@ export function useUpdateChannel() {
   return useMutation({
     mutationFn: ({ id, data }) => api.updateChannel(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['channels']);
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
     },
   });
 }
@@ -55,8 +55,8 @@ export function useDeleteChannel() {
   return useMutation({
     mutationFn: (id) => api.deleteChannel(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['channels']);
-      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
 }
@@ -67,8 +67,8 @@ export function useScanChannel() {
     mutationFn: ({ id, forceFull = false, is_batch_start = false, is_auto_scan = false, batch_label = '' }) =>
       api.scanChannel(id, forceFull, is_batch_start, is_auto_scan, batch_label),
     onSuccess: () => {
-      queryClient.invalidateQueries(['videos']);
-      queryClient.invalidateQueries(['channels']);
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
     },
   });
 }
@@ -95,8 +95,8 @@ export function useUpdateVideo() {
   return useMutation({
     mutationFn: ({ id, data }) => api.updateVideo(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['videos']);
-      queryClient.invalidateQueries(['video']);
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['video'] });
     },
   });
 }
@@ -106,8 +106,8 @@ export function useDeleteVideo() {
   return useMutation({
     mutationFn: (id) => api.deleteVideo(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['videos']);
-      queryClient.invalidateQueries(['playlists']);
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
     },
   });
 }
@@ -117,7 +117,7 @@ export function useBulkUpdateVideos() {
   return useMutation({
     mutationFn: ({ videoIds, updates }) => api.bulkUpdateVideos(videoIds, updates),
     onSuccess: () => {
-      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
 }
@@ -127,8 +127,8 @@ export function useBulkDeleteVideos() {
   return useMutation({
     mutationFn: (videoIds) => api.bulkDeleteVideos(videoIds),
     onSuccess: () => {
-      queryClient.invalidateQueries(['videos']);
-      queryClient.invalidateQueries(['playlists']);
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
     },
   });
 }
@@ -154,7 +154,7 @@ export function useCreateCategory() {
   return useMutation({
     mutationFn: (data) => api.createCategory(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['categories']);
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 }
@@ -164,8 +164,8 @@ export function useUpdateCategory() {
   return useMutation({
     mutationFn: ({ id, data }) => api.updateCategory(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['categories']);
-      queryClient.invalidateQueries(['category']);
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['category'] });
     },
   });
 }
@@ -175,8 +175,8 @@ export function useDeleteCategory() {
   return useMutation({
     mutationFn: (id) => api.deleteCategory(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['categories']);
-      queryClient.invalidateQueries(['playlists']); // Playlists become uncategorized
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
+      queryClient.invalidateQueries({ queryKey: ['playlists'] }); // Playlists become uncategorized
     },
   });
 }
@@ -186,8 +186,8 @@ export function useBulkAssignCategory() {
   return useMutation({
     mutationFn: ({ playlistIds, categoryId }) => api.bulkAssignCategory(playlistIds, categoryId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['playlists']);
-      queryClient.invalidateQueries(['categories']);
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['categories'] });
     },
   });
 }
@@ -205,7 +205,7 @@ export function useCreateChannelCategory() {
   return useMutation({
     mutationFn: (data) => api.createChannelCategory(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['channel-categories']);
+      queryClient.invalidateQueries({ queryKey: ['channel-categories'] });
     },
   });
 }
@@ -215,7 +215,7 @@ export function useUpdateChannelCategory() {
   return useMutation({
     mutationFn: ({ id, data }) => api.updateChannelCategory(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['channel-categories']);
+      queryClient.invalidateQueries({ queryKey: ['channel-categories'] });
     },
   });
 }
@@ -225,8 +225,8 @@ export function useDeleteChannelCategory() {
   return useMutation({
     mutationFn: (id) => api.deleteChannelCategory(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['channel-categories']);
-      queryClient.invalidateQueries(['channels']); // Channels become uncategorized
+      queryClient.invalidateQueries({ queryKey: ['channel-categories'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] }); // Channels become uncategorized
     },
   });
 }
@@ -252,7 +252,7 @@ export function useCreatePlaylist() {
   return useMutation({
     mutationFn: (data) => api.createPlaylist(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['playlists']);
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
     },
   });
 }
@@ -262,8 +262,8 @@ export function useUpdatePlaylist() {
   return useMutation({
     mutationFn: ({ id, data }) => api.updatePlaylist(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['playlists']);
-      queryClient.invalidateQueries(['playlist']);
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist'] });
     },
   });
 }
@@ -273,7 +273,7 @@ export function useDeletePlaylist() {
   return useMutation({
     mutationFn: (id) => api.deletePlaylist(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['playlists']);
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
     },
   });
 }
@@ -283,8 +283,8 @@ export function useAddVideoToPlaylist() {
   return useMutation({
     mutationFn: ({ playlistId, videoId }) => api.addVideoToPlaylist(playlistId, videoId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['playlists']);
-      queryClient.invalidateQueries(['playlist']);
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist'] });
     },
   });
 }
@@ -294,9 +294,9 @@ export function useAddVideosToPlaylistBulk() {
   return useMutation({
     mutationFn: ({ playlistId, videoIds }) => api.addVideosToPlaylistBulk(playlistId, videoIds),
     onSuccess: () => {
-      queryClient.invalidateQueries(['playlists']);
-      queryClient.invalidateQueries(['playlist']);
-      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
 }
@@ -306,8 +306,8 @@ export function useRemoveVideoFromPlaylist() {
   return useMutation({
     mutationFn: ({ playlistId, videoId }) => api.removeVideoFromPlaylist(playlistId, videoId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['playlists']);
-      queryClient.invalidateQueries(['playlist']);
+      queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['playlist'] });
     },
   });
 }
@@ -327,8 +327,8 @@ export function useAddToQueue() {
   return useMutation({
     mutationFn: (videoId) => api.addToQueue(videoId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
-      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
 }
@@ -338,8 +338,8 @@ export function useAddToQueueBulk() {
   return useMutation({
     mutationFn: (videoIds) => api.addToQueueBulk(videoIds),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
-      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
 }
@@ -361,7 +361,7 @@ export function useCancelCurrent() {
   return useMutation({
     mutationFn: () => api.cancelCurrent(),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
     },
   });
 }
@@ -371,7 +371,7 @@ export function useRemoveFromQueue() {
   return useMutation({
     mutationFn: (id) => api.removeFromQueue(id),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
     },
   });
 }
@@ -381,7 +381,7 @@ export function useReorderQueue() {
   return useMutation({
     mutationFn: ({ itemId, newPosition }) => api.reorderQueue(itemId, newPosition),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
     },
   });
 }
@@ -391,7 +391,7 @@ export function useMoveToTop() {
   return useMutation({
     mutationFn: (itemId) => api.moveToTop(itemId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
     },
   });
 }
@@ -401,7 +401,7 @@ export function useMoveToBottom() {
   return useMutation({
     mutationFn: (itemId) => api.moveToBottom(itemId),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
     },
   });
 }
@@ -411,8 +411,8 @@ export function useClearQueue() {
   return useMutation({
     mutationFn: () => api.clearQueue(),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
-      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
 }
@@ -430,7 +430,7 @@ export function useUpdateSettings() {
   return useMutation({
     mutationFn: (data) => api.updateSettings(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(['settings']);
+      queryClient.invalidateQueries({ queryKey: ['settings'] });
     },
   });
 }
@@ -464,8 +464,8 @@ export function useQueuePlaylistVideos() {
   return useMutation({
     mutationFn: ({ videos }) => api.queuePlaylistVideos(videos),
     onSuccess: () => {
-      queryClient.invalidateQueries(['queue']);
-      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
 }
@@ -499,7 +499,7 @@ export function useAddImportChannel() {
   return useMutation({
     mutationFn: (url) => api.addImportChannel(url),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
     },
   });
 }
@@ -509,7 +509,7 @@ export function useSetImportChannels() {
   return useMutation({
     mutationFn: (urls) => api.setImportChannels(urls),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
     },
   });
 }
@@ -519,7 +519,7 @@ export function useFetchImportChannel() {
   return useMutation({
     mutationFn: (channelIdx) => api.fetchImportChannel(channelIdx),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
     },
   });
 }
@@ -529,7 +529,7 @@ export function useMatchImportFiles() {
   return useMutation({
     mutationFn: (channelIdx) => api.matchImportFiles(channelIdx),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
     },
   });
 }
@@ -539,9 +539,9 @@ export function useExecuteImport() {
   return useMutation({
     mutationFn: (matches) => api.executeImport(matches),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
-      queryClient.invalidateQueries(['videos']);
-      queryClient.invalidateQueries(['channels']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
     },
   });
 }
@@ -551,8 +551,8 @@ export function useResolveImportPending() {
   return useMutation({
     mutationFn: ({ file, videoId, skip }) => api.resolveImportPending(file, videoId, skip),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
-      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
     },
   });
 }
@@ -562,7 +562,7 @@ export function useSkipRemainingImport() {
   return useMutation({
     mutationFn: () => api.skipRemainingImport(),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
     },
   });
 }
@@ -572,8 +572,8 @@ export function useResetImport() {
   return useMutation({
     mutationFn: () => api.resetImport(),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'scan']);
-      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'scan'] });
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
     },
   });
 }
@@ -583,7 +583,7 @@ export function useSmartIdentify() {
   return useMutation({
     mutationFn: ({ mode }) => api.smartIdentify(mode),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
     },
   });
 }
@@ -593,9 +593,9 @@ export function useExecuteSmartImport() {
   return useMutation({
     mutationFn: (matches) => api.executeSmartImport(matches),
     onSuccess: () => {
-      queryClient.invalidateQueries(['import', 'state']);
-      queryClient.invalidateQueries(['videos']);
-      queryClient.invalidateQueries(['channels']);
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
     },
   });
 }
