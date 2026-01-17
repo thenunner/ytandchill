@@ -39,8 +39,8 @@ import_bp = Blueprint('import_videos', __name__)
 _session_factory = None
 _settings_manager = None
 
-# Supported video extensions
-VIDEO_EXTENSIONS = {'.mp4', '.webm', '.mkv', '.avi', '.mov', '.m4v', '.flv'}
+# Supported video extensions (browser-playable formats only)
+VIDEO_EXTENSIONS = {'.mp4', '.webm', '.m4v'}
 
 # Import state (in-memory for session)
 _import_state = {

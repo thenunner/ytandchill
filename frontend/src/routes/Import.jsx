@@ -12,8 +12,8 @@ import {
 import LoadingSpinner from '../components/LoadingSpinner';
 import { CheckmarkIcon } from '../components/icons';
 
-// Supported video extensions (must match backend)
-const VIDEO_EXTENSIONS = /\.(mp4|webm|mkv|avi|mov|m4v|flv)$/i;
+// Supported video extensions (browser-playable formats only, must match backend)
+const VIDEO_EXTENSIONS = /\.(mp4|webm|m4v)$/i;
 
 // Max file size (must match backend MAX_CONTENT_LENGTH)
 const MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024; // 50GB
@@ -188,8 +188,14 @@ export default function Import() {
 
     // Filter by extension
     const videoFiles = allFiles.filter(f => VIDEO_EXTENSIONS.test(f.name));
+    const unsupportedFiles = allFiles.filter(f => !VIDEO_EXTENSIONS.test(f.name));
+
+    if (unsupportedFiles.length > 0) {
+      const names = unsupportedFiles.map(f => f.name).join(', ');
+      showNotification(`${unsupportedFiles.length} file(s) skipped (unsupported format): ${names}. Supported: .mp4, .webm, .m4v`, 'warning');
+    }
+
     if (videoFiles.length === 0) {
-      showNotification('No valid video files found. Supported: .mp4, .webm, .mkv, .avi, .mov, .m4v, .flv', 'warning');
       return;
     }
 
@@ -434,7 +440,7 @@ export default function Import() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
               </svg>
               <div className="text-xl font-semibold text-accent-text">Drop files to upload</div>
-              <div className="text-sm text-text-secondary mt-2">.mp4, .webm, .mkv, .avi, .mov, .m4v, .flv (max 50 GB)</div>
+              <div className="text-sm text-text-secondary mt-2">.mp4, .webm, .m4v (max 50 GB)</div>
             </div>
           </div>
         )}
