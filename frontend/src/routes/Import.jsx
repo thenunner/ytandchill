@@ -1,21 +1,16 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import {
   useScanImportFolder,
   useImportState,
-  useAddImportChannel,
-  useSetImportChannels,
-  useFetchImportChannel,
-  useMatchImportFiles,
-  useExecuteImport,
   useResolveImportPending,
-  useSkipRemainingImport,
   useResetImport,
+  useSmartIdentify,
+  useExecuteSmartImport,
 } from '../api/queries';
-import api from '../api/client';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { PlusIcon, CheckmarkIcon, TrashIcon } from '../components/icons';
+import { CheckmarkIcon } from '../components/icons';
 
 export default function Import() {
   const navigate = useNavigate();
@@ -26,285 +21,97 @@ export default function Import() {
   const { data: stateData, refetch: refetchState } = useImportState();
 
   // Mutations
-  const addChannel = useAddImportChannel();
-  const setChannels = useSetImportChannels();
-  const fetchChannel = useFetchImportChannel();
-  const matchFiles = useMatchImportFiles();
-  const executeImport = useExecuteImport();
+  const smartIdentify = useSmartIdentify();
+  const executeSmartImport = useExecuteSmartImport();
   const resolvePending = useResolveImportPending();
-  const skipRemaining = useSkipRemainingImport();
   const resetImport = useResetImport();
 
   // Local state
-  const [channelInput, setChannelInput] = useState('');
-  const [importMode, setImportMode] = useState(null); // 'auto' or 'manual'
-  const [currentStep, setCurrentStep] = useState('setup'); // setup, fetching, matching, importing, resolving, complete
-  const [currentChannelIdx, setCurrentChannelIdx] = useState(0);
+  const [currentStep, setCurrentStep] = useState('setup'); // setup, identifying, review, importing, complete
+  const [identifyResult, setIdentifyResult] = useState(null);
   const [pendingMatches, setPendingMatches] = useState([]);
   const [currentPendingIdx, setCurrentPendingIdx] = useState(0);
   const [selectedVideoId, setSelectedVideoId] = useState(null);
-  const [allMatches, setAllMatches] = useState([]); // All single matches across channels
-  const [manualFileIdx, setManualFileIdx] = useState(0);
-  const [manualMatches, setManualMatches] = useState([]); // Matches for current file in manual mode
-  const [csvInitialized, setCsvInitialized] = useState(false); // Prevent infinite loop
 
-  // Initialize with CSV channels if available (only once)
-  useEffect(() => {
-    if (
-      !csvInitialized &&
-      scanData?.csv_found &&
-      scanData?.csv_channels?.length > 0 &&
-      stateData?.channels?.length === 0
-    ) {
-      setCsvInitialized(true);
-      setChannels.mutate(scanData.csv_channels);
-    }
-  }, [csvInitialized, scanData?.csv_found, scanData?.csv_channels?.length, stateData?.channels?.length]);
-
-  // Handle adding a channel
-  const handleAddChannel = async () => {
-    if (!channelInput.trim()) return;
+  // Start Smart Import - identifies videos directly without scanning channels
+  const handleSmartImport = async () => {
+    setCurrentStep('identifying');
 
     try {
-      await addChannel.mutateAsync(channelInput.trim());
-      setChannelInput('');
-      showNotification('Channel added', 'success');
+      const result = await smartIdentify.mutateAsync();
+      setIdentifyResult(result);
+
+      if (result.pending && result.pending.length > 0) {
+        // Some files need user selection
+        setPendingMatches(result.pending);
+        setCurrentPendingIdx(0);
+        setCurrentStep('review');
+      } else if (result.identified && result.identified.length > 0) {
+        // All files identified - proceed to import
+        setCurrentStep('importing');
+        await executeSmartImport.mutateAsync(result.identified);
+        await refetchState();
+        setCurrentStep('complete');
+      } else {
+        // Nothing identified
+        showNotification('No videos could be identified', 'warning');
+        setCurrentStep('complete');
+      }
     } catch (error) {
-      showNotification(error.message || 'Failed to add channel', 'error');
+      showNotification(`Error: ${error.message}`, 'error');
+      setCurrentStep('setup');
     }
   };
 
-  // Start Auto Import
-  const handleAutoImport = async () => {
-    setImportMode('auto');
-    setCurrentStep('fetching');
-    setCurrentChannelIdx(0);
-    setAllMatches([]);
-
-    // Process each channel
-    for (let i = 0; i < stateData.channels.length; i++) {
-      setCurrentChannelIdx(i);
-
-      try {
-        // Fetch channel metadata
-        await fetchChannel.mutateAsync(i);
-        await refetchState();
-
-        // Match files
-        setCurrentStep('matching');
-        const matchResult = await matchFiles.mutateAsync(i);
-        await refetchState();
-
-        // Collect single matches
-        if (matchResult.matches && matchResult.matches.length > 0) {
-          setAllMatches(prev => [...prev, ...matchResult.matches]);
-        }
-
-        // If there are pending matches, pause and show resolution UI
-        if (matchResult.pending && matchResult.pending.length > 0) {
-          setPendingMatches(matchResult.pending);
-          setCurrentPendingIdx(0);
-          setCurrentStep('resolving');
-          return; // Exit loop - will continue after resolution
-        }
-      } catch (error) {
-        showNotification(`Error processing channel: ${error.message}`, 'error');
-      }
-    }
-
-    // All channels processed - execute imports
-    await executeAutoImport();
-  };
-
-  // Execute auto import with collected matches
-  const executeAutoImport = async () => {
-    setCurrentStep('importing');
-
-    if (allMatches.length > 0) {
-      try {
-        await executeImport.mutateAsync(allMatches);
-        await refetchState();
-      } catch (error) {
-        showNotification(`Import error: ${error.message}`, 'error');
-      }
-    }
-
-    // Mark remaining as skipped
-    await skipRemaining.mutateAsync();
-    await refetchState();
-
-    setCurrentStep('complete');
-  };
-
-  // Handle resolving a pending match
-  const handleResolvePending = async (skip = false) => {
+  // Handle resolving a pending match (user selects video)
+  const handleSelectMatch = async (skip = false) => {
     const pending = pendingMatches[currentPendingIdx];
 
+    if (!skip && !selectedVideoId) {
+      showNotification('Please select a video', 'error');
+      return;
+    }
+
     try {
-      await resolvePending.mutateAsync({
-        file: pending.file,
-        videoId: skip ? null : selectedVideoId,
-        skip,
-      });
-      await refetchState();
+      if (!skip) {
+        // Find selected video and add to identified list
+        const selectedVideo = pending.matches.find(m => m.id === selectedVideoId);
+        if (selectedVideo) {
+          const match = {
+            file: pending.file,
+            filename: pending.filename,
+            video: selectedVideo,
+            match_type: 'user_selected',
+            channel_info: {
+              channel_id: selectedVideo.channel_id,
+              channel_title: selectedVideo.channel_title,
+              channel_url: `https://youtube.com/channel/${selectedVideo.channel_id}`,
+            },
+          };
+
+          // Add to identified and import immediately
+          await executeSmartImport.mutateAsync([match]);
+        }
+      }
 
       // Move to next pending
       if (currentPendingIdx < pendingMatches.length - 1) {
         setCurrentPendingIdx(prev => prev + 1);
         setSelectedVideoId(null);
       } else {
-        // All pending resolved for this channel
-        setPendingMatches([]);
-        setCurrentPendingIdx(0);
+        // All pending resolved
+        await refetchState();
 
-        // Continue with remaining channels if any
-        if (currentChannelIdx < stateData.channels.length - 1) {
-          const nextIdx = currentChannelIdx + 1;
-          setCurrentChannelIdx(nextIdx);
-          setCurrentStep('fetching');
-
-          // Process remaining channels
-          for (let i = nextIdx; i < stateData.channels.length; i++) {
-            setCurrentChannelIdx(i);
-
-            try {
-              await fetchChannel.mutateAsync(i);
-              await refetchState();
-
-              setCurrentStep('matching');
-              const matchResult = await matchFiles.mutateAsync(i);
-              await refetchState();
-
-              if (matchResult.matches && matchResult.matches.length > 0) {
-                setAllMatches(prev => [...prev, ...matchResult.matches]);
-              }
-
-              if (matchResult.pending && matchResult.pending.length > 0) {
-                setPendingMatches(matchResult.pending);
-                setCurrentPendingIdx(0);
-                setCurrentStep('resolving');
-                return;
-              }
-            } catch (error) {
-              showNotification(`Error processing channel: ${error.message}`, 'error');
-            }
-          }
-
-          // All channels done
-          await executeAutoImport();
-        } else {
-          // All channels done
-          await executeAutoImport();
+        // Import any remaining identified files
+        if (identifyResult?.identified?.length > 0) {
+          setCurrentStep('importing');
+          await executeSmartImport.mutateAsync(identifyResult.identified);
         }
+
+        setCurrentStep('complete');
       }
     } catch (error) {
       showNotification(`Error: ${error.message}`, 'error');
-    }
-  };
-
-  // Start Manual Import
-  const handleManualImport = async () => {
-    setImportMode('manual');
-    setCurrentStep('fetching');
-    setCurrentChannelIdx(0);
-
-    // Fetch all channel metadata first
-    for (let i = 0; i < stateData.channels.length; i++) {
-      setCurrentChannelIdx(i);
-      try {
-        await fetchChannel.mutateAsync(i);
-        await refetchState();
-      } catch (error) {
-        showNotification(`Error fetching channel ${i + 1}: ${error.message}`, 'error');
-      }
-    }
-
-    // Start manual matching
-    setCurrentStep('manual');
-    setManualFileIdx(0);
-    await fetchManualMatches(0);
-  };
-
-  // Fetch matches for a file in manual mode
-  const fetchManualMatches = async (fileIdx) => {
-    // Get all channel videos and find matches for this file
-    const file = stateData?.files?.[fileIdx];
-    if (!file) {
-      setCurrentStep('complete');
-      return;
-    }
-
-    // Match against all channels
-    const matches = [];
-    for (let i = 0; i < stateData.channels.length; i++) {
-      try {
-        const result = await matchFiles.mutateAsync(i);
-        await refetchState();
-
-        // Find matches for this specific file
-        if (result.matches) {
-          for (const match of result.matches) {
-            if (match.file === file.path || match.filename === file.name) {
-              matches.push(match);
-            }
-          }
-        }
-        if (result.pending) {
-          for (const pending of result.pending) {
-            if (pending.file === file.path || pending.filename === file.name) {
-              matches.push({
-                ...pending,
-                isMultiple: true,
-              });
-            }
-          }
-        }
-      } catch (error) {
-        // Continue with other channels
-      }
-    }
-
-    setManualMatches(matches);
-  };
-
-  // Handle manual import decision
-  const handleManualDecision = async (match, skip = false) => {
-    if (skip) {
-      // Skip this file
-      await resolvePending.mutateAsync({
-        file: match.file,
-        videoId: null,
-        skip: true,
-      });
-    } else if (match.isMultiple) {
-      // Need to select from multiple
-      if (!selectedVideoId) {
-        showNotification('Please select a video', 'error');
-        return;
-      }
-      await resolvePending.mutateAsync({
-        file: match.file,
-        videoId: selectedVideoId,
-        skip: false,
-      });
-    } else {
-      // Single match - import directly
-      await executeImport.mutateAsync([match]);
-    }
-
-    await refetchState();
-
-    // Move to next file
-    const nextIdx = manualFileIdx + 1;
-    if (nextIdx < (stateData?.file_count || 0)) {
-      setManualFileIdx(nextIdx);
-      setSelectedVideoId(null);
-      await fetchManualMatches(nextIdx);
-    } else {
-      // All files processed
-      await skipRemaining.mutateAsync();
-      await refetchState();
-      setCurrentStep('complete');
     }
   };
 
@@ -313,15 +120,23 @@ export default function Import() {
     await resetImport.mutateAsync();
     await refetchScan();
     setCurrentStep('setup');
-    setImportMode(null);
-    setAllMatches([]);
+    setIdentifyResult(null);
     setPendingMatches([]);
-    setCsvInitialized(false); // Allow CSV re-initialization
+    setCurrentPendingIdx(0);
+    setSelectedVideoId(null);
   };
 
   // View channels (navigate to channels tab)
   const handleViewChannels = () => {
     navigate('/');
+  };
+
+  // Format duration
+  const formatDuration = (seconds) => {
+    if (!seconds) return 'Unknown';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${String(secs).padStart(2, '0')}`;
   };
 
   if (scanLoading) {
@@ -343,11 +158,12 @@ export default function Import() {
           {scanData?.import_path || 'downloads/imports/'}
         </code>
         <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 max-w-md">
-          <p className="text-text-secondary text-sm mb-2">For multiple channels, include a <span className="text-text-primary font-mono">channels.csv</span>:</p>
+          <p className="text-text-secondary text-sm mb-2">
+            <strong>Tip:</strong> Name files with their YouTube video ID for instant matching:
+          </p>
           <pre className="bg-dark-tertiary rounded p-3 text-left text-sm font-mono text-text-muted">
-{`https://youtube.com/@channel1
-https://youtube.com/@channel2
-https://youtube.com/@channel3`}
+{`dQw4w9WgXcQ.mp4  (video ID)
+My Video Title.mp4  (will search)`}
           </pre>
         </div>
         <button
@@ -360,7 +176,7 @@ https://youtube.com/@channel3`}
     );
   }
 
-  // State 5: Import Complete
+  // State: Import Complete
   if (currentStep === 'complete') {
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
@@ -368,56 +184,53 @@ https://youtube.com/@channel3`}
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/20 flex items-center justify-center">
             <CheckmarkIcon className="w-8 h-8 text-accent-text" strokeWidth={3} />
           </div>
+          <h2 className="text-xl font-bold text-text-primary mb-2">Import Complete</h2>
           <button
             onClick={handleViewChannels}
-            className="btn btn-primary text-lg px-8 py-3"
+            className="btn btn-primary text-lg px-8 py-3 mt-4"
           >
-            Import Complete - View Channels
+            View Library
           </button>
         </div>
 
-        {/* Summary Table */}
-        {stateData?.imported?.length > 0 && (
-          <div className="bg-dark-secondary border border-dark-border rounded-lg overflow-hidden mb-6">
-            <div className="px-4 py-3 border-b border-dark-border">
-              <h3 className="font-semibold text-text-primary">Imported ({stateData.imported.length})</h3>
-            </div>
-            <div className="divide-y divide-dark-border max-h-64 overflow-y-auto">
-              {Object.entries(
-                stateData.imported.reduce((acc, item) => {
-                  const ch = item.channel || 'Unknown';
-                  if (!acc[ch]) acc[ch] = { count: 0, titleMatch: 0, idMatch: 0 };
-                  acc[ch].count++;
-                  if (item.match_type === 'id') acc[ch].idMatch++;
-                  else acc[ch].titleMatch++;
-                  return acc;
-                }, {})
-              ).map(([channel, stats]) => (
-                <div key={channel} className="px-4 py-3 flex justify-between items-center">
-                  <span className="text-text-primary">{channel}</span>
-                  <span className="text-text-secondary text-sm">
-                    {stats.count} imported ({stats.titleMatch} title, {stats.idMatch} ID)
-                  </span>
+        {/* Summary */}
+        {identifyResult && (
+          <div className="space-y-4">
+            {identifyResult.summary && (
+              <div className="bg-dark-secondary border border-dark-border rounded-lg p-4">
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-2xl font-bold text-accent-text">{identifyResult.summary.identified}</div>
+                    <div className="text-sm text-text-secondary">Imported</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-yellow-400">{identifyResult.summary.pending}</div>
+                    <div className="text-sm text-text-secondary">Resolved</div>
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-text-muted">{identifyResult.summary.failed}</div>
+                    <div className="text-sm text-text-secondary">Failed</div>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              </div>
+            )}
 
-        {/* Skipped Files */}
-        {stateData?.skipped?.length > 0 && (
-          <div className="bg-dark-secondary border border-dark-border rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b border-dark-border">
-              <h3 className="font-semibold text-text-secondary">Skipped ({stateData.skipped.length})</h3>
-            </div>
-            <div className="divide-y divide-dark-border max-h-48 overflow-y-auto">
-              {stateData.skipped.map((item, idx) => (
-                <div key={idx} className="px-4 py-2 text-sm">
-                  <div className="text-text-primary truncate">{item.filename}</div>
-                  <div className="text-text-muted">{item.reason}</div>
+            {/* Failed files */}
+            {identifyResult.failed?.length > 0 && (
+              <div className="bg-dark-secondary border border-dark-border rounded-lg overflow-hidden">
+                <div className="px-4 py-3 border-b border-dark-border">
+                  <h3 className="font-semibold text-text-secondary">Not Found ({identifyResult.failed.length})</h3>
                 </div>
-              ))}
-            </div>
+                <div className="divide-y divide-dark-border max-h-48 overflow-y-auto">
+                  {identifyResult.failed.map((item, idx) => (
+                    <div key={idx} className="px-4 py-2 text-sm">
+                      <div className="text-text-primary truncate">{item.filename}</div>
+                      <div className="text-text-muted">{item.reason}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -430,15 +243,15 @@ https://youtube.com/@channel3`}
     );
   }
 
-  // State 4: Resolving pending matches (multiple matches)
-  if (currentStep === 'resolving' && pendingMatches.length > 0) {
+  // State: Reviewing pending matches
+  if (currentStep === 'review' && pendingMatches.length > 0) {
     const pending = pendingMatches[currentPendingIdx];
 
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-text-primary">Multiple Matches Found</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Select Correct Video</h2>
             <span className="text-text-secondary text-sm">
               {currentPendingIdx + 1} of {pendingMatches.length}
             </span>
@@ -454,11 +267,21 @@ https://youtube.com/@channel3`}
         <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 mb-6">
           <div className="text-sm text-text-secondary mb-1">File:</div>
           <div className="text-text-primary font-medium truncate">{pending.filename}</div>
+          {pending.local_duration && (
+            <div className="text-sm text-text-muted mt-1">
+              Duration: {formatDuration(pending.local_duration)}
+            </div>
+          )}
         </div>
 
         <div className="space-y-2 mb-6">
-          <div className="text-sm text-text-secondary mb-2">Select the correct video:</div>
-          {pending.matches.map((video, idx) => (
+          <div className="text-sm text-text-secondary mb-2">
+            {pending.match_type === 'multiple_duration'
+              ? 'Multiple videos match the duration:'
+              : 'Search results (select best match):'
+            }
+          </div>
+          {pending.matches.map((video) => (
             <button
               key={video.id}
               onClick={() => setSelectedVideoId(video.id)}
@@ -469,7 +292,7 @@ https://youtube.com/@channel3`}
               }`}
             >
               <div className="flex items-center gap-3">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
                   selectedVideoId === video.id ? 'border-accent bg-accent' : 'border-text-secondary'
                 }`}>
                   {selectedVideoId === video.id && (
@@ -478,8 +301,12 @@ https://youtube.com/@channel3`}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-text-primary truncate">{video.title}</div>
-                  <div className="text-text-muted text-sm">
-                    {video.duration ? `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, '0')}` : 'Unknown duration'}
+                  <div className="text-text-muted text-sm flex items-center gap-2">
+                    <span>{formatDuration(video.duration)}</span>
+                    {video.duration_match && (
+                      <span className="text-accent-text text-xs bg-accent/20 px-1.5 py-0.5 rounded">Duration Match</span>
+                    )}
+                    <span className="text-text-secondary">• {video.channel_title}</span>
                   </div>
                 </div>
               </div>
@@ -489,13 +316,13 @@ https://youtube.com/@channel3`}
 
         <div className="flex gap-3">
           <button
-            onClick={() => handleResolvePending(true)}
+            onClick={() => handleSelectMatch(true)}
             className="btn btn-secondary flex-1"
           >
             Skip
           </button>
           <button
-            onClick={() => handleResolvePending(false)}
+            onClick={() => handleSelectMatch(false)}
             disabled={!selectedVideoId}
             className="btn btn-primary flex-1 disabled:opacity-50"
           >
@@ -506,210 +333,85 @@ https://youtube.com/@channel3`}
     );
   }
 
-  // State 4: Fetching/Matching/Importing progress
-  if (currentStep === 'fetching' || currentStep === 'matching' || currentStep === 'importing') {
-    const channel = stateData?.channels?.[currentChannelIdx];
-    const progress = stateData?.channels?.length
-      ? ((currentChannelIdx + 1) / stateData.channels.length) * 100
-      : 0;
-
+  // State: Identifying / Importing progress
+  if (currentStep === 'identifying' || currentStep === 'importing') {
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
-        <div className="text-center mb-8">
+        <div className="text-center">
+          <div className="animate-spin h-12 w-12 border-4 border-accent border-t-transparent rounded-full mx-auto mb-6" />
           <h2 className="text-xl font-semibold text-text-primary mb-2">
-            {importMode === 'auto' ? 'Auto Import in Progress' : 'Processing Channels'}
+            {currentStep === 'identifying' ? 'Identifying Videos...' : 'Importing Videos...'}
           </h2>
           <p className="text-text-secondary">
-            Channel {currentChannelIdx + 1} of {stateData?.channels?.length || 0}
+            {currentStep === 'identifying'
+              ? 'Searching YouTube to match your files'
+              : 'Organizing files into your library'
+            }
           </p>
-        </div>
-
-        <div className="mb-8">
-          <div className="w-full bg-dark-tertiary rounded-full h-3 mb-2">
-            <div
-              className="bg-accent h-3 rounded-full transition-all"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <div className="text-center text-text-secondary text-sm">
-            {currentStep === 'fetching' && 'Fetching channel metadata...'}
-            {currentStep === 'matching' && 'Matching files...'}
-            {currentStep === 'importing' && 'Importing files...'}
-          </div>
-        </div>
-
-        {channel && (
-          <div className="bg-dark-secondary border border-dark-border rounded-lg p-4">
-            <div className="text-text-primary font-medium mb-2">
-              {channel.channel_info?.channel_title || channel.url}
-            </div>
-            {channel.video_count > 0 && (
-              <div className="text-text-secondary text-sm">
-                {channel.video_count} videos in channel
-              </div>
-            )}
-          </div>
-        )}
-
-        {stateData?.imported?.length > 0 && (
-          <div className="mt-4 text-center text-text-secondary">
-            {stateData.imported.length} files imported so far
-          </div>
-        )}
-
-        <div className="flex items-center justify-center gap-2 mt-8">
-          <div className="animate-spin h-5 w-5 border-2 border-accent border-t-transparent rounded-full" />
-          <span className="text-text-secondary">Processing...</span>
         </div>
       </div>
     );
   }
 
-  // State 2 & 3: Setup - Files found, configure channels
+  // State: Setup - Files found, ready to import
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text-primary mb-2">Import Videos</h1>
         <p className="text-text-secondary">
-          Found <span className="text-accent-text font-semibold">{scanData.count}</span> video files in import folder
+          Found <span className="text-accent-text font-semibold">{scanData.count}</span> video file{scanData.count !== 1 ? 's' : ''} to import
         </p>
       </div>
 
-      {/* CSV Notice */}
-      {scanData.csv_found && (
-        <div className="bg-accent/10 border border-accent/30 rounded-lg p-4 mb-6">
-          <div className="flex items-center gap-2 text-accent-text font-medium mb-1">
-            <CheckmarkIcon className="w-5 h-5" />
-            channels.csv found
-          </div>
-          <p className="text-text-secondary text-sm">
-            {scanData.csv_channels.length} channels loaded from CSV
-          </p>
+      {/* File List */}
+      <div className="bg-dark-secondary border border-dark-border rounded-lg overflow-hidden mb-6">
+        <div className="px-4 py-3 border-b border-dark-border">
+          <h3 className="font-semibold text-text-primary">Files</h3>
         </div>
-      )}
-
-      {/* Add Channel Input */}
-      {(!stateData?.channels?.length || stateData.channels.length === 0) && !scanData.csv_found && (
-        <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 mb-6">
-          <p className="text-text-secondary mb-4">
-            No channels.csv found. Enter channel URLs to match videos:
-          </p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={channelInput}
-              onChange={(e) => setChannelInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleAddChannel()}
-              placeholder="https://youtube.com/@..."
-              className="input flex-1"
-            />
-            <button
-              onClick={handleAddChannel}
-              disabled={!channelInput.trim() || addChannel.isLoading}
-              className="btn btn-primary"
-            >
-              Add
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Channel List */}
-      {stateData?.channels?.length > 0 && (
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-text-primary">
-              Channels ({stateData.channels.length})
-            </h3>
-            {!scanData.csv_found && (
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={channelInput}
-                  onChange={(e) => setChannelInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleAddChannel()}
-                  placeholder="Add another channel..."
-                  className="input w-64 text-sm"
-                />
-                <button
-                  onClick={handleAddChannel}
-                  disabled={!channelInput.trim()}
-                  className="btn btn-secondary btn-sm"
-                >
-                  <PlusIcon />
-                </button>
+        <div className="divide-y divide-dark-border max-h-64 overflow-y-auto">
+          {scanData.files?.slice(0, 20).map((file, idx) => (
+            <div key={idx} className="px-4 py-3 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-text-primary truncate">{file.name}</div>
+                <div className="text-text-muted text-sm">
+                  {(file.size / 1024 / 1024).toFixed(1)} MB
+                </div>
               </div>
-            )}
-          </div>
-
-          <div className="bg-dark-secondary border border-dark-border rounded-lg overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-dark-border">
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-text-secondary">URL</th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-text-secondary">Channel Name</th>
-                  <th className="px-4 py-3 text-right text-sm font-semibold text-text-secondary">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-dark-border">
-                {stateData.channels.slice(0, 10).map((channel, idx) => (
-                  <tr key={idx}>
-                    <td className="px-4 py-3 text-text-primary text-sm truncate max-w-xs">
-                      {channel.url}
-                    </td>
-                    <td className="px-4 py-3 text-text-secondary text-sm">
-                      {channel.channel_info?.channel_title || '-'}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      {channel.status === 'ready' ? (
-                        <span className="text-accent-text text-sm">Ready</span>
-                      ) : channel.status === 'fetching' ? (
-                        <span className="text-yellow-400 text-sm">Fetching...</span>
-                      ) : channel.status === 'error' ? (
-                        <span className="text-red-400 text-sm">Error</span>
-                      ) : (
-                        <span className="text-text-muted text-sm">Pending</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {stateData.channels.length > 10 && (
-              <div className="px-4 py-3 text-center text-text-muted text-sm border-t border-dark-border">
-                ...and {stateData.channels.length - 10} more channels
-              </div>
-            )}
-          </div>
+            </div>
+          ))}
+          {scanData.files?.length > 20 && (
+            <div className="px-4 py-3 text-center text-text-muted text-sm">
+              ...and {scanData.files.length - 20} more files
+            </div>
+          )}
         </div>
-      )}
-
-      {/* Import Buttons */}
-      {stateData?.channels?.length > 0 && (
-        <div className="flex gap-4">
-          <button
-            onClick={handleManualImport}
-            disabled={fetchChannel.isLoading}
-            className="btn btn-secondary flex-1 py-3"
-          >
-            Import Manual
-          </button>
-          <button
-            onClick={handleAutoImport}
-            disabled={fetchChannel.isLoading}
-            className="btn btn-primary flex-1 py-3"
-          >
-            Import Auto
-          </button>
-        </div>
-      )}
-
-      {/* Help Text */}
-      <div className="mt-6 text-center text-text-muted text-sm">
-        <p><strong>Auto:</strong> Automatically imports single matches, pauses only for multiple matches</p>
-        <p><strong>Manual:</strong> Confirm each file before importing</p>
       </div>
+
+      {/* How it works */}
+      <div className="bg-dark-tertiary border border-dark-border rounded-lg p-4 mb-6">
+        <h3 className="font-semibold text-text-primary mb-2">How Smart Import Works</h3>
+        <ul className="text-sm text-text-secondary space-y-1">
+          <li>• Files named with video ID (11 chars) are matched instantly</li>
+          <li>• Other files are searched on YouTube by title</li>
+          <li>• Duration is used to verify matches</li>
+          <li>• You'll confirm any uncertain matches</li>
+        </ul>
+      </div>
+
+      {/* Import Button */}
+      <button
+        onClick={handleSmartImport}
+        disabled={smartIdentify.isLoading}
+        className="btn btn-primary w-full py-3 text-lg disabled:opacity-50"
+      >
+        {smartIdentify.isLoading ? 'Starting...' : 'Start Smart Import'}
+      </button>
+
+      {/* Info */}
+      <p className="text-center text-text-muted text-sm mt-4">
+        No need to specify channels - videos are identified automatically
+      </p>
     </div>
   );
 }
