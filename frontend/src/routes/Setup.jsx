@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { useNotification } from '../contexts/NotificationContext';
 
 function Setup() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { showNotification } = useNotification();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -57,10 +59,13 @@ function Setup() {
 
       showNotification('Credentials saved! Please log in.', 'success');
 
+      // Invalidate first-run cache so app knows setup is complete
+      await queryClient.invalidateQueries({ queryKey: ['auth', 'first-run'] });
+
       // Redirect to login page
       setTimeout(() => {
         navigate('/login');
-      }, 1500);
+      }, 1000);
     } catch (err) {
       setError('Failed to connect to server');
       setIsLoading(false);

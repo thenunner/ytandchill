@@ -545,17 +545,17 @@ export default function Settings() {
                 </label>
               </div>
 
-              {/* Reset User, Status Bar Toggle, and Queue/DB Repair Buttons Row */}
-              <div className="flex gap-2 justify-center">
+              {/* Reset User, Status Bar Toggle, and Repair Buttons Row */}
+              <div className="flex flex-wrap gap-2 justify-center">
                 <button
                   onClick={() => setShowPasswordChange(!showPasswordChange)}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-3"
                 >
                   Reset User
                 </button>
                 <button
                   onClick={toggleStatusBar}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary"
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-3 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary"
                 >
                   {statusBarVisible ? 'Hide Status' : 'Show Status'}
                 </button>
@@ -563,9 +563,9 @@ export default function Settings() {
                   onClick={handleQueueRepair}
                   disabled={isCheckingRepair}
                   title="Cleans up database count issues, orphaned queue items, ghost videos from deleted channels, and other inconsistencies"
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-3 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isCheckingRepair ? 'Checking...' : 'Queue/DB Repair'}
+                  {isCheckingRepair ? 'Checking...' : 'Repair'}
                 </button>
               </div>
 
