@@ -15,7 +15,7 @@ import logging
 import atexit
 from sqlalchemy.orm import joinedload
 from sqlalchemy import func
-from utils import parse_iso8601_duration, download_thumbnail, get_random_video_thumbnail, update_log_level, get_stored_credentials, check_auth_credentials
+from utils import parse_iso8601_duration, download_thumbnail, get_random_video_thumbnail, update_log_level, get_stored_credentials, check_auth_credentials, makedirs_777
 from werkzeug.security import check_password_hash, generate_password_hash, safe_join
 import threading
 from queue import Queue
@@ -954,10 +954,10 @@ if __name__ == '__main__':
     # Benefits: Better concurrency, proper thread pooling, handles byte-range requests well
     port = int(os.environ.get('PORT', 4099))
 
-    # Ensure required directories exist
+    # Ensure required directories exist with 777 permissions for remote access
     downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
-    os.makedirs(os.path.join(downloads_dir, 'imports'), exist_ok=True)
-    os.makedirs(os.path.join(downloads_dir, 'thumbnails'), exist_ok=True)
+    makedirs_777(os.path.join(downloads_dir, 'imports'))
+    makedirs_777(os.path.join(downloads_dir, 'thumbnails'))
 
     logger.info(f"Starting Waitress server on 0.0.0.0:{port}")
     print(f"\n🚀 Server started! Open in your browser:")

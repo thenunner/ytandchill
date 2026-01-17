@@ -8,7 +8,7 @@ import logging
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
 from database import Video, QueueItem, Setting, get_session
-from utils import download_thumbnail
+from utils import download_thumbnail, makedirs_777
 
 logger = logging.getLogger(__name__)
 
@@ -57,8 +57,8 @@ class DownloadWorker:
         self.last_error_message = None  # Last download error for UI display
         self.cookie_warning_message = None  # Persistent cookie warning (cleared on user interaction)
 
-        # Ensure download directory exists
-        os.makedirs(download_dir, exist_ok=True)
+        # Ensure download directory exists with proper permissions
+        makedirs_777(download_dir)
     
     def start(self):
         if not self.running:
@@ -326,8 +326,8 @@ class DownloadWorker:
         session.commit()
         logger.info(f"Video {video.yt_id} status updated to 'downloading'")
 
-        # Prepare download path
-        os.makedirs(video_dir, exist_ok=True)
+        # Prepare download path with proper permissions
+        makedirs_777(video_dir)
 
         return video, channel, video_dir
 
