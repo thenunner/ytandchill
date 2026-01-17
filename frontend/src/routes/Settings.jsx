@@ -4,6 +4,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import { version as APP_VERSION } from '../../package.json';
 
 export default function Settings() {
   const { data: settings, isLoading } = useSettings();
@@ -155,9 +156,9 @@ export default function Settings() {
           const data = await response.json();
           const latest = data.tag_name?.replace(/^v/, '') || null;
           setLatestVersion(latest);
-          if (latest && latest !== '6.11.2') {
+          if (latest && latest !== APP_VERSION) {
             // Simple string comparison works for semver if format is consistent
-            setUpdateAvailable(latest > '6.11.2');
+            setUpdateAvailable(latest > APP_VERSION);
           }
         }
       } catch (e) {
@@ -471,7 +472,7 @@ export default function Settings() {
               <div className="flex flex-col items-center gap-1">
                 <span className="text-text-secondary text-xs">YT and Chill</span>
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
-                  v6.11.2
+                  v{APP_VERSION}
                   {updateAvailable && (
                     <a
                       href="https://github.com/thenunner/ytandchill/releases/latest"
