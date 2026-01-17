@@ -70,12 +70,14 @@ def scan_channel_videos(channel_url, max_results=250):
         max_results: Maximum number of videos to fetch (default: 250)
 
     Returns:
-        tuple: (channel_info, videos)
+        tuple: (channel_info, videos, all_video_ids)
             channel_info: dict with keys: id, title, thumbnail (or None if error)
             videos: list of video dicts with keys: id, title, duration_sec, upload_date, thumbnail
+            all_video_ids: set of ALL video IDs found (including shorts) for not_found detection
 
     Note:
-        - Filters out videos under 2 minutes (YouTube Shorts)
+        - Filters out videos under 2 minutes (YouTube Shorts) from the videos list
+        - all_video_ids includes shorts so they aren't incorrectly marked as not_found
         - upload_date is in YYYYMMDD format
     """
     logger.info(f'Scanning channel: {channel_url} (max: {max_results})')
@@ -91,9 +93,10 @@ def scan_channel_videos(channel_url, max_results=250):
 
     if not success:
         logger.error(f'Failed to scan channel {channel_url}: {stderr}')
-        return None, []
+        return None, [], set()
 
     videos = []
+    all_video_ids = set()  # Track ALL video IDs including shorts
     channel_info = None
 
     for line in stdout.strip().split('\n'):
@@ -113,17 +116,20 @@ def scan_channel_videos(channel_url, max_results=250):
                 'thumbnail': None,  # Will be set from first video
             }
 
+        video_id = data.get('id')
+        if not video_id:
+            continue
+
+        # Track ALL video IDs (including shorts) for not_found detection
+        all_video_ids.add(video_id)
+
         # Get duration (may be None for some entries)
         duration = data.get('duration')
         if duration is None:
             continue
 
-        # Skip shorts (<2 minutes)
+        # Skip shorts (<2 minutes) from the returned videos list
         if duration < MIN_DURATION_SECONDS:
-            continue
-
-        video_id = data.get('id')
-        if not video_id:
             continue
 
         # Set channel thumbnail from first valid video
@@ -138,8 +144,8 @@ def scan_channel_videos(channel_url, max_results=250):
             'thumbnail': f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg',
         })
 
-    logger.info(f'Scanned {len(videos)} videos from channel')
-    return channel_info, videos
+    logger.info(f'Scanned {len(videos)} videos from channel ({len(all_video_ids)} total including shorts)')
+    return channel_info, videos, all_video_ids
 
 
 def get_channel_info(channel_url):

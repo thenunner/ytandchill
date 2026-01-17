@@ -605,9 +605,9 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
 
     # Build channel URL from stored channel ID
     channel_url = f'https://youtube.com/channel/{channel.yt_id}'
-    channel_info, videos = scan_channel_videos(channel_url, max_results=max_results)
+    channel_info, videos, all_video_ids = scan_channel_videos(channel_url, max_results=max_results)
 
-    if channel_info is None and len(videos) == 0:
+    if channel_info is None and len(all_video_ids) == 0:
         logger.error(f"Failed to scan channel: {channel.title}")
         clear_operation()
         raise ValueError(f"Failed to scan channel: {channel.title}")
@@ -690,15 +690,13 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     # Clean up videos removed from YouTube (only on full scans)
     not_found_count = 0
     if force_full:
-        # Collect all yt_ids found in this scan
-        scanned_yt_ids = {video_data['id'] for video_data in videos}
-
         # Find all videos for this channel in DB
         db_videos = session.query(Video).filter(Video.channel_id == channel.id).all()
 
         # Mark videos not found in scan as 'not_found' (except library videos)
+        # Uses all_video_ids which includes shorts, so we don't incorrectly mark shorts as not_found
         for db_video in db_videos:
-            if db_video.yt_id not in scanned_yt_ids and db_video.status != 'library':
+            if db_video.yt_id not in all_video_ids and db_video.status != 'library':
                 db_video.status = 'not_found'
                 not_found_count += 1
                 logger.info(f"Marked as not found (removed from YouTube): '{db_video.title}'")
