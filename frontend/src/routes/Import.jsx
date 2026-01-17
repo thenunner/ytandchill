@@ -234,11 +234,14 @@ My Video Title.mp4  (will search)`}
           </div>
         )}
 
-        <div className="mt-6 text-center">
-          <button onClick={handleReset} className="btn btn-secondary">
-            Import More Files
-          </button>
-        </div>
+        {/* Only show if there are failed files still in the folder */}
+        {identifyResult?.failed?.length > 0 && (
+          <div className="mt-6 text-center">
+            <button onClick={handleReset} className="btn btn-secondary">
+              Retry Failed Files
+            </button>
+          </div>
+        )}
       </div>
     );
   }
