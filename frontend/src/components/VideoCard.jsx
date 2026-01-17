@@ -28,6 +28,7 @@ export default function VideoCard({
   const [showMenu, setShowMenu] = useState(false);
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showVideoInfo, setShowVideoInfo] = useState(false);
   const [previewPlaying, setPreviewPlaying] = useState(false);
   const [imageError, setImageError] = useState(false);
   const menuRef = useRef(null);
@@ -324,6 +325,21 @@ export default function VideoCard({
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowMenu(false);
+                      setShowVideoInfo(true);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Video Info
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowMenu(false);
                       setShowDeleteConfirm(true);
                     }}
                     className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
@@ -375,6 +391,64 @@ export default function VideoCard({
         cancelText="Cancel"
         isDanger={true}
       />
+
+      {/* Video Info Modal */}
+      {showVideoInfo && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowVideoInfo(false);
+          }}
+        >
+          <div
+            className="bg-dark-secondary rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-dark-border">
+              <h3 className="text-lg font-semibold text-text-primary">Video Info</h3>
+              <button
+                onClick={() => setShowVideoInfo(false)}
+                className="text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 space-y-1 text-sm font-mono">
+              <InfoRow label="ID" value={video.id} />
+              <InfoRow label="YT ID" value={video.yt_id} />
+              <InfoRow label="Title" value={video.title} />
+              <InfoRow label="Status" value={video.status} />
+              <InfoRow label="Duration" value={video.duration_sec ? `${video.duration_sec}s (${formatDuration(video.duration_sec)})` : '-'} />
+              <InfoRow label="Upload Date" value={video.upload_date || '-'} />
+              <InfoRow label="Thumb URL" value={video.thumb_url || '-'} truncate />
+              <InfoRow label="File Path" value={video.file_path || '-'} truncate />
+              <InfoRow label="File Size" value={video.file_size_bytes ? formatFileSize(video.file_size_bytes) : '-'} />
+              <InfoRow label="Watched" value={video.watched ? 'Yes' : 'No'} />
+              <InfoRow label="Playback" value={video.playback_seconds ? `${video.playback_seconds}s` : '-'} />
+              <InfoRow label="Channel ID" value={video.channel_id || '-'} />
+              <InfoRow label="Channel" value={video.channel_title || '-'} />
+              <InfoRow label="Folder" value={video.folder_name || '-'} />
+              <InfoRow label="Discovered" value={video.discovered_at ? formatDateTime(video.discovered_at) : '-'} />
+              <InfoRow label="Downloaded" value={video.downloaded_at ? formatDateTime(video.downloaded_at) : '-'} />
+              <InfoRow label="Playlists" value={video.playlist_ids?.length ? video.playlist_ids.join(', ') : '-'} />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function InfoRow({ label, value, truncate }) {
+  return (
+    <div className="flex">
+      <span className="text-text-secondary w-24 flex-shrink-0">{label}:</span>
+      <span className={`text-text-primary ${truncate ? 'truncate' : ''}`} title={truncate ? value : undefined}>
+        {value}
+      </span>
     </div>
   );
 }
