@@ -373,6 +373,7 @@ def _execute_youtube_search(search_query, num_results=20):
                 'duration': data.get('duration'),
                 'channel_id': data.get('channel_id'),
                 'channel_title': data.get('channel') or data.get('uploader'),
+                'uploader_id': data.get('uploader_id'),  # @handle
                 'upload_date': data.get('upload_date'),
             })
         except json.JSONDecodeError:
@@ -381,13 +382,14 @@ def _execute_youtube_search(search_query, num_results=20):
     return results
 
 
-def search_video_by_title(title, expected_duration=None, known_channel_ids=None, num_results=20):
+def search_video_by_title(title, expected_duration=None, known_channel_ids=None, known_channel_handles=None, num_results=20):
     """Search YouTube for a video by title using yt-dlp.
 
     Args:
         title: Video title to search for
         expected_duration: Expected duration in seconds (for matching)
-        known_channel_ids: Set of channel IDs to prioritize (from channels.txt)
+        known_channel_ids: Set of channel IDs (UC...) to prioritize
+        known_channel_handles: Set of @handles to prioritize (lowercase)
         num_results: Number of search results to fetch
 
     Returns:
@@ -395,6 +397,8 @@ def search_video_by_title(title, expected_duration=None, known_channel_ids=None,
     """
     if known_channel_ids is None:
         known_channel_ids = set()
+    if known_channel_handles is None:
+        known_channel_handles = set()
     try:
         # Clean up title for search - keep most chars, just normalize separators
         # YouTube handles special chars fine, only remove things that break shell/URLs
@@ -431,17 +435,30 @@ def search_video_by_title(title, expected_duration=None, known_channel_ids=None,
             video_title = data.get('title', '')
             normalized_video_title = normalize_title(video_title)
 
+            # Check if channel matches our known channels (from channels.txt)
+            channel_match = False
+            uploader_id = data.get('uploader_id', '')  # e.g. "@AtomicShrimp"
+
+            # Check by channel ID (UC...)
+            if data.get('channel_id') and data['channel_id'] in known_channel_ids:
+                channel_match = True
+
+            # Check by @handle
+            if uploader_id and uploader_id.lower() in known_channel_handles:
+                channel_match = True
+
             match_info = {
                 'id': data['id'],
                 'title': video_title,
                 'duration': video_duration,
                 'channel_id': data['channel_id'],
                 'channel_title': data['channel_title'],
+                'uploader_id': uploader_id,
                 'upload_date': data.get('upload_date'),
                 'match_type': 'search',
                 'duration_match': False,
                 'title_match': False,
-                'channel_match': data['channel_id'] in known_channel_ids if data.get('channel_id') else False,
+                'channel_match': channel_match,
             }
 
             # Check title match (normalized comparison)
@@ -692,15 +709,29 @@ def scan_folder():
 
     result = scan_import_folder()
 
-    # Extract channel IDs from URLs where possible (fast, no network calls)
-    known_channel_ids = set()
-    for url in result.get('csv_channels', []):
-        # Try to extract channel ID from URL directly
-        match = re.search(r'/channel/(UC[a-zA-Z0-9_-]{22})', url)
-        if match:
-            known_channel_ids.add(match.group(1))
+    # Extract channel identifiers from URLs (handles, IDs, custom names)
+    # We'll match against these when checking search results
+    known_channel_ids = set()  # UC... IDs
+    known_channel_handles = set()  # @handles (lowercase for comparison)
 
-    logger.info(f"Found {len(known_channel_ids)} channel IDs from {len(result.get('csv_channels', []))} URLs")
+    for url in result.get('csv_channels', []):
+        url_lower = url.lower()
+        # Extract @handle
+        handle_match = re.search(r'/@([a-zA-Z0-9_-]+)', url)
+        if handle_match:
+            known_channel_handles.add('@' + handle_match.group(1).lower())
+
+        # Extract channel ID
+        id_match = re.search(r'/channel/(UC[a-zA-Z0-9_-]{22})', url)
+        if id_match:
+            known_channel_ids.add(id_match.group(1))
+
+        # Extract /c/name or /user/name
+        c_match = re.search(r'/(?:c|user)/([a-zA-Z0-9_-]+)', url)
+        if c_match:
+            known_channel_handles.add(c_match.group(1).lower())
+
+    logger.info(f"Found {len(known_channel_ids)} channel IDs and {len(known_channel_handles)} handles from {len(result.get('csv_channels', []))} URLs")
 
     # Reset import state
     _import_state = {
@@ -710,7 +741,7 @@ def scan_folder():
         'imported': [],
         'skipped': [],
         'known_channel_ids': known_channel_ids,
-        'known_channel_urls': set(result.get('csv_channels', [])),  # Keep raw URLs too
+        'known_channel_handles': known_channel_handles,
         'current_channel_idx': 0,
         'status': 'idle',
         'progress': 0,
@@ -780,12 +811,14 @@ def smart_identify():
         logger.info(f"Title to search: '{name_without_ext}'")
         logger.info(f"Local duration: {local_duration} seconds")
         known_channel_ids = _import_state.get('known_channel_ids', set())
-        logger.info(f"Known channel IDs from channels.txt: {len(known_channel_ids)}")
+        known_channel_handles = _import_state.get('known_channel_handles', set())
+        logger.info(f"Known channels from channels.txt: {len(known_channel_ids)} IDs, {len(known_channel_handles)} handles")
 
         search_results = search_video_by_title(
             name_without_ext,
             expected_duration=local_duration,
-            known_channel_ids=known_channel_ids
+            known_channel_ids=known_channel_ids,
+            known_channel_handles=known_channel_handles
         )
 
         if not search_results:
@@ -801,7 +834,7 @@ def smart_identify():
 
         # Log first few results for debugging
         for i, r in enumerate(search_results[:3]):
-            logger.info(f"  Result {i+1}: '{r.get('title')}' by {r.get('channel_title')}")
+            logger.info(f"  Result {i+1}: '{r.get('title')}' by {r.get('channel_title')} ({r.get('uploader_id')})")
             logger.info(f"    - channel_match={r.get('channel_match')}, title_match={r.get('title_match')}, duration_match={r.get('duration_match')}")
             logger.info(f"    - duration: {r.get('duration')}s (expected: {local_duration}s)")
 
