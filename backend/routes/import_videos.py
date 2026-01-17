@@ -362,9 +362,9 @@ def search_video_by_title(title, expected_duration=None, num_results=20):
                 'duration_match': False,
             }
 
-            # Check duration match (within 5 seconds tolerance for re-encoded videos)
+            # Check duration match (exact match only)
             if expected_duration and video_duration:
-                if abs(video_duration - expected_duration) <= 5:
+                if video_duration == expected_duration:
                     match_info['duration_match'] = True
                     match_info['match_type'] = 'search+duration'
 
