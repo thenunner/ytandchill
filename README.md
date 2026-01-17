@@ -85,16 +85,24 @@ Required for reliable downloads due to YouTube's bot detection.
 
 Have existing YouTube videos? Import them into your library:
 
+**Option 1: Drag and Drop**
+1. Go to Import page in the app
+2. Drag video files directly onto the page (supports files up to 50GB)
+3. Files upload to the imports folder automatically
+4. Click "Smart Import" to identify and add to library
+
+**Option 2: Direct Folder Access**
 1. Place video files in `downloads/imports/`
-2. (Optional) Add a `channels.txt` file with channel URLs to improve matching
-3. Go to Import page in the app
-4. Click "Smart Import" (Auto or Manual mode)
+2. Go to Import page in the app
+3. Click "Smart Import" (Auto or Manual mode)
+
+**Tips:**
+- Add a `channels.txt` file with channel URLs to improve matching accuracy
+- Supported channel file formats: `channels.txt`, `channels.csv`, `channels.list`, `urls.txt`, `urls.csv` (one URL per line)
 
 Videos are identified automatically by:
 - **Filename = Video ID** (e.g., `dQw4w9WgXcQ.mp4`) → instant match
 - **Filename = Title** (e.g., `My Video Title.mp4`) → YouTube search + duration match
-
-**Supported channel file formats:** `channels.txt`, `channels.csv`, `channels.list`, `urls.txt`, `urls.csv` (one URL per line)
 
 ## Directory Structure
 
