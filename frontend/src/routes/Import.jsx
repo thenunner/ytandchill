@@ -34,11 +34,12 @@ export default function Import() {
   const [selectedVideoId, setSelectedVideoId] = useState(null);
 
   // Start Smart Import - identifies videos directly without scanning channels
-  const handleSmartImport = async () => {
+  // mode: 'auto' = auto-import confident matches, 'manual' = review everything
+  const handleSmartImport = async (mode = 'auto') => {
     setCurrentStep('identifying');
 
     try {
-      const result = await smartIdentify.mutateAsync();
+      const result = await smartIdentify.mutateAsync({ mode });
       setIdentifyResult(result);
 
       if (result.pending && result.pending.length > 0) {
@@ -397,23 +398,32 @@ My Video Title.mp4  (will search)`}
         <ul className="text-sm text-text-secondary space-y-1">
           <li>• Files named with video ID (11 chars) are matched instantly</li>
           <li>• Other files are searched on YouTube by title</li>
-          <li>• Duration is used to verify matches</li>
-          <li>• You'll confirm any uncertain matches</li>
+          <li>• Duration + channel from channels.txt used to verify matches</li>
         </ul>
       </div>
 
-      {/* Import Button */}
-      <button
-        onClick={handleSmartImport}
-        disabled={smartIdentify.isLoading}
-        className="btn btn-primary w-full py-3 text-lg disabled:opacity-50"
-      >
-        {smartIdentify.isLoading ? 'Starting...' : 'Start Smart Import'}
-      </button>
+      {/* Import Buttons */}
+      <div className="flex gap-4">
+        <button
+          onClick={() => handleSmartImport('auto')}
+          disabled={smartIdentify.isLoading}
+          className="btn btn-primary flex-1 py-3 text-lg disabled:opacity-50"
+        >
+          {smartIdentify.isLoading ? 'Starting...' : 'Auto Import'}
+        </button>
+        <button
+          onClick={() => handleSmartImport('manual')}
+          disabled={smartIdentify.isLoading}
+          className="btn btn-secondary flex-1 py-3 text-lg disabled:opacity-50"
+        >
+          Manual Import
+        </button>
+      </div>
 
       {/* Info */}
       <p className="text-center text-text-muted text-sm mt-4">
-        No need to specify channels - videos are identified automatically
+        <strong>Auto:</strong> Imports confident matches (title + duration).
+        <strong> Manual:</strong> Review every match before importing.
       </p>
     </div>
   );

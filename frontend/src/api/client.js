@@ -446,9 +446,10 @@ class APIClient {
     });
   }
 
-  smartIdentify() {
+  smartIdentify(mode = 'auto') {
     return this.request('/import/smart-identify', {
       method: 'POST',
+      body: JSON.stringify({ mode }),
     });
   }
 
