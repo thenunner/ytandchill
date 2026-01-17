@@ -302,14 +302,16 @@ def identify_video_by_id(video_id):
             if not data:
                 return None
 
+            video_id = data.get('id')
             return {
-                'id': data.get('id'),
+                'id': video_id,
                 'title': data.get('title'),
                 'duration': data.get('duration'),
                 'channel_id': data.get('channel_id'),
                 'channel_title': data.get('channel') or data.get('uploader'),
                 'channel_url': f"https://youtube.com/channel/{data.get('channel_id')}",
                 'upload_date': data.get('upload_date'),
+                'thumb_url': f"https://img.youtube.com/vi/{video_id}/maxresdefault.jpg",
             }
     except Exception as e:
         logger.error(f"Failed to identify video {video_id}: {e}")
@@ -629,11 +631,14 @@ def execute_import(file_path, video_info, channel_info, match_type):
         # Copy file (don't move yet - in case of error)
         shutil.copy2(file_path, new_file_path)
 
-        # Download thumbnail
-        thumb_path = download_thumbnail(video_id, channel_folder)
+        # Download thumbnail locally
+        download_thumbnail(video_id, channel_folder)
 
         # Get upload date (keep as string in YYYYMMDD format)
         upload_date = video_info.get('upload_date')
+
+        # Store local relative path for thumb_url (e.g., "ChannelFolder/videoId.jpg")
+        thumb_url = f"{channel.folder_name}/{video_id}.jpg"
 
         # Check if video already exists
         existing = session.query(Video).filter(Video.yt_id == video_id).first()
@@ -644,8 +649,7 @@ def execute_import(file_path, video_info, channel_info, match_type):
                 existing.status = 'library'
                 existing.file_path = new_file_path
                 existing.file_size_bytes = os.path.getsize(new_file_path)
-                if thumb_path:
-                    existing.thumb_url = thumb_path
+                existing.thumb_url = thumb_url
                 session.commit()
             # Remove source file
             os.remove(file_path)
@@ -661,11 +665,9 @@ def execute_import(file_path, video_info, channel_info, match_type):
             file_size_bytes=os.path.getsize(new_file_path),
             duration_sec=video_info.get('duration', 0),
             upload_date=upload_date,
+            thumb_url=thumb_url,
             downloaded_at=datetime.now(timezone.utc),
         )
-
-        if thumb_path:
-            video.thumb_url = thumb_path
 
         session.add(video)
         session.commit()
