@@ -5,6 +5,7 @@ import secrets
 from datetime import datetime, timezone, timedelta
 import os
 import yt_dlp
+import requests as http_requests
 from database import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, ChannelCategory, get_session
 from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
@@ -320,6 +321,26 @@ def release_scan_batch_lock():
                 return True  # Signal that auto-scan should run
         return False
 
+
+def _check_for_app_update():
+    """Check GitHub for latest version and store in settings after scan operations."""
+    try:
+        response = http_requests.get(
+            'https://api.github.com/repos/thenunner/ytandchill/releases/latest',
+            timeout=10,
+            headers={'Accept': 'application/vnd.github.v3+json'}
+        )
+        if response.status_code == 200:
+            data = response.json()
+            tag_name = data.get('tag_name', '')
+            latest_version = tag_name.lstrip('v') if tag_name else None
+            if latest_version:
+                settings_manager.set('latest_version', latest_version)
+                logger.info(f"Channel scan: Update check complete - latest version is {latest_version}")
+    except Exception as e:
+        logger.debug(f"Channel scan: Update check failed: {e}")
+
+
 def _scan_worker():
     """Background worker thread that processes scan queue"""
     global scan_worker_running, scan_current_channel, scan_total_channels, scan_batch_label
@@ -383,6 +404,8 @@ def _scan_worker():
                         # Reset counters now that batch is complete
                         scan_total_channels = 0
                         scan_current_channel = 0
+                        # Check for app updates after scan batch completes
+                        _check_for_app_update()
                         if should_trigger_auto_scan:
                             logger.debug("Scan worker: Triggering pending auto-scan")
                             scheduler.scan_all_channels()
