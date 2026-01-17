@@ -255,8 +255,7 @@ logging.Logger.api = _api_log
 LOG_DIR = 'logs'
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, 'app.log')
-MAX_BYTES = 50 * 1024 * 1024  # 50 MB
-BACKUP_COUNT = 2  # 3 files total
+BACKUP_COUNT = 14  # Keep 2 weeks of daily logs
 DEFAULT_LOG_LEVEL = 'INFO'
 
 # Initialize settings manager for logging (uses its own DB session)
@@ -293,9 +292,10 @@ def setup_logging():
     else:
         log_level = getattr(logging, log_level_str, logging.INFO)
 
-    file_handler = logging.handlers.RotatingFileHandler(
+    file_handler = logging.handlers.TimedRotatingFileHandler(
         LOG_FILE,
-        maxBytes=MAX_BYTES,
+        when='midnight',
+        interval=1,
         backupCount=BACKUP_COUNT,
         encoding='utf-8'
     )
