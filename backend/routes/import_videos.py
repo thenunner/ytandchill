@@ -388,15 +388,15 @@ def search_video_by_title(title, expected_duration=None, num_results=20):
                     match_info['match_type'] = 'search+title'
                     logger.info(f"Title match found: '{normalized_filename}' == '{normalized_video_title}'")
 
-            # Check duration match (exact match only)
+            # Check duration match (allow 1 second tolerance for encoding differences)
             if expected_duration and video_duration:
-                if video_duration == expected_duration:
+                if abs(video_duration - expected_duration) <= 1:
                     match_info['duration_match'] = True
                     if match_info['title_match']:
                         match_info['match_type'] = 'search+title+duration'
                     else:
                         match_info['match_type'] = 'search+duration'
-                    logger.info(f"Duration match found: {video_duration} == {expected_duration}")
+                    logger.info(f"Duration match found: {video_duration} ~= {expected_duration} (diff: {abs(video_duration - expected_duration)}s)")
 
             matches.append(match_info)
 
