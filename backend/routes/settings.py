@@ -617,10 +617,21 @@ def purge_deleted_channels():
                 # Delete playlists
                 session.query(Playlist).filter(Playlist.channel_id == channel_id).delete()
 
+                # Delete channel folder if it exists (no library videos = safe to delete)
+                folder_deleted = False
+                if channel.folder_name:
+                    import shutil
+                    downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
+                    channel_folder = os.path.join(downloads_dir, channel.folder_name)
+                    if os.path.exists(channel_folder) and os.path.isdir(channel_folder):
+                        shutil.rmtree(channel_folder)
+                        folder_deleted = True
+                        logger.info(f"Deleted channel folder: {channel_folder}")
+
                 # Delete the channel
                 session.delete(channel)
 
-                logger.info(f"Purged channel: {channel.title} ({video_count} videos)")
+                logger.info(f"Purged channel: {channel.title} ({video_count} videos, folder_deleted={folder_deleted})")
                 purged_count += 1
                 total_videos_removed += video_count
 
@@ -638,48 +649,3 @@ def purge_deleted_channels():
             return jsonify({'error': str(e)}), 500
 
 
-@settings_bp.route('/api/repair/thumbnails', methods=['POST'])
-def repair_thumbnails():
-    """Fix video thumb_url to use local paths instead of YouTube URLs.
-
-    For all videos with status='library', updates thumb_url from YouTube URL
-    to local relative path (folder/videoId.jpg) format.
-    """
-    from database import Video, Channel
-
-    with get_session(_session_factory) as session:
-        try:
-            # Find all library videos with YouTube URLs in thumb_url
-            library_videos = session.query(Video).filter(
-                Video.status == 'library',
-                Video.thumb_url.like('http%')
-            ).all()
-
-            updated_count = 0
-            for video in library_videos:
-                # Get folder name from channel or video's folder_name
-                if video.channel:
-                    folder_name = video.channel.folder_name
-                elif video.folder_name:
-                    folder_name = video.folder_name
-                else:
-                    folder_name = 'Singles'
-
-                # Update to local path format
-                new_thumb_url = f"{folder_name}/{video.yt_id}.jpg"
-                video.thumb_url = new_thumb_url
-                updated_count += 1
-                logger.debug(f"Updated thumb_url for {video.yt_id}: {new_thumb_url}")
-
-            session.commit()
-            logger.info(f"Repaired {updated_count} video thumbnails to local paths")
-
-            return jsonify({
-                'updated': updated_count,
-                'message': f'Updated {updated_count} videos to use local thumbnail paths'
-            })
-
-        except Exception as e:
-            session.rollback()
-            logger.error(f"Error repairing thumbnails: {e}", exc_info=True)
-            return jsonify({'error': str(e)}), 500
