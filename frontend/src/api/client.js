@@ -342,6 +342,12 @@ class APIClient {
     });
   }
 
+  repairThumbnails() {
+    return this.request('/repair/thumbnails', {
+      method: 'POST',
+    });
+  }
+
   // Auth
   checkAuth() {
     return this.request('/auth/check');

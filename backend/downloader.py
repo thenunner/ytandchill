@@ -714,6 +714,10 @@ class DownloadWorker:
             video.status = 'library'
             video.downloaded_at = datetime.now(timezone.utc)
 
+            # Update thumb_url to local path (folder/videoId.jpg)
+            folder_name = channel.folder_name if channel else (video.folder_name or 'Singles')
+            video.thumb_url = f"{folder_name}/{video.yt_id}.jpg"
+
             # Log completion with file details
             size_mb = video.file_size_bytes / (1024 * 1024)
             # Get folder name for logging (handle both channel and playlist videos)
