@@ -55,7 +55,36 @@ export default function Import() {
   const [currentUploadIndex, setCurrentUploadIndex] = useState(0);
   const [currentUploadProgress, setCurrentUploadProgress] = useState(0);
   const [skippedFiles, setSkippedFiles] = useState([]); // Files skipped due to unsupported format
+  const [rejectionError, setRejectionError] = useState(null); // {files: [], countdown: 4}
+  const rejectionTimerRef = useRef(null);
   const abortControllerRef = useRef(null);
+
+  // Auto-dismiss rejection error after countdown
+  useEffect(() => {
+    if (rejectionError) {
+      // Clear any existing timer
+      if (rejectionTimerRef.current) {
+        clearInterval(rejectionTimerRef.current);
+      }
+
+      // Start countdown
+      rejectionTimerRef.current = setInterval(() => {
+        setRejectionError(prev => {
+          if (!prev || prev.countdown <= 1) {
+            clearInterval(rejectionTimerRef.current);
+            return null;
+          }
+          return { ...prev, countdown: prev.countdown - 1 };
+        });
+      }, 1000);
+
+      return () => {
+        if (rejectionTimerRef.current) {
+          clearInterval(rejectionTimerRef.current);
+        }
+      };
+    }
+  }, [rejectionError?.files]); // Only restart when files change, not countdown
 
   // Start Smart Import - identifies videos directly without scanning channels
   // mode: 'auto' = auto-import confident matches, 'manual' = review everything
@@ -194,6 +223,15 @@ export default function Import() {
     // Track skipped files for inline display
     setSkippedFiles(unsupportedFiles.map(f => f.name));
 
+    // If NO valid files at all, show rejection error inline
+    if (videoFiles.length === 0 && unsupportedFiles.length > 0) {
+      setRejectionError({
+        files: unsupportedFiles.map(f => f.name),
+        countdown: 4
+      });
+      return;
+    }
+
     if (unsupportedFiles.length > 0) {
       const names = unsupportedFiles.map(f => f.name).join(', ');
       showNotification(`${unsupportedFiles.length} file(s) skipped (unsupported format): ${names}. Supported: .mp4, .webm, .m4v`, 'warning');
@@ -202,6 +240,9 @@ export default function Import() {
     if (videoFiles.length === 0) {
       return;
     }
+
+    // Clear any rejection error when starting valid upload
+    setRejectionError(null);
 
     // Check for oversized files
     const oversizedFiles = videoFiles.filter(f => f.size > MAX_FILE_SIZE);
@@ -456,13 +497,48 @@ export default function Import() {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={`relative flex flex-col items-center justify-center min-h-[60vh] text-center px-4 mx-4 my-4 border-2 border-dashed rounded-xl transition-all duration-200 ${
-          isDragging
-            ? 'border-accent bg-accent/10 scale-[1.02]'
-            : 'border-dark-border hover:border-dark-border-light'
+          rejectionError
+            ? 'border-red-500/50 bg-red-500/5'
+            : isDragging
+              ? 'border-accent bg-accent/10 scale-[1.02]'
+              : 'border-dark-border hover:border-dark-border-light'
         }`}
       >
+        {/* Rejection error overlay */}
+        {rejectionError && (
+          <div className="absolute inset-0 flex items-center justify-center bg-dark-primary/95 rounded-xl z-10">
+            <div className="text-center max-w-sm px-4">
+              {/* X icon */}
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+                <svg className="w-8 h-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </div>
+              <div className="text-xl font-semibold text-red-400 mb-3">Unsupported file format</div>
+              <div className="text-text-secondary mb-4 text-sm">
+                {rejectionError.files.slice(0, 3).map((name, i) => (
+                  <div key={i} className="truncate">{name}</div>
+                ))}
+                {rejectionError.files.length > 3 && (
+                  <div className="text-text-muted">+{rejectionError.files.length - 3} more</div>
+                )}
+              </div>
+              <div className="text-sm text-text-muted mb-6">
+                Supported: <span className="text-text-secondary">.mp4, .webm, .m4v</span>
+              </div>
+              {/* Countdown bar */}
+              <div className="w-48 mx-auto h-1 bg-dark-tertiary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-red-500/50 transition-all duration-1000 ease-linear"
+                  style={{ width: `${(rejectionError.countdown / 4) * 100}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Drag overlay */}
-        {isDragging && (
+        {isDragging && !rejectionError && (
           <div className="absolute inset-0 flex items-center justify-center bg-dark-primary/90 rounded-xl z-10">
             <div className="text-center">
               <svg className="w-16 h-16 text-accent mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
