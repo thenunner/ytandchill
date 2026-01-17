@@ -106,13 +106,10 @@ def _get_or_create_channel(session, yt_channel_id, channel_title):
     # Create new channel
     folder_name = channel_title.replace(' ', '_').replace('/', '_')[:50] if channel_title else yt_channel_id[:50]
 
-    # Download channel thumbnail (use a video thumbnail as proxy)
-    thumbnail_path = None
-    thumbnail_url = f'https://yt3.googleusercontent.com/ytc/{yt_channel_id}'  # Try channel avatar
-    thumbnail_filename = f"{yt_channel_id}.jpg"
-    local_file_path = os.path.join('downloads', 'thumbnails', thumbnail_filename)
-    if download_thumbnail(thumbnail_url, local_file_path):
-        thumbnail_path = os.path.join('thumbnails', thumbnail_filename)
+    # Download channel thumbnail using real yt-dlp lookup
+    from utils import ensure_channel_thumbnail
+    downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
+    thumbnail_path = ensure_channel_thumbnail(yt_channel_id, downloads_folder)
 
     channel = Channel(
         yt_id=yt_channel_id,

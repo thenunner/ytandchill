@@ -93,10 +93,16 @@ def ensure_channel_thumbnail(channel_id, downloads_folder):
     if os.path.exists(thumb_path):
         return relative_path
 
-    # Try to download from YouTube
-    thumb_url = f"https://yt3.googleusercontent.com/ytc/{channel_id}"
-    if download_thumbnail(thumb_url, thumb_path):
-        return relative_path
+    # Get real channel thumbnail URL via yt-dlp
+    try:
+        from scanner import get_channel_info
+        channel_url = f"https://youtube.com/channel/{channel_id}"
+        channel_info = get_channel_info(channel_url)
+        if channel_info and channel_info.get('thumbnail'):
+            if download_thumbnail(channel_info['thumbnail'], thumb_path):
+                return relative_path
+    except Exception:
+        pass  # Fall through to return None
 
     return None
 
