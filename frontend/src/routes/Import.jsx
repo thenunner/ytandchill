@@ -159,13 +159,16 @@ export default function Import() {
           {scanData?.import_path || 'downloads/imports/'}
         </code>
         <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 max-w-md">
-          <p className="text-text-secondary text-sm mb-2">
-            <strong>Tip:</strong> Name files with their YouTube video ID for instant matching:
+          <p className="text-text-secondary text-sm mb-3">
+            <strong>File naming requirements:</strong>
           </p>
           <pre className="bg-dark-tertiary rounded p-3 text-left text-sm font-mono text-text-muted">
-{`dQw4w9WgXcQ.mp4  (video ID)
-My Video Title.mp4  (will search)`}
+{`dQw4w9WgXcQ.mp4      ← YouTube video ID (instant match)
+My Video Title.mp4   ← Exact video title (searches YouTube)`}
           </pre>
+          <p className="text-text-secondary text-xs mt-3">
+            Files must be named as either the 11-character YouTube ID or the exact video title.
+          </p>
         </div>
         <button
           onClick={() => refetchScan()}
