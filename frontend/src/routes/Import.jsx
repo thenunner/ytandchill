@@ -54,6 +54,7 @@ export default function Import() {
   const [uploadFiles, setUploadFiles] = useState([]); // {name, size, status: 'pending'|'uploading'|'done'|'error', progress}
   const [currentUploadIndex, setCurrentUploadIndex] = useState(0);
   const [currentUploadProgress, setCurrentUploadProgress] = useState(0);
+  const [skippedFiles, setSkippedFiles] = useState([]); // Files skipped due to unsupported format
   const abortControllerRef = useRef(null);
 
   // Start Smart Import - identifies videos directly without scanning channels
@@ -189,6 +190,9 @@ export default function Import() {
     // Filter by extension
     const videoFiles = allFiles.filter(f => VIDEO_EXTENSIONS.test(f.name));
     const unsupportedFiles = allFiles.filter(f => !VIDEO_EXTENSIONS.test(f.name));
+
+    // Track skipped files for inline display
+    setSkippedFiles(unsupportedFiles.map(f => f.name));
 
     if (unsupportedFiles.length > 0) {
       const names = unsupportedFiles.map(f => f.name).join(', ');
@@ -412,6 +416,31 @@ export default function Import() {
           {failed > 0 && (
             <div className="mt-4 text-center text-sm text-red-400">
               {failed} file{failed !== 1 ? 's' : ''} failed
+            </div>
+          )}
+
+          {/* Skipped Unsupported Files Warning */}
+          {skippedFiles.length > 0 && (
+            <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+              <div className="flex items-start gap-2">
+                <svg className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <div>
+                  <div className="text-sm font-medium text-yellow-400">
+                    {skippedFiles.length} file{skippedFiles.length !== 1 ? 's' : ''} skipped (unsupported format)
+                  </div>
+                  <div className="text-xs text-yellow-400/70 mt-1">
+                    {skippedFiles.slice(0, 3).join(', ')}
+                    {skippedFiles.length > 3 && ` +${skippedFiles.length - 3} more`}
+                  </div>
+                  <div className="text-xs text-text-muted mt-1">
+                    Supported: .mp4, .webm, .m4v
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -671,6 +700,40 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
           Found <span className="text-accent-text font-semibold">{scanData.count}</span> video file{scanData.count !== 1 ? 's' : ''} to import
         </p>
       </div>
+
+      {/* Skipped Unsupported Files Warning */}
+      {skippedFiles.length > 0 && (
+        <div className="mb-6 p-3 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+          <div className="flex items-start gap-2">
+            <svg className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div className="flex-1">
+              <div className="text-sm font-medium text-yellow-400">
+                {skippedFiles.length} file{skippedFiles.length !== 1 ? 's' : ''} skipped (unsupported format)
+              </div>
+              <div className="text-xs text-yellow-400/70 mt-1">
+                {skippedFiles.slice(0, 3).join(', ')}
+                {skippedFiles.length > 3 && ` +${skippedFiles.length - 3} more`}
+              </div>
+              <div className="text-xs text-text-muted mt-1">
+                Supported: .mp4, .webm, .m4v
+              </div>
+            </div>
+            <button
+              onClick={() => setSkippedFiles([])}
+              className="text-yellow-400/50 hover:text-yellow-400 p-1"
+              title="Dismiss"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* File List */}
       <div className="bg-dark-secondary border border-dark-border rounded-lg overflow-hidden mb-6">
