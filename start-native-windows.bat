@@ -32,16 +32,24 @@ if not errorlevel 1 (
 )
 
 echo ERROR: No compatible Python version found (need 3.11-3.13)
-echo Please install Python 3.12 from https://www.python.org/downloads/
+echo Please run setup-native-windows.bat to install Python 3.12
 pause
 exit /b 1
 
 :python_found
 echo Using: %PYTHON_CMD%
 echo.
+
+REM Ensure we're in the project root directory (where this script is located)
+cd /d "%~dp0"
+
+REM Create data directory if it doesn't exist
+if not exist data mkdir data
+
 echo Starting backend server on port 4099...
 echo.
 echo Press Ctrl+C to stop the server
 echo.
-cd backend
-%PYTHON_CMD% app.py
+
+REM Run from project root, not from backend folder
+%PYTHON_CMD% backend/app.py

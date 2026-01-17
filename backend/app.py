@@ -127,9 +127,16 @@ def get_or_create_secret_key():
         settings_manager.set('secret_key', new_secret_key)
         return new_secret_key
 
-# Determine static folder path - different for Docker vs local dev
-# In Docker: /app/dist, In local dev: ../frontend/dist
-static_folder = 'dist' if os.path.exists('dist') else '../frontend/dist'
+# Determine static folder path - different for Docker vs local dev vs native Windows
+# In Docker: /app/dist
+# In local dev from backend/: ../frontend/dist
+# In native Windows from project root: frontend/dist
+if os.path.exists('dist'):
+    static_folder = 'dist'  # Docker
+elif os.path.exists('frontend/dist'):
+    static_folder = 'frontend/dist'  # Running from project root (native Windows)
+else:
+    static_folder = '../frontend/dist'  # Running from backend folder (local dev)
 app = Flask(__name__, static_folder=static_folder)
 
 # Session configuration

@@ -154,11 +154,11 @@ cd ..
 
 echo.
 echo Creating empty cookies.txt file (optional)...
-if not exist cookies.txt (
-    type nul > cookies.txt
-    echo Created empty cookies.txt
+if not exist backend\cookies.txt (
+    type nul > backend\cookies.txt
+    echo Created empty backend\cookies.txt
 ) else (
-    echo cookies.txt already exists
+    echo backend\cookies.txt already exists
 )
 
 echo.

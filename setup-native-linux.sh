@@ -81,11 +81,11 @@ cd ..
 
 echo ""
 echo "Creating empty cookies.txt file (optional)..."
-if [ ! -f cookies.txt ]; then
-    touch cookies.txt
-    echo "Created empty cookies.txt"
+if [ ! -f backend/cookies.txt ]; then
+    touch backend/cookies.txt
+    echo "Created empty backend/cookies.txt"
 else
-    echo "cookies.txt already exists"
+    echo "backend/cookies.txt already exists"
 fi
 
 # Set permissions
@@ -100,8 +100,7 @@ echo "To start the application:"
 echo "  ./start-native-linux.sh"
 echo ""
 echo "Or manually:"
-echo "  cd backend"
-echo "  python3 app.py"
+echo "  python3 backend/app.py"
 echo ""
 echo "Then access at: http://localhost:4099"
 echo ""
