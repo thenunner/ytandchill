@@ -445,7 +445,7 @@ export default function Settings() {
               {/* YT and Chill */}
               <div className="flex flex-col items-center gap-1">
                 <span className="text-text-secondary text-xs">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.11.0</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.11.1</span>
               </div>
               {/* YT-DLP */}
               <div className="flex flex-col items-center gap-1">
