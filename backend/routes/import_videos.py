@@ -885,7 +885,9 @@ def upload_import_file():
 
     try:
         file.save(filepath)
-        os.chmod(filepath, 0o777)  # Match existing permission pattern
+        # Set permissions (Unix only - no-op on Windows)
+        if os.name != 'nt':
+            os.chmod(filepath, 0o777)
         file_size = os.path.getsize(filepath)
         logger.info(f"Uploaded file to import folder: {safe_filename_str} ({file_size} bytes)")
 
