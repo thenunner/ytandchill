@@ -589,13 +589,13 @@ def execute_import(file_path, video_info, channel_info, match_type):
     with get_session(_session_factory) as session:
         # Get or create channel
         channel = session.query(Channel).filter(
-            Channel.channel_id == channel_info['channel_id']
+            Channel.yt_id == channel_info['channel_id']
         ).first()
 
         if not channel:
             # Create channel
             channel = Channel(
-                channel_id=channel_info['channel_id'],
+                yt_id=channel_info['channel_id'],
                 title=channel_info['channel_title'],
                 url=channel_info['channel_url'],
             )
