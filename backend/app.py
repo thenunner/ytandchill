@@ -174,12 +174,17 @@ app.config['ENV'] = 'production'
 # Disable werkzeug's default request logging - we'll handle it ourselves
 logging.getLogger('werkzeug').setLevel(logging.ERROR)  # Only log errors from werkzeug
 
-# Initialize rate limiter
+# Initialize rate limiter with exemption for media files (local file serving)
+def rate_limit_exempt():
+    """Exempt media routes from rate limiting - they just serve local files."""
+    return request.path.startswith('/api/media/')
+
 limiter = Limiter(
     app=app,
     key_func=get_remote_address,
     default_limits=["200 per minute"],  # General rate limit for all endpoints
-    storage_uri="memory://"
+    storage_uri="memory://",
+    request_filter=rate_limit_exempt  # Skip rate limiting for media files
 )
 
 # Authentication helper functions
