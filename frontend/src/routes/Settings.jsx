@@ -81,6 +81,10 @@ export default function Settings() {
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
 
+  // Version update check state
+  const [latestVersion, setLatestVersion] = useState(null);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+
   // Scroll to top on component mount
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' });
@@ -141,6 +145,27 @@ export default function Settings() {
       setCookieSource(settings.cookie_source || 'file');
     }
   }, [settings]);
+
+  // Check for version updates on mount
+  useEffect(() => {
+    const checkForUpdates = async () => {
+      try {
+        const response = await fetch('https://api.github.com/repos/thenunner/ytandchill/releases/latest');
+        if (response.ok) {
+          const data = await response.json();
+          const latest = data.tag_name?.replace(/^v/, '') || null;
+          setLatestVersion(latest);
+          if (latest && latest !== '6.11.2') {
+            // Simple string comparison works for semver if format is consistent
+            setUpdateAvailable(latest > '6.11.2');
+          }
+        }
+      } catch (e) {
+        // Silently fail - version check is non-critical
+      }
+    };
+    checkForUpdates();
+  }, []);
 
   const toggleLogs = () => {
     const newValue = !showLogs;
@@ -445,7 +470,20 @@ export default function Settings() {
               {/* YT and Chill */}
               <div className="flex flex-col items-center gap-1">
                 <span className="text-text-secondary text-xs">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.11.2</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
+                  v6.11.2
+                  {updateAvailable && (
+                    <a
+                      href="https://github.com/thenunner/ytandchill/releases/latest"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ml-2 text-accent hover:underline"
+                      title={`Update available: v${latestVersion}`}
+                    >
+                      ↑ v{latestVersion}
+                    </a>
+                  )}
+                </span>
               </div>
               {/* YT-DLP */}
               <div className="flex flex-col items-center gap-1">
