@@ -290,13 +290,41 @@ def fetch_channel_videos_ytdlp(channel_url):
 
 
 def normalize_title(title):
-    """Normalize title for comparison."""
+    """Normalize title for comparison.
+
+    - Lowercase
+    - Convert underscores/hyphens/dots to spaces (common filename separators)
+    - Remove all other special chars (!, ?, ', etc.)
+    - Collapse multiple spaces
+    """
     if not title:
         return ''
-    # Remove special chars, lowercase, collapse multiple spaces, strip
-    normalized = re.sub(r'[^\w\s]', '', title.lower())
-    normalized = re.sub(r'\s+', ' ', normalized)  # Collapse multiple spaces
+    normalized = title.lower()
+    # Convert common filename separators to spaces
+    normalized = re.sub(r'[_\-\.]', ' ', normalized)
+    # Remove all other special chars
+    normalized = re.sub(r'[^\w\s]', '', normalized)
+    # Collapse multiple spaces
+    normalized = re.sub(r'\s+', ' ', normalized)
     return normalized.strip()
+
+
+def titles_match(filename_title, video_title):
+    """Check if titles match after normalizing case and whitespace.
+
+    Handles: "JOE wants some food" == "joe wants some food"
+    Does NOT handle extra words like "(Official Video)" - those need manual review.
+    """
+    if not filename_title or not video_title:
+        return False
+
+    norm_file = normalize_title(filename_title)
+    norm_video = normalize_title(video_title)
+
+    if not norm_file or not norm_video:
+        return False
+
+    return norm_file == norm_video
 
 
 def identify_video_by_id(video_id):
@@ -465,16 +493,15 @@ def search_video_by_title(title, expected_duration=None, known_channel_ids=None,
                 'channel_match': channel_match,
             }
 
-            # Check title match (normalized comparison)
-            if normalized_filename and normalized_video_title:
-                if normalized_filename == normalized_video_title:
-                    match_info['title_match'] = True
-                    match_info['match_type'] = 'search+title'
-                    logger.info(f"Title match found: '{normalized_filename}' == '{normalized_video_title}'")
+            # Check title match (flexible comparison)
+            if titles_match(title, video_title):
+                match_info['title_match'] = True
+                match_info['match_type'] = 'search+title'
+                logger.info(f"Title match found: '{normalized_filename}' ~ '{normalized_video_title}'")
 
-            # Check duration match (allow 1 second tolerance for encoding differences)
+            # Check duration match (allow 3 second tolerance for encoding differences)
             if expected_duration and video_duration:
-                if abs(video_duration - expected_duration) <= 1:
+                if abs(video_duration - expected_duration) <= 3:
                     match_info['duration_match'] = True
                     if match_info['title_match']:
                         match_info['match_type'] = 'search+title+duration'
@@ -1011,14 +1038,14 @@ def smart_identify():
                     f"title={len(title_matches)}, dur={len(duration_matches)}")
 
         # Determine if we should auto-import based on mode
-        # Auto mode: only channel+title+duration or title+duration
+        # Auto mode: only exact title+duration matches (high confidence)
         # Manual mode: everything goes to pending
         best_match = None
         match_type = None
         should_auto_import = False
 
         if mode == 'auto':
-            # Only auto-import with high confidence (must have duration match)
+            # Only auto-import with title AND duration match (high confidence)
             if len(channel_title_duration) == 1:
                 best_match = channel_title_duration[0]
                 match_type = 'channel+title+duration'
@@ -1027,7 +1054,7 @@ def smart_identify():
                 best_match = title_duration[0]
                 match_type = 'title+duration'
                 should_auto_import = True
-            # Note: channel+title without duration, or duration-only matches go to pending
+            # Everything else needs manual review
         # Manual mode: everything goes to pending (no auto-import)
 
         if should_auto_import and best_match:
