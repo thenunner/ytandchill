@@ -1436,7 +1436,20 @@ export default function Settings() {
                 <p className="text-sm text-text-secondary">✓ No videos to remove</p>
               ) : (
                 <>
-                  <p className="text-sm text-text-secondary mb-3">Select videos to remove from database:</p>
+                  <label className="flex items-center gap-2 text-sm text-text-secondary mb-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedNotFoundVideos.length === repairData.not_found_videos.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedNotFoundVideos(repairData.not_found_videos.map(v => v.id));
+                        } else {
+                          setSelectedNotFoundVideos([]);
+                        }
+                      }}
+                    />
+                    Select all videos to remove from database:
+                  </label>
                   <div className="max-h-96 overflow-y-auto space-y-2">
                     {repairData.not_found_videos.map((video) => (
                       <label key={video.id} className="flex items-start gap-3 p-3 bg-dark-tertiary hover:bg-dark-hover border border-dark-border rounded-lg cursor-pointer">
