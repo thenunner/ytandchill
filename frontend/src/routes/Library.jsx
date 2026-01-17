@@ -846,11 +846,65 @@ export default function Library() {
       {activeTab === 'channels' && (
         <>
           {channelsList.length === 0 ? (
-            <EmptyState
-              icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />}
-              title={allChannelsList.length > 0 && searchInput ? "No channels match filters" : "No downloaded videos"}
-              message={allChannelsList.length > 0 && searchInput ? "Remove filters to see them" : "Videos you download will appear here"}
-            />
+            allChannelsList.length > 0 && searchInput ? (
+              <EmptyState
+                icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />}
+                title="No channels match filters"
+                message="Remove filters to see them"
+              />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 px-4">
+                <svg className="w-20 h-20 text-text-muted mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
+                </svg>
+                <h3 className="text-xl font-semibold text-text-primary mb-2">Your library is empty</h3>
+                <p className="text-text-secondary mb-8 text-center">Here's how to add videos:</p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl w-full">
+                  {/* Subscribe to channels */}
+                  <button
+                    onClick={() => navigate('/channels')}
+                    className="group p-6 bg-dark-secondary border border-dark-border rounded-xl hover:border-accent/50 hover:bg-dark-tertiary transition-all text-left"
+                  >
+                    <div className="w-12 h-12 bg-dark-tertiary rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
+                      <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-semibold text-text-primary mb-1">Subscribe</h4>
+                    <p className="text-sm text-text-secondary">Monitor a channel for new uploads</p>
+                  </button>
+
+                  {/* One-off videos */}
+                  <button
+                    onClick={() => navigate('/videos')}
+                    className="group p-6 bg-dark-secondary border border-dark-border rounded-xl hover:border-accent/50 hover:bg-dark-tertiary transition-all text-left"
+                  >
+                    <div className="w-12 h-12 bg-dark-tertiary rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
+                      <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+                      </svg>
+                    </div>
+                    <h4 className="font-semibold text-text-primary mb-1">One-off Videos</h4>
+                    <p className="text-sm text-text-secondary">Grab single videos or playlists by URL</p>
+                  </button>
+
+                  {/* Import existing */}
+                  <button
+                    onClick={() => navigate('/import')}
+                    className="group p-6 bg-dark-secondary border border-dark-border rounded-xl hover:border-accent/50 hover:bg-dark-tertiary transition-all text-left"
+                  >
+                    <div className="w-12 h-12 bg-dark-tertiary rounded-lg flex items-center justify-center mb-4 group-hover:bg-accent/20 transition-colors">
+                      <svg className="w-6 h-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                      </svg>
+                    </div>
+                    <h4 className="font-semibold text-text-primary mb-1">Import Existing</h4>
+                    <p className="text-sm text-text-secondary">Add videos you already downloaded</p>
+                  </button>
+                </div>
+              </div>
+            )
           ) : (() => {
             const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedChannelsList.length);
             const textSizes = getTextSizes(effectiveCardSize);
