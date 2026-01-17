@@ -273,7 +273,48 @@ def identify_video_by_id(video_id):
         return None
 
 
-def search_video_by_title(title, expected_duration=None, num_results=10):
+def _execute_youtube_search(search_query, num_results=20):
+    """Execute a YouTube search via yt-dlp."""
+    cmd = [
+        'yt-dlp',
+        '--flat-playlist',
+        '--dump-json',
+        '--no-warnings',
+        f'ytsearch{num_results}:{search_query}'
+    ]
+
+    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+    if os.path.exists(cookies_path):
+        cmd.extend(['--cookies', cookies_path])
+
+    logger.info(f"Searching YouTube for: {search_query}")
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+
+    if result.returncode != 0:
+        logger.error(f"YouTube search failed: {result.stderr}")
+        return []
+
+    results = []
+    for line in result.stdout.strip().split('\n'):
+        if not line:
+            continue
+        try:
+            data = json.loads(line)
+            results.append({
+                'id': data.get('id'),
+                'title': data.get('title'),
+                'duration': data.get('duration'),
+                'channel_id': data.get('channel_id'),
+                'channel_title': data.get('channel') or data.get('uploader'),
+                'upload_date': data.get('upload_date'),
+            })
+        except json.JSONDecodeError:
+            continue
+
+    return results
+
+
+def search_video_by_title(title, expected_duration=None, num_results=20):
     """Search YouTube for a video by title using yt-dlp.
 
     Args:
@@ -285,60 +326,52 @@ def search_video_by_title(title, expected_duration=None, num_results=10):
         list of matching videos, best matches first
     """
     try:
-        # Clean up title for search
-        search_query = re.sub(r'[_\-\.]', ' ', title).strip()
+        # Clean up title for search - keep most chars, just normalize separators
+        # YouTube handles special chars fine, only remove things that break shell/URLs
+        search_query = re.sub(r'[_\-\.]', ' ', title)  # Treat these as word separators
+        search_query = re.sub(r'[\"\`]', '', search_query)  # Remove quotes that break shell
+        search_query = re.sub(r'\s+', ' ', search_query).strip()
 
-        cmd = [
-            'yt-dlp',
-            '--flat-playlist',
-            '--dump-json',
-            '--no-warnings',
-            f'ytsearch{num_results}:{search_query}'
-        ]
+        # Try full title search first
+        raw_results = _execute_youtube_search(search_query, num_results)
 
-        cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
-        if os.path.exists(cookies_path):
-            cmd.extend(['--cookies', cookies_path])
+        # If no results, try with first 5 words only
+        if not raw_results:
+            words = search_query.split()[:5]
+            if len(words) >= 2:
+                short_query = ' '.join(words)
+                logger.info(f"No results, trying shorter query: {short_query}")
+                raw_results = _execute_youtube_search(short_query, num_results)
 
-        logger.info(f"Searching YouTube for: {search_query}")
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-
-        if result.returncode != 0:
-            logger.error(f"YouTube search failed: {result.stderr}")
+        if not raw_results:
             return []
 
+        # Process results and check duration matches
         matches = []
-        for line in result.stdout.strip().split('\n'):
-            if not line:
-                continue
-            try:
-                data = json.loads(line)
-                video_duration = data.get('duration')
+        for data in raw_results:
+            video_duration = data.get('duration')
 
-                match_info = {
-                    'id': data.get('id'),
-                    'title': data.get('title'),
-                    'duration': video_duration,
-                    'channel_id': data.get('channel_id'),
-                    'channel_title': data.get('channel') or data.get('uploader'),
-                    'upload_date': data.get('upload_date'),
-                    'match_type': 'search',
-                    'duration_match': False,
-                }
+            match_info = {
+                'id': data['id'],
+                'title': data['title'],
+                'duration': video_duration,
+                'channel_id': data['channel_id'],
+                'channel_title': data['channel_title'],
+                'upload_date': data.get('upload_date'),
+                'match_type': 'search',
+                'duration_match': False,
+            }
 
-                # Check duration match (within 2 seconds tolerance)
-                if expected_duration and video_duration:
-                    if abs(video_duration - expected_duration) <= 2:
-                        match_info['duration_match'] = True
-                        match_info['match_type'] = 'search+duration'
+            # Check duration match (within 5 seconds tolerance for re-encoded videos)
+            if expected_duration and video_duration:
+                if abs(video_duration - expected_duration) <= 5:
+                    match_info['duration_match'] = True
+                    match_info['match_type'] = 'search+duration'
 
-                matches.append(match_info)
-
-            except json.JSONDecodeError:
-                continue
+            matches.append(match_info)
 
         # Sort: duration matches first, then by order
-        matches.sort(key=lambda x: (not x['duration_match'], matches.index(x)))
+        matches.sort(key=lambda x: (not x['duration_match'],))
 
         logger.info(f"Found {len(matches)} search results, {sum(1 for m in matches if m['duration_match'])} with duration match")
         return matches
