@@ -158,7 +158,7 @@ export default function Import() {
         <code className="bg-dark-tertiary px-4 py-2 rounded-lg text-accent-text font-mono mb-6">
           {scanData?.import_path || 'downloads/imports/'}
         </code>
-        <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 max-w-md">
+        <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 max-w-xl">
           <p className="text-text-secondary text-sm mb-3">
             <strong>File naming requirements:</strong>
           </p>
