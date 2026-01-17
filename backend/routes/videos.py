@@ -12,6 +12,7 @@ from sqlalchemy import func
 import re
 import os
 import logging
+import requests as http_requests
 
 from database import Video, Channel, QueueItem, get_session
 from scanner import extract_playlist_id, scan_playlist_videos, get_video_info
@@ -28,18 +29,40 @@ _download_worker = None
 _set_operation = None
 _clear_operation = None
 _parse_iso8601_duration = None
+_settings_manager = None
 
 
 def init_videos_routes(session_factory, download_worker,
-                       set_operation, clear_operation, parse_iso8601_duration):
+                       set_operation, clear_operation, parse_iso8601_duration,
+                       settings_manager=None):
     """Initialize the videos routes with required dependencies."""
-    global _session_factory, _download_worker
+    global _session_factory, _download_worker, _settings_manager
     global _set_operation, _clear_operation, _parse_iso8601_duration
     _session_factory = session_factory
     _download_worker = download_worker
     _set_operation = set_operation
     _clear_operation = clear_operation
     _parse_iso8601_duration = parse_iso8601_duration
+    _settings_manager = settings_manager
+
+
+def _check_for_app_update():
+    """Check GitHub for latest version and store in settings."""
+    try:
+        response = http_requests.get(
+            'https://api.github.com/repos/thenunner/ytandchill/releases/latest',
+            timeout=10,
+            headers={'Accept': 'application/vnd.github.v3+json'}
+        )
+        if response.status_code == 200:
+            data = response.json()
+            tag_name = data.get('tag_name', '')
+            latest_version = tag_name.lstrip('v') if tag_name else None
+            if latest_version and _settings_manager:
+                _settings_manager.set('latest_version', latest_version)
+                logger.debug(f"Videos scan: Update check complete - latest version is {latest_version}")
+    except Exception as e:
+        logger.debug(f"Videos scan: Update check failed: {e}")
 
 
 # =============================================================================
@@ -227,6 +250,9 @@ def scan_youtube_playlist():
 
         # Clear operation status
         _clear_operation()
+
+        # Check for app updates after scan
+        _check_for_app_update()
 
         return jsonify({
             'total_in_playlist': len(videos),

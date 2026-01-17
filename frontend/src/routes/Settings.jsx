@@ -4,6 +4,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ui/ConfirmModal';
+import UpdateModal from '../components/UpdateModal';
 import { version as APP_VERSION } from '../../package.json';
 
 export default function Settings() {
@@ -85,6 +86,7 @@ export default function Settings() {
   // Version update check state
   const [latestVersion, setLatestVersion] = useState(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   // Scroll to top on component mount
   useEffect(() => {
@@ -147,26 +149,17 @@ export default function Settings() {
     }
   }, [settings]);
 
-  // Check for version updates on mount
+  // Get latest version from health API (populated by backend scan operations)
   useEffect(() => {
-    const checkForUpdates = async () => {
-      try {
-        const response = await fetch('https://api.github.com/repos/thenunner/ytandchill/releases/latest');
-        if (response.ok) {
-          const data = await response.json();
-          const latest = data.tag_name?.replace(/^v/, '') || null;
-          setLatestVersion(latest);
-          if (latest && latest !== APP_VERSION) {
-            // Simple string comparison works for semver if format is consistent
-            setUpdateAvailable(latest > APP_VERSION);
-          }
-        }
-      } catch (e) {
-        // Silently fail - version check is non-critical
+    if (health?.latest_version) {
+      const latest = health.latest_version;
+      setLatestVersion(latest);
+      if (latest && latest !== APP_VERSION) {
+        // Simple string comparison works for semver if format is consistent
+        setUpdateAvailable(latest > APP_VERSION);
       }
-    };
-    checkForUpdates();
-  }, []);
+    }
+  }, [health?.latest_version]);
 
   const toggleLogs = () => {
     const newValue = !showLogs;
@@ -474,15 +467,13 @@ export default function Settings() {
                 <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
                   v{APP_VERSION}
                   {updateAvailable && (
-                    <a
-                      href="https://github.com/thenunner/ytandchill/releases/latest"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ml-2 text-accent hover:underline"
+                    <button
+                      onClick={() => setShowUpdateModal(true)}
+                      className="ml-2 text-accent hover:underline cursor-pointer"
                       title={`Update available: v${latestVersion}`}
                     >
                       ↑ v{latestVersion}
-                    </a>
+                    </button>
                   )}
                 </span>
               </div>
@@ -1588,6 +1579,14 @@ export default function Settings() {
           </div>
         </div>
       )}
+
+      {/* Update Modal */}
+      <UpdateModal
+        isOpen={showUpdateModal}
+        onClose={() => setShowUpdateModal(false)}
+        currentVersion={APP_VERSION}
+        latestVersion={latestVersion}
+      />
     </div>
     </>
   );

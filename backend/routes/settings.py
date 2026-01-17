@@ -14,6 +14,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import subprocess
 import os
 import logging
+import requests
 import yt_dlp
 from database import Setting, get_session
 from utils import update_log_level, get_stored_credentials, check_auth_credentials
@@ -37,6 +38,38 @@ def init_settings_routes(session_factory, settings_manager, scheduler, download_
     _settings_manager = settings_manager
     _scheduler = scheduler
     _download_worker = download_worker
+
+
+# =============================================================================
+# Update Check Function
+# =============================================================================
+
+def check_for_app_update():
+    """
+    Check GitHub for the latest version and store it in settings.
+    Called at the end of scan operations (auto-scan, channel scan, import, URL scan).
+    Returns the latest version string or None on error.
+    """
+    try:
+        response = requests.get(
+            'https://api.github.com/repos/thenunner/ytandchill/releases/latest',
+            timeout=10,
+            headers={'Accept': 'application/vnd.github.v3+json'}
+        )
+        if response.status_code == 200:
+            data = response.json()
+            tag_name = data.get('tag_name', '')
+            # Remove leading 'v' if present
+            latest_version = tag_name.lstrip('v') if tag_name else None
+            if latest_version:
+                _settings_manager.set('latest_version', latest_version)
+                logger.debug(f"Update check: latest version is {latest_version}")
+                return latest_version
+    except requests.RequestException as e:
+        logger.debug(f"Update check failed: {e}")
+    except Exception as e:
+        logger.debug(f"Update check error: {e}")
+    return None
 
 
 # =============================================================================
@@ -221,6 +254,9 @@ def health_check():
             pass
     database_size = format_bytes(db_size)
 
+    # Get latest version from settings (populated by scan operations)
+    latest_version = _settings_manager.get('latest_version')
+
     return jsonify({
         'status': 'ok',
         'ffmpeg_available': ffmpeg_available,
@@ -232,7 +268,8 @@ def health_check():
         'firefox_profile_mounted': firefox_profile_mounted,
         'firefox_has_cookies': firefox_has_cookies,
         'total_storage': total_storage,
-        'database_size': database_size
+        'database_size': database_size,
+        'latest_version': latest_version
     })
 
 
