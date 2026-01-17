@@ -80,7 +80,6 @@ export default function Settings() {
   const [selectedChannels, setSelectedChannels] = useState([]);
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
-  const [isRepairingThumbnails, setIsRepairingThumbnails] = useState(false);
 
   // Scroll to top on component mount
   useEffect(() => {
@@ -333,27 +332,6 @@ export default function Settings() {
       showNotification('Failed to purge channels', 'error');
     } finally {
       setIsRemoving(false);
-    }
-  };
-
-  const handleRepairThumbnails = async () => {
-    setIsRepairingThumbnails(true);
-    try {
-      const response = await fetch('/api/repair/thumbnails', { method: 'POST' });
-      const data = await response.json();
-
-      if (data.error) {
-        showNotification(data.error, 'error');
-        return;
-      }
-
-      showNotification(`Fixed ${data.updated} video thumbnail${data.updated !== 1 ? 's' : ''} to use local paths`, 'success');
-      setShowRepairModal(false);
-      setRepairData(null);
-    } catch (error) {
-      showNotification('Failed to repair thumbnails', 'error');
-    } finally {
-      setIsRepairingThumbnails(false);
     }
   };
 
@@ -1435,24 +1413,6 @@ export default function Settings() {
                 </div>
               </button>
 
-              {/* Option 3: Correct Thumbnails */}
-              <button
-                onClick={handleRepairThumbnails}
-                disabled={isRepairingThumbnails}
-                className="w-full p-4 bg-dark-tertiary hover:bg-dark-hover border border-dark-border-light rounded-lg text-left transition-colors disabled:opacity-50"
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-text-primary">
-                      {isRepairingThumbnails ? 'Fixing...' : 'Correct Thumbnails'}
-                    </div>
-                    <div className="text-xs text-text-secondary mt-1">
-                      Update video thumbnails to use local files
-                    </div>
-                  </div>
-                  <div className="text-2xl text-text-muted">→</div>
-                </div>
-              </button>
             </div>
             <div className="px-6 py-4 border-t border-dark-border">
               <button onClick={() => setShowRepairModal(false)} className="btn btn-secondary w-full">
