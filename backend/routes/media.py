@@ -5,8 +5,7 @@ Handles:
 - GET /api/media/<path:filename> - Serve video/media files
 """
 
-from flask import Blueprint, send_from_directory, request, Response, jsonify
-from werkzeug.utils import safe_join
+from flask import Blueprint, send_file, request, Response, jsonify
 import logging
 import os
 import mimetypes
@@ -34,28 +33,31 @@ def serve_media(filename):
     """Serve media files with path traversal protection and HTTP range request support for iOS"""
     downloads_folder = get_downloads_folder()
 
-    # Validate and sanitize the path to prevent directory traversal
-    safe_path = safe_join(downloads_folder, filename)
-    if safe_path is None:
-        logger.warning(f"Invalid path rejected by safe_join: {filename}")
-        return jsonify({'error': 'File not found'}), 404
+    # Convert URL forward slashes to OS path separator (important for Windows)
+    filename_normalized = filename.replace('/', os.sep)
 
-    # Normalize paths for consistent comparison (handles Windows backslashes)
+    # Build the full path manually to handle Windows paths correctly
+    safe_path = os.path.normpath(os.path.join(downloads_folder, filename_normalized))
+
+    # Normalize paths for consistent comparison
     downloads_abs = os.path.normpath(os.path.abspath(downloads_folder))
     file_abs = os.path.normpath(os.path.abspath(safe_path))
 
-    # Additional check: ensure the resolved path is actually within downloads directory
+    logger.debug(f"Media request: filename={filename}, normalized={filename_normalized}")
+    logger.debug(f"Paths: downloads_abs={downloads_abs}, file_abs={file_abs}")
+
+    # Security check: ensure the resolved path is actually within downloads directory
     if not file_abs.startswith(downloads_abs + os.sep) and file_abs != downloads_abs:
         logger.warning(f"Path traversal attempt blocked: {filename}")
         return jsonify({'error': 'Access denied'}), 403
 
-    if not os.path.exists(safe_path):
-        logger.warning(f"File not found: {safe_path}")
+    if not os.path.exists(file_abs):
+        logger.warning(f"File not found: {file_abs}")
         return jsonify({'error': 'File not found'}), 404
 
     # Get file size and MIME type
-    file_size = os.path.getsize(safe_path)
-    mime_type, _ = mimetypes.guess_type(safe_path)
+    file_size = os.path.getsize(file_abs)
+    mime_type, _ = mimetypes.guess_type(file_abs)
     if not mime_type:
         mime_type = 'video/mp4'  # Default fallback
 
@@ -64,7 +66,7 @@ def serve_media(filename):
 
     if not range_header:
         # No range request - send full file with Accept-Ranges header for iOS
-        response = send_from_directory(downloads_folder, filename, conditional=True, mimetype=mime_type)
+        response = send_file(file_abs, mimetype=mime_type, conditional=True)
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Content-Length'] = str(file_size)
         response.headers['Access-Control-Allow-Origin'] = '*'
@@ -82,7 +84,7 @@ def serve_media(filename):
 
         # Generator function to stream file in chunks
         def generate():
-            with open(safe_path, 'rb') as f:
+            with open(file_abs, 'rb') as f:
                 f.seek(start)
                 remaining = length
                 chunk_size = 8192  # 8KB chunks
@@ -109,7 +111,7 @@ def serve_media(filename):
     except Exception as e:
         logger.error(f"Error handling range request for {filename}: {e}")
         # Fallback to regular send if range parsing fails
-        response = send_from_directory(downloads_folder, filename, conditional=True, mimetype=mime_type)
+        response = send_file(file_abs, mimetype=mime_type, conditional=True)
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Access-Control-Allow-Origin'] = '*'
         return response
