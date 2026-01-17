@@ -192,9 +192,9 @@ export default function Import() {
     setSelectedVideoId(null);
   };
 
-  // View channels (navigate to channels tab)
-  const handleViewChannels = () => {
-    navigate('/');
+  // View library after import
+  const handleViewLibrary = () => {
+    navigate('/library');
   };
 
   // Format duration
@@ -613,7 +613,7 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
           </div>
           <h2 className="text-xl font-bold text-text-primary mb-2">Import Complete</h2>
           <button
-            onClick={handleViewChannels}
+            onClick={handleViewLibrary}
             className="btn btn-primary text-lg px-8 py-3 mt-4"
           >
             View Library
