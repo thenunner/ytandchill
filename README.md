@@ -49,9 +49,9 @@ cd ytandchill
 
 **Windows:**
 ```cmd
-setup-native-windows.bat
-start-native-windows.bat
+windows-start.bat
 ```
+Select option 3 (Setup) on first run, then option 1 (Start) to launch.
 
 **Linux / macOS:**
 ```bash
@@ -81,12 +81,25 @@ Required for reliable downloads due to YouTube's bot detection.
 1. Mount Firefox profile to `/firefox_profile:ro`
 2. Select "Firefox" in Settings → Cookie Source
 
+## Importing Existing Videos
+
+Have existing YouTube videos? Import them into your library:
+
+1. Place video files in `downloads/imports/`
+2. Go to Import page in the app
+3. Click "Start Smart Import"
+
+Videos are identified automatically by:
+- **Filename = Video ID** (e.g., `dQw4w9WgXcQ.mp4`) → instant match
+- **Filename = Title** (e.g., `My Video Title.mp4`) → YouTube search + duration match
+
 ## Directory Structure
 
 ```
 ytandchill/
 ├── data/           # Database
 ├── downloads/      # Videos and thumbnails
+│   └── imports/    # Drop files here for import
 ├── logs/           # Application logs
 └── backend/
     └── cookies.txt # YouTube cookies (optional)

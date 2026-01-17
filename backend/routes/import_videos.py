@@ -82,12 +82,16 @@ def get_import_folder():
 
 
 def scan_import_folder():
-    """Scan import folder for video files and channels.csv."""
+    """Scan import folder for video files and channel URL files."""
     import_folder = get_import_folder()
+
+    # Accepted channel file names (one URL per line)
+    CHANNEL_FILE_NAMES = {'channels.txt', 'channels.csv', 'channels.list', 'urls.txt', 'urls.csv'}
 
     files = []
     csv_channels = []
     csv_found = False
+    channel_file_name = None
 
     # Scan for video files
     for filename in os.listdir(import_folder):
@@ -102,9 +106,10 @@ def scan_import_folder():
                     'path': filepath,
                     'size': os.path.getsize(filepath),
                 })
-            elif filename.lower() == 'channels.csv':
+            elif filename.lower() in CHANNEL_FILE_NAMES:
                 csv_found = True
-                # Parse CSV (no header - just URLs, one per line)
+                channel_file_name = filename
+                # Parse file (one URL per line, # for comments)
                 with open(filepath, 'r', encoding='utf-8') as f:
                     for line in f:
                         url = line.strip()
@@ -116,6 +121,7 @@ def scan_import_folder():
         'count': len(files),
         'csv_found': csv_found,
         'csv_channels': csv_channels,
+        'channel_file': channel_file_name,
         'import_path': import_folder,
     }
 
@@ -226,8 +232,10 @@ def normalize_title(title):
     """Normalize title for comparison."""
     if not title:
         return ''
-    # Remove special chars, lowercase, strip whitespace
-    return re.sub(r'[^\w\s]', '', title.lower()).strip()
+    # Remove special chars, lowercase, collapse multiple spaces, strip
+    normalized = re.sub(r'[^\w\s]', '', title.lower())
+    normalized = re.sub(r'\s+', ' ', normalized)  # Collapse multiple spaces
+    return normalized.strip()
 
 
 def identify_video_by_id(video_id):
@@ -332,6 +340,9 @@ def search_video_by_title(title, expected_duration=None, num_results=20):
         search_query = re.sub(r'[\"\`]', '', search_query)  # Remove quotes that break shell
         search_query = re.sub(r'\s+', ' ', search_query).strip()
 
+        # Normalize the original title for comparison
+        normalized_filename = normalize_title(title)
+
         # Try exact phrase search first (quoted)
         raw_results = _execute_youtube_search(f'"{search_query}"', num_results)
 
@@ -351,34 +362,66 @@ def search_video_by_title(title, expected_duration=None, num_results=20):
         if not raw_results:
             return []
 
-        # Process results and check duration matches
+        # Process results and check both title and duration matches
         matches = []
         for data in raw_results:
             video_duration = data.get('duration')
+            video_title = data.get('title', '')
+            normalized_video_title = normalize_title(video_title)
 
             match_info = {
                 'id': data['id'],
-                'title': data['title'],
+                'title': video_title,
                 'duration': video_duration,
                 'channel_id': data['channel_id'],
                 'channel_title': data['channel_title'],
                 'upload_date': data.get('upload_date'),
                 'match_type': 'search',
                 'duration_match': False,
+                'title_match': False,
             }
+
+            # Check title match (normalized comparison)
+            if normalized_filename and normalized_video_title:
+                if normalized_filename == normalized_video_title:
+                    match_info['title_match'] = True
+                    match_info['match_type'] = 'search+title'
+                    logger.info(f"Title match found: '{normalized_filename}' == '{normalized_video_title}'")
 
             # Check duration match (exact match only)
             if expected_duration and video_duration:
                 if video_duration == expected_duration:
                     match_info['duration_match'] = True
-                    match_info['match_type'] = 'search+duration'
+                    if match_info['title_match']:
+                        match_info['match_type'] = 'search+title+duration'
+                    else:
+                        match_info['match_type'] = 'search+duration'
+                    logger.info(f"Duration match found: {video_duration} == {expected_duration}")
 
             matches.append(match_info)
 
-        # Sort: duration matches first, then by order
-        matches.sort(key=lambda x: (not x['duration_match'],))
+            # Log first result for debugging
+            if len(matches) == 1:
+                logger.info(f"First result - YT title: '{video_title}', normalized: '{normalized_video_title}'")
+                logger.info(f"Expected - File title: '{title}', normalized: '{normalized_filename}'")
+                logger.info(f"Duration - YT: {video_duration}, Local: {expected_duration}")
 
-        logger.info(f"Found {len(matches)} search results, {sum(1 for m in matches if m['duration_match'])} with duration match")
+        # Sort: title+duration first, then title only, then duration only, then others
+        def sort_key(x):
+            if x['title_match'] and x['duration_match']:
+                return (0,)
+            elif x['title_match']:
+                return (1,)
+            elif x['duration_match']:
+                return (2,)
+            else:
+                return (3,)
+
+        matches.sort(key=sort_key)
+
+        title_matches = sum(1 for m in matches if m['title_match'])
+        duration_matches = sum(1 for m in matches if m['duration_match'])
+        logger.info(f"Found {len(matches)} results: {title_matches} title matches, {duration_matches} duration matches")
         return matches
 
     except subprocess.TimeoutExpired:
@@ -655,22 +698,61 @@ def smart_identify():
             })
             continue
 
-        # Check for duration matches
+        # Check for matches - prioritize title+duration, then title, then duration
+        perfect_matches = [r for r in search_results if r.get('title_match') and r.get('duration_match')]
+        title_matches = [r for r in search_results if r.get('title_match')]
         duration_matches = [r for r in search_results if r.get('duration_match')]
 
-        if len(duration_matches) == 1:
+        if len(perfect_matches) == 1:
+            # Perfect match - title AND duration
+            match = perfect_matches[0]
+            identified.append({
+                'file': file_path,
+                'filename': filename,
+                'video': match,
+                'match_type': 'title+duration',
+                'channel_info': {
+                    'channel_id': match['channel_id'],
+                    'channel_title': match['channel_title'],
+                    'channel_url': f"https://youtube.com/channel/{match['channel_id']}",
+                },
+            })
+        elif len(title_matches) == 1:
+            # Single title match - confident even without duration
+            match = title_matches[0]
+            identified.append({
+                'file': file_path,
+                'filename': filename,
+                'video': match,
+                'match_type': 'title',
+                'channel_info': {
+                    'channel_id': match['channel_id'],
+                    'channel_title': match['channel_title'],
+                    'channel_url': f"https://youtube.com/channel/{match['channel_id']}",
+                },
+            })
+        elif len(duration_matches) == 1:
             # Single duration match - confident match
             match = duration_matches[0]
             identified.append({
                 'file': file_path,
                 'filename': filename,
                 'video': match,
-                'match_type': 'search+duration',
+                'match_type': 'duration',
                 'channel_info': {
                     'channel_id': match['channel_id'],
                     'channel_title': match['channel_title'],
                     'channel_url': f"https://youtube.com/channel/{match['channel_id']}",
                 },
+            })
+        elif len(perfect_matches) > 1 or len(title_matches) > 1:
+            # Multiple title matches - user needs to choose
+            pending.append({
+                'file': file_path,
+                'filename': filename,
+                'matches': title_matches if title_matches else perfect_matches,
+                'match_type': 'multiple_title',
+                'local_duration': local_duration,
             })
         elif len(duration_matches) > 1:
             # Multiple duration matches - user needs to choose
@@ -682,7 +764,7 @@ def smart_identify():
                 'local_duration': local_duration,
             })
         elif search_results:
-            # No duration match, but have search results - user can choose
+            # No confident match, but have search results - user can choose
             pending.append({
                 'file': file_path,
                 'filename': filename,
