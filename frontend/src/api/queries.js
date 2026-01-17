@@ -476,3 +476,105 @@ export function useRemovePlaylistVideos() {
   });
 }
 
+// Video Import
+export function useScanImportFolder() {
+  return useQuery({
+    queryKey: ['import', 'scan'],
+    queryFn: () => api.scanImportFolder(),
+    staleTime: 0, // Always refetch
+  });
+}
+
+export function useImportState() {
+  return useQuery({
+    queryKey: ['import', 'state'],
+    queryFn: () => api.getImportState(),
+    refetchInterval: 1000, // Poll every second during import
+    staleTime: 0,
+  });
+}
+
+export function useAddImportChannel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (url) => api.addImportChannel(url),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+    },
+  });
+}
+
+export function useSetImportChannels() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (urls) => api.setImportChannels(urls),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+    },
+  });
+}
+
+export function useFetchImportChannel() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (channelIdx) => api.fetchImportChannel(channelIdx),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+    },
+  });
+}
+
+export function useMatchImportFiles() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (channelIdx) => api.matchImportFiles(channelIdx),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+    },
+  });
+}
+
+export function useExecuteImport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (matches) => api.executeImport(matches),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries(['videos']);
+      queryClient.invalidateQueries(['channels']);
+    },
+  });
+}
+
+export function useResolveImportPending() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ file, videoId, skip }) => api.resolveImportPending(file, videoId, skip),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+      queryClient.invalidateQueries(['videos']);
+    },
+  });
+}
+
+export function useSkipRemainingImport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.skipRemainingImport(),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'state']);
+    },
+  });
+}
+
+export function useResetImport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.resetImport(),
+    onSuccess: () => {
+      queryClient.invalidateQueries(['import', 'scan']);
+      queryClient.invalidateQueries(['import', 'state']);
+    },
+  });
+}
+

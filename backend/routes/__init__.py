@@ -12,11 +12,12 @@ from .media import media_bp
 from .videos import videos_bp, init_videos_routes
 from .library import library_bp, init_library_routes
 from .channels import channels_bp, init_channels_routes
+from .import_videos import import_bp, init_import_routes
 
 
 def register_blueprints(app, session_factory, settings_manager, scheduler, download_worker,
                         limiter=None, serialize_queue_item=None, get_current_operation=None,
-                        serialize_video=None, get_youtube_client=None, set_operation=None,
+                        serialize_video=None, set_operation=None,
                         clear_operation=None, parse_iso8601_duration=None,
                         serialize_category=None, serialize_playlist=None,
                         serialize_channel=None, queue_channel_scan=None):
@@ -33,7 +34,6 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
         serialize_queue_item: Function to serialize queue items
         get_current_operation: Function to get current operation status
         serialize_video: Function to serialize video objects
-        get_youtube_client: Function to get YouTube API client
         set_operation: Function to set current operation status
         clear_operation: Function to clear current operation status
         parse_iso8601_duration: Function to parse ISO 8601 duration strings
@@ -61,8 +61,8 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
     app.register_blueprint(media_bp)
 
     # Initialize and register videos blueprint (YouTube import - Videos tab)
-    if get_youtube_client and set_operation and clear_operation and parse_iso8601_duration:
-        init_videos_routes(session_factory, download_worker, get_youtube_client,
+    if set_operation and clear_operation and parse_iso8601_duration:
+        init_videos_routes(session_factory, download_worker,
                           set_operation, clear_operation, parse_iso8601_duration)
         app.register_blueprint(videos_bp)
 
@@ -73,6 +73,10 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
 
     # Initialize and register channels blueprint
     if serialize_channel and queue_channel_scan:
-        init_channels_routes(session_factory, limiter, serialize_channel, get_youtube_client,
+        init_channels_routes(session_factory, limiter, serialize_channel,
                             set_operation, clear_operation, queue_channel_scan)
         app.register_blueprint(channels_bp)
+
+    # Initialize and register import blueprint
+    init_import_routes(session_factory, settings_manager)
+    app.register_blueprint(import_bp)

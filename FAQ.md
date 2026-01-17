@@ -11,15 +11,6 @@ The most common causes of download failures are:
 3. **Network issues** - Check your internet connection and firewall settings.
 4. **Age-restricted or private videos** - These require valid authentication cookies.
 
-### Do I need a YouTube API key?
-
-Yes, the YouTube Data API v3 key is required for:
-- Fast channel scanning
-- Fetching video metadata and thumbnails
-- Checking for new uploads efficiently
-
-The free tier provides 10,000 quota units per day, sufficient for personal use (scanning ~100-300 channels daily).
-
 ### Which YouTube account should I use for cookies?
 
 **IMPORTANT:** It is strongly advised to **NOT use your personal YouTube account** for cookies. Here's why:
@@ -182,18 +173,18 @@ The file must be named `cookies.txt` and placed in the project root directory.
 
 ### Why does channel scanning take so long?
 
-**Cause:** Without a YouTube API key, the app must scrape channel pages, which is slow and unreliable.
+Channel scanning uses yt-dlp to fetch video metadata directly from YouTube. The speed depends on:
+- Number of videos in the channel history
+- Network connection speed
+- YouTube's response times
 
-**Solution:** Add a YouTube Data API v3 key in Settings. This enables fast, efficient channel scanning using YouTube's official API.
+For incremental scans (daily auto-refresh), only new videos are fetched, which is much faster than full scans.
 
 ### How many channels can I monitor?
 
-With a YouTube API key (10,000 quota units/day):
-- Each channel scan costs ~30-100 quota units depending on video count
-- You can scan approximately 100-300 channels per day
-- Daily auto-refresh is designed for this use case
+YT and Chill uses yt-dlp for all channel scanning, which has **no API quota limits**. You can monitor as many channels as you want without worrying about daily limits.
 
-Without an API key, scanning is limited by rate limiting and is not recommended for more than a few channels.
+Practical limits depend on your scanning schedule and network bandwidth rather than API quotas.
 
 ## Storage and Library
 

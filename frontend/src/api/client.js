@@ -382,6 +382,69 @@ class APIClient {
       body: JSON.stringify({ videos }),
     });
   }
+
+  // Video Import
+  scanImportFolder() {
+    return this.request('/import/scan');
+  }
+
+  getImportState() {
+    return this.request('/import/state');
+  }
+
+  addImportChannel(url) {
+    return this.request('/import/add-channel', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    });
+  }
+
+  setImportChannels(urls) {
+    return this.request('/import/set-channels', {
+      method: 'POST',
+      body: JSON.stringify({ urls }),
+    });
+  }
+
+  fetchImportChannel(channelIdx) {
+    return this.request('/import/fetch-channel', {
+      method: 'POST',
+      body: JSON.stringify({ channel_idx: channelIdx }),
+    });
+  }
+
+  matchImportFiles(channelIdx) {
+    return this.request('/import/match', {
+      method: 'POST',
+      body: JSON.stringify({ channel_idx: channelIdx }),
+    });
+  }
+
+  executeImport(matches) {
+    return this.request('/import/execute', {
+      method: 'POST',
+      body: JSON.stringify({ matches }),
+    });
+  }
+
+  resolveImportPending(file, videoId, skip = false) {
+    return this.request('/import/resolve', {
+      method: 'POST',
+      body: JSON.stringify({ file, video_id: videoId, skip }),
+    });
+  }
+
+  skipRemainingImport() {
+    return this.request('/import/skip-remaining', {
+      method: 'POST',
+    });
+  }
+
+  resetImport() {
+    return this.request('/import/reset', {
+      method: 'POST',
+    });
+  }
 }
 
 export default new APIClient();

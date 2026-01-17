@@ -6,17 +6,9 @@ export function getUserFriendlyError(errorMessage) {
 
   const lowerError = errorMessage.toLowerCase();
 
-  // YouTube API issues
-  if (lowerError.includes('youtube api key not configured')) {
-    return 'YouTube API key is not configured. Add your API key in Settings → YouTube API Key.';
-  }
-
-  if (lowerError.includes('youtube api') || lowerError.includes('api key')) {
-    return 'YouTube API issue detected. Check your API key in Settings, or you may have hit the daily quota limit (10,000 requests). Try again tomorrow.';
-  }
-
-  if (lowerError.includes('quota') || lowerError.includes('rate limit')) {
-    return 'YouTube API quota exceeded. You\'ve hit the 10,000 daily request limit. Please try again tomorrow.';
+  // Rate limit issues
+  if (lowerError.includes('rate limit')) {
+    return 'YouTube rate limit detected. Wait a few minutes and try again, or refresh your cookies.';
   }
 
   // Cookie issues

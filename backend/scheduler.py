@@ -131,7 +131,7 @@ class AutoRefreshScheduler:
             logger.info("Auto-refresh jobs rescheduled")
 
     def update_dependencies(self):
-        """Update yt-dlp and google-api-python-client to latest versions"""
+        """Update yt-dlp to latest version"""
         try:
             # Get current yt-dlp version
             try:
@@ -165,9 +165,8 @@ class AutoRefreshScheduler:
 
             # Run pip upgrade using --user flag for non-root permissions
             # Use [default] extras to include yt-dlp-ejs for JavaScript runtime support
-            # Also upgrade google-api-python-client for YouTube API improvements
             result = subprocess.run(
-                ['pip', 'install', '--user', '--upgrade', 'yt-dlp[default]', 'google-api-python-client'],
+                ['pip', 'install', '--user', '--upgrade', 'yt-dlp[default]'],
                 capture_output=True,
                 text=True,
                 timeout=300  # 5 minute timeout
@@ -251,7 +250,7 @@ class AutoRefreshScheduler:
         """Queue scans for all channels and update yt-dlp"""
         logger.info("Auto-scan: Starting scheduled auto-scan")
 
-        # First, update dependencies (yt-dlp and google-api-python-client)
+        # First, update yt-dlp to latest version
         if self.set_operation:
             self.set_operation('auto_refresh', 'Updating dependencies...')
         self.update_dependencies()

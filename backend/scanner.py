@@ -1,380 +1,355 @@
 """
-YouTube API Client for channel and video operations.
+YouTube Scanner using yt-dlp.
 
-This module provides a centralized client for all YouTube Data API interactions,
-including channel discovery, video scanning, and metadata retrieval.
+This module provides channel and video scanning without YouTube API quota limits.
+Uses yt-dlp's --flat-playlist mode for fast metadata extraction.
 """
 
+import os
+import re
+import json
+import subprocess
 import logging
-from googleapiclient.discovery import build
-from googleapiclient.errors import HttpError
-from utils import parse_iso8601_duration
 
 logger = logging.getLogger(__name__)
 
+# Minimum video duration in seconds (filters out Shorts)
+MIN_DURATION_SECONDS = 120
 
-class YouTubeAPIClient:
+
+def get_cookies_path():
+    """Get the cookies.txt path if it exists."""
+    data_dir = os.environ.get('DATA_DIR', '/appdata/data')
+    cookies_path = os.path.join(data_dir, 'backend', 'cookies.txt')
+    if os.path.exists(cookies_path):
+        return cookies_path
+    return None
+
+
+def _run_ytdlp(args, timeout=300):
+    """Run yt-dlp with common options and error handling.
+
+    Args:
+        args: List of yt-dlp arguments
+        timeout: Timeout in seconds (default: 5 minutes)
+
+    Returns:
+        tuple: (success, stdout, stderr)
     """
-    Centralized YouTube Data API client with error handling.
+    cmd = ['yt-dlp', '--no-warnings'] + args
 
-    This client provides a clean interface for all YouTube API operations,
-    with consistent error handling and logging.
+    # Add cookies if available
+    cookies_path = get_cookies_path()
+    if cookies_path:
+        cmd.extend(['--cookies', cookies_path])
 
-    Usage:
-        client = YouTubeAPIClient(api_key)
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout
+        )
+        return result.returncode == 0, result.stdout, result.stderr
+    except subprocess.TimeoutExpired:
+        logger.error(f'yt-dlp timeout after {timeout}s')
+        return False, '', 'Timeout'
+    except Exception as e:
+        logger.error(f'yt-dlp error: {e}')
+        return False, '', str(e)
 
-        # Get channel info
-        info = client.get_channel_info('UC_channel_id')
 
-        # Scan channel videos
-        videos = client.scan_channel_videos('UC_channel_id', max_results=50)
-
-        # Resolve channel ID from URL
-        channel_id = client.resolve_channel_id_from_url('https://youtube.com/@channelname')
+def scan_channel_videos(channel_url, max_results=250):
     """
+    Scan channel videos using yt-dlp (no API quota limits).
 
-    def __init__(self, api_key):
-        """
-        Initialize YouTube API client.
+    Uses --flat-playlist for fast metadata extraction without downloading.
 
-        Args:
-            api_key: YouTube Data API v3 key
-        """
-        if not api_key:
-            raise ValueError('YouTube API key is required')
+    Args:
+        channel_url: YouTube channel URL (any format: @handle, /channel/UC..., etc.)
+        max_results: Maximum number of videos to fetch (default: 250)
 
-        self.api_key = api_key
-        self.youtube = build('youtube', 'v3', developerKey=api_key, cache_discovery=False)
-        logger.debug('YouTube API client initialized')
+    Returns:
+        tuple: (channel_info, videos)
+            channel_info: dict with keys: id, title, thumbnail (or None if error)
+            videos: list of video dicts with keys: id, title, duration_sec, upload_date, thumbnail
 
-    def get_channel_info(self, channel_id):
-        """
-        Get channel metadata using Data API.
+    Note:
+        - Filters out videos under 2 minutes (YouTube Shorts)
+        - upload_date is in YYYYMMDD format
+    """
+    logger.info(f'Scanning channel: {channel_url} (max: {max_results})')
 
-        Args:
-            channel_id: YouTube channel ID (starts with 'UC')
+    args = [
+        '--flat-playlist',
+        '--dump-json',
+        '--playlist-end', str(max_results),
+        channel_url
+    ]
 
-        Returns:
-            dict: Channel info with keys: id, title, thumbnail, uploads_playlist
-            None: If channel not found or API error
+    success, stdout, stderr = _run_ytdlp(args)
 
-        Raises:
-            HttpError: If API request fails
-        """
+    if not success:
+        logger.error(f'Failed to scan channel {channel_url}: {stderr}')
+        return None, []
+
+    videos = []
+    channel_info = None
+
+    for line in stdout.strip().split('\n'):
+        if not line:
+            continue
+
         try:
-            response = self.youtube.channels().list(
-                part='snippet,contentDetails,statistics',
-                id=channel_id
-            ).execute()
+            data = json.loads(line)
+        except json.JSONDecodeError:
+            continue
 
-            if not response.get('items'):
-                logger.warning(f'Channel not found: {channel_id}')
-                return None
-
-            channel_data = response['items'][0]
-            return {
-                'id': channel_id,
-                'title': channel_data['snippet']['title'],
-                'thumbnail': channel_data['snippet']['thumbnails'].get('high', {}).get('url'),
-                'uploads_playlist': channel_data['contentDetails']['relatedPlaylists']['uploads']
+        # Extract channel info from first video
+        if not channel_info and data.get('channel_id'):
+            channel_info = {
+                'id': data.get('channel_id'),
+                'title': data.get('channel') or data.get('uploader'),
+                'thumbnail': None,  # Will be set from first video
             }
-        except HttpError as e:
-            logger.error(f'YouTube API error getting channel info for {channel_id}: {e}')
-            raise
 
-    def scan_channel_videos(self, channel_id, max_results=50):
-        """
-        Scan channel videos using Data API (fast and reliable).
+        # Get duration (may be None for some entries)
+        duration = data.get('duration')
+        if duration is None:
+            continue
 
-        Fetches videos from the channel's uploads playlist, filtering out:
-        - Videos without duration (deleted/private)
-        - Videos under 2 minutes (YouTube Shorts)
+        # Skip shorts (<2 minutes)
+        if duration < MIN_DURATION_SECONDS:
+            continue
 
-        Args:
-            channel_id: YouTube channel ID
-            max_results: Maximum number of videos to fetch (default: 50)
+        video_id = data.get('id')
+        if not video_id:
+            continue
 
-        Returns:
-            list: List of video dicts with keys: id, title, duration_sec, upload_date, thumbnail
-            Empty list on error
+        # Set channel thumbnail from first valid video
+        if channel_info and not channel_info['thumbnail']:
+            channel_info['thumbnail'] = f'https://img.youtube.com/vi/{video_id}/default.jpg'
 
-        Note:
-            Each video dict has upload_date in YYYYMMDD format (e.g., '20240315')
-        """
-        try:
-            # First get channel info to find uploads playlist
-            channel_info = self.get_channel_info(channel_id)
-            if not channel_info:
-                logger.error(f'Could not get channel info for {channel_id}')
-                return []
+        videos.append({
+            'id': video_id,
+            'title': data.get('title', 'Untitled'),
+            'duration_sec': duration,
+            'upload_date': data.get('upload_date'),  # YYYYMMDD format
+            'thumbnail': f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg',
+        })
 
-            uploads_playlist_id = channel_info['uploads_playlist']
-            logger.debug(f'Scanning uploads playlist: {uploads_playlist_id}')
-            videos = []
-            next_page_token = None
+    logger.info(f'Scanned {len(videos)} videos from channel')
+    return channel_info, videos
 
-            while len(videos) < max_results:
-                # Get videos from uploads playlist (paginated)
-                playlist_response = self.youtube.playlistItems().list(
-                    part='snippet,contentDetails',
-                    playlistId=uploads_playlist_id,
-                    maxResults=min(50, max_results - len(videos)),
-                    pageToken=next_page_token
-                ).execute()
 
-                video_ids = [item['contentDetails']['videoId'] for item in playlist_response.get('items', [])]
-                logger.debug(f'Found {len(video_ids)} video IDs in this page')
+def get_channel_info(channel_url):
+    """
+    Get channel metadata using yt-dlp.
 
-                if video_ids:
-                    # Get detailed video info (including duration) in batch
-                    videos_response = self.youtube.videos().list(
-                        part='snippet,contentDetails,statistics',
-                        id=','.join(video_ids)
-                    ).execute()
+    Args:
+        channel_url: YouTube channel URL (any format)
 
-                    for video in videos_response.get('items', []):
-                        # Skip videos without duration (deleted, private, etc)
-                        if 'duration' not in video.get('contentDetails', {}):
-                            logger.debug(f"Skipping video {video['id']}: no duration (possibly deleted/private)")
-                            continue
+    Returns:
+        dict: Channel info with keys: id, title, thumbnail, url
+        None: If channel not found or error
+    """
+    logger.debug(f'Getting channel info: {channel_url}')
 
-                        # Parse ISO 8601 duration (PT1H2M10S -> seconds)
-                        duration_str = video['contentDetails']['duration']
-                        duration_sec = parse_iso8601_duration(duration_str)
+    # Get just the first video to extract channel info
+    args = [
+        '--flat-playlist',
+        '--dump-json',
+        '--playlist-items', '1',
+        channel_url
+    ]
 
-                        # Skip videos under 2 minutes (120 seconds)
-                        # This filters out YouTube Shorts and very short videos
-                        if duration_sec < 120:
-                            logger.debug(f"Skipping video {video['id']}: duration {duration_sec}s (<2 min)")
-                            continue
+    success, stdout, stderr = _run_ytdlp(args, timeout=60)
 
-                        videos.append({
-                            'id': video['id'],
-                            'title': video['snippet']['title'],
-                            'duration_sec': duration_sec,
-                            'upload_date': video['snippet']['publishedAt'][:10].replace('-', ''),
-                            'thumbnail': video['snippet']['thumbnails'].get('high', {}).get('url')
-                        })
+    if not success or not stdout.strip():
+        logger.error(f'Failed to get channel info for {channel_url}: {stderr}')
+        return None
 
-                next_page_token = playlist_response.get('nextPageToken')
-                if not next_page_token:
-                    break
+    try:
+        data = json.loads(stdout.strip().split('\n')[0])
 
-            logger.debug(f'Total videos scanned: {len(videos)}')
-            return videos
-
-        except HttpError as e:
-            logger.error(f'YouTube API error scanning channel {channel_id}: {e}')
-            raise
-        except Exception as e:
-            logger.error(f'Error in scan_channel_videos for {channel_id}: {e}', exc_info=True)
-            return []
-
-    def resolve_channel_id_from_url(self, url):
-        """
-        Resolve channel ID from various YouTube URL formats using Data API.
-
-        Supports:
-        - youtube.com/@handle
-        - youtube.com/channel/UC...
-        - youtube.com/c/customname
-
-        Args:
-            url: YouTube channel URL
-
-        Returns:
-            str: Channel ID (UC...) if found
-            None: If channel not found or URL format not recognized
-
-        Raises:
-            HttpError: If API request fails
-        """
-        try:
-            # Handle @username URLs
-            if 'youtube.com/@' in url:
-                handle = url.split('/@')[1].split('/')[0].split('?')[0]
-
-                # Try forHandle first (works for @handle format)
-                try:
-                    response = self.youtube.channels().list(
-                        part='snippet',
-                        forHandle=handle
-                    ).execute()
-                    if response.get('items'):
-                        channel_id = response['items'][0]['id']
-                        logger.debug(f'Resolved @{handle} to {channel_id} via forHandle')
-                        return channel_id
-                except (HttpError, TypeError) as e:
-                    # TypeError if forHandle not supported by API client version
-                    logger.debug(f'forHandle lookup failed for @{handle}: {e}')
-
-                # Try forUsername as fallback (works for some older handles)
-                try:
-                    response = self.youtube.channels().list(
-                        part='snippet',
-                        forUsername=handle
-                    ).execute()
-                    if response.get('items'):
-                        channel_id = response['items'][0]['id']
-                        logger.debug(f'Resolved @{handle} to {channel_id} via forUsername')
-                        return channel_id
-                except HttpError as e:
-                    logger.debug(f'forUsername lookup failed for @{handle}, falling back to search: {e}')
-
-                # Last resort: Use search with exact query match
-                search_response = self.youtube.search().list(
-                    part='snippet',
-                    q=f'"{handle}"',
-                    type='channel',
-                    maxResults=5
-                ).execute()
-
-                # Look for exact handle match in results
-                if search_response.get('items'):
-                    for item in search_response['items']:
-                        channel_id = item['snippet']['channelId']
-
-                        # Get channel details to check custom URL
-                        channel_details = self.youtube.channels().list(
-                            part='snippet',
-                            id=channel_id
-                        ).execute()
-
-                        if channel_details.get('items'):
-                            custom_url = channel_details['items'][0]['snippet'].get('customUrl', '')
-                            # Check if customUrl matches the handle (case-sensitive)
-                            if custom_url == f'@{handle}' or custom_url == handle:
-                                logger.debug(f'Resolved @{handle} to {channel_id} via search')
-                                return channel_id
-
-                    # If no exact match found, return first result (with warning)
-                    channel_id = search_response['items'][0]['snippet']['channelId']
-                    logger.warning(f'No exact handle match for @{handle}, using first search result: {channel_id}')
-                    return channel_id
-
-            # Handle /channel/UC... URLs (direct channel ID)
-            elif 'youtube.com/channel/' in url:
-                channel_id = url.split('/channel/')[1].split('/')[0].split('?')[0]
-                logger.debug(f'Extracted channel ID from URL: {channel_id}')
-                return channel_id
-
-            # Handle /c/customname URLs
-            elif 'youtube.com/c/' in url:
-                custom_url = url.split('/c/')[1].split('/')[0].split('?')[0]
-                search_response = self.youtube.search().list(
-                    part='snippet',
-                    q=custom_url,
-                    type='channel',
-                    maxResults=1
-                ).execute()
-                if search_response.get('items'):
-                    channel_id = search_response['items'][0]['snippet']['channelId']
-                    logger.debug(f'Resolved /c/{custom_url} to {channel_id}')
-                    return channel_id
-
-            logger.warning(f'Could not resolve channel ID from URL: {url}')
+        channel_id = data.get('channel_id')
+        if not channel_id:
+            logger.warning(f'No channel_id in response for {channel_url}')
             return None
 
-        except HttpError as e:
-            logger.error(f'YouTube API error resolving channel from URL {url}: {e}')
-            raise
-        except Exception as e:
-            logger.error(f'Error resolving channel ID from URL {url}: {e}', exc_info=True)
-            return None
+        video_id = data.get('id')
+        thumbnail = f'https://img.youtube.com/vi/{video_id}/default.jpg' if video_id else None
 
-    def get_playlist_videos(self, playlist_id, max_results=500):
-        """
-        Fetch all videos from a YouTube playlist.
+        return {
+            'id': channel_id,
+            'title': data.get('channel') or data.get('uploader') or 'Unknown',
+            'thumbnail': thumbnail,
+            'url': f'https://youtube.com/channel/{channel_id}',
+        }
+    except (json.JSONDecodeError, IndexError) as e:
+        logger.error(f'Error parsing channel info for {channel_url}: {e}')
+        return None
 
-        Args:
-            playlist_id: YouTube playlist ID (starts with 'PL')
-            max_results: Maximum number of videos to fetch (default: 500)
 
-        Returns:
-            list: List of video dicts with keys: yt_id, title, duration_sec, upload_date, thumbnail, channel_title
-            Empty list on error
-        """
-        try:
-            logger.info(f'Scanning YouTube playlist: {playlist_id}')
-            videos = []
-            next_page_token = None
+def resolve_channel_from_url(url):
+    """
+    Resolve any YouTube URL to channel information.
 
-            while len(videos) < max_results:
-                # Get videos from playlist (paginated)
-                playlist_response = self.youtube.playlistItems().list(
-                    part='snippet,contentDetails',
-                    playlistId=playlist_id,
-                    maxResults=min(50, max_results - len(videos)),
-                    pageToken=next_page_token
-                ).execute()
+    Supports:
+    - youtube.com/@handle
+    - youtube.com/channel/UC...
+    - youtube.com/c/customname
+    - youtube.com/user/username
 
-                video_ids = [item['contentDetails']['videoId'] for item in playlist_response.get('items', [])]
-                logger.debug(f'Found {len(video_ids)} video IDs in playlist page')
+    Args:
+        url: YouTube URL
 
-                if video_ids:
-                    # Get detailed video info (including duration) in batch
-                    videos_response = self.youtube.videos().list(
-                        part='snippet,contentDetails,statistics',
-                        id=','.join(video_ids)
-                    ).execute()
+    Returns:
+        dict: Channel info with keys: id, title, thumbnail, url
+        None: If channel not found
+    """
+    # Normalize URL to channel format
+    url = url.strip()
 
-                    for video in videos_response.get('items', []):
-                        # Skip videos without duration (deleted, private, etc)
-                        if 'duration' not in video.get('contentDetails', {}):
-                            logger.debug(f"Skipping video {video['id']}: no duration (possibly deleted/private)")
-                            continue
-
-                        # Parse ISO 8601 duration (PT1H2M10S -> seconds)
-                        duration_str = video['contentDetails']['duration']
-                        duration_sec = parse_iso8601_duration(duration_str)
-
-                        # Skip videos under 2 minutes (120 seconds) - filters out Shorts
-                        if duration_sec < 120:
-                            logger.debug(f"Skipping video {video['id']}: duration {duration_sec}s (<2 min)")
-                            continue
-
-                        videos.append({
-                            'yt_id': video['id'],
-                            'title': video['snippet']['title'],
-                            'duration_sec': duration_sec,
-                            'upload_date': video['snippet']['publishedAt'][:10].replace('-', ''),
-                            'thumbnail': video['snippet']['thumbnails'].get('high', {}).get('url'),
-                            'channel_title': video['snippet'].get('channelTitle', 'Unknown')
-                        })
-
-                next_page_token = playlist_response.get('nextPageToken')
-                if not next_page_token:
-                    break
-
-            logger.info(f'Playlist scan complete: {len(videos)} videos found')
-            return videos
-
-        except HttpError as e:
-            logger.error(f'YouTube API error scanning playlist {playlist_id}: {e}')
-            raise
-        except Exception as e:
-            logger.error(f'Error in get_playlist_videos for {playlist_id}: {e}', exc_info=True)
-            return []
-
-    @staticmethod
-    def extract_playlist_id(url):
-        """
-        Extract playlist ID from YouTube playlist URL.
-
-        Supports:
-        - youtube.com/playlist?list=PLxxxxx
-        - youtube.com/watch?v=xxx&list=PLxxxxx
-
-        Args:
-            url: YouTube URL containing playlist ID
-
-        Returns:
-            str: Playlist ID if found
-            None: If playlist ID not found in URL
-        """
-        import re
-        # Match list= parameter in URL
-        match = re.search(r'[?&]list=([^&]+)', url)
+    # Direct channel ID URLs - extract and build canonical URL
+    if '/channel/' in url:
+        match = re.search(r'/channel/([^/?]+)', url)
         if match:
-            return match.group(1)
+            channel_id = match.group(1)
+            # Verify the channel exists by getting info
+            canonical_url = f'https://youtube.com/channel/{channel_id}'
+            return get_channel_info(canonical_url)
+
+    # For all other formats (@handle, /c/, /user/), use yt-dlp to resolve
+    return get_channel_info(url)
+
+
+def scan_playlist_videos(playlist_url, max_results=500):
+    """
+    Fetch all videos from a YouTube playlist.
+
+    Args:
+        playlist_url: YouTube playlist URL
+        max_results: Maximum number of videos to fetch (default: 500)
+
+    Returns:
+        list: List of video dicts with keys: yt_id, title, duration_sec, upload_date, thumbnail, channel_title
+        Empty list on error
+    """
+    logger.info(f'Scanning playlist: {playlist_url}')
+
+    args = [
+        '--flat-playlist',
+        '--dump-json',
+        '--playlist-end', str(max_results),
+        playlist_url
+    ]
+
+    success, stdout, stderr = _run_ytdlp(args)
+
+    if not success:
+        logger.error(f'Failed to scan playlist {playlist_url}: {stderr}')
+        return []
+
+    videos = []
+
+    for line in stdout.strip().split('\n'):
+        if not line:
+            continue
+
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        duration = data.get('duration')
+        if duration is None:
+            continue
+
+        # Skip shorts (<2 minutes)
+        if duration < MIN_DURATION_SECONDS:
+            continue
+
+        video_id = data.get('id')
+        if not video_id:
+            continue
+
+        videos.append({
+            'yt_id': video_id,
+            'title': data.get('title', 'Untitled'),
+            'duration_sec': duration,
+            'upload_date': data.get('upload_date'),
+            'thumbnail': f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg',
+            'channel_title': data.get('channel') or data.get('uploader') or 'Unknown',
+        })
+
+    logger.info(f'Playlist scan complete: {len(videos)} videos found')
+    return videos
+
+
+def extract_playlist_id(url):
+    """
+    Extract playlist ID from YouTube playlist URL.
+
+    Supports:
+    - youtube.com/playlist?list=PLxxxxx
+    - youtube.com/watch?v=xxx&list=PLxxxxx
+
+    Args:
+        url: YouTube URL containing playlist ID
+
+    Returns:
+        str: Playlist ID if found
+        None: If playlist ID not found in URL
+    """
+    match = re.search(r'[?&]list=([^&]+)', url)
+    if match:
+        return match.group(1)
+    return None
+
+
+def get_video_info(video_id):
+    """
+    Get metadata for a single video using yt-dlp.
+
+    Args:
+        video_id: YouTube video ID (11 characters)
+
+    Returns:
+        dict: Video info with keys: yt_id, title, duration_sec, upload_date, thumbnail, channel_title
+        None: If video not found or error
+    """
+    url = f'https://youtube.com/watch?v={video_id}'
+    logger.debug(f'Getting video info: {video_id}')
+
+    args = [
+        '--dump-json',
+        '--no-playlist',
+        url
+    ]
+
+    success, stdout, stderr = _run_ytdlp(args, timeout=60)
+
+    if not success or not stdout.strip():
+        logger.error(f'Failed to get video info for {video_id}: {stderr}')
+        return None
+
+    try:
+        data = json.loads(stdout.strip())
+
+        duration = data.get('duration')
+        if duration is None:
+            logger.warning(f'No duration for video {video_id}')
+            return None
+
+        return {
+            'yt_id': data.get('id', video_id),
+            'title': data.get('title', 'Untitled'),
+            'duration_sec': duration,
+            'upload_date': data.get('upload_date'),
+            'thumbnail': f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg',
+            'channel_title': data.get('channel') or data.get('uploader') or 'Unknown',
+        }
+    except json.JSONDecodeError as e:
+        logger.error(f'Error parsing video info for {video_id}: {e}')
         return None

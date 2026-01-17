@@ -15,6 +15,7 @@ import Player from './routes/Player';
 import PlaylistPlayer from './routes/PlaylistPlayer';
 import Setup from './routes/Setup';
 import Login from './routes/Login';
+import Import from './routes/Import';
 import NavItem from './components/NavItem';
 import ErrorBoundary from './components/ErrorBoundary';
 import { SettingsIcon } from './components/icons';
@@ -468,6 +469,7 @@ function App() {
             <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
             <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
             <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
+            <Route path="/import" element={isAuthenticated ? <Import /> : <Navigate to="/login" replace />} />
             <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
             <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
             <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />

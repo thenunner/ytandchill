@@ -11,13 +11,13 @@ Handles:
 
 from flask import Blueprint, jsonify, request
 from datetime import datetime, timezone
-from googleapiclient.errors import HttpError
 from sqlalchemy.orm import joinedload
 import logging
 import os
 
 from database import Channel, Video, Playlist, ChannelCategory, get_session
 from utils import download_thumbnail
+from scanner import resolve_channel_from_url, get_channel_info
 
 logger = logging.getLogger(__name__)
 
@@ -28,21 +28,19 @@ channels_bp = Blueprint('channels', __name__)
 _session_factory = None
 _limiter = None
 _serialize_channel = None
-_get_youtube_client = None
 _set_operation = None
 _clear_operation = None
 _queue_channel_scan = None
 
 
-def init_channels_routes(session_factory, limiter, serialize_channel, get_youtube_client,
+def init_channels_routes(session_factory, limiter, serialize_channel,
                          set_operation, clear_operation, queue_channel_scan):
     """Initialize the channels routes with required dependencies."""
-    global _session_factory, _limiter, _serialize_channel, _get_youtube_client
+    global _session_factory, _limiter, _serialize_channel
     global _set_operation, _clear_operation, _queue_channel_scan
     _session_factory = session_factory
     _limiter = limiter
     _serialize_channel = serialize_channel
-    _get_youtube_client = get_youtube_client
     _set_operation = set_operation
     _clear_operation = clear_operation
     _queue_channel_scan = queue_channel_scan
@@ -68,23 +66,14 @@ def create_channel():
     try:
         _set_operation('adding_channel', 'Fetching channel information...')
 
-        # Get YouTube API client
-        try:
-            youtube_client = _get_youtube_client()
-        except ValueError as e:
-            _clear_operation()
-            return jsonify({'error': str(e)}), 400
+        # Resolve channel from URL using yt-dlp
+        channel_info = resolve_channel_from_url(data['url'])
 
-        # Resolve channel ID from URL
-        try:
-            channel_id = youtube_client.resolve_channel_id_from_url(data['url'])
-        except HttpError as e:
+        if not channel_info:
             _clear_operation()
-            return jsonify({'error': f'YouTube API error: {e}'}), 500
+            return jsonify({'error': 'Could not resolve channel from URL'}), 400
 
-        if not channel_id:
-            _clear_operation()
-            return jsonify({'error': 'Could not resolve channel ID from URL'}), 400
+        channel_id = channel_info['id']
 
         with get_session(_session_factory) as session:
             # Check if already exists
@@ -99,14 +88,14 @@ def create_channel():
 
                     # Refresh channel info and thumbnail
                     try:
-                        channel_info = youtube_client.get_channel_info(existing.yt_id)
-                        if channel_info:
-                            existing.title = channel_info['title']
+                        restored_info = get_channel_info(f'https://youtube.com/channel/{existing.yt_id}')
+                        if restored_info:
+                            existing.title = restored_info['title']
                             # Re-download thumbnail
-                            if channel_info['thumbnail']:
+                            if restored_info['thumbnail']:
                                 thumbnail_filename = f"{existing.yt_id}.jpg"
                                 local_file_path = os.path.join('downloads', 'thumbnails', thumbnail_filename)
-                                if download_thumbnail(channel_info['thumbnail'], local_file_path):
+                                if download_thumbnail(restored_info['thumbnail'], local_file_path):
                                     existing.thumbnail = os.path.join('thumbnails', thumbnail_filename)
                                     logger.info(f"Re-downloaded thumbnail for restored channel: {existing.title}")
                     except Exception as e:
@@ -130,16 +119,7 @@ def create_channel():
                     _clear_operation()
                     return jsonify({'error': 'Channel already exists'}), 400
 
-            # Get channel info
-            try:
-                channel_info = youtube_client.get_channel_info(channel_id)
-            except HttpError as e:
-                _clear_operation()
-                return jsonify({'error': f'YouTube API error: {e}'}), 500
-
-            if not channel_info:
-                _clear_operation()
-                return jsonify({'error': 'Could not fetch channel information'}), 400
+            # channel_info already populated from resolve_channel_from_url above
 
             # Create folder name
             folder_name = channel_info['title'].replace(' ', '_').replace('/', '_')[:50]
@@ -179,10 +159,6 @@ def create_channel():
             }
             return jsonify(result), 201
 
-    except HttpError as api_error:
-        _clear_operation()
-        logger.error(f'YouTube API error while adding channel: {api_error}', exc_info=True)
-        return jsonify({'error': 'Failed to add channel due to YouTube API error'}), 500
     except Exception as e:
         _clear_operation()
         logger.error(f'Error adding channel: {str(e)}', exc_info=True)

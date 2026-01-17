@@ -10,7 +10,7 @@ import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridU
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
-import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, FilterIcon, PlusIcon, TrashIcon } from '../components/icons';
+import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, FilterIcon, PlusIcon, TrashIcon, UploadIcon } from '../components/icons';
 import { formatFileSize } from '../utils/formatters';
 
 export default function Library() {
@@ -539,6 +539,13 @@ export default function Library() {
               >
                 Playlists
               </button>
+              <Link
+                to="/import"
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary flex items-center gap-2"
+              >
+                <UploadIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Import</span>
+              </Link>
             </div>
 
             {/* Search - Full width on mobile */}
@@ -682,6 +689,13 @@ export default function Library() {
                 >
                   Playlists
                 </button>
+                <Link
+                  to="/import"
+                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary flex items-center gap-2"
+                >
+                  <UploadIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Import</span>
+                </Link>
               </div>
 
               {/* Search - Full width on mobile */}

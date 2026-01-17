@@ -9,10 +9,11 @@ Handles the "Videos" tab functionality:
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
-from googleapiclient.errors import HttpError
+import re
 import logging
 
 from database import Video, Channel, QueueItem, get_session
+from scanner import extract_playlist_id, scan_playlist_videos, get_video_info
 
 logger = logging.getLogger(__name__)
 
@@ -22,20 +23,18 @@ videos_bp = Blueprint('videos_import', __name__)
 # Module-level references to shared dependencies
 _session_factory = None
 _download_worker = None
-_get_youtube_client = None
 _set_operation = None
 _clear_operation = None
 _parse_iso8601_duration = None
 
 
-def init_videos_routes(session_factory, download_worker, get_youtube_client,
+def init_videos_routes(session_factory, download_worker,
                        set_operation, clear_operation, parse_iso8601_duration):
     """Initialize the videos routes with required dependencies."""
-    global _session_factory, _download_worker, _get_youtube_client
+    global _session_factory, _download_worker
     global _set_operation, _clear_operation, _parse_iso8601_duration
     _session_factory = session_factory
     _download_worker = download_worker
-    _get_youtube_client = get_youtube_client
     _set_operation = set_operation
     _clear_operation = clear_operation
     _parse_iso8601_duration = parse_iso8601_duration
@@ -82,6 +81,7 @@ def scan_youtube_playlist():
     """Scan a YouTube playlist or channel URL and return videos.
 
     Supports:
+        - Single video URLs: youtube.com/watch?v=xxx, youtu.be/xxx
         - Playlist URLs: youtube.com/playlist?list=PLxxxxx
         - Channel URLs: youtube.com/@handle, youtube.com/channel/UC..., youtube.com/c/name
 
@@ -89,8 +89,6 @@ def scan_youtube_playlist():
         filter: 'new' (default) - only videos not in DB
                 'all' - all videos with their status
     """
-    from scanner import YouTubeAPIClient
-
     data = request.json
     url = data.get('url', '')
     filter_mode = data.get('filter', 'new')  # 'new' or 'all'
@@ -98,9 +96,6 @@ def scan_youtube_playlist():
     if not url:
         return jsonify({'error': 'URL is required'}), 400
 
-    import re
-    youtube = _get_youtube_client()
-    playlist_id = None
     single_video_id = None
     source_type = 'playlist'
 
@@ -111,70 +106,46 @@ def scan_youtube_playlist():
         source_type = 'video'
         logger.info(f"Detected single video URL: {single_video_id}")
 
-    # If not a single video, try playlist ID
+    # If not a single video, check for playlist or channel
     if not single_video_id:
-        playlist_id = YouTubeAPIClient.extract_playlist_id(url)
+        # Check for playlist ID in URL
+        playlist_id = extract_playlist_id(url)
 
-    # If no playlist ID, check if it's a channel URL
-    if not single_video_id and not playlist_id:
-        # Check for channel URL patterns
-        is_channel_url = any(pattern in url for pattern in [
-            'youtube.com/@',
-            'youtube.com/channel/',
-            'youtube.com/c/',
-            'youtube.com/user/'
-        ])
-
-        if is_channel_url:
-            try:
-                # Resolve channel ID from URL
-                channel_id = youtube.resolve_channel_id_from_url(url)
-                if not channel_id:
-                    return jsonify({'error': 'Could not resolve channel from URL'}), 400
-
-                # Get channel info to find uploads playlist
-                channel_info = youtube.get_channel_info(channel_id)
-                if not channel_info:
-                    return jsonify({'error': 'Could not get channel information'}), 400
-
-                playlist_id = channel_info['uploads_playlist']
-                source_type = 'channel'
-                logger.info(f"Resolved channel URL to uploads playlist: {playlist_id}")
-            except Exception as e:
-                logger.error(f"Error resolving channel URL: {e}")
-                return jsonify({'error': f'Failed to resolve channel: {str(e)}'}), 400
+        if playlist_id:
+            # It's a playlist URL - build full URL for yt-dlp
+            url = f'https://youtube.com/playlist?list={playlist_id}'
+            source_type = 'playlist'
         else:
-            return jsonify({'error': 'Invalid URL. Provide a YouTube video, playlist, or channel URL'}), 400
+            # Check if it's a channel URL
+            is_channel_url = any(pattern in url for pattern in [
+                'youtube.com/@',
+                'youtube.com/channel/',
+                'youtube.com/c/',
+                'youtube.com/user/'
+            ])
 
-    logger.info(f"Scanning YouTube {source_type}: {single_video_id or playlist_id} (filter={filter_mode})")
+            if is_channel_url:
+                source_type = 'channel'
+            else:
+                return jsonify({'error': 'Invalid URL. Provide a YouTube video, playlist, or channel URL'}), 400
+
+    logger.info(f"Scanning YouTube {source_type}: {single_video_id or url} (filter={filter_mode})")
     _set_operation('scanning', f"Scanning YouTube {source_type}...")
 
     try:
-        # Handle single video vs playlist/channel
-        if single_video_id:
-            # Fetch single video metadata
-            videos_response = youtube.youtube.videos().list(
-                part='snippet,contentDetails,statistics',
-                id=single_video_id
-            ).execute()
+        videos = []
 
-            videos = []
-            for video in videos_response.get('items', []):
-                if 'duration' not in video.get('contentDetails', {}):
-                    continue
-                duration_str = video['contentDetails']['duration']
-                duration_sec = _parse_iso8601_duration(duration_str)
-                videos.append({
-                    'yt_id': video['id'],
-                    'title': video['snippet']['title'],
-                    'duration_sec': duration_sec,
-                    'upload_date': video['snippet']['publishedAt'][:10].replace('-', ''),
-                    'thumbnail': video['snippet']['thumbnails'].get('high', {}).get('url'),
-                    'channel_title': video['snippet'].get('channelTitle', 'Unknown')
-                })
+        if single_video_id:
+            # Fetch single video metadata using yt-dlp
+            video_info = get_video_info(single_video_id)
+            if video_info:
+                videos = [video_info]
+            else:
+                _clear_operation()
+                return jsonify({'error': 'Could not fetch video information'}), 400
         else:
-            # Fetch playlist/channel videos
-            videos = youtube.get_playlist_videos(playlist_id)
+            # Fetch playlist/channel videos using yt-dlp
+            videos = scan_playlist_videos(url, max_results=500)
 
         with get_session(_session_factory) as session:
             # Get existing videos with their status
@@ -199,7 +170,7 @@ def scan_youtube_playlist():
                     v['status'] = None
                 already_in_db = len(videos) - len(new_videos)
 
-        logger.info(f"Playlist scan complete: {len(videos)} total, {len(new_videos)} returned, {already_in_db} in DB")
+        logger.info(f"Scan complete: {len(videos)} total, {len(new_videos)} returned, {already_in_db} in DB")
 
         # Clear operation status
         _clear_operation()
@@ -211,18 +182,10 @@ def scan_youtube_playlist():
             'videos': new_videos
         })
 
-    except HttpError as e:
-        logger.error(f"YouTube API error scanning playlist: {e}")
-        _clear_operation()
-        return jsonify({'error': f'YouTube API error: {str(e)}'}), 500
-    except ValueError as e:
-        logger.error(f"Configuration error: {e}")
-        _clear_operation()
-        return jsonify({'error': str(e)}), 400
     except Exception as e:
-        logger.error(f"Error scanning playlist: {e}", exc_info=True)
+        logger.error(f"Error scanning: {e}", exc_info=True)
         _clear_operation()
-        return jsonify({'error': f'Failed to scan playlist: {str(e)}'}), 500
+        return jsonify({'error': f'Failed to scan: {str(e)}'}), 500
 
 
 @videos_bp.route('/api/youtube-playlists/queue', methods=['POST'])

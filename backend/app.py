@@ -10,8 +10,7 @@ from database import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem
 from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
 from routes import register_blueprints
-from googleapiclient.errors import HttpError
-from scanner import YouTubeAPIClient
+from scanner import scan_channel_videos
 import logging
 import atexit
 from sqlalchemy.orm import joinedload
@@ -106,18 +105,6 @@ def check_single_instance():
 
 # Check for single instance before starting
 check_single_instance()
-
-# YouTube Data API Helper Functions
-def get_youtube_api_key():
-    """Get YouTube API key from settings"""
-    return settings_manager.get('youtube_api_key')
-
-def get_youtube_client():
-    """Get YouTube API client instance"""
-    api_key = get_youtube_api_key()
-    if not api_key:
-        raise ValueError('YouTube API key not configured. Please add it in Settings.')
-    return YouTubeAPIClient(api_key)
 
 # Initialize database BEFORE Flask app so we can load secret key from DB
 engine, Session = init_db()
@@ -587,15 +574,7 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     # Note: Per-channel status updates removed - too fast for frontend polling
     # Batch-level status is set when scan batch starts
 
-    # Get YouTube API client
-    try:
-        youtube_client = get_youtube_client()
-    except ValueError as e:
-        logger.debug("YouTube API key not configured")
-        clear_operation()
-        raise e
-
-    # Scan videos using YouTube Data API
+    # Scan videos using yt-dlp (no API quota limits!)
     # For full scan, get ALL videos (999999 effectively means no limit)
     # For incremental scans:
     #   - If auto-scan is OFF: use 250 (manual scans are infrequent, need larger buffer)
@@ -608,8 +587,17 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         auto_scan_enabled = settings_manager.get_bool('auto_refresh_enabled')
         max_results = 50 if auto_scan_enabled else 250
     logger.debug(f"Fetching up to {max_results} videos for channel: {channel.title}")
-    videos = youtube_client.scan_channel_videos(channel.yt_id, max_results=max_results)
-    logger.debug(f"Found {len(videos)} total videos from YouTube API for channel: {channel.title}")
+
+    # Build channel URL from stored channel ID
+    channel_url = f'https://youtube.com/channel/{channel.yt_id}'
+    channel_info, videos = scan_channel_videos(channel_url, max_results=max_results)
+
+    if channel_info is None:
+        logger.error(f"Failed to scan channel: {channel.title}")
+        clear_operation()
+        raise ValueError(f"Failed to scan channel: {channel.title}")
+
+    logger.debug(f"Found {len(videos)} total videos for channel: {channel.title}")
 
     new_count = 0
     ignored_count = 0
@@ -905,7 +893,6 @@ register_blueprints(
     serialize_queue_item=serialize_queue_item,
     get_current_operation=get_current_operation,
     serialize_video=serialize_video,
-    get_youtube_client=get_youtube_client,
     set_operation=set_operation,
     clear_operation=clear_operation,
     parse_iso8601_duration=parse_iso8601_duration,

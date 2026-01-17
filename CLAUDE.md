@@ -95,7 +95,7 @@ docker pull ghcr.io/thenunner/ytandchill:latest  # Pull latest pre-built image
   - `Playlist.jsx`: Playlist viewer and management
   - `Queue.jsx`: Download queue with drag-and-drop reordering
   - `Player.jsx`: Video player with playback resume and speed controls
-  - `Settings.jsx`: Configuration (API key, auto-scan, cookies, themes, auth)
+  - `Settings.jsx`: Configuration (auto-scan, cookies, themes, auth, SponsorBlock)
   - `Login.jsx`: Authentication login page
   - `Setup.jsx`: First-run setup wizard
 
@@ -151,12 +151,13 @@ Videos have a status field that tracks their lifecycle:
 
 ## Important Implementation Details
 
-### YouTube Data API Integration
+### Channel Scanning (yt-dlp)
 
-- **Required**: API key must be configured in Settings (free tier: 10,000 quota/day)
-- Channel scanning uses `playlistItems.list` and `videos.list` endpoints
-- Handle resolution uses `search.list` with exact matching
-- Duration filtering uses ISO 8601 duration format (parsed in utils.py)
+- Uses yt-dlp's `--flat-playlist --dump-json` for fast metadata extraction
+- **No API key required** - no quota limits on channel scanning
+- Channel resolution supports @handles, /channel/UC..., /c/, /user/ URLs
+- Duration filtering uses seconds (converted from yt-dlp output)
+- Incremental scans stop when existing videos are found
 
 ### Cookie Authentication
 
@@ -199,7 +200,7 @@ No formal test suite exists. Manual testing via:
 - Channel scanning with various URL formats
 - Download queue operations (add, remove, reorder)
 - Video playback with resume functionality
-- Settings changes (API key, auto-scan, cookies)
+- Settings changes (auto-scan, cookies, themes)
 
 ## Common Development Tasks
 
@@ -270,7 +271,7 @@ Edit `ydl_opts` dictionary in `download_worker.py`:
 ## Known Issues & Limitations
 
 - No password recovery mechanism (must manually reset via database)
-- Full channel scans can use significant YouTube API quota
+- Full channel scans can be slow for channels with large video libraries
 - Download worker is single-threaded (one download at a time)
 - No multi-user support (single authentication credential)
 - SQLite database (not suitable for high concurrency)

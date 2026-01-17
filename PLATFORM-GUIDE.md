@@ -570,7 +570,6 @@ Recreate the container.
 3. Copy the `downloads/` directory to the new location
 4. Copy `cookies.txt` if using age-restricted downloads
 5. Install and start on the new platform
-6. Re-enter YouTube API key in Settings
 
 ---
 

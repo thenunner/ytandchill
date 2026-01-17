@@ -9,3 +9,4 @@ export { FilterIcon } from './FilterIcon';
 export { ArrowLeftIcon } from './ArrowLeftIcon';
 export { PlusIcon } from './PlusIcon';
 export { EyeIcon } from './EyeIcon';
+export { UploadIcon } from './UploadIcon';

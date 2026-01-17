@@ -38,7 +38,6 @@ export default function Settings() {
   const [manualModeTimes, setManualModeTimes] = useState([{ hour: 3, minute: 0 }]);
   const [intervalModeTime, setIntervalModeTime] = useState({ hour: 3, minute: 0 });
   const [intervalModeHours, setIntervalModeHours] = useState(6);
-  const [youtubeApiKey, setYoutubeApiKey] = useState('');
   const [logLevel, setLogLevel] = useState('INFO');
 
   // Password change state
@@ -93,7 +92,6 @@ export default function Settings() {
   useEffect(() => {
     if (settings) {
       setAutoRefresh(settings.auto_refresh_enabled === 'true');
-      setYoutubeApiKey(settings.youtube_api_key || '');
       setLogLevel(settings.log_level || 'INFO');
       // Parse auto_refresh_config (new multi-scan system)
       if (settings.auto_refresh_config) {
@@ -143,20 +141,6 @@ export default function Settings() {
       setCookieSource(settings.cookie_source || 'file');
     }
   }, [settings]);
-
-  const handleSave = async () => {
-    try {
-      await updateSettings.mutateAsync({
-        auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-        auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-        youtube_api_key: youtubeApiKey,
-        log_level: logLevel,
-      });
-      showNotification('Settings saved', 'success');
-    } catch (error) {
-      showNotification(error.message, 'error');
-    }
-  };
 
   const toggleLogs = () => {
     const newValue = !showLogs;
@@ -461,7 +445,7 @@ export default function Settings() {
               {/* YT and Chill */}
               <div className="flex flex-col items-center gap-1">
                 <span className="text-text-secondary text-xs">YT and Chill</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.10.10</span>
+                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>v6.11.0</span>
               </div>
               {/* YT-DLP */}
               <div className="flex flex-col items-center gap-1">
@@ -777,41 +761,9 @@ export default function Settings() {
             )}
           </div>
 
-          {/* Card 2: YouTube API Key + Auto-Scan Daily */}
+          {/* Card 2: SponsorBlock */}
           <div className="card p-4 w-full">
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* YouTube API Key Section */}
-              <div className="flex-1 flex flex-col items-center">
-                <h3 className="text-sm font-semibold text-text-primary mb-3 text-center flex items-center justify-center gap-2">
-                  YouTube Data API Key
-                  <a
-                    href="https://console.cloud.google.com/apis/credentials"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-accent-text hover:text-accent-hover font-normal underline"
-                  >
-                    [Key at Google Cloud Console]
-                  </a>
-                </h3>
-                <div className="flex gap-2 w-full md:w-auto">
-                  <input
-                    type="text"
-                    value={youtubeApiKey}
-                    onChange={(e) => setYoutubeApiKey(e.target.value)}
-                    placeholder="Enter your YouTube Data API v3 key..."
-                    className="input text-sm py-1.5 px-3 font-mono w-full md:w-[320px]"
-                  />
-                  <button
-                    onClick={handleSave}
-                    className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-4"
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-
-              {/* SponsorBlock Section */}
-              <div className="flex-1">
+            <div className="flex flex-col items-center">
                 <h3 className="text-sm font-semibold text-text-primary mb-3 flex items-center justify-center gap-2">
                   SponsorBlock
                   <button
@@ -853,11 +805,10 @@ export default function Settings() {
                     <span className="text-sm text-text-primary font-medium">Like/Sub Requests</span>
                   </label>
                 </div>
-              </div>
             </div>
           </div>
 
-          {/* Card 4: Auto-Scan Daily */}
+          {/* Card 3: Auto-Scan Daily */}
           <div className="card p-4 w-full">
             {/* Helper function for rendering time boxes */}
             {(() => {
@@ -1217,7 +1168,7 @@ export default function Settings() {
               <h3 className="text-sm font-semibold text-text-primary">Logging</h3>
               <button
                 className="text-text-secondary hover:text-text-primary transition-colors"
-                title="DEBUG: Most verbose - all operations and API calls&#10;INFO: General information - major operations and status&#10;API: YouTube API calls and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
+                title="DEBUG: Most verbose - all operations&#10;INFO: General information - major operations and status&#10;API: yt-dlp commands and external requests only&#10;WARN: Potential issues that don't stop operations&#10;ERROR: Critical failures only"
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
@@ -1235,9 +1186,6 @@ export default function Settings() {
                   setLogLevel(newLevel);
                   try {
                     await updateSettings.mutateAsync({
-                      auto_refresh_enabled: autoRefresh ? 'true' : 'false',
-                      auto_refresh_time: `${refreshHour.toString().padStart(2, '0')}:${refreshMinute.toString().padStart(2, '0')}`,
-                      youtube_api_key: youtubeApiKey,
                       log_level: newLevel,
                     });
                     showNotification(`Log level changed to ${newLevel}`, 'success');
