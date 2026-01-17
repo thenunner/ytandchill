@@ -576,9 +576,17 @@ function App() {
                         <path d="M12 8h.01"></path>
                       </svg>
                     )}
+                    {notification.type === 'warning' && (
+                      <svg className="w-4 h-4 text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                      </svg>
+                    )}
                     <span className={`font-medium ${
                       notification.type === 'success' ? 'text-accent-text' :
                       notification.type === 'error' ? 'text-red-400' :
+                      notification.type === 'warning' ? 'text-yellow-400' :
                       'text-blue-400'
                     }`}>
                       {notification.message}
