@@ -128,15 +128,17 @@ def get_or_create_secret_key():
         return new_secret_key
 
 # Determine static folder path - different for Docker vs local dev vs native Windows
+# Flask resolves relative paths from app.py location, so we use absolute paths
 # In Docker: /app/dist
 # In local dev from backend/: ../frontend/dist
 # In native Windows from project root: frontend/dist
 if os.path.exists('dist'):
-    static_folder = 'dist'  # Docker
+    static_folder = os.path.abspath('dist')  # Docker
 elif os.path.exists('frontend/dist'):
-    static_folder = 'frontend/dist'  # Running from project root (native Windows)
+    static_folder = os.path.abspath('frontend/dist')  # Running from project root (native Windows)
 else:
-    static_folder = '../frontend/dist'  # Running from backend folder (local dev)
+    static_folder = os.path.abspath('../frontend/dist')  # Running from backend folder (local dev)
+print(f"Static folder: {static_folder}")
 app = Flask(__name__, static_folder=static_folder)
 
 # Session configuration
