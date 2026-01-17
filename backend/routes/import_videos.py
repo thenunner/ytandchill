@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import logging
 from datetime import datetime, timezone
+from difflib import SequenceMatcher
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 import requests as http_requests
@@ -327,6 +328,32 @@ def titles_match(filename_title, video_title):
     return norm_file == norm_video
 
 
+def titles_match_fuzzy(filename_title, video_title, threshold=0.95):
+    """Check if titles match with fuzzy matching (95% similarity by default).
+
+    Handles minor differences like:
+    - "dont" vs "don't"
+    - Extra spaces
+    - An extra letter
+    - Minor typos
+
+    Returns (is_match, similarity_ratio)
+    """
+    if not filename_title or not video_title:
+        return False, 0.0
+
+    norm_file = normalize_title(filename_title)
+    norm_video = normalize_title(video_title)
+
+    if not norm_file or not norm_video:
+        return False, 0.0
+
+    # Use SequenceMatcher for fuzzy comparison
+    ratio = SequenceMatcher(None, norm_file, norm_video).ratio()
+
+    return ratio >= threshold, ratio
+
+
 def identify_video_by_id(video_id):
     """Get video metadata directly using yt-dlp library.
 
@@ -490,14 +517,26 @@ def search_video_by_title(title, expected_duration=None, known_channel_ids=None,
                 'match_type': 'search',
                 'duration_match': False,
                 'title_match': False,
+                'title_match_fuzzy': False,
+                'title_similarity': 0.0,
                 'channel_match': channel_match,
             }
 
-            # Check title match (flexible comparison)
+            # Check title match (exact after normalization)
             if titles_match(title, video_title):
                 match_info['title_match'] = True
+                match_info['title_match_fuzzy'] = True
+                match_info['title_similarity'] = 1.0
                 match_info['match_type'] = 'search+title'
                 logger.info(f"Title match found: '{normalized_filename}' ~ '{normalized_video_title}'")
+            else:
+                # Check fuzzy title match (95%+ similarity)
+                is_fuzzy_match, similarity = titles_match_fuzzy(title, video_title)
+                match_info['title_similarity'] = similarity
+                if is_fuzzy_match:
+                    match_info['title_match_fuzzy'] = True
+                    match_info['match_type'] = 'search+title_fuzzy'
+                    logger.info(f"Fuzzy title match found: '{normalized_filename}' ~ '{normalized_video_title}' ({similarity:.1%})")
 
             # Check duration match (allow 3 second tolerance for encoding differences)
             if expected_duration and video_duration:
@@ -1072,20 +1111,39 @@ def smart_identify():
             })
         else:
             # Manual mode, or no confident match - user needs to choose
-            # Prioritize showing best matches first
-            logger.info(f"PENDING: '{filename}' - {mode} mode, needs user selection")
-            matches_to_show = (
-                channel_title_duration or channel_title or channel_duration or
-                title_duration or title_matches or duration_matches or
-                search_results[:5]
-            )
-            pending.append({
-                'file': file_path,
-                'filename': filename,
-                'matches': matches_to_show[:5],  # Top 5
-                'match_type': 'multiple',
-                'local_duration': local_duration,
-            })
+            # CRITICAL: Only show videos that match BOTH:
+            # 1. Duration (within 3 seconds), AND
+            # 2. Title (95%+ fuzzy match)
+            # Duration alone is meaningless (1000s of videos have same duration)
+            viable_matches = [r for r in search_results if r.get('duration_match') and r.get('title_match_fuzzy')]
+
+            if viable_matches:
+                # Sort by title similarity (highest first)
+                viable_matches.sort(key=lambda x: -x.get('title_similarity', 0))
+                logger.info(f"PENDING: '{filename}' - {mode} mode, {len(viable_matches)} viable options (duration AND title match)")
+                pending.append({
+                    'file': file_path,
+                    'filename': filename,
+                    'matches': viable_matches[:5],  # Top 5
+                    'match_type': 'multiple',
+                    'local_duration': local_duration,
+                })
+            else:
+                # No videos match BOTH duration AND title - can't reliably match
+                best_result = search_results[0] if search_results else None
+                if best_result:
+                    best_similarity = best_result.get('title_similarity', 0)
+                    best_duration = best_result.get('duration')
+                    duration_diff = abs(best_duration - local_duration) if best_duration and local_duration else None
+                    reason = f'No match found. Best: "{best_result.get("title")[:40]}..." (duration: {best_duration}s vs {local_duration}s, title: {best_similarity:.0%} similar)'
+                else:
+                    reason = 'No search results found on YouTube'
+                logger.warning(f"FAILED: '{filename}' - no videos match both duration ({local_duration}s) AND title (95%+)")
+                failed.append({
+                    'file': file_path,
+                    'filename': filename,
+                    'reason': reason,
+                })
 
     # Update import state
     _import_state['pending'] = pending
