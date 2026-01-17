@@ -953,7 +953,10 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 4099))
 
     logger.info(f"Starting Waitress server on 0.0.0.0:{port}")
-    print(f"🚀 Server starting on http://0.0.0.0:{port}")
+    print(f"\n🚀 Server started! Open in your browser:")
+    print(f"   Local:   http://localhost:{port}")
+    print(f"   Network: http://<your-ip>:{port}")
+    print("")
 
     serve(
         app,
