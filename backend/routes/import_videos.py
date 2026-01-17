@@ -26,7 +26,7 @@ import requests
 import yt_dlp
 
 from database import Video, Channel, get_session
-from utils import makedirs_777
+from utils import makedirs_777, ensure_channel_thumbnail
 
 logger = logging.getLogger(__name__)
 
@@ -609,8 +609,16 @@ def execute_import(file_path, video_info, channel_info, match_type):
             session.commit()
             logger.info(f"Created soft-deleted channel for import: {channel_info['channel_title']}")
 
-        # Create channel folder with proper permissions
+        # Ensure channel thumbnail exists
         downloads_folder = get_downloads_folder()
+        if not channel.thumbnail:
+            thumb_path = ensure_channel_thumbnail(channel_info['channel_id'], downloads_folder)
+            if thumb_path:
+                channel.thumbnail = thumb_path
+                session.commit()
+                logger.info(f"Downloaded channel thumbnail for {channel_info['channel_title']}")
+
+        # Create channel folder with proper permissions
         channel_folder = os.path.join(downloads_folder, channel.folder_name)
         makedirs_777(channel_folder)
 

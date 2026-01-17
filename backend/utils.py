@@ -74,6 +74,33 @@ def download_thumbnail(url, save_path):
         return False
 
 
+def ensure_channel_thumbnail(channel_id, downloads_folder):
+    """
+    Ensure channel thumbnail exists, downloading if necessary.
+
+    Args:
+        channel_id: YouTube channel ID (e.g., 'UC0QuCui5pNF9k9fiNXkqn_w')
+        downloads_folder: Base downloads folder path
+
+    Returns:
+        str or None: Relative thumbnail path (e.g., 'thumbnails/UC...jpg') if exists/downloaded, None otherwise
+    """
+    thumb_filename = f"{channel_id}.jpg"
+    thumb_path = os.path.join(downloads_folder, 'thumbnails', thumb_filename)
+    relative_path = os.path.join('thumbnails', thumb_filename)
+
+    # Already exists
+    if os.path.exists(thumb_path):
+        return relative_path
+
+    # Try to download from YouTube
+    thumb_url = f"https://yt3.googleusercontent.com/ytc/{channel_id}"
+    if download_thumbnail(thumb_url, thumb_path):
+        return relative_path
+
+    return None
+
+
 def get_random_video_thumbnail(playlist_videos):
     """
     Get a random thumbnail URL from a list of playlist videos.
