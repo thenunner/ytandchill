@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import {
@@ -11,6 +11,21 @@ import {
 } from '../api/queries';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { CheckmarkIcon } from '../components/icons';
+
+// Supported video extensions (must match backend)
+const VIDEO_EXTENSIONS = /\.(mp4|webm|mkv|avi|mov|m4v|flv)$/i;
+
+// Max file size (must match backend MAX_CONTENT_LENGTH)
+const MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024; // 50GB
+
+// Format bytes to human readable
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
 
 export default function Import() {
   const navigate = useNavigate();
@@ -32,6 +47,14 @@ export default function Import() {
   const [pendingMatches, setPendingMatches] = useState([]);
   const [currentPendingIdx, setCurrentPendingIdx] = useState(0);
   const [selectedVideoId, setSelectedVideoId] = useState(null);
+
+  // Drag and drop state
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadFiles, setUploadFiles] = useState([]); // {name, size, status: 'pending'|'uploading'|'done'|'error', progress}
+  const [currentUploadIndex, setCurrentUploadIndex] = useState(0);
+  const [currentUploadProgress, setCurrentUploadProgress] = useState(0);
+  const abortControllerRef = useRef(null);
 
   // Start Smart Import - identifies videos directly without scanning channels
   // mode: 'auto' = auto-import confident matches, 'manual' = review everything
@@ -140,39 +163,311 @@ export default function Import() {
     return `${mins}:${String(secs).padStart(2, '0')}`;
   };
 
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set to false if leaving the drop zone entirely
+    if (!e.currentTarget.contains(e.relatedTarget)) {
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const allFiles = Array.from(e.dataTransfer.files);
+
+    // Filter by extension
+    const videoFiles = allFiles.filter(f => VIDEO_EXTENSIONS.test(f.name));
+    if (videoFiles.length === 0) {
+      showNotification('No valid video files found. Supported: .mp4, .webm, .mkv, .avi, .mov, .m4v, .flv', 'warning');
+      return;
+    }
+
+    // Check for oversized files
+    const oversizedFiles = videoFiles.filter(f => f.size > MAX_FILE_SIZE);
+    const droppedFiles = videoFiles.filter(f => f.size <= MAX_FILE_SIZE);
+
+    if (oversizedFiles.length > 0) {
+      const names = oversizedFiles.map(f => f.name).join(', ');
+      showNotification(`${oversizedFiles.length} file(s) exceed 50GB limit and will be skipped: ${names}`, 'warning');
+    }
+
+    if (droppedFiles.length === 0) {
+      showNotification('All files exceed the 50GB size limit', 'error');
+      return;
+    }
+
+    // Initialize upload state
+    const filesWithStatus = droppedFiles.map(f => ({
+      file: f,
+      name: f.name,
+      size: f.size,
+      status: 'pending',
+      progress: 0,
+    }));
+
+    setUploadFiles(filesWithStatus);
+    setCurrentUploadIndex(0);
+    setCurrentUploadProgress(0);
+    setIsUploading(true);
+
+    // Upload files sequentially
+    for (let i = 0; i < filesWithStatus.length; i++) {
+      const fileData = filesWithStatus[i];
+
+      // Update current file to uploading
+      setCurrentUploadIndex(i);
+      setCurrentUploadProgress(0);
+      setUploadFiles(prev => prev.map((f, idx) =>
+        idx === i ? { ...f, status: 'uploading' } : f
+      ));
+
+      try {
+        await uploadFile(fileData.file, (progress) => {
+          setCurrentUploadProgress(progress);
+        });
+
+        // Mark as done
+        setUploadFiles(prev => prev.map((f, idx) =>
+          idx === i ? { ...f, status: 'done', progress: 100 } : f
+        ));
+      } catch (err) {
+        // Mark as error
+        setUploadFiles(prev => prev.map((f, idx) =>
+          idx === i ? { ...f, status: 'error', error: err.message } : f
+        ));
+      }
+    }
+
+    // Upload complete - refresh scan
+    setIsUploading(false);
+    const successCount = filesWithStatus.filter((_, i) => {
+      // Check final status - we need to get it from the state
+      return true; // Will be updated by the state
+    }).length;
+
+    showNotification(`Upload complete`, 'success');
+    refetchScan();
+  };
+
+  // Upload a single file with progress tracking
+  const uploadFile = (file, onProgress) => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const formData = new FormData();
+      formData.append('file', file);
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const progress = Math.round((e.loaded / e.total) * 100);
+          onProgress(progress);
+        }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            if (response.success) {
+              resolve(response);
+            } else {
+              reject(new Error(response.error || 'Upload failed'));
+            }
+          } catch (e) {
+            reject(new Error('Invalid response'));
+          }
+        } else {
+          try {
+            const response = JSON.parse(xhr.responseText);
+            reject(new Error(response.error || `HTTP ${xhr.status}`));
+          } catch (e) {
+            reject(new Error(`HTTP ${xhr.status}`));
+          }
+        }
+      });
+
+      xhr.addEventListener('error', () => {
+        reject(new Error('Network error'));
+      });
+
+      xhr.addEventListener('abort', () => {
+        reject(new Error('Upload cancelled'));
+      });
+
+      xhr.open('POST', '/api/import/upload');
+      xhr.send(formData);
+    });
+  };
+
   if (scanLoading) {
     return <LoadingSpinner />;
   }
 
-  // State 1: No files in import folder
+  // State: Uploading files
+  if (isUploading) {
+    const completed = uploadFiles.filter(f => f.status === 'done').length;
+    const failed = uploadFiles.filter(f => f.status === 'error').length;
+    const total = uploadFiles.length;
+    const totalBytes = uploadFiles.reduce((sum, f) => sum + f.size, 0);
+    const completedBytes = uploadFiles.reduce((sum, f, idx) => {
+      if (f.status === 'done') return sum + f.size;
+      if (f.status === 'uploading') return sum + (f.size * currentUploadProgress / 100);
+      return sum;
+    }, 0);
+    const overallPercent = Math.round((completedBytes / totalBytes) * 100);
+
+    const currentFile = uploadFiles[currentUploadIndex];
+    const recentCompleted = uploadFiles.filter(f => f.status === 'done').slice(-4);
+    const remaining = total - completed - failed - 1;
+
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+        <div className="w-full max-w-md">
+          {/* Header - Overall Progress */}
+          <div className="text-center mb-6">
+            <div className="text-4xl font-mono font-bold text-text-primary mb-1">
+              {completed + failed}<span className="text-text-muted">/{total}</span>
+            </div>
+            <div className="text-sm text-text-secondary">
+              {formatBytes(completedBytes)} of {formatBytes(totalBytes)}
+            </div>
+          </div>
+
+          {/* Overall Progress Bar */}
+          <div className="h-1 bg-dark-tertiary rounded-full mb-8 overflow-hidden">
+            <div
+              className="h-full bg-accent transition-all duration-300 ease-out"
+              style={{ width: `${overallPercent}%` }}
+            />
+          </div>
+
+          {/* Current File - Prominent */}
+          {currentFile && currentFile.status === 'uploading' && (
+            <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 mb-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-mono text-accent-text uppercase tracking-wider">
+                  Uploading
+                </span>
+                <span className="text-xs font-mono text-text-muted">
+                  {currentUploadProgress}%
+                </span>
+              </div>
+              <div className="text-text-primary font-medium truncate mb-3">
+                {currentFile.name}
+              </div>
+              <div className="h-2 bg-dark-tertiary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-accent transition-all duration-150"
+                  style={{ width: `${currentUploadProgress}%` }}
+                />
+              </div>
+              <div className="text-xs text-text-muted mt-2 text-right">
+                {formatBytes(currentFile.size)}
+              </div>
+            </div>
+          )}
+
+          {/* Recent Completions - Compact Rolling List */}
+          {recentCompleted.length > 0 && (
+            <div className="space-y-1 mb-4">
+              {recentCompleted.map((file, idx) => (
+                <div
+                  key={file.name + idx}
+                  className="flex items-center gap-2 text-sm py-1 px-2 rounded bg-dark-tertiary/50"
+                >
+                  <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  <span className="text-text-secondary truncate flex-1">{file.name}</span>
+                  <span className="text-text-muted text-xs font-mono">{formatBytes(file.size)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Queue Status */}
+          {remaining > 0 && (
+            <div className="text-center text-sm text-text-muted">
+              {remaining} file{remaining !== 1 ? 's' : ''} in queue
+            </div>
+          )}
+
+          {/* Failed Files Warning */}
+          {failed > 0 && (
+            <div className="mt-4 text-center text-sm text-red-400">
+              {failed} file{failed !== 1 ? 's' : ''} failed
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // State 1: No files in import folder - Show drag and drop zone
   if (!scanData?.count || scanData.count === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`relative flex flex-col items-center justify-center min-h-[60vh] text-center px-4 mx-4 my-4 border-2 border-dashed rounded-xl transition-all duration-200 ${
+          isDragging
+            ? 'border-accent bg-accent/10 scale-[1.02]'
+            : 'border-dark-border hover:border-dark-border-light'
+        }`}
+      >
+        {/* Drag overlay */}
+        {isDragging && (
+          <div className="absolute inset-0 flex items-center justify-center bg-dark-primary/90 rounded-xl z-10">
+            <div className="text-center">
+              <svg className="w-16 h-16 text-accent mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              </svg>
+              <div className="text-xl font-semibold text-accent-text">Drop files to upload</div>
+              <div className="text-sm text-text-secondary mt-2">.mp4, .webm, .mkv, .avi, .mov, .m4v, .flv (max 50 GB)</div>
+            </div>
+          </div>
+        )}
+
+        {/* Default content */}
         <svg className="w-16 h-16 text-text-muted mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
           <path strokeLinecap="round" strokeLinejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
         </svg>
-        <h2 className="text-xl font-semibold text-text-primary mb-4">No files to import</h2>
-        <p className="text-text-secondary mb-2">
-          Copy <span className="text-text-primary font-mono">.mp4</span>, <span className="text-text-primary font-mono">.webm</span>, or <span className="text-text-primary font-mono">.mkv</span> files to:
+        <h2 className="text-xl font-semibold text-text-primary mb-2">Drag and drop video files</h2>
+        <p className="text-text-secondary mb-4">
+          or copy files to:
         </p>
         <code className="bg-dark-tertiary px-4 py-2 rounded-lg text-accent-text font-mono mb-6">
           {scanData?.import_path || 'downloads/imports/'}
         </code>
         <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 max-w-xl">
           <p className="text-text-secondary text-sm mb-3">
-            <strong>File naming requirements:</strong>
+            <strong>File naming tips:</strong>
           </p>
           <pre className="bg-dark-tertiary rounded p-3 text-left text-sm font-mono text-text-muted">
 {`dQw4w9WgXcQ.mp4      ← YouTube video ID (instant match)
 My Video Title.mp4   ← Exact video title (searches YouTube)`}
           </pre>
           <p className="text-text-secondary text-xs mt-3">
-            Files must be named as either the 11-character YouTube ID or the exact video title.
+            Files named with the 11-character YouTube ID match instantly. Other names are searched on YouTube.
+          </p>
+          <p className="text-text-muted text-xs mt-2">
+            Max file size: 50 GB
           </p>
         </div>
         <button
           onClick={() => refetchScan()}
-          className="mt-6 btn btn-primary"
+          className="mt-6 btn btn-secondary"
         >
           Refresh
         </button>

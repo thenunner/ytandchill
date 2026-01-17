@@ -63,6 +63,9 @@ def get_channels():
 def create_channel():
     data = request.json
 
+    if not data or 'url' not in data:
+        return jsonify({'error': 'URL is required'}), 400
+
     try:
         _set_operation('adding_channel', 'Fetching channel information...')
 

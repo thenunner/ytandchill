@@ -25,6 +25,8 @@ from flask import Blueprint, jsonify, request
 import requests
 import yt_dlp
 
+from werkzeug.utils import secure_filename
+
 from database import Video, Channel, get_session
 from utils import makedirs_777, ensure_channel_thumbnail
 
@@ -731,6 +733,61 @@ def scan_folder():
     }
 
     return jsonify(result)
+
+
+@import_bp.route('/api/import/upload', methods=['POST'])
+def upload_import_file():
+    """Upload a video file to the import folder.
+
+    Accepts multipart form data with a 'file' field.
+    Returns the saved filename and size.
+    """
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    # Check extension
+    ext = os.path.splitext(file.filename)[1].lower()
+    if ext not in VIDEO_EXTENSIONS:
+        return jsonify({
+            'error': f'Invalid file type: {ext}. Supported: {", ".join(sorted(VIDEO_EXTENSIONS))}'
+        }), 400
+
+    # Save to import folder
+    import_folder = get_import_folder()
+    safe_filename_str = secure_filename(file.filename)
+
+    # If secure_filename strips everything (e.g., non-ASCII), use a fallback
+    if not safe_filename_str:
+        safe_filename_str = f'upload_{datetime.now().strftime("%Y%m%d_%H%M%S")}{ext}'
+
+    filepath = os.path.join(import_folder, safe_filename_str)
+
+    # Handle duplicate filenames
+    base, file_ext = os.path.splitext(safe_filename_str)
+    counter = 1
+    while os.path.exists(filepath):
+        safe_filename_str = f"{base}_{counter}{file_ext}"
+        filepath = os.path.join(import_folder, safe_filename_str)
+        counter += 1
+
+    try:
+        file.save(filepath)
+        os.chmod(filepath, 0o777)  # Match existing permission pattern
+        file_size = os.path.getsize(filepath)
+        logger.info(f"Uploaded file to import folder: {safe_filename_str} ({file_size} bytes)")
+
+        return jsonify({
+            'success': True,
+            'filename': safe_filename_str,
+            'size': file_size
+        })
+    except Exception as e:
+        logger.error(f"Failed to save uploaded file: {e}")
+        return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
 
 
 @import_bp.route('/api/import/smart-identify', methods=['POST'])

@@ -94,6 +94,7 @@ export default function VideoCard({
       }
       if (videoPreviewRef.current) {
         videoPreviewRef.current.pause();
+        videoPreviewRef.current.oncanplay = null;
         videoPreviewRef.current.src = '';
       }
     };

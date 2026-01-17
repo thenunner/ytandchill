@@ -25,14 +25,23 @@ class AutoRefreshScheduler:
         """Get auto-refresh configuration from database settings, migrating legacy format if needed"""
         config_json = self.settings_manager.get('auto_refresh_config')
 
+        default_config = {
+            'mode': 'times',
+            'times': ['03:00']
+        }
+
         if not config_json:
             # Migrate from legacy auto_refresh_time setting
             legacy_time = self.settings_manager.get('auto_refresh_time', '3:0')
             # Ensure proper HH:MM format
-            parts = legacy_time.split(':')
-            hour = int(parts[0])
-            minute = int(parts[1]) if len(parts) > 1 else 0
-            formatted_time = f"{hour:02d}:{minute:02d}"
+            try:
+                parts = legacy_time.split(':')
+                hour = int(parts[0])
+                minute = int(parts[1]) if len(parts) > 1 else 0
+                formatted_time = f"{hour:02d}:{minute:02d}"
+            except (ValueError, IndexError):
+                logger.warning(f"Invalid legacy time format '{legacy_time}', using default")
+                formatted_time = '03:00'
 
             config = {
                 'mode': 'times',
@@ -42,7 +51,11 @@ class AutoRefreshScheduler:
             logger.info(f"Migrated legacy auto_refresh_time '{legacy_time}' to new config format")
             return config
 
-        return json.loads(config_json)
+        try:
+            return json.loads(config_json)
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse auto_refresh_config JSON: {e}, using default config")
+            return default_config
 
     def _remove_all_jobs(self):
         """Remove all auto-refresh jobs (both time-based and interval-based)"""
@@ -58,32 +71,46 @@ class AutoRefreshScheduler:
             self.scheduler.remove_job('auto_refresh_interval')
             logger.debug("Removed job: auto_refresh_interval")
 
+    def _parse_time(self, time_str, default_hour=3, default_minute=0):
+        """Parse a time string in HH:MM format, returning (hour, minute) tuple"""
+        try:
+            parts = time_str.split(':')
+            hour = int(parts[0])
+            minute = int(parts[1]) if len(parts) > 1 else 0
+            # Validate ranges
+            if not (0 <= hour <= 23 and 0 <= minute <= 59):
+                raise ValueError("Hour or minute out of range")
+            return hour, minute
+        except (ValueError, IndexError, AttributeError) as e:
+            logger.warning(f"Invalid time format '{time_str}': {e}, using default {default_hour:02d}:{default_minute:02d}")
+            return default_hour, default_minute
+
     def _schedule_jobs(self):
         """Schedule jobs based on current configuration (specific times or interval mode)"""
         config = self._get_refresh_config()
 
         if config['mode'] == 'times':
             # Schedule cron jobs for specific times
-            for idx, time_str in enumerate(config['times']):
-                hour, minute = time_str.split(':')
+            for idx, time_str in enumerate(config.get('times', ['03:00'])):
+                hour, minute = self._parse_time(time_str)
                 self.scheduler.add_job(
                     self.scan_all_channels,
                     'cron',
-                    hour=int(hour),
-                    minute=int(minute),
+                    hour=hour,
+                    minute=minute,
                     id=f'auto_refresh_{idx}'
                 )
-                logger.info(f"Auto-refresh scheduled at {hour}:{minute} (job: auto_refresh_{idx})")
+                logger.info(f"Auto-refresh scheduled at {hour:02d}:{minute:02d} (job: auto_refresh_{idx})")
 
         elif config['mode'] == 'interval':
             # Schedule interval job with custom start time
-            interval_hours = config['interval_hours']
+            interval_hours = config.get('interval_hours', 6)
             start_time = config.get('interval_start', '00:00')
-            hour, minute = start_time.split(':')
+            hour, minute = self._parse_time(start_time, default_hour=0, default_minute=0)
 
             # Calculate next run time based on start time
             now = datetime.now()
-            start_datetime = now.replace(hour=int(hour), minute=int(minute), second=0, microsecond=0)
+            start_datetime = now.replace(hour=hour, minute=minute, second=0, microsecond=0)
 
             # If start time already passed today, schedule for next occurrence based on interval
             if start_datetime <= now:
