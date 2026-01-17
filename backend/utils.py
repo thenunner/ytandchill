@@ -18,6 +18,19 @@ from werkzeug.security import check_password_hash, generate_password_hash
 # Helper Functions
 # =============================================================================
 
+def makedirs_777(path):
+    """Create directory with 777 permissions for remote access.
+
+    Args:
+        path: Directory path to create
+    """
+    os.makedirs(path, exist_ok=True)
+    try:
+        os.chmod(path, 0o777)
+    except OSError:
+        pass  # May fail on some systems, but folder is created
+
+
 def parse_iso8601_duration(duration):
     """
     Parse ISO 8601 duration string (e.g., PT1H2M10S) to total seconds.

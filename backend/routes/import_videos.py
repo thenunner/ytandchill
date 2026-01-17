@@ -26,6 +26,7 @@ import requests
 import yt_dlp
 
 from database import Video, Channel, get_session
+from utils import makedirs_777
 
 logger = logging.getLogger(__name__)
 
@@ -77,8 +78,8 @@ def get_import_folder():
     """
     import_folder = os.path.join(get_downloads_folder(), 'imports')
 
-    # Create if doesn't exist
-    os.makedirs(import_folder, exist_ok=True)
+    # Create if doesn't exist with proper permissions
+    makedirs_777(import_folder)
 
     return import_folder
 
@@ -587,6 +588,9 @@ def execute_import(file_path, video_info, channel_info, match_type):
     ext = os.path.splitext(filename)[1]
 
     with get_session(_session_factory) as session:
+        # Sanitize channel title for folder name
+        safe_title = re.sub(r'[<>:"/\\|?*]', '_', channel_info['channel_title'])
+
         # Get or create channel
         channel = session.query(Channel).filter(
             Channel.yt_id == channel_info['channel_id']
@@ -597,18 +601,16 @@ def execute_import(file_path, video_info, channel_info, match_type):
             channel = Channel(
                 yt_id=channel_info['channel_id'],
                 title=channel_info['channel_title'],
-                url=channel_info['channel_url'],
+                folder_name=safe_title,
             )
             session.add(channel)
             session.commit()
             logger.info(f"Created channel: {channel_info['channel_title']}")
 
-        # Create channel folder
+        # Create channel folder with proper permissions
         downloads_folder = get_downloads_folder()
-        # Sanitize channel title for folder name
-        safe_title = re.sub(r'[<>:"/\\|?*]', '_', channel_info['channel_title'])
-        channel_folder = os.path.join(downloads_folder, safe_title)
-        os.makedirs(channel_folder, exist_ok=True)
+        channel_folder = os.path.join(downloads_folder, channel.folder_name)
+        makedirs_777(channel_folder)
 
         # New file path
         new_filename = f"{video_id}{ext}"
