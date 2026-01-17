@@ -23,6 +23,7 @@ from datetime import datetime
 from pathlib import Path
 from flask import Blueprint, jsonify, request
 import requests
+import yt_dlp
 
 from database import Video, Channel, get_session
 
@@ -99,40 +100,26 @@ def resolve_channel_id(channel_url):
     if match:
         return match.group(1)
 
-    # Need to resolve via yt-dlp
+    # Need to resolve via yt-dlp library
     try:
-        cmd = [
-            'yt-dlp',
-            '--dump-json',
-            '--playlist-items', '0',  # Don't fetch videos, just channel info
-            '--no-warnings',
-            channel_url
-        ]
+        ydl_opts = {
+            'quiet': True,
+            'no_warnings': True,
+            'extract_flat': True,
+            'playlist_items': '1',  # Just get first video to extract channel
+        }
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-
-        if result.returncode == 0 and result.stdout.strip():
-            data = json.loads(result.stdout.strip())
-            return data.get('channel_id')
-
-        # Try alternate approach - get channel page
-        cmd = [
-            'yt-dlp',
-            '--dump-json',
-            '--flat-playlist',
-            '--playlist-items', '1',
-            '--no-warnings',
-            f'{channel_url}/videos'
-        ]
-
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-
-        if result.returncode == 0 and result.stdout.strip():
-            for line in result.stdout.strip().split('\n'):
-                if line:
-                    data = json.loads(line)
-                    if data.get('channel_id'):
-                        return data.get('channel_id')
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(f'{channel_url}/videos', download=False)
+            if info:
+                # Try to get channel_id from playlist info
+                if info.get('channel_id'):
+                    return info.get('channel_id')
+                # Or from first entry
+                if info.get('entries') and len(info['entries']) > 0:
+                    first_entry = info['entries'][0]
+                    if first_entry and first_entry.get('channel_id'):
+                        return first_entry.get('channel_id')
 
     except Exception as e:
         logger.warning(f"Failed to resolve channel ID for {channel_url}: {e}")
@@ -213,75 +200,62 @@ def get_video_duration(file_path):
 
 
 def fetch_channel_videos_ytdlp(channel_url):
-    """Fetch all video metadata from a channel using yt-dlp.
+    """Fetch all video metadata from a channel using yt-dlp library.
 
-    Uses --flat-playlist to get metadata without downloading.
+    Uses extract_flat to get metadata without downloading.
     No API quota limits!
     """
+    logger.info(f"Fetching channel metadata: {channel_url}")
+
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,
+        'ignoreerrors': True,
+    }
+
+    # Add cookies if configured
+    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+    if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
+        ydl_opts['cookiefile'] = cookies_path
+
     try:
-        # Build yt-dlp command
-        cmd = [
-            'yt-dlp',
-            '--flat-playlist',
-            '--dump-json',
-            '--no-warnings',
-            channel_url
-        ]
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(channel_url, download=False)
 
-        # Add cookies if configured
-        cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
-        if os.path.exists(cookies_path):
-            cmd.extend(['--cookies', cookies_path])
+            if not info:
+                return None, "Failed to fetch channel info"
 
-        logger.info(f"Fetching channel metadata: {channel_url}")
+            videos = []
+            channel_info = None
 
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=300  # 5 minute timeout for large channels
-        )
-
-        if result.returncode != 0:
-            logger.error(f"yt-dlp failed: {result.stderr}")
-            return None, result.stderr
-
-        videos = []
-        channel_info = None
-
-        for line in result.stdout.strip().split('\n'):
-            if not line:
-                continue
-            try:
-                data = json.loads(line)
+            entries = info.get('entries', [])
+            for entry in entries:
+                if not entry:
+                    continue
 
                 # Extract channel info from first video
-                if not channel_info and data.get('channel'):
+                if not channel_info and entry.get('channel'):
                     channel_info = {
-                        'channel_id': data.get('channel_id'),
-                        'channel_title': data.get('channel'),
+                        'channel_id': entry.get('channel_id'),
+                        'channel_title': entry.get('channel'),
                         'channel_url': channel_url,
                     }
 
                 videos.append({
-                    'id': data.get('id'),
-                    'title': data.get('title'),
-                    'duration': data.get('duration'),  # seconds
-                    'upload_date': data.get('upload_date'),  # YYYYMMDD
+                    'id': entry.get('id'),
+                    'title': entry.get('title'),
+                    'duration': entry.get('duration'),
+                    'upload_date': entry.get('upload_date'),
                 })
-            except json.JSONDecodeError:
-                continue
 
-        logger.info(f"Fetched {len(videos)} videos from channel")
+            logger.info(f"Fetched {len(videos)} videos from channel")
 
-        return {
-            'channel_info': channel_info,
-            'videos': videos,
-        }, None
+            return {
+                'channel_info': channel_info,
+                'videos': videos,
+            }, None
 
-    except subprocess.TimeoutExpired:
-        logger.error(f"yt-dlp timeout for {channel_url}")
-        return None, "Timeout fetching channel data"
     except Exception as e:
         logger.error(f"yt-dlp error: {e}")
         return None, str(e)
@@ -298,7 +272,7 @@ def normalize_title(title):
 
 
 def identify_video_by_id(video_id):
-    """Get video metadata directly using yt-dlp.
+    """Get video metadata directly using yt-dlp library.
 
     Args:
         video_id: YouTube video ID (11 characters)
@@ -306,78 +280,78 @@ def identify_video_by_id(video_id):
     Returns:
         dict with video info including channel, or None if not found
     """
+    logger.info(f"Looking up video by ID: {video_id}")
+
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'noplaylist': True,
+    }
+
+    # Add cookies if available
+    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+    if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
+        ydl_opts['cookiefile'] = cookies_path
+
     try:
-        cmd = [
-            'yt-dlp',
-            '--dump-json',
-            '--no-warnings',
-            '--no-playlist',
-            f'https://youtube.com/watch?v={video_id}'
-        ]
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            url = f'https://youtube.com/watch?v={video_id}'
+            data = ydl.extract_info(url, download=False)
 
-        cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
-        if os.path.exists(cookies_path):
-            cmd.extend(['--cookies', cookies_path])
+            if not data:
+                return None
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
-
-        if result.returncode != 0:
-            return None
-
-        data = json.loads(result.stdout.strip())
-
-        return {
-            'id': data.get('id'),
-            'title': data.get('title'),
-            'duration': data.get('duration'),
-            'channel_id': data.get('channel_id'),
-            'channel_title': data.get('channel') or data.get('uploader'),
-            'channel_url': f"https://youtube.com/channel/{data.get('channel_id')}",
-            'upload_date': data.get('upload_date'),
-        }
+            return {
+                'id': data.get('id'),
+                'title': data.get('title'),
+                'duration': data.get('duration'),
+                'channel_id': data.get('channel_id'),
+                'channel_title': data.get('channel') or data.get('uploader'),
+                'channel_url': f"https://youtube.com/channel/{data.get('channel_id')}",
+                'upload_date': data.get('upload_date'),
+            }
     except Exception as e:
         logger.error(f"Failed to identify video {video_id}: {e}")
         return None
 
 
 def _execute_youtube_search(search_query, num_results=20):
-    """Execute a YouTube search via yt-dlp."""
-    cmd = [
-        'yt-dlp',
-        '--flat-playlist',
-        '--dump-json',
-        '--no-warnings',
-        f'ytsearch{num_results}:{search_query}'
-    ]
-
-    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
-    if os.path.exists(cookies_path):
-        cmd.extend(['--cookies', cookies_path])
-
+    """Execute a YouTube search via yt-dlp library."""
     logger.info(f"Searching YouTube for: {search_query}")
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
 
-    if result.returncode != 0:
-        logger.error(f"YouTube search failed: {result.stderr}")
-        return []
+    ydl_opts = {
+        'quiet': True,
+        'no_warnings': True,
+        'extract_flat': True,  # Don't download, just get metadata
+        'ignoreerrors': True,
+    }
+
+    # Add cookies if available
+    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+    if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
+        ydl_opts['cookiefile'] = cookies_path
 
     results = []
-    for line in result.stdout.strip().split('\n'):
-        if not line:
-            continue
-        try:
-            data = json.loads(line)
-            results.append({
-                'id': data.get('id'),
-                'title': data.get('title'),
-                'duration': data.get('duration'),
-                'channel_id': data.get('channel_id'),
-                'channel_title': data.get('channel') or data.get('uploader'),
-                'uploader_id': data.get('uploader_id'),  # @handle
-                'upload_date': data.get('upload_date'),
-            })
-        except json.JSONDecodeError:
-            continue
+    try:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            search_url = f'ytsearch{num_results}:{search_query}'
+            info = ydl.extract_info(search_url, download=False)
+
+            if info and 'entries' in info:
+                for entry in info['entries']:
+                    if entry:  # Some entries might be None
+                        results.append({
+                            'id': entry.get('id'),
+                            'title': entry.get('title'),
+                            'duration': entry.get('duration'),
+                            'channel_id': entry.get('channel_id'),
+                            'channel_title': entry.get('channel') or entry.get('uploader'),
+                            'uploader_id': entry.get('uploader_id'),  # @handle
+                            'upload_date': entry.get('upload_date'),
+                        })
+    except Exception as e:
+        logger.error(f"YouTube search error: {e}")
+        return []
 
     return results
 
