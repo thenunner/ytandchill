@@ -45,6 +45,7 @@ _import_state = {
     'pending': [],  # Files needing user selection (multiple matches)
     'imported': [],  # Successfully imported files
     'skipped': [],  # Skipped files with reasons
+    'known_channel_ids': set(),  # Channel IDs from channels.txt for prioritization
     'current_channel_idx': 0,
     'status': 'idle',  # idle, fetching, matching, importing, complete
     'progress': 0,
@@ -79,6 +80,64 @@ def get_import_folder():
     os.makedirs(import_folder, exist_ok=True)
 
     return import_folder
+
+
+def resolve_channel_id(channel_url):
+    """Resolve a channel URL to its channel ID.
+
+    Handles various URL formats:
+    - /channel/UCxxxxx - extract directly
+    - /@handle or /c/name - use yt-dlp to resolve
+
+    Returns channel_id or None if unable to resolve.
+    """
+    if not channel_url:
+        return None
+
+    # Direct channel ID URL
+    match = re.search(r'/channel/(UC[a-zA-Z0-9_-]{22})', channel_url)
+    if match:
+        return match.group(1)
+
+    # Need to resolve via yt-dlp
+    try:
+        cmd = [
+            'yt-dlp',
+            '--dump-json',
+            '--playlist-items', '0',  # Don't fetch videos, just channel info
+            '--no-warnings',
+            channel_url
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+
+        if result.returncode == 0 and result.stdout.strip():
+            data = json.loads(result.stdout.strip())
+            return data.get('channel_id')
+
+        # Try alternate approach - get channel page
+        cmd = [
+            'yt-dlp',
+            '--dump-json',
+            '--flat-playlist',
+            '--playlist-items', '1',
+            '--no-warnings',
+            f'{channel_url}/videos'
+        ]
+
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+
+        if result.returncode == 0 and result.stdout.strip():
+            for line in result.stdout.strip().split('\n'):
+                if line:
+                    data = json.loads(line)
+                    if data.get('channel_id'):
+                        return data.get('channel_id')
+
+    except Exception as e:
+        logger.warning(f"Failed to resolve channel ID for {channel_url}: {e}")
+
+    return None
 
 
 def scan_import_folder():
@@ -322,17 +381,20 @@ def _execute_youtube_search(search_query, num_results=20):
     return results
 
 
-def search_video_by_title(title, expected_duration=None, num_results=20):
+def search_video_by_title(title, expected_duration=None, known_channel_ids=None, num_results=20):
     """Search YouTube for a video by title using yt-dlp.
 
     Args:
         title: Video title to search for
         expected_duration: Expected duration in seconds (for matching)
+        known_channel_ids: Set of channel IDs to prioritize (from channels.txt)
         num_results: Number of search results to fetch
 
     Returns:
         list of matching videos, best matches first
     """
+    if known_channel_ids is None:
+        known_channel_ids = set()
     try:
         # Clean up title for search - keep most chars, just normalize separators
         # YouTube handles special chars fine, only remove things that break shell/URLs
@@ -379,6 +441,7 @@ def search_video_by_title(title, expected_duration=None, num_results=20):
                 'match_type': 'search',
                 'duration_match': False,
                 'title_match': False,
+                'channel_match': data['channel_id'] in known_channel_ids if data.get('channel_id') else False,
             }
 
             # Check title match (normalized comparison)
@@ -406,22 +469,36 @@ def search_video_by_title(title, expected_duration=None, num_results=20):
                 logger.info(f"Expected - File title: '{title}', normalized: '{normalized_filename}'")
                 logger.info(f"Duration - YT: {video_duration}, Local: {expected_duration}")
 
-        # Sort: title+duration first, then title only, then duration only, then others
+        # Sort priority: channel+title+duration > channel+title > channel+duration > title+duration > title > duration > other
+        # Channel match is a strong signal when combined with title or duration
         def sort_key(x):
-            if x['title_match'] and x['duration_match']:
-                return (0,)
-            elif x['title_match']:
-                return (1,)
-            elif x['duration_match']:
-                return (2,)
+            channel = x.get('channel_match', False)
+            title = x.get('title_match', False)
+            duration = x.get('duration_match', False)
+
+            if channel and title and duration:
+                return (0,)  # Best: all three match
+            elif channel and title:
+                return (1,)  # Channel + title
+            elif channel and duration:
+                return (2,)  # Channel + duration
+            elif title and duration:
+                return (3,)  # Title + duration (no channel)
+            elif channel:
+                return (4,)  # Channel only
+            elif title:
+                return (5,)  # Title only
+            elif duration:
+                return (6,)  # Duration only
             else:
-                return (3,)
+                return (7,)  # No matches
 
         matches.sort(key=sort_key)
 
+        channel_matches = sum(1 for m in matches if m.get('channel_match'))
         title_matches = sum(1 for m in matches if m['title_match'])
         duration_matches = sum(1 for m in matches if m['duration_match'])
-        logger.info(f"Found {len(matches)} results: {title_matches} title matches, {duration_matches} duration matches")
+        logger.info(f"Found {len(matches)} results: {channel_matches} channel, {title_matches} title, {duration_matches} duration matches")
         return matches
 
     except subprocess.TimeoutExpired:
@@ -615,6 +692,16 @@ def scan_folder():
 
     result = scan_import_folder()
 
+    # Extract channel IDs from URLs where possible (fast, no network calls)
+    known_channel_ids = set()
+    for url in result.get('csv_channels', []):
+        # Try to extract channel ID from URL directly
+        match = re.search(r'/channel/(UC[a-zA-Z0-9_-]{22})', url)
+        if match:
+            known_channel_ids.add(match.group(1))
+
+    logger.info(f"Found {len(known_channel_ids)} channel IDs from {len(result.get('csv_channels', []))} URLs")
+
     # Reset import state
     _import_state = {
         'channels': [],
@@ -622,6 +709,8 @@ def scan_folder():
         'pending': [],
         'imported': [],
         'skipped': [],
+        'known_channel_ids': known_channel_ids,
+        'known_channel_urls': set(result.get('csv_channels', [])),  # Keep raw URLs too
         'current_channel_idx': 0,
         'status': 'idle',
         'progress': 0,
@@ -686,11 +775,21 @@ def smart_identify():
                 })
                 continue
 
-        # Method 2: Search by title
-        logger.info(f"Searching by title: {name_without_ext}")
-        search_results = search_video_by_title(name_without_ext, expected_duration=local_duration)
+        # Method 2: Search by title (pass known channels for prioritization)
+        logger.info(f"=== Processing file: {filename} ===")
+        logger.info(f"Title to search: '{name_without_ext}'")
+        logger.info(f"Local duration: {local_duration} seconds")
+        known_channel_ids = _import_state.get('known_channel_ids', set())
+        logger.info(f"Known channel IDs from channels.txt: {len(known_channel_ids)}")
+
+        search_results = search_video_by_title(
+            name_without_ext,
+            expected_duration=local_duration,
+            known_channel_ids=known_channel_ids
+        )
 
         if not search_results:
+            logger.warning(f"No search results found for: {name_without_ext}")
             failed.append({
                 'file': file_path,
                 'filename': filename,
@@ -698,78 +797,77 @@ def smart_identify():
             })
             continue
 
-        # Check for matches - prioritize title+duration, then title, then duration
-        perfect_matches = [r for r in search_results if r.get('title_match') and r.get('duration_match')]
+        logger.info(f"Got {len(search_results)} search results")
+
+        # Log first few results for debugging
+        for i, r in enumerate(search_results[:3]):
+            logger.info(f"  Result {i+1}: '{r.get('title')}' by {r.get('channel_title')}")
+            logger.info(f"    - channel_match={r.get('channel_match')}, title_match={r.get('title_match')}, duration_match={r.get('duration_match')}")
+            logger.info(f"    - duration: {r.get('duration')}s (expected: {local_duration}s)")
+
+        # Check for matches - prioritize channel+title+duration, then combinations
+        # Channel match from channels.txt is a strong signal
+        channel_title_duration = [r for r in search_results if r.get('channel_match') and r.get('title_match') and r.get('duration_match')]
+        channel_title = [r for r in search_results if r.get('channel_match') and r.get('title_match')]
+        channel_duration = [r for r in search_results if r.get('channel_match') and r.get('duration_match')]
+        title_duration = [r for r in search_results if r.get('title_match') and r.get('duration_match')]
         title_matches = [r for r in search_results if r.get('title_match')]
         duration_matches = [r for r in search_results if r.get('duration_match')]
 
-        if len(perfect_matches) == 1:
-            # Perfect match - title AND duration
-            match = perfect_matches[0]
-            identified.append({
-                'file': file_path,
-                'filename': filename,
-                'video': match,
-                'match_type': 'title+duration',
-                'channel_info': {
-                    'channel_id': match['channel_id'],
-                    'channel_title': match['channel_title'],
-                    'channel_url': f"https://youtube.com/channel/{match['channel_id']}",
-                },
-            })
+        logger.info(f"Match counts: channel+title+dur={len(channel_title_duration)}, channel+title={len(channel_title)}, "
+                    f"channel+dur={len(channel_duration)}, title+dur={len(title_duration)}, "
+                    f"title={len(title_matches)}, dur={len(duration_matches)}")
+
+        # Auto-identify with best match
+        best_match = None
+        match_type = None
+
+        if len(channel_title_duration) == 1:
+            best_match = channel_title_duration[0]
+            match_type = 'channel+title+duration'
+        elif len(channel_title) == 1:
+            best_match = channel_title[0]
+            match_type = 'channel+title'
+        elif len(channel_duration) == 1:
+            best_match = channel_duration[0]
+            match_type = 'channel+duration'
+        elif len(title_duration) == 1:
+            best_match = title_duration[0]
+            match_type = 'title+duration'
         elif len(title_matches) == 1:
-            # Single title match - confident even without duration
-            match = title_matches[0]
-            identified.append({
-                'file': file_path,
-                'filename': filename,
-                'video': match,
-                'match_type': 'title',
-                'channel_info': {
-                    'channel_id': match['channel_id'],
-                    'channel_title': match['channel_title'],
-                    'channel_url': f"https://youtube.com/channel/{match['channel_id']}",
-                },
-            })
+            best_match = title_matches[0]
+            match_type = 'title'
         elif len(duration_matches) == 1:
-            # Single duration match - confident match
-            match = duration_matches[0]
+            best_match = duration_matches[0]
+            match_type = 'duration'
+
+        if best_match:
+            logger.info(f"AUTO-IDENTIFIED: '{filename}' -> '{best_match.get('title')}' (match_type={match_type})")
             identified.append({
                 'file': file_path,
                 'filename': filename,
-                'video': match,
-                'match_type': 'duration',
+                'video': best_match,
+                'match_type': match_type,
                 'channel_info': {
-                    'channel_id': match['channel_id'],
-                    'channel_title': match['channel_title'],
-                    'channel_url': f"https://youtube.com/channel/{match['channel_id']}",
+                    'channel_id': best_match['channel_id'],
+                    'channel_title': best_match['channel_title'],
+                    'channel_url': f"https://youtube.com/channel/{best_match['channel_id']}",
                 },
             })
-        elif len(perfect_matches) > 1 or len(title_matches) > 1:
-            # Multiple title matches - user needs to choose
+        else:
+            # Multiple matches or no confident single match - user needs to choose
+            # Prioritize showing channel matches, then title, then duration matches
+            logger.info(f"PENDING: '{filename}' - multiple matches or no confident match, needs user selection")
+            matches_to_show = (
+                channel_title_duration or channel_title or channel_duration or
+                title_duration or title_matches or duration_matches or
+                search_results[:5]
+            )
             pending.append({
                 'file': file_path,
                 'filename': filename,
-                'matches': title_matches if title_matches else perfect_matches,
-                'match_type': 'multiple_title',
-                'local_duration': local_duration,
-            })
-        elif len(duration_matches) > 1:
-            # Multiple duration matches - user needs to choose
-            pending.append({
-                'file': file_path,
-                'filename': filename,
-                'matches': duration_matches,
-                'match_type': 'multiple_duration',
-                'local_duration': local_duration,
-            })
-        elif search_results:
-            # No confident match, but have search results - user can choose
-            pending.append({
-                'file': file_path,
-                'filename': filename,
-                'matches': search_results[:5],  # Top 5 results
-                'match_type': 'search_only',
+                'matches': matches_to_show[:5],  # Top 5
+                'match_type': 'multiple',
                 'local_duration': local_duration,
             })
 
