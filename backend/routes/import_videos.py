@@ -760,9 +760,18 @@ def smart_identify():
     1. Get video info directly (if filename is video ID)
     2. Search YouTube by title and match by duration
 
+    Modes:
+    - 'auto': Auto-import confident matches (video_id, or title+duration)
+    - 'manual': User reviews all matches (except video_id which is 100%)
+
     Returns ready-to-import matches.
     """
     global _import_state
+
+    # Get mode from request
+    data = request.get_json() or {}
+    mode = data.get('mode', 'auto')  # 'auto' or 'manual'
+    logger.info(f"Smart identify starting in {mode.upper()} mode")
 
     if not _import_state['files']:
         return jsonify({'error': 'No files to identify. Run scan first.'}), 400
@@ -851,30 +860,27 @@ def smart_identify():
                     f"channel+dur={len(channel_duration)}, title+dur={len(title_duration)}, "
                     f"title={len(title_matches)}, dur={len(duration_matches)}")
 
-        # Auto-identify with best match
+        # Determine if we should auto-import based on mode
+        # Auto mode: only channel+title+duration or title+duration
+        # Manual mode: everything goes to pending
         best_match = None
         match_type = None
+        should_auto_import = False
 
-        if len(channel_title_duration) == 1:
-            best_match = channel_title_duration[0]
-            match_type = 'channel+title+duration'
-        elif len(channel_title) == 1:
-            best_match = channel_title[0]
-            match_type = 'channel+title'
-        elif len(channel_duration) == 1:
-            best_match = channel_duration[0]
-            match_type = 'channel+duration'
-        elif len(title_duration) == 1:
-            best_match = title_duration[0]
-            match_type = 'title+duration'
-        elif len(title_matches) == 1:
-            best_match = title_matches[0]
-            match_type = 'title'
-        elif len(duration_matches) == 1:
-            best_match = duration_matches[0]
-            match_type = 'duration'
+        if mode == 'auto':
+            # Only auto-import with high confidence (must have duration match)
+            if len(channel_title_duration) == 1:
+                best_match = channel_title_duration[0]
+                match_type = 'channel+title+duration'
+                should_auto_import = True
+            elif len(title_duration) == 1:
+                best_match = title_duration[0]
+                match_type = 'title+duration'
+                should_auto_import = True
+            # Note: channel+title without duration, or duration-only matches go to pending
+        # Manual mode: everything goes to pending (no auto-import)
 
-        if best_match:
+        if should_auto_import and best_match:
             logger.info(f"AUTO-IDENTIFIED: '{filename}' -> '{best_match.get('title')}' (match_type={match_type})")
             identified.append({
                 'file': file_path,
@@ -888,9 +894,9 @@ def smart_identify():
                 },
             })
         else:
-            # Multiple matches or no confident single match - user needs to choose
-            # Prioritize showing channel matches, then title, then duration matches
-            logger.info(f"PENDING: '{filename}' - multiple matches or no confident match, needs user selection")
+            # Manual mode, or no confident match - user needs to choose
+            # Prioritize showing best matches first
+            logger.info(f"PENDING: '{filename}' - {mode} mode, needs user selection")
             matches_to_show = (
                 channel_title_duration or channel_title or channel_duration or
                 title_duration or title_matches or duration_matches or

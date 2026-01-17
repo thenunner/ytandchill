@@ -581,7 +581,7 @@ export function useResetImport() {
 export function useSmartIdentify() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api.smartIdentify(),
+    mutationFn: ({ mode }) => api.smartIdentify(mode),
     onSuccess: () => {
       queryClient.invalidateQueries(['import', 'state']);
     },
