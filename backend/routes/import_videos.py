@@ -59,19 +59,26 @@ def init_import_routes(session_factory, settings_manager):
     _settings_manager = settings_manager
 
 
+def get_downloads_folder():
+    """Get the downloads folder path.
+
+    Uses DOWNLOADS_DIR env var if set, otherwise defaults to 'downloads'.
+    In Docker/Unraid, this is typically /app/downloads (mounted volume).
+    """
+    return os.environ.get('DOWNLOADS_DIR', 'downloads')
+
+
 def get_import_folder():
-    """Get the import folder path (downloads/imports/)."""
-    import_folder = os.path.join('downloads', 'imports')
+    """Get the import folder path (downloads/imports/).
+
+    Uses the downloads folder path with /imports appended.
+    """
+    import_folder = os.path.join(get_downloads_folder(), 'imports')
 
     # Create if doesn't exist
     os.makedirs(import_folder, exist_ok=True)
 
     return import_folder
-
-
-def get_downloads_folder():
-    """Get the downloads folder path."""
-    return 'downloads'
 
 
 def scan_import_folder():
@@ -109,6 +116,7 @@ def scan_import_folder():
         'count': len(files),
         'csv_found': csv_found,
         'csv_channels': csv_channels,
+        'import_path': import_folder,
     }
 
 

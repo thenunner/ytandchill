@@ -46,13 +46,20 @@ export default function Import() {
   const [allMatches, setAllMatches] = useState([]); // All single matches across channels
   const [manualFileIdx, setManualFileIdx] = useState(0);
   const [manualMatches, setManualMatches] = useState([]); // Matches for current file in manual mode
+  const [csvInitialized, setCsvInitialized] = useState(false); // Prevent infinite loop
 
-  // Initialize with CSV channels if available
+  // Initialize with CSV channels if available (only once)
   useEffect(() => {
-    if (scanData?.csv_found && scanData?.csv_channels?.length > 0 && stateData?.channels?.length === 0) {
+    if (
+      !csvInitialized &&
+      scanData?.csv_found &&
+      scanData?.csv_channels?.length > 0 &&
+      stateData?.channels?.length === 0
+    ) {
+      setCsvInitialized(true);
       setChannels.mutate(scanData.csv_channels);
     }
-  }, [scanData?.csv_found, scanData?.csv_channels, stateData?.channels?.length]);
+  }, [csvInitialized, scanData?.csv_found, scanData?.csv_channels?.length, stateData?.channels?.length]);
 
   // Handle adding a channel
   const handleAddChannel = async () => {
@@ -309,6 +316,7 @@ export default function Import() {
     setImportMode(null);
     setAllMatches([]);
     setPendingMatches([]);
+    setCsvInitialized(false); // Allow CSV re-initialization
   };
 
   // View channels (navigate to channels tab)
@@ -332,7 +340,7 @@ export default function Import() {
           Copy <span className="text-text-primary font-mono">.mp4</span>, <span className="text-text-primary font-mono">.webm</span>, or <span className="text-text-primary font-mono">.mkv</span> files to:
         </p>
         <code className="bg-dark-tertiary px-4 py-2 rounded-lg text-accent-text font-mono mb-6">
-          data/import/
+          {scanData?.import_path || 'downloads/imports/'}
         </code>
         <div className="bg-dark-secondary border border-dark-border rounded-lg p-4 max-w-md">
           <p className="text-text-secondary text-sm mb-2">For multiple channels, include a <span className="text-text-primary font-mono">channels.csv</span>:</p>
@@ -611,7 +619,9 @@ https://youtube.com/@channel3`}
       {stateData?.channels?.length > 0 && (
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-text-primary">Channels</h3>
+            <h3 className="font-semibold text-text-primary">
+              Channels ({stateData.channels.length})
+            </h3>
             {!scanData.csv_found && (
               <div className="flex gap-2">
                 <input
@@ -643,7 +653,7 @@ https://youtube.com/@channel3`}
                 </tr>
               </thead>
               <tbody className="divide-y divide-dark-border">
-                {stateData.channels.map((channel, idx) => (
+                {stateData.channels.slice(0, 10).map((channel, idx) => (
                   <tr key={idx}>
                     <td className="px-4 py-3 text-text-primary text-sm truncate max-w-xs">
                       {channel.url}
@@ -666,6 +676,11 @@ https://youtube.com/@channel3`}
                 ))}
               </tbody>
             </table>
+            {stateData.channels.length > 10 && (
+              <div className="px-4 py-3 text-center text-text-muted text-sm border-t border-dark-border">
+                ...and {stateData.channels.length - 10} more channels
+              </div>
+            )}
           </div>
         </div>
       )}
