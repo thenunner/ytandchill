@@ -607,7 +607,7 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     channel_url = f'https://youtube.com/channel/{channel.yt_id}'
     channel_info, videos = scan_channel_videos(channel_url, max_results=max_results)
 
-    if channel_info is None:
+    if channel_info is None and len(videos) == 0:
         logger.error(f"Failed to scan channel: {channel.title}")
         clear_operation()
         raise ValueError(f"Failed to scan channel: {channel.title}")
