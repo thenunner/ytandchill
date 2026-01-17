@@ -60,10 +60,8 @@ def init_import_routes(session_factory, settings_manager):
 
 
 def get_import_folder():
-    """Get the import folder path (data/import/)."""
-    # Get data directory from settings or use default
-    data_dir = os.environ.get('DATA_DIR', '/appdata/data')
-    import_folder = os.path.join(data_dir, 'import')
+    """Get the import folder path (downloads/imports/)."""
+    import_folder = os.path.join('downloads', 'imports')
 
     # Create if doesn't exist
     os.makedirs(import_folder, exist_ok=True)
@@ -73,8 +71,7 @@ def get_import_folder():
 
 def get_downloads_folder():
     """Get the downloads folder path."""
-    data_dir = os.environ.get('DATA_DIR', '/appdata/data')
-    return os.path.join(data_dir, 'downloads')
+    return 'downloads'
 
 
 def scan_import_folder():

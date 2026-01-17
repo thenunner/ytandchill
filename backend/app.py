@@ -954,6 +954,10 @@ if __name__ == '__main__':
     # Benefits: Better concurrency, proper thread pooling, handles byte-range requests well
     port = int(os.environ.get('PORT', 4099))
 
+    # Ensure required directories exist
+    os.makedirs('downloads/imports', exist_ok=True)
+    os.makedirs('downloads/thumbnails', exist_ok=True)
+
     logger.info(f"Starting Waitress server on 0.0.0.0:{port}")
     print(f"\n🚀 Server started! Open in your browser:")
     print(f"   Local:   http://localhost:{port}")

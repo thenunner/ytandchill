@@ -280,6 +280,7 @@ def scan_playlist_videos(playlist_url, max_results=500):
             'duration_sec': duration,
             'upload_date': data.get('upload_date'),
             'thumbnail': f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg',
+            'channel_id': data.get('channel_id'),
             'channel_title': data.get('channel') or data.get('uploader') or 'Unknown',
         })
 
@@ -348,6 +349,7 @@ def get_video_info(video_id):
             'duration_sec': duration,
             'upload_date': data.get('upload_date'),
             'thumbnail': f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg',
+            'channel_id': data.get('channel_id'),
             'channel_title': data.get('channel') or data.get('uploader') or 'Unknown',
         }
     except json.JSONDecodeError as e:

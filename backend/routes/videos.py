@@ -10,10 +10,12 @@ Handles the "Videos" tab functionality:
 from flask import Blueprint, jsonify, request
 from sqlalchemy import func
 import re
+import os
 import logging
 
 from database import Video, Channel, QueueItem, get_session
 from scanner import extract_playlist_id, scan_playlist_videos, get_video_info
+from utils import download_thumbnail
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ def _get_or_create_singles_channel(session):
     Get or create the special "Singles" pseudo-channel for imported videos.
 
     This channel is used to hold videos imported via YouTube URLs that don't
-    belong to a specific tracked channel.
+    belong to a specific tracked channel (fallback when channel_id is unknown).
 
     Args:
         session: Database session to use
@@ -70,6 +72,60 @@ def _get_or_create_singles_channel(session):
         session.flush()
         logger.info(f"Created Singles pseudo-channel with ID: {singles_channel.id}")
     return singles_channel
+
+
+def _get_or_create_channel(session, yt_channel_id, channel_title):
+    """
+    Get or create a channel by its YouTube channel ID.
+
+    If the channel exists (including soft-deleted), return it.
+    If not, create a new channel with the given info.
+
+    Args:
+        session: Database session to use
+        yt_channel_id: YouTube channel ID (e.g., 'UC...')
+        channel_title: Channel title for display
+
+    Returns:
+        Channel: The channel object
+    """
+    if not yt_channel_id:
+        # Fall back to Singles if no channel ID
+        return _get_or_create_singles_channel(session)
+
+    # Check if channel already exists
+    channel = session.query(Channel).filter(Channel.yt_id == yt_channel_id).first()
+
+    if channel:
+        # If soft-deleted, restore it
+        if channel.deleted_at is not None:
+            channel.deleted_at = None
+            logger.info(f"Restored soft-deleted channel: {channel.title}")
+        return channel
+
+    # Create new channel
+    folder_name = channel_title.replace(' ', '_').replace('/', '_')[:50] if channel_title else yt_channel_id[:50]
+
+    # Download channel thumbnail (use a video thumbnail as proxy)
+    thumbnail_path = None
+    thumbnail_url = f'https://yt3.googleusercontent.com/ytc/{yt_channel_id}'  # Try channel avatar
+    thumbnail_filename = f"{yt_channel_id}.jpg"
+    local_file_path = os.path.join('downloads', 'thumbnails', thumbnail_filename)
+    if download_thumbnail(thumbnail_url, local_file_path):
+        thumbnail_path = os.path.join('thumbnails', thumbnail_filename)
+
+    channel = Channel(
+        yt_id=yt_channel_id,
+        title=channel_title or 'Unknown Channel',
+        folder_name=folder_name,
+        thumbnail=thumbnail_path,
+        auto_download=False  # Don't auto-download by default for imported channels
+    )
+    session.add(channel)
+    session.flush()
+    logger.info(f"Created channel from import: {channel.title} (ID: {channel.id})")
+
+    return channel
 
 
 # =============================================================================
@@ -197,14 +253,15 @@ def queue_youtube_playlist_videos():
     if not videos_data:
         return jsonify({'error': 'No videos provided'}), 400
 
-    logger.info(f"Queueing {len(videos_data)} videos to Singles folder")
+    logger.info(f"Queueing {len(videos_data)} videos for download")
 
     with get_session(_session_factory) as session:
         added = 0
         skipped = 0
+        channels_created = 0
 
-        # Get or create a special "Singles" channel to hold imported videos
-        singles_channel = _get_or_create_singles_channel(session)
+        # Cache for channels we've already looked up/created in this batch
+        channel_cache = {}
 
         # Get max queue position once
         max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
@@ -231,6 +288,21 @@ def queue_youtube_playlist_videos():
                     skipped += 1
                 continue
 
+            # Get or create the channel for this video
+            yt_channel_id = v.get('channel_id')
+            channel_title = v.get('channel_title', 'Unknown')
+
+            # Use cache to avoid repeated lookups
+            cache_key = yt_channel_id or '__singles__'
+            if cache_key not in channel_cache:
+                channel = _get_or_create_channel(session, yt_channel_id, channel_title)
+                channel_cache[cache_key] = channel
+                if channel.yt_id != '__singles__' and channel.id:
+                    # Check if this is a newly created channel (not in DB before this batch)
+                    channels_created += 1
+            else:
+                channel = channel_cache[cache_key]
+
             # Create video record (new videos have NULL prior_status)
             video = Video(
                 yt_id=v['yt_id'],
@@ -238,8 +310,8 @@ def queue_youtube_playlist_videos():
                 duration_sec=v.get('duration_sec', 0),
                 upload_date=v.get('upload_date'),
                 thumb_url=v.get('thumbnail'),
-                channel_id=singles_channel.id,  # Use the Singles pseudo-channel
-                folder_name='Singles',
+                channel_id=channel.id,
+                folder_name=channel.folder_name,
                 status='queued'
             )
             session.add(video)
@@ -250,7 +322,7 @@ def queue_youtube_playlist_videos():
             queue_item = QueueItem(video_id=video.id, queue_position=max_pos, prior_status=None)
             session.add(queue_item)
             added += 1
-            logger.debug(f"Queued video: {v['title']} (ID: {video.id})")
+            logger.debug(f"Queued video: {v['title']} to channel: {channel.title}")
 
         session.commit()
 
@@ -281,8 +353,8 @@ def remove_youtube_playlist_videos():
     with get_session(_session_factory) as session:
         removed = 0
 
-        # Get or create Singles channel (needed for channel_id)
-        singles_channel = _get_or_create_singles_channel(session)
+        # Cache for channels we've already looked up/created in this batch
+        channel_cache = {}
 
         for v in videos_data:
             yt_id = v.get('yt_id') if isinstance(v, dict) else v
@@ -294,6 +366,18 @@ def remove_youtube_playlist_videos():
                 existing.status = 'ignored'
                 removed += 1
             else:
+                # Get or create the channel for this video
+                yt_channel_id = v.get('channel_id') if isinstance(v, dict) else None
+                channel_title = v.get('channel_title', 'Unknown') if isinstance(v, dict) else 'Unknown'
+
+                # Use cache to avoid repeated lookups
+                cache_key = yt_channel_id or '__singles__'
+                if cache_key not in channel_cache:
+                    channel = _get_or_create_channel(session, yt_channel_id, channel_title)
+                    channel_cache[cache_key] = channel
+                else:
+                    channel = channel_cache[cache_key]
+
                 # Create new record with ignored status
                 video = Video(
                     yt_id=yt_id,
@@ -301,8 +385,8 @@ def remove_youtube_playlist_videos():
                     duration_sec=v.get('duration_sec', 0) if isinstance(v, dict) else 0,
                     upload_date=v.get('upload_date') if isinstance(v, dict) else None,
                     thumb_url=v.get('thumbnail') if isinstance(v, dict) else None,
-                    channel_id=singles_channel.id,
-                    folder_name='Singles',
+                    channel_id=channel.id,
+                    folder_name=channel.folder_name,
                     status='ignored'
                 )
                 session.add(video)
