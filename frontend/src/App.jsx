@@ -124,8 +124,8 @@ function App() {
   useEffect(() => {
     if (currentOperation?.type === 'scanning' && currentOperation?.message) {
       showNotification(currentOperation.message, 'scanning', { id: 'scanning', persistent: true });
-    } else if (prevOperationRef.current?.type === 'scanning') {
-      // Remove scanning toast when done
+    } else {
+      // Always remove scanning toast when not actively scanning
       removeToast('scanning');
     }
   }, [currentOperation, showNotification, removeToast]);
