@@ -600,3 +600,13 @@ export function useExecuteSmartImport() {
   });
 }
 
+export function useEncodeStatus(enabled = true) {
+  return useQuery({
+    queryKey: ['import', 'encode-status'],
+    queryFn: () => api.getEncodeStatus(),
+    refetchInterval: enabled ? 500 : false, // Poll every 500ms when enabled
+    staleTime: 0,
+    enabled,
+  });
+}
+
