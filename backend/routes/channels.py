@@ -137,7 +137,7 @@ def create_channel():
                 if download_thumbnail(channel_info['thumbnail'], local_file_path):
                     # Store relative path (without 'downloads/' prefix) since media endpoint serves from downloads/
                     thumbnail_path = os.path.join('thumbnails', thumbnail_filename)
-                    print(f'Downloaded channel thumbnail for {channel_id}')
+                    logger.debug(f'Downloaded channel thumbnail for {channel_id}')
 
             channel = Channel(
                 yt_id=channel_id,

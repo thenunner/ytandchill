@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels, useVideos } from '../api/queries';
+import { useState, useEffect } from 'react';
+import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -70,9 +70,6 @@ export default function Settings() {
   const { data: health } = useHealth();
   const { data: logsData } = useLogs(500);
   const { data: channels } = useChannels();
-  const { data: discoveredVideos, refetch: refetchDiscovered } = useVideos({ status: 'discovered' });
-  const { data: ignoredVideos, refetch: refetchIgnored } = useVideos({ status: 'ignored' });
-  const { data: libraryVideos, refetch: refetchLibrary } = useVideos({ status: 'library' });
   const updateSettings = useUpdateSettings();
   const { showNotification } = useNotification();
   const { theme, setTheme } = useTheme();
@@ -88,8 +85,7 @@ export default function Settings() {
   }, []);
 
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const [refreshHour, setRefreshHour] = useState(3);
-  const [refreshMinute, setRefreshMinute] = useState(0);
+  const [serverAutoRefresh, setServerAutoRefresh] = useState(false); // Track server's saved state
   // Auto-scan state
   const [scanMode, setScanMode] = useState('times'); // 'times' or 'interval'
   // Preset times for "Set Times" mode - array of selected time labels
@@ -113,13 +109,11 @@ export default function Settings() {
 
   // Cookie source state
   const [cookieSource, setCookieSource] = useState('file');
-  const [showCookieHelp, setShowCookieHelp] = useState(false);
 
   // SponsorBlock state
   const [removeSponsor, setRemoveSponsor] = useState(false);
   const [removeSelfpromo, setRemoveSelfpromo] = useState(false);
   const [removeInteraction, setRemoveInteraction] = useState(false);
-  const [showSponsorBlockHelp, setShowSponsorBlockHelp] = useState(false);
 
   // Library date display preference (stored in localStorage)
   const [libraryDateDisplay, setLibraryDateDisplay] = useState(() => {
@@ -156,45 +150,59 @@ export default function Settings() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
+  // Helper to convert 24h hour to preset label
+  const hour24ToPreset = (hour24) => {
+    const map = { 0: '12 AM', 3: '3 AM', 6: '6 AM', 9: '9 AM', 12: '12 PM', 15: '3 PM', 18: '6 PM', 21: '9 PM' };
+    return map[hour24] || null;
+  };
+
+  // Helper to convert 24h to 12h format
+  const to12Hour = (hour24) => {
+    if (hour24 === 0) return { hour: 12, ampm: 'AM' };
+    if (hour24 === 12) return { hour: 12, ampm: 'PM' };
+    if (hour24 < 12) return { hour: hour24, ampm: 'AM' };
+    return { hour: hour24 - 12, ampm: 'PM' };
+  };
+
   useEffect(() => {
     if (settings) {
-      setAutoRefresh(settings.auto_refresh_enabled === 'true');
+      const isEnabled = settings.auto_refresh_enabled === 'true';
+      setAutoRefresh(isEnabled);
+      setServerAutoRefresh(isEnabled); // Track what server has saved
       setLogLevel(settings.log_level || 'INFO');
       // Parse auto_refresh_config (new multi-scan system)
       if (settings.auto_refresh_config) {
         try {
           const config = JSON.parse(settings.auto_refresh_config);
-          setScanMode(config.mode);
+          setScanMode(config.mode || 'times');
 
-          if (config.mode === 'times') {
-            const times = config.times.map(t => {
-              const [h, m] = t.split(':');
-              return { hour: parseInt(h), minute: parseInt(m) };
-            });
-            setScanTimes(times);
-            setManualModeTimes(times);
+          if (config.mode === 'times' && config.times) {
+            // Convert 24h times back to preset labels
+            const presets = config.times
+              .map(t => {
+                const [h] = t.split(':');
+                return hour24ToPreset(parseInt(h));
+              })
+              .filter(p => p !== null);
+            if (presets.length > 0) {
+              setSelectedPresetTimes(presets);
+            }
           } else if (config.mode === 'interval') {
-            setScanInterval(config.interval_hours);
-            setIntervalModeHours(config.interval_hours);
+            if (config.interval_hours) {
+              setScanInterval(config.interval_hours);
+            }
             if (config.interval_start) {
               const [h, m] = config.interval_start.split(':');
-              const time = { hour: parseInt(h), minute: parseInt(m) };
-              setScanTimes([time]);
-              setIntervalModeTime(time);
+              const hour24 = parseInt(h) || 0;
+              const minute = parseInt(m) || 0;
+              const { hour, ampm } = to12Hour(hour24);
+              setIntervalHour(hour);
+              setIntervalMinute(minute);
+              setIntervalAmPm(ampm);
             }
           }
         } catch (e) {
           console.error('Failed to parse auto_refresh_config:', e);
-        }
-      } else {
-        if (settings.auto_refresh_time) {
-          const [hour, minute] = settings.auto_refresh_time.split(':');
-          setRefreshHour(parseInt(hour) || 3);
-          setRefreshMinute(parseInt(minute) || 0);
-          const time = { hour: parseInt(hour) || 3, minute: parseInt(minute) || 0 };
-          setScanTimes([time]);
-          setManualModeTimes([time]);
-          setIntervalModeTime(time);
         }
       }
       setRemoveSponsor(settings.sponsorblock_remove_sponsor === 'true');
@@ -242,24 +250,6 @@ export default function Settings() {
       console.error(`Failed to save ${setting}:`, error);
       setValue(currentValue);
     }
-  };
-
-  // Auto-Scan helper functions
-  const getPreviewTimes = () => {
-    if (scanMode !== 'interval' || scanTimes.length === 0) return scanTimes;
-
-    const startTime = scanTimes[0];
-    const numScans = scanInterval === 6 ? 4 : scanInterval === 8 ? 3 : 2;
-    const preview = [startTime];
-
-    for (let i = 1; i < numScans; i++) {
-      const totalMinutes = (startTime.hour * 60 + startTime.minute) + (scanInterval * i * 60);
-      const hour = Math.floor(totalMinutes / 60) % 24;
-      const minute = totalMinutes % 60;
-      preview.push({ hour, minute });
-    }
-
-    return preview;
   };
 
   const handleModeSwitch = (newMode) => {
@@ -328,7 +318,20 @@ export default function Settings() {
         auto_refresh_config: JSON.stringify(config)
       });
 
-      showNotification('Auto-scan schedule saved', 'success');
+      // Determine appropriate notification
+      const wasEnabled = serverAutoRefresh;
+      const isNowEnabled = autoRefresh;
+
+      if (!wasEnabled && isNowEnabled) {
+        showNotification('Auto-scan enabled', 'success');
+      } else if (wasEnabled && !isNowEnabled) {
+        showNotification('Auto-scan disabled', 'success');
+      } else {
+        showNotification('Auto-scan schedule saved', 'success');
+      }
+
+      // Update server state tracking
+      setServerAutoRefresh(autoRefresh);
     } catch (error) {
       showNotification(error.message || 'Failed to save auto-scan settings', 'error');
     }
@@ -521,22 +524,9 @@ export default function Settings() {
     }
   };
 
-  const handleAutoScanToggle = async (enabled) => {
+  // Toggle just controls local state - Save button commits to server
+  const handleAutoScanToggle = (enabled) => {
     setAutoRefresh(enabled);
-    try {
-      await updateSettings.mutateAsync({
-        auto_refresh_enabled: enabled ? 'true' : 'false',
-        auto_refresh_config: JSON.stringify({
-          mode: scanMode,
-          times: scanMode === 'times' ? scanTimes.slice(0, 4).map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`) : [],
-          interval_hours: scanMode === 'interval' ? scanInterval : null,
-          interval_start: scanMode === 'interval' && scanTimes.length > 0 ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}` : null
-        })
-      });
-      showNotification(enabled ? 'Auto-scan enabled' : 'Auto-scan disabled', 'success');
-    } catch (error) {
-      showNotification(error.message || 'Failed to update auto-scan', 'error');
-    }
   };
 
   if (isLoading) {
@@ -554,42 +544,6 @@ export default function Settings() {
     online: 'hsl(115, 25%, 50%)',
     pixel: 'hsl(315, 80%, 75%)',
     debug: 'hsl(210, 30%, 55%)'
-  };
-
-  // Helper to render time box for auto-scan
-  const displayTimes = getPreviewTimes();
-  while (displayTimes.length < 4) {
-    displayTimes.push({ hour: 0, minute: 0 });
-  }
-
-  const renderTimeBox = (time, index) => {
-    const isDisabled = scanMode === 'interval' && index > 0;
-    return (
-      <div key={index} className="time-slot">
-        <span className="time-slot-num">{index + 1}.</span>
-        <select
-          value={time.hour}
-          onChange={(e) => updateScanTime(index, 'hour', e.target.value)}
-          disabled={isDisabled}
-          className={`time-input ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {Array.from({ length: 24 }, (_, i) => (
-            <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-          ))}
-        </select>
-        <span className="time-separator">:</span>
-        <select
-          value={time.minute}
-          onChange={(e) => updateScanTime(index, 'minute', e.target.value)}
-          disabled={isDisabled}
-          className={`time-input ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-        >
-          {Array.from({ length: 60 }, (_, i) => (
-            <option key={i} value={i}>{i.toString().padStart(2, '0')}</option>
-          ))}
-        </select>
-      </div>
-    );
   };
 
   return (
@@ -878,9 +832,9 @@ export default function Settings() {
                       value={String(intervalHour).padStart(2, '0')}
                       maxLength={2}
                       onChange={(e) => {
-                        let val = parseInt(e.target.value.replace(/\D/g, '')) || 0;
+                        let val = parseInt(e.target.value.replace(/\D/g, '')) || 1;
                         if (val > 12) val = 12;
-                        if (val < 0) val = 0;
+                        if (val < 1) val = 1;
                         setIntervalHour(val);
                       }}
                     />
@@ -918,7 +872,7 @@ export default function Settings() {
                 onClick={handleSaveAutoRefresh}
                 className="settings-action-btn ml-auto"
               >
-                Save
+                {!serverAutoRefresh && autoRefresh ? 'Enable & Save' : (serverAutoRefresh && !autoRefresh ? 'Disable' : 'Save')}
               </button>
             </div>
           </div>
@@ -1104,76 +1058,6 @@ export default function Settings() {
         </div>
 
       </div>
-
-      {/* Cookie Source Help Modal */}
-      {showCookieHelp && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowCookieHelp(false)}>
-          <div className="card p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-text-primary">Cookie Source Options</h2>
-              <button onClick={() => setShowCookieHelp(false)} className="text-text-muted hover:text-text-primary transition-colors">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-4 text-sm text-text-secondary">
-              <div className="space-y-3">
-                <div className="bg-dark-tertiary p-3 rounded-lg">
-                  <h3 className="font-semibold text-text-primary mb-2">cookies.txt (Default)</h3>
-                  <p className="mb-2">Uses a manually exported cookies.txt file from your browser.</p>
-                  <p className="text-xs text-text-muted"><strong>How to use:</strong> Export cookies from your browser using an extension like "Get cookies.txt" while logged into YouTube, then save the file as <code className="bg-dark-primary px-1 rounded">cookies.txt</code> in the backend directory.</p>
-                </div>
-                <div className="bg-dark-tertiary p-3 rounded-lg">
-                  <h3 className="font-semibold text-text-primary mb-2">Firefox Browser</h3>
-                  <p className="mb-2">Automatically extracts cookies directly from your Firefox browser profile.</p>
-                  <p className="text-xs text-text-muted mb-2"><strong>Requirements:</strong></p>
-                  <ul className="text-xs text-text-muted list-disc list-inside space-y-1 ml-2">
-                    <li>Firefox profile mounted to <code className="bg-dark-primary px-1 rounded">/firefox_profile</code> in container</li>
-                    <li>YouTube must be logged in via Firefox</li>
-                    <li>Configure volume mount: <code className="bg-dark-primary px-1 rounded">/path/to/firefox/.mozilla/firefox:/firefox_profile:ro</code></li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* SponsorBlock Help Modal */}
-      {showSponsorBlockHelp && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowSponsorBlockHelp(false)}>
-          <div className="card p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-text-primary">What is SponsorBlock?</h2>
-              <button onClick={() => setShowSponsorBlockHelp(false)} className="text-text-muted hover:text-text-primary transition-colors">
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-4 text-sm text-text-secondary">
-              <div className="space-y-3">
-                <div className="bg-dark-tertiary p-3 rounded-lg">
-                  <h3 className="font-semibold text-text-primary mb-1">Remove Sponsors</h3>
-                  <p>Removes paid promotions and sponsorship segments from videos.</p>
-                </div>
-                <div className="bg-dark-tertiary p-3 rounded-lg">
-                  <h3 className="font-semibold text-text-primary mb-1">Remove Self-Promo</h3>
-                  <p>Removes unpaid self-promotion segments like merchandise, Patreon links, etc.</p>
-                </div>
-                <div className="bg-dark-tertiary p-3 rounded-lg">
-                  <h3 className="font-semibold text-text-primary mb-1">Remove Like/Sub Requests</h3>
-                  <p>Removes interaction reminders where creators ask you to like/subscribe.</p>
-                </div>
-              </div>
-              <p className="text-xs text-text-muted mt-4">
-                Data provided by <a href="https://sponsor.ajay.app" target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">SponsorBlock API</a>.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Queue/DB Repair Modal */}
       {showRepairModal && repairData && (

@@ -360,6 +360,7 @@ def health_check():
     # Check auto-refresh status
     auto_refresh_enabled = _settings_manager.get_bool('auto_refresh_enabled')
     auto_refresh_time = _settings_manager.get('auto_refresh_time', '03:00')
+    auto_refresh_config = _settings_manager.get('auto_refresh_config')
 
     # Check cookies.txt (in data folder)
     data_dir = os.environ.get('DATA_DIR', 'data')
@@ -447,6 +448,7 @@ def health_check():
         'ytdlp_version': ytdlp_version,
         'auto_refresh_enabled': auto_refresh_enabled,
         'auto_refresh_time': auto_refresh_time,
+        'auto_refresh_config': auto_refresh_config,
         'download_worker_running': worker_alive,
         'cookies_available': cookies_available,
         'firefox_profile_mounted': firefox_profile_mounted,

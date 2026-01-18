@@ -626,7 +626,7 @@ export default function ChannelLibrary() {
         batch_label: batchLabel
       });
 
-      // Backend handles completion message via status bar
+      // Backend handles completion message via toast notification
     } catch (error) {
       showNotification(error.message, 'error');
     }
