@@ -37,6 +37,7 @@ function formatDuration(seconds) {
 // ============================================================================
 function ResultsDetailModal({ imported, skipped, failed, onClose }) {
   const [filter, setFilter] = useState('all'); // 'all', 'imported', 'skipped', 'failed'
+  const [copied, setCopied] = useState(false);
 
   const allItems = [
     ...(imported || []).map(item => ({ ...item, _type: 'imported' })),
@@ -81,6 +82,8 @@ function ResultsDetailModal({ imported, skipped, failed, onClose }) {
   const handleExport = async (items) => {
     try {
       await navigator.clipboard.writeText(generateExportText(items));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
@@ -157,20 +160,23 @@ function ResultsDetailModal({ imported, skipped, failed, onClose }) {
 
         {/* Footer */}
         <div className="flex items-center justify-between px-4 py-3 border-t border-dark-border">
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => handleExport(filteredItems)}
               className="btn btn-secondary text-sm"
             >
-              Export {filter === 'all' ? 'All' : getTypeLabel(filter)}
+              Copy {filter === 'all' ? 'All' : getTypeLabel(filter)}
             </button>
             {filter !== 'failed' && failed?.length > 0 && (
               <button
                 onClick={() => handleExport(failed.map(f => ({ ...f, _type: 'failed' })))}
                 className="btn btn-secondary text-sm text-red-400"
               >
-                Export Failed Only
+                Copy Failed Only
               </button>
+            )}
+            {copied && (
+              <span className="text-green-400 text-sm animate-pulse">Copied to clipboard!</span>
             )}
           </div>
           <button onClick={onClose} className="btn btn-primary">Close</button>
