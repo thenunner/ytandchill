@@ -307,7 +307,7 @@ export default function Videos() {
       {/* Results Summary */}
       {scanResults && (
         <StickyBar className="rounded-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-3 flex-wrap">
               <div className="text-text-secondary">
                 {scanResults.videos.length === 0 ? (

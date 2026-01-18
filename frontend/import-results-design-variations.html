@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Layout 3: Responsive Preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0a0b0e;
+      color: #e2e8f0;
+      padding: 32px;
+      min-height: 100vh;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .page-header h1 {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      color: #3b82f6;
+      margin-bottom: 6px;
+    }
+
+    .page-header p {
+      color: #64748b;
+      font-size: 13px;
+    }
+
+    .viewports {
+      display: flex;
+      flex-direction: column;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .viewport-section {
+      width: 100%;
+      max-width: 1400px;
+    }
+
+    .viewport-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .viewport-label h2 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .viewport-label .dimensions {
+      font-size: 11px;
+      color: #64748b;
+      background: #1a1d24;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .viewport-label .scale {
+      font-size: 10px;
+      color: #475569;
+    }
+
+    /* Device Frame */
+    .device-frame {
+      background: #1a1d24;
+      border-radius: 12px;
+      border: 1px solid #2a2f3a;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .device-frame::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 28px;
+      background: #12141a;
+      border-bottom: 1px solid #2a2f3a;
+    }
+
+    .device-frame::after {
+      content: '● ● ●';
+      position: absolute;
+      top: 6px;
+      left: 12px;
+      font-size: 10px;
+      letter-spacing: 4px;
+      color: #3a3f4a;
+    }
+
+    .device-content {
+      padding-top: 28px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100px;
+    }
+
+    /* Mobile Frame */
+    .mobile-frame {
+      width: 375px;
+    }
+    .mobile-frame .device-content {
+      padding: 36px 8px 16px;
+      background: #0f1015;
+    }
+
+    /* Tablet Frame */
+    .tablet-frame {
+      width: 820px;
+    }
+    .tablet-frame .device-content {
+      padding: 36px 32px 24px;
+      background: #0f1015;
+    }
+
+    /* 1080p Frame */
+    .desktop-frame {
+      width: 100%;
+      max-width: 1100px;
+    }
+    .desktop-frame .device-content {
+      padding: 44px 60px 32px;
+      background: #0f1015;
+    }
+
+    /* 4K Frame - scaled down */
+    .ultrawide-frame {
+      width: 100%;
+      max-width: 1300px;
+    }
+    .ultrawide-frame .device-content {
+      padding: 44px 100px 40px;
+      background: #0f1015;
+    }
+
+    /* =============================================
+       MODAL STYLES
+       ============================================= */
+    :root {
+      --bg: #12141a;
+      --surface: #1a1d24;
+      --surface-hover: #22262f;
+      --border: #2a2f3a;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --error: #f87171;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --accent: #3b82f6;
+    }
+
+    .modal {
+      background: var(--bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    }
+
+    /* Responsive max-widths - generous but not full screen */
+    .mobile-frame .modal {
+      max-width: 100%;
+    }
+    .tablet-frame .modal {
+      max-width: 680px;
+    }
+    .desktop-frame .modal {
+      max-width: 760px;
+    }
+    .ultrawide-frame .modal {
+      max-width: 840px;
+    }
+
+    .modal-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mobile-frame .modal-header {
+      padding: 14px 16px;
+    }
+
+    .modal-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .mobile-frame .modal-header h2 {
+      font-size: 14px;
+    }
+
+    .modal-explanation {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .mobile-frame .modal-explanation {
+      font-size: 11px;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 16px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .mobile-frame .stats-bar {
+      gap: 12px;
+    }
+
+    .stat {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .mobile-frame .stat {
+      font-size: 11px;
+    }
+
+    .stat-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .stat.success { color: var(--success); }
+    .stat.success .stat-dot { background: var(--success); }
+    .stat.warning { color: var(--warning); }
+    .stat.warning .stat-dot { background: var(--warning); }
+    .stat.error { color: var(--error); }
+    .stat.error .stat-dot { background: var(--error); }
+
+    .results-list {
+      padding: 8px;
+      max-height: 320px;
+      overflow-y: auto;
+    }
+
+    /* Custom scrollbar - matches dark theme */
+    .results-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .results-list::-webkit-scrollbar-track {
+      background: var(--surface);
+      border-radius: 4px;
+    }
+
+    .results-list::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    .results-list::-webkit-scrollbar-thumb:hover {
+      background: #3a4555;
+    }
+
+    /* Firefox scrollbar */
+    .results-list {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) var(--surface);
+    }
+
+    .mobile-frame .results-list {
+      padding: 6px;
+      max-height: 280px;
+    }
+
+    .result-item {
+      padding: 10px 12px;
+      margin: 4px;
+      border-radius: 6px;
+      background: var(--surface);
+      border-left: 3px solid transparent;
+    }
+
+    .mobile-frame .result-item {
+      padding: 10px;
+      margin: 3px;
+    }
+
+    .result-item:hover {
+      background: var(--surface-hover);
+    }
+
+    .result-item.success { border-left-color: var(--success); }
+    .result-item.warning { border-left-color: var(--warning); }
+    .result-item.error { border-left-color: var(--error); }
+
+    .line1 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .mobile-frame .line1 {
+      gap: 6px;
+    }
+
+    .status-icon {
+      font-size: 12px;
+      flex-shrink: 0;
+    }
+
+    .result-item.success .status-icon { color: var(--success); }
+    .result-item.warning .status-icon { color: var(--warning); }
+    .result-item.error .status-icon { color: var(--error); }
+
+    .filename {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+    }
+
+    .mobile-frame .filename {
+      font-size: 10px;
+    }
+
+    .line2 {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding-left: 20px;
+    }
+
+    .mobile-frame .line2 {
+      padding-left: 18px;
+    }
+
+    .match-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .mobile-frame .match-info {
+      gap: 4px;
+    }
+
+    .reason {
+      font-size: 10px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      flex-shrink: 0;
+    }
+
+    .mobile-frame .reason {
+      font-size: 9px;
+    }
+
+    .reason.matched { color: var(--success); }
+    .reason.skipped { color: var(--warning); }
+    .reason.failed { color: var(--error); }
+
+    .match-title {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* All sizes: allow title to wrap to 2nd line */
+    .match-title {
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    /* Mobile & Tablet: allow up to 3 lines */
+    .mobile-frame .match-title,
+    .tablet-frame .match-title {
+      -webkit-line-clamp: 3;
+    }
+
+    .mobile-frame .match-title {
+      font-size: 11px;
+    }
+
+    .channel {
+      font-size: 11px;
+      color: #475569;
+      flex-shrink: 0;
+    }
+
+    .mobile-frame .channel {
+      font-size: 10px;
+    }
+
+    /* All sizes: allow match-info to wrap */
+    .match-info {
+      flex-wrap: wrap;
+    }
+
+    /* Channel goes on new line when title wraps */
+    .channel {
+      width: 100%;
+      margin-top: 2px;
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .mobile-frame .badges {
+      gap: 4px;
+    }
+
+    .video-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--muted);
+      background: rgba(255,255,255,0.05);
+      padding: 3px 7px;
+      border-radius: 4px;
+    }
+
+    .mobile-frame .video-id {
+      font-size: 8px;
+      padding: 2px 5px;
+    }
+
+    .similarity {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--error);
+      background: rgba(248, 113, 113, 0.1);
+      padding: 3px 7px;
+      border-radius: 4px;
+    }
+
+    .mobile-frame .similarity {
+      font-size: 8px;
+      padding: 2px 5px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: space-between;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mobile-frame .modal-footer {
+      padding: 12px 16px;
+    }
+
+    .btn {
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 8px 18px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+    }
+
+    .mobile-frame .btn {
+      font-size: 11px;
+      padding: 8px 14px;
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1>Layout 3: Two Tight Lines</h1>
+    <p>Responsive preview across device sizes</p>
+  </div>
+
+  <div class="viewports">
+
+    <!-- MOBILE -->
+    <div class="viewport-section">
+      <div class="viewport-label">
+        <h2>📱 Mobile</h2>
+        <span class="dimensions">375 × 667</span>
+        <span class="scale">iPhone SE / Small Android</span>
+      </div>
+      <div class="device-frame mobile-frame">
+        <div class="device-content">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Import Results</h2>
+              <p class="modal-explanation">
+                Your files have been matched against your YouTube library.
+              </p>
+              <div class="stats-bar">
+                <span class="stat success"><span class="stat-dot"></span> 3 matched</span>
+                <span class="stat warning"><span class="stat-dot"></span> 1 skipped</span>
+                <span class="stat error"><span class="stat-dot"></span> 1 failed</span>
+              </div>
+            </div>
+            <div class="results-list">
+              <div class="result-item success">
+                <div class="line1">
+                  <span class="status-icon">✓</span>
+                  <span class="filename">tutorial_video_final_v2.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason matched">Matched:</span>
+                    <span class="match-title">Amazing React Tutorial - Complete Guide for Beginners - Learn React from Scratch in 2024</span>
+                    <span class="channel">· TechChannel Pro</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">dQw4w9WgXcQ</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item warning">
+                <div class="line1">
+                  <span class="status-icon">⏭</span>
+                  <span class="filename">duplicate_video_copy.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason skipped">Skipped:</span>
+                    <span class="match-title">Already exists in library</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item error">
+                <div class="line1">
+                  <span class="status-icon">✗</span>
+                  <span class="filename">unknown_recording.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason failed">Closest:</span>
+                    <span class="match-title">Weekly Gaming Stream Highlights - Best Moments Compilation January 2024</span>
+                    <span class="channel">· GamerPro</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">fGh123IjKlM</span>
+                    <span class="similarity">34%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Export</button>
+              <button class="btn btn-primary">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLET -->
+    <div class="viewport-section">
+      <div class="viewport-label">
+        <h2>📱 Tablet</h2>
+        <span class="dimensions">768 × 1024</span>
+        <span class="scale">iPad / Android Tablet</span>
+      </div>
+      <div class="device-frame tablet-frame">
+        <div class="device-content">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Import Results</h2>
+              <p class="modal-explanation">
+                Your files have been matched against your YouTube library.
+                Successfully matched files are now linked to their videos.
+              </p>
+              <div class="stats-bar">
+                <span class="stat success"><span class="stat-dot"></span> 3 matched</span>
+                <span class="stat warning"><span class="stat-dot"></span> 1 skipped</span>
+                <span class="stat error"><span class="stat-dot"></span> 1 failed</span>
+              </div>
+            </div>
+            <div class="results-list">
+              <div class="result-item success">
+                <div class="line1">
+                  <span class="status-icon">✓</span>
+                  <span class="filename">tutorial_video_final_v2.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason matched">Matched:</span>
+                    <span class="match-title">Amazing React Tutorial - Complete Guide for Beginners - Learn React Hooks, Context, and Redux from Scratch</span>
+                    <span class="channel">· TechChannel</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">dQw4w9WgXcQ</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item success">
+                <div class="line1">
+                  <span class="status-icon">✓</span>
+                  <span class="filename">cooking_pasta_recipe.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason matched">Matched:</span>
+                    <span class="match-title">How to Make Perfect Pasta at Home</span>
+                    <span class="channel">· Chef Marco</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">xYz789AbCdE</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item warning">
+                <div class="line1">
+                  <span class="status-icon">⏭</span>
+                  <span class="filename">duplicate_video_copy.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason skipped">Skipped:</span>
+                    <span class="match-title">File already exists in your library</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item error">
+                <div class="line1">
+                  <span class="status-icon">✗</span>
+                  <span class="filename">unknown_recording_2024.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason failed">Closest:</span>
+                    <span class="match-title">Weekly Gaming Stream Highlights - Best Moments and Epic Fails Compilation January 2024</span>
+                    <span class="channel">· GamerPro</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">fGh123IjKlM</span>
+                    <span class="similarity">34%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Export CSV</button>
+              <button class="btn btn-primary">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1080p DESKTOP -->
+    <div class="viewport-section">
+      <div class="viewport-label">
+        <h2>🖥️ Desktop 1080p</h2>
+        <span class="dimensions">1920 × 1080</span>
+        <span class="scale">Standard HD Monitor</span>
+      </div>
+      <div class="device-frame desktop-frame">
+        <div class="device-content">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Import Results</h2>
+              <p class="modal-explanation">
+                Your files have been matched against your YouTube library.
+                Successfully matched files are now linked to their videos.
+              </p>
+              <div class="stats-bar">
+                <span class="stat success"><span class="stat-dot"></span> 3 matched</span>
+                <span class="stat warning"><span class="stat-dot"></span> 1 skipped</span>
+                <span class="stat error"><span class="stat-dot"></span> 1 failed</span>
+              </div>
+            </div>
+            <div class="results-list">
+              <div class="result-item success">
+                <div class="line1">
+                  <span class="status-icon">✓</span>
+                  <span class="filename">tutorial_video_final_v2.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason matched">Matched:</span>
+                    <span class="match-title">Amazing React Tutorial - Complete Guide for Beginners 2024</span>
+                    <span class="channel">· TechChannel Pro</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">dQw4w9WgXcQ</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item success">
+                <div class="line1">
+                  <span class="status-icon">✓</span>
+                  <span class="filename">cooking_pasta_recipe.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason matched">Matched:</span>
+                    <span class="match-title">How to Make Perfect Pasta at Home - Chef's Guide</span>
+                    <span class="channel">· Chef Marco</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">xYz789AbCdE</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item warning">
+                <div class="line1">
+                  <span class="status-icon">⏭</span>
+                  <span class="filename">duplicate_video_copy.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason skipped">Skipped:</span>
+                    <span class="match-title">File already exists in your library</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item error">
+                <div class="line1">
+                  <span class="status-icon">✗</span>
+                  <span class="filename">unknown_recording_2024.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason failed">Closest:</span>
+                    <span class="match-title">Gaming Stream Highlights Compilation</span>
+                    <span class="channel">· GamerPro Streams</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">fGh123IjKlM</span>
+                    <span class="similarity">34%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Export CSV</button>
+              <button class="btn btn-primary">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4K / 2160p -->
+    <div class="viewport-section">
+      <div class="viewport-label">
+        <h2>🖥️ Desktop 4K</h2>
+        <span class="dimensions">3840 × 2160</span>
+        <span class="scale">4K / Ultra HD Monitor (scaled preview)</span>
+      </div>
+      <div class="device-frame ultrawide-frame">
+        <div class="device-content">
+          <div class="modal">
+            <div class="modal-header">
+              <h2>Import Results</h2>
+              <p class="modal-explanation">
+                Your files have been matched against your YouTube library.
+                Successfully matched files are now linked to their videos.
+              </p>
+              <div class="stats-bar">
+                <span class="stat success"><span class="stat-dot"></span> 3 matched</span>
+                <span class="stat warning"><span class="stat-dot"></span> 1 skipped</span>
+                <span class="stat error"><span class="stat-dot"></span> 1 failed</span>
+              </div>
+            </div>
+            <div class="results-list">
+              <div class="result-item success">
+                <div class="line1">
+                  <span class="status-icon">✓</span>
+                  <span class="filename">tutorial_video_final_v2.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason matched">Matched:</span>
+                    <span class="match-title">Amazing React Tutorial - Complete Guide for Beginners 2024</span>
+                    <span class="channel">· TechChannel Pro</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">dQw4w9WgXcQ</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item success">
+                <div class="line1">
+                  <span class="status-icon">✓</span>
+                  <span class="filename">cooking_pasta_recipe.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason matched">Matched:</span>
+                    <span class="match-title">How to Make Perfect Pasta at Home - Chef's Guide</span>
+                    <span class="channel">· Chef Marco</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">xYz789AbCdE</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item warning">
+                <div class="line1">
+                  <span class="status-icon">⏭</span>
+                  <span class="filename">duplicate_video_copy.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason skipped">Skipped:</span>
+                    <span class="match-title">File already exists in your library</span>
+                  </div>
+                </div>
+              </div>
+              <div class="result-item error">
+                <div class="line1">
+                  <span class="status-icon">✗</span>
+                  <span class="filename">unknown_recording_2024.mp4</span>
+                </div>
+                <div class="line2">
+                  <div class="match-info">
+                    <span class="reason failed">Closest:</span>
+                    <span class="match-title">Gaming Stream Highlights Compilation</span>
+                    <span class="channel">· GamerPro Streams</span>
+                  </div>
+                  <div class="badges">
+                    <span class="video-id">fGh123IjKlM</span>
+                    <span class="similarity">34%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Export CSV</button>
+              <button class="btn btn-primary">Done</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

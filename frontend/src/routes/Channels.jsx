@@ -556,8 +556,8 @@ export default function Channels() {
             </div>
           </div>
 
-          {/* Center Section: Search - Full width on mobile, fixed width on desktop */}
-          <div className="order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-[280px] sm:mx-4">
+          {/* Search - Full width on mobile, fixed on desktop */}
+          <div className="order-last sm:order-none w-full sm:w-[200px]">
             <SearchInput
               value={searchInput}
               onChange={setSearchInput}
@@ -567,7 +567,7 @@ export default function Channels() {
           </div>
 
           {/* Right Section: Filters + View Controls */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:ml-auto">
 
           {/* Sort Button */}
           <div className="relative" ref={sortMenuRef}>

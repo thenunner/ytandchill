@@ -548,8 +548,8 @@ export default function Library() {
               </Link>
             </div>
 
-            {/* Center Section: Search - Full width on mobile */}
-            <div className="order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-[240px] sm:mx-4">
+            {/* Search - Full width on mobile, fixed on desktop */}
+            <div className="order-last sm:order-none w-full sm:w-[200px]">
               <SearchInput
                 value={searchInput}
                 onChange={setSearchInput}
@@ -559,7 +559,7 @@ export default function Library() {
             </div>
 
             {/* Right Section: Filters + Controls */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:ml-auto">
               {/* Sort Button */}
               <div className="relative" ref={channelSortMenuRef}>
                 <button
@@ -716,8 +716,8 @@ export default function Library() {
               </button>
             </div>
 
-            {/* Center Section: Search - Full width on mobile */}
-            <div className="order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-[240px] sm:mx-4">
+            {/* Search - Full width on mobile, fixed on desktop */}
+            <div className="order-last sm:order-none w-full sm:w-[200px]">
               <SearchInput
                 value={searchInput}
                 onChange={setSearchInput}
@@ -727,7 +727,7 @@ export default function Library() {
             </div>
 
             {/* Right Section: Filters + Controls */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sm:ml-auto">
               {/* Sort Button */}
               <div className="relative" ref={playlistSortMenuRef}>
                 <button
