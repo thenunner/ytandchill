@@ -10,7 +10,7 @@ import FiltersModal from '../components/FiltersModal';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 
 export default function Playlist() {
@@ -197,10 +197,11 @@ export default function Playlist() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Sticky Header Row */}
+      {/* Sticky Header Row - 2 column grid: LEFT (back, title, search) | RIGHT (controls) */}
       <StickyBar className="-mx-8 px-8 mb-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
+          {/* LEFT: Back, Title, Search */}
+          <div className="flex items-center gap-2 flex-wrap">
             {/* Back Arrow */}
             <button
               onClick={() => {
@@ -211,7 +212,7 @@ export default function Playlist() {
                 );
                 navigate(referrer);
               }}
-              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors"
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
               title="Back"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -220,112 +221,89 @@ export default function Playlist() {
             </button>
 
             {/* Playlist Title */}
-            <div className="flex items-center gap-2">
-              <h2 className="text-lg font-semibold text-text-primary">{playlist.name}</h2>
-              <span className="text-sm text-text-secondary">({sortedVideos.length} videos)</span>
-            </div>
+            <h2 className="text-lg font-semibold text-text-primary">{playlist.name}</h2>
+            <span className="text-sm text-text-secondary">({sortedVideos.length} videos)</span>
+
+            {/* Search - left justified */}
+            <SearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder="Search videos..."
+              className="w-full sm:w-[180px]"
+            />
+          </div>
+
+          {/* RIGHT: Controls */}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <CardSizeSlider tab="library" />
+
+            <Pagination
+              currentPage={currentPage}
+              totalItems={sortedVideos.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(value) => {
+                setItemsPerPage(value);
+                localStorage.setItem('playlist_itemsPerPage', value);
+                setCurrentPage(1);
+              }}
+            />
+
+            <button
+              onClick={() => setShowFiltersModal(true)}
+              className="filter-btn"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
+              </svg>
+              <span>Filters</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setEditMode(!editMode);
+                setSelectedVideos([]);
+              }}
+              className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <span>{editMode ? 'Done' : 'Edit'}</span>
+            </button>
           </div>
         </div>
-
-        {/* Controls Row */}
-        <div className="flex items-center justify-center gap-3">
-          {/* Search */}
-          <SearchInput
-            value={searchInput}
-            onChange={setSearchInput}
-            placeholder="Search videos..."
-            className="w-[180px]"
-          />
-
-          {/* Card Size Slider */}
-          <CardSizeSlider tab="library" />
-
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={sortedVideos.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={(value) => {
-              setItemsPerPage(value);
-              localStorage.setItem('playlist_itemsPerPage', value);
-              setCurrentPage(1);
-            }}
-          />
-
-          {/* Filters Button */}
-          <button
-            onClick={() => setShowFiltersModal(true)}
-            className="filter-btn"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
-            </svg>
-            <span>Filters</span>
-          </button>
-
-          {/* Edit Button */}
-          <button
-            onClick={() => {
-              setEditMode(!editMode);
-              setSelectedVideos([]);
-            }}
-            className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <span>{editMode ? 'Done' : 'Edit'}</span>
-          </button>
-
-          {/* Edit Mode Actions */}
-          {editMode && (
-            <>
-              {/* Select All */}
-              {sortedVideos.length > 0 && (
-                <button
-                  onClick={selectAll}
-                  className="btn btn-sm bg-dark-tertiary text-text-primary hover:bg-dark-hover"
-                >
-                  Select All ({sortedVideos.length})
-                </button>
-              )}
-
-              {/* Action Buttons when videos selected */}
-              {selectedVideos.length > 0 && (
-                <>
-                  <span className="text-sm text-text-secondary">{selectedVideos.length} selected</span>
-                  <button
-                    onClick={() => handleBulkAction('mark-watched')}
-                    className="btn btn-primary btn-sm"
-                  >
-                    Mark Watched
-                  </button>
-                  <button
-                    onClick={() => setShowBulkPlaylistOptions(true)}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Playlist Options
-                  </button>
-                  <button
-                    onClick={() => handleBulkAction('delete')}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Delete Video
-                  </button>
-                  <button
-                    onClick={clearSelection}
-                    className="btn btn-sm bg-dark-tertiary text-text-primary hover:bg-dark-hover"
-                  >
-                    Clear
-                  </button>
-                </>
-              )}
-            </>
-          )}
-        </div>
       </StickyBar>
+
+      {/* SelectionBar for edit mode */}
+      <SelectionBar
+        show={editMode && sortedVideos.length > 0}
+        selectedCount={selectedVideos.length}
+        totalCount={sortedVideos.length}
+        onSelectAll={selectAll}
+        onClear={clearSelection}
+        onDone={() => {
+          setEditMode(false);
+          setSelectedVideos([]);
+        }}
+        actions={[
+          {
+            label: 'Mark Watched',
+            onClick: () => handleBulkAction('mark-watched'),
+            primary: true
+          },
+          {
+            label: 'Playlist Options',
+            onClick: () => setShowBulkPlaylistOptions(true)
+          },
+          {
+            label: 'Delete',
+            onClick: () => handleBulkAction('delete'),
+            danger: true
+          }
+        ]}
+      />
 
       {/* Videos Grid */}
       {sortedVideos.length > 0 ? (() => {
