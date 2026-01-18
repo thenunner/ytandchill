@@ -83,6 +83,9 @@ export default function Settings() {
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
 
+  // Fix upload dates state
+  const [isFixingDates, setIsFixingDates] = useState(false);
+
   // Version update check state
   const [latestVersion, setLatestVersion] = useState(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
@@ -439,6 +442,34 @@ export default function Settings() {
     }
   };
 
+  const handleFixUploadDates = async () => {
+    setIsFixingDates(true);
+    try {
+      const response = await fetch('/api/settings/fix-upload-dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      if (data.updated > 0) {
+        showNotification(`Fixed ${data.updated} upload date${data.updated !== 1 ? 's' : ''} (${data.skipped} already had dates, ${data.failed} failed)`, 'success');
+      } else if (data.skipped > 0) {
+        showNotification(`All ${data.skipped} videos already have upload dates`, 'success');
+      } else {
+        showNotification('No library videos found to check', 'warning');
+      }
+    } catch (error) {
+      showNotification(`Failed to fix upload dates: ${error.message}`, 'error');
+    } finally {
+      setIsFixingDates(false);
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -717,6 +748,14 @@ export default function Settings() {
                   className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCheckingRepair ? 'Checking...' : 'Repair'}
+                </button>
+                <button
+                  onClick={handleFixUploadDates}
+                  disabled={isFixingDates}
+                  title="Fetch missing upload dates for all library videos from YouTube"
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isFixingDates ? 'Fixing...' : 'Fix Dates'}
                 </button>
               </div>
 
