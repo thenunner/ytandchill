@@ -260,6 +260,9 @@ def scan_playlist_videos(playlist_url, max_results=500):
         return []
 
     videos = []
+    # Extract channel info from first video that has it (flat-playlist mode doesn't always include it)
+    playlist_channel_title = None
+    playlist_channel_id = None
 
     for line in stdout.strip().split('\n'):
         if not line:
@@ -269,6 +272,11 @@ def scan_playlist_videos(playlist_url, max_results=500):
             data = json.loads(line)
         except json.JSONDecodeError:
             continue
+
+        # Capture channel info from first video that has it
+        if not playlist_channel_title:
+            playlist_channel_title = data.get('channel') or data.get('uploader') or data.get('playlist_channel')
+            playlist_channel_id = data.get('channel_id')
 
         duration = data.get('duration')
         if duration is None:
@@ -288,8 +296,8 @@ def scan_playlist_videos(playlist_url, max_results=500):
             'duration_sec': duration,
             'upload_date': data.get('upload_date'),
             'thumbnail': f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg',
-            'channel_id': data.get('channel_id'),
-            'channel_title': data.get('channel') or data.get('uploader') or 'Unknown',
+            'channel_id': data.get('channel_id') or playlist_channel_id,
+            'channel_title': data.get('channel') or data.get('uploader') or playlist_channel_title or 'Unknown',
         })
 
     logger.info(f'Playlist scan complete: {len(videos)} videos found')
