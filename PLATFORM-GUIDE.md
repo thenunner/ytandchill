@@ -41,31 +41,27 @@ This guide provides detailed platform-specific instructions for running YT and C
    cd C:\ytandchill
    ```
 
-4. Run the setup script:
+4. Run the launcher:
    ```cmd
-   setup-native-windows.bat
+   windows-start.bat
    ```
 
-   This will:
+5. From the menu, select option **3 (Setup)** on first run. This will:
    - Check for Python, Node.js, and ffmpeg
    - Create required directories (data, downloads, logs)
    - Install Python dependencies
    - Install Node.js dependencies
    - Build the frontend
-   - Create empty cookies.txt
 
-5. Start the application:
-   ```cmd
-   start-native-windows.bat
-   ```
+6. After setup completes, select option **1 (Start)** to launch the application
 
-6. Open your browser to: http://localhost:4099
+7. Open your browser to: http://localhost:4099
 
 ### Windows-Specific Notes
 
 - **Running in Background**: The app runs in a console window - close the window to stop
-- **Auto-start on Boot**: Use Task Scheduler to run `start-native-windows.bat` at startup
-- **Updating**: Re-run `setup-native-windows.bat` after pulling new code
+- **Auto-start on Boot**: Use Task Scheduler to run `windows-start.bat`
+- **Updating**: Run `windows-start.bat` and select option 4 (Update)
 - **Data Location**:
   - Database: `C:\ytandchill\data\`
   - Downloads: `C:\ytandchill\downloads\`
@@ -86,9 +82,8 @@ This guide provides detailed platform-specific instructions for running YT and C
 - Or continue without ffmpeg (some features may not work)
 
 **Port 4099 already in use:**
-- Edit `backend\app.py`
-- Change line: `port = int(os.environ.get('PORT', 4099))`
-- Replace `4099` with your desired port
+- Set environment variable `PORT` to desired port before running
+- Or edit `backend\app.py` and change `4099` to your desired port
 
 **Permission errors:**
 - Run Command Prompt as Administrator
@@ -134,35 +129,28 @@ ffmpeg -version
    cd ytandchill
    ```
 
-2. Run the setup script:
+2. Run the launcher:
    ```bash
-   chmod +x setup-native-linux.sh
-   ./setup-native-linux.sh
+   chmod +x linux-start.sh
+   ./linux-start.sh
    ```
 
-   This will:
+3. From the menu, select option **3 (Setup)** on first run. This will:
    - Check for Python, Node.js, and ffmpeg
    - Create required directories
    - Install Python dependencies
    - Install Node.js dependencies
    - Build the frontend
-   - Set proper permissions
 
-3. Start the application:
-   ```bash
-   ./start-native-linux.sh
-   ```
+4. After setup completes, select option **1 (Start)** to launch
 
-4. Open your browser to: http://localhost:4099
+5. Open your browser to: http://localhost:4099
 
 ### Linux-Specific Notes
 
-- **Running in Background**:
-  ```bash
-  nohup ./start-native-linux.sh > /dev/null 2>&1 &
-  ```
-
 - **Auto-start on Boot**: Create a systemd service (see below)
+
+- **Updating**: Run `./linux-start.sh` and select option 4 (Update)
 
 - **Data Location**:
   - Database: `~/ytandchill/data/`
@@ -223,7 +211,7 @@ nano backend/app.py
 
 **Can't execute scripts:**
 ```bash
-chmod +x setup-native-linux.sh start-native-linux.sh
+chmod +x linux-start.sh
 ```
 
 ---
@@ -258,27 +246,23 @@ ffmpeg -version
    cd ytandchill
    ```
 
-2. Run the setup script:
+2. Run the launcher:
    ```bash
-   chmod +x setup-native-linux.sh
-   ./setup-native-linux.sh
+   chmod +x linux-start.sh
+   ./linux-start.sh
    ```
 
-3. Start the application:
-   ```bash
-   ./start-native-linux.sh
-   ```
+3. From the menu, select option **3 (Setup)** on first run
 
-4. Open your browser to: http://localhost:4099
+4. After setup completes, select option **1 (Start)** to launch
+
+5. Open your browser to: http://localhost:4099
 
 ### macOS-Specific Notes
 
-- **Running in Background**:
-  ```bash
-  nohup ./start-native-linux.sh > /dev/null 2>&1 &
-  ```
-
 - **Auto-start**: Create a LaunchAgent (see below)
+
+- **Updating**: Run `./linux-start.sh` and select option 4 (Update)
 
 - **Data Location**:
   - Database: `~/Documents/ytandchill/data/`
@@ -327,7 +311,7 @@ ffmpeg -version
 
 **Permission denied on scripts:**
 ```bash
-chmod +x setup-native-linux.sh start-native-linux.sh
+chmod +x linux-start.sh linux-start.sh
 ```
 
 **Python/Node not found:**
@@ -340,80 +324,48 @@ chmod +x setup-native-linux.sh start-native-linux.sh
 
 YT and Chill uses Docker on Unraid for easy management and updates.
 
-### Method 1: Docker Template (Recommended)
+### Method 1: Docker Compose (Recommended)
 
-1. Download `ytandchill-template.xml` from the repository
-
-2. Copy to Unraid templates directory:
+1. Clone or copy the repository:
    ```bash
-   cp ytandchill-template.xml /boot/config/plugins/dockerMan/templates-user/
+   cd /mnt/user/appdata
+   git clone https://github.com/thenunner/ytandchill.git
+   cd ytandchill
    ```
 
-3. In Unraid WebUI:
-   - Go to **Docker** tab
-   - Click **Add Container**
-   - Select **ytandchill** from template dropdown
-
-4. Configure paths:
-   - **WebUI Port**: `4099` (or your preference)
-   - **Database Path**: `/mnt/user/appdata/ytandchill/data`
-   - **Downloads Path**: `/mnt/user/data/media/youtube/ytandchill`
-   - **Logs Path**: `/mnt/user/appdata/ytandchill/logs`
-   - **Cookies Path**: `/mnt/user/appdata/ytandchill/cookies.txt`
-   - **Network**: `bridge` (or your custom network)
-
-5. Click **Apply**
-
-6. Access at: http://YOUR-SERVER-IP:4099
-
-### Method 2: Docker Compose
-
-1. Copy project to Unraid:
+2. Build and start:
    ```bash
-   mkdir -p /mnt/user/appdata/ytandchill
-   cd /mnt/user/appdata/ytandchill
-   # Copy files here
+   docker-compose up -d --build
    ```
 
-2. Create required directories:
-   ```bash
-   mkdir -p data downloads logs
-   chown -R 99:100 data downloads logs
-   ```
+3. Access at: http://YOUR-SERVER-IP:4099
 
-3. Start with docker-compose:
-   ```bash
-   docker-compose up -d
-   ```
+### Method 2: Manual Container Creation
+
+See [UNRAID-SETUP.md](UNRAID-SETUP.md) for detailed manual setup instructions including:
+- Path mappings
+- Environment variables
+- Network configuration
 
 ### Unraid-Specific Notes
 
 - **User Permissions**: Container runs as `nobody:users` (99:100)
 - **Network**: Uses bridge network (default: "bridge")
-- **Updates**: Use "Force Update" in Docker tab to pull latest from GitHub
+- **Updates**: Run `git pull` then rebuild with docker-compose
 - **WebUI Integration**: Template includes WebUI link in Docker tab
 - **Auto-start**: Configured to restart unless stopped
 
 ### Updating on Unraid
 
-**From GitHub Container Registry (Automatic Builds):**
-1. Push changes to GitHub main branch
-2. GitHub Actions builds new image automatically
-3. In Unraid Docker tab, click **Force Update** on ytandchill container
-4. Container downloads new image and restarts
+**If using GitHub Container Registry (templated):**
+- In Unraid Docker tab → click **Force Update** on ytandchill container
 
-**Manual Pull:**
-```bash
-docker pull ghcr.io/thenunner/ytandchill:latest
-docker restart ytandchill
-```
-
-**From Local Build:**
+**If using local docker-compose build:**
 ```bash
 cd /mnt/user/appdata/ytandchill
+git pull
 docker-compose down
-docker-compose build
-docker-compose up -d
+docker-compose up -d --build
 ```
 
 ### Troubleshooting Unraid
@@ -435,10 +387,10 @@ chown -R 99:100 /mnt/user/data/media/youtube/ytandchill
 - Verify network settings in template
 - Test port: `curl http://localhost:4099`
 
-**Force Update not pulling new image:**
-- Manually pull: `docker pull ghcr.io/thenunner/ytandchill:latest`
-- Check GitHub Actions completed successfully
-- Clear Docker image cache
+**Container not updating:**
+- Ensure you ran `git pull` first
+- Rebuild with `docker-compose up -d --build`
+- Clear old images: `docker image prune -f`
 
 See [UNRAID-SETUP.md](UNRAID-SETUP.md) for detailed Unraid instructions.
 
@@ -465,8 +417,8 @@ Or check: `/mnt/user/appdata/ytandchill/logs/app.log`
 ### Stopping the Application
 
 **Windows:**
-- Close the Command Prompt window running the app
-- Or press `Ctrl+C` in the window
+- Press `Ctrl+C` in the Command Prompt window
+- Or close the window
 
 **Linux/macOS:**
 - Press `Ctrl+C` in the terminal
@@ -484,13 +436,14 @@ Or use Unraid Docker tab → Stop button
 **Windows:**
 ```cmd
 # Close the running window, then:
-start-native-windows.bat
+windows-start.bat
+# Select option 1 (Start)
 ```
 
 **Linux/macOS:**
 ```bash
 # Press Ctrl+C to stop, then:
-./start-native-linux.sh
+./linux-start.sh
 
 # Or with systemd:
 sudo systemctl restart ytandchill
@@ -503,21 +456,25 @@ docker restart ytandchill
 
 ### Updating to Latest Version
 
-**Windows/Linux/macOS:**
+**Windows:**
+```cmd
+windows-start.bat
+# Select option 2 (Update)
+```
+
+**Linux/macOS:**
 ```bash
-# Pull latest code
-git pull
-
-# Re-run setup to rebuild
-setup-native-windows.bat  # Windows
-./setup-native-linux.sh    # Linux/macOS
-
-# Restart the application
+./linux-start.sh
+# Select option 2 (Update)
 ```
 
 **Unraid:**
-- Push to GitHub → GitHub Actions builds automatically
-- In Unraid Docker tab → Force Update
+```bash
+cd /mnt/user/appdata/ytandchill
+git pull
+docker-compose down
+docker-compose up -d --build
+```
 
 ### Changing the Port
 
@@ -582,7 +539,7 @@ Recreate the container.
 | Performance | Good | Excellent | Good | Excellent |
 | Auto-start | Task Scheduler | Systemd | LaunchAgent | Built-in |
 | Resource Usage | Low | Low | Low | Low |
-| Updates | Manual (git pull) | Manual (git pull) | Manual (git pull) | Auto (Force Update) |
+| Updates | Menu option 2 | Menu option 2 | Menu option 2 | Force Update / rebuild |
 | Best For | Desktop use | Servers/Desktop | Desktop use | Home servers |
 
 ---

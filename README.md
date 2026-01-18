@@ -10,10 +10,13 @@ YT channel downloader and video library manager. Monitor channels, queue downloa
 
 - **Channel Management** - Subscribe to channels, organize with categories, set per-channel duration filters and auto-download
 - **Smart Queue** - Drag-and-drop reordering, pause/resume, real-time progress with speed and ETA
-- **Video Library** - Search, filter, sort, bulk actions, watched status tracking with resume playback
+- **Video Library** - Search, filter, sort by download/upload date, bulk actions, watched status with resume playback
+- **Smart Import** - Drag-and-drop upload, auto-matching by filename or video ID, results view with Text/CSV export
 - **Playlists** - Create custom playlists, organize with categories, shuffle play
 - **Video Player** - Playback speed controls, picture-in-picture, keyboard shortcuts, video preview on hover
+- **Settings** - Collapsible sections, tooltips, ffmpeg configuration, auto-update system
 - **Auto-Scan Scheduler** - Set daily scan times to check for new uploads
+- **Toast Notifications** - Non-blocking status updates throughout the app
 - **10 Themes** - Kernel, Fatal, Subnet, Archive, Buffer, Gateway, Catppuccin, Online, Pixel, Debug
 - **Mobile Support** - Touch-optimized interface with gesture controls
 - **Cookie Auth** - cookies.txt or Firefox browser integration for authenticated downloads
@@ -55,10 +58,10 @@ Select option 3 (Setup) on first run, then option 1 (Start) to launch.
 
 **Linux / macOS:**
 ```bash
-chmod +x setup-native-linux.sh start-native-linux.sh
-./setup-native-linux.sh
-./start-native-linux.sh
+chmod +x linux-start.sh
+./linux-start.sh
 ```
+Select option 3 (Setup) on first run, then option 1 (Start) to launch.
 
 **Unraid/Docker:**
 See [UNRAID-SETUP.md](UNRAID-SETUP.md)
@@ -104,6 +107,8 @@ Videos are identified automatically by:
 - **Filename = Video ID** (e.g., `dQw4w9WgXcQ.mp4`) → instant match
 - **Filename = Title** (e.g., `My Video Title.mp4`) → YouTube search + duration match
 
+**Import Results**: View matched, skipped, and failed imports with video IDs and similarity scores. Export results as Text or CSV.
+
 ## Directory Structure
 
 ```
@@ -123,6 +128,15 @@ ytandchill/
 - **Docker issues**: Check logs with `docker logs ytandchill`
 
 See [FAQ.md](FAQ.md) for more help.
+
+## Documentation
+
+| File | Description |
+|------|-------------|
+| [README.md](README.md) | This file - quick start and overview |
+| [FAQ.md](FAQ.md) | Frequently asked questions and troubleshooting |
+| [PLATFORM-GUIDE.md](PLATFORM-GUIDE.md) | Detailed platform-specific setup (Windows, Linux, macOS) |
+| [UNRAID-SETUP.md](UNRAID-SETUP.md) | Unraid/Docker installation guide |
 
 ## Architecture
 
