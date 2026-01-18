@@ -259,12 +259,12 @@ export default function Player() {
         <div className={`md:max-w-[83.333%] transition-all duration-300 ease-in-out ${
           isTheaterMode ? 'md:w-[83.333%]' : 'md:w-[60%]'
         }`} style={{ willChange: 'width' }}>
-          <div className={`bg-black rounded-xl shadow-card-hover relative flex items-center justify-center ${
+          <div className={`bg-black rounded-xl shadow-card-hover relative overflow-hidden ${
             isTheaterMode ? '' : 'max-h-[600px]'
           }`}>
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered max-w-full h-auto block mx-auto"
+              className="video-js vjs-big-play-centered w-full"
               playsInline
               preload="auto"
             />
