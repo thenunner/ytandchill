@@ -924,7 +924,6 @@ export default function Library() {
             const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedChannelsList.length);
             const textSizes = getTextSizes(effectiveCardSize);
             return (
-            <div className="px-6 lg:px-12 xl:px-16">
               <div className={`grid ${getGridClass(gridColumns, paginatedChannelsList.length)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedChannelsList.map(channel => (
             <Link
@@ -967,7 +966,6 @@ export default function Library() {
             </Link>
           ))}
             </div>
-          </div>
             );
           })()}
 
@@ -1101,7 +1099,6 @@ export default function Library() {
                     {isExpanded && (() => {
                       const textSizes = getTextSizes(cardSize);
                       return (
-                        <div className="px-6 lg:px-12 xl:px-16">
                           <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                           {categoryPlaylists.map(playlist => {
                             const isSelected = selectedPlaylists.includes(playlist.id);
@@ -1253,7 +1250,6 @@ export default function Library() {
                             );
                           })}
                           </div>
-                        </div>
                       );
                     })()}
                   </div>
@@ -1279,7 +1275,6 @@ export default function Library() {
                   {(() => {
                     const textSizes = getTextSizes(cardSize);
                     return (
-                    <div className="px-6 lg:px-12 xl:px-16">
                       <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                       {groupedPlaylists.uncategorized.map(playlist => {
                         const isSelected = selectedPlaylists.includes(playlist.id);
@@ -1426,7 +1421,6 @@ export default function Library() {
                         );
                       })}
                       </div>
-                    </div>
                     );
                   })()}
                 </div>
