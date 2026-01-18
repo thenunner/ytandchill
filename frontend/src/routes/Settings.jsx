@@ -574,7 +574,7 @@ export default function Settings() {
 
   return (
     <>
-    <div className="animate-fade-in">
+    <div className="animate-fade-in pt-4">
       <div className="flex flex-col gap-4 w-full max-w-3xl mx-auto">
 
         {/* Stats Bar */}
@@ -809,69 +809,185 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="setting-row flex-col !items-stretch gap-3">
-            <div className="flex items-center justify-between">
+          <div className="setting-row flex-col !items-stretch !py-0 !border-b-0">
+            <div className="flex items-center justify-between py-3.5">
               <div className="setting-label">
+                <span className={`autoscan-status ${autoRefresh ? 'active' : ''}`}></span>
                 <div>
                   <div className="setting-name">Auto-Scan</div>
                   <div className="setting-desc">Automatically check channels for new videos</div>
                 </div>
               </div>
-              <div className="settings-toggle-group">
-                <button
-                  onClick={() => handleAutoScanToggle(false)}
-                  className={`settings-toggle-btn ${!autoRefresh ? 'active' : ''}`}
-                >
-                  Off
-                </button>
-                <button
-                  onClick={() => handleAutoScanToggle(true)}
-                  className={`settings-toggle-btn ${autoRefresh ? 'active' : ''}`}
-                >
-                  On
-                </button>
-              </div>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={autoRefresh}
+                  onChange={(e) => handleAutoScanToggle(e.target.checked)}
+                />
+                <span className="toggle-slider"></span>
+              </label>
             </div>
 
-            {/* Expandable Auto-Scan config */}
-            {autoRefresh && (
-              <div className="expandable-content -mx-4 -mb-3.5 rounded-none">
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs text-text-secondary">Mode:</span>
-                  <div className="settings-toggle-group">
-                    <button
-                      onClick={() => handleModeSwitch('times')}
-                      className={`settings-toggle-btn ${scanMode === 'times' ? 'active' : ''}`}
-                    >
-                      Manual Times
-                    </button>
-                    <button
-                      onClick={() => handleModeSwitch('interval')}
-                      className={`settings-toggle-btn ${scanMode === 'interval' ? 'active' : ''}`}
-                    >
-                      Interval
-                    </button>
+            {/* Expandable Auto-Scan config with CSS transition */}
+            <div className={`autoscan-expand ${autoRefresh ? 'expanded' : ''}`}>
+              <div className="autoscan-inner -mx-4">
+                {/* Mode Selector */}
+                <div className="mode-selector">
+                  <button
+                    onClick={() => handleModeSwitch('times')}
+                    className={`mode-btn ${scanMode === 'times' ? 'active' : ''}`}
+                  >
+                    Specific Times
+                  </button>
+                  <button
+                    onClick={() => handleModeSwitch('interval')}
+                    className={`mode-btn ${scanMode === 'interval' ? 'active' : ''}`}
+                  >
+                    Interval
+                  </button>
+                </div>
+
+                {/* Manual Times Mode */}
+                {scanMode === 'times' && (
+                  <div>
+                    <label className="block text-xs font-medium text-text-muted uppercase tracking-wider mb-3">
+                      Scan Times (up to 4)
+                    </label>
+                    <div className="time-slots">
+                      {scanTimes.map((time, index) => (
+                        <div key={index} className="time-slot">
+                          <span className="time-slot-num">{index + 1}</span>
+                          <div className="time-inputs">
+                            <input
+                              type="text"
+                              className="time-input"
+                              value={String(time.hour).padStart(2, '0')}
+                              maxLength={2}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                                const newTimes = [...scanTimes];
+                                newTimes[index] = { ...newTimes[index], hour: parseInt(val) || 0 };
+                                setScanTimes(newTimes);
+                                setManualModeTimes(newTimes);
+                              }}
+                            />
+                            <span className="time-separator">:</span>
+                            <input
+                              type="text"
+                              className="time-input"
+                              value={String(time.minute).padStart(2, '0')}
+                              maxLength={2}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                                const newTimes = [...scanTimes];
+                                newTimes[index] = { ...newTimes[index], minute: parseInt(val) || 0 };
+                                setScanTimes(newTimes);
+                                setManualModeTimes(newTimes);
+                              }}
+                            />
+                          </div>
+                          {scanTimes.length > 1 && (
+                            <button
+                              className="remove-slot-btn"
+                              onClick={() => {
+                                const newTimes = scanTimes.filter((_, i) => i !== index);
+                                setScanTimes(newTimes);
+                                setManualModeTimes(newTimes);
+                              }}
+                            >
+                              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                      {scanTimes.length < 4 && (
+                        <div
+                          className="time-slot empty"
+                          onClick={() => {
+                            const newTimes = [...scanTimes, { hour: 12, minute: 0 }];
+                            setScanTimes(newTimes);
+                            setManualModeTimes(newTimes);
+                          }}
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                          </svg>
+                          <span>Add Time</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  {scanMode === 'interval' && (
-                    <select
-                      value={scanInterval}
-                      onChange={(e) => {
-                        const newInterval = parseInt(e.target.value);
-                        setScanInterval(newInterval);
-                        setIntervalModeHours(newInterval);
-                      }}
-                      className="input text-xs font-mono py-1 px-2 w-auto"
-                    >
-                      <option value={6}>Every 6h</option>
-                      <option value={8}>Every 8h</option>
-                      <option value={12}>Every 12h</option>
-                    </select>
-                  )}
-                </div>
-                <div className="time-slots">
-                  {displayTimes.slice(0, 4).map((time, index) => renderTimeBox(time, index))}
-                </div>
-                <div className="flex justify-end mt-3">
+                )}
+
+                {/* Interval Mode */}
+                {scanMode === 'interval' && (
+                  <div>
+                    <div className="interval-config">
+                      <div className="interval-group">
+                        <label>Every</label>
+                        <div className="interval-buttons">
+                          {[6, 8, 12].map(hours => (
+                            <button
+                              key={hours}
+                              className={`interval-btn ${scanInterval === hours ? 'active' : ''}`}
+                              onClick={() => {
+                                setScanInterval(hours);
+                                setIntervalModeHours(hours);
+                              }}
+                            >
+                              {hours}h
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="interval-group">
+                        <label>Starting At</label>
+                        <div className="start-time-picker">
+                          <input
+                            type="text"
+                            className="time-input"
+                            value={String(intervalModeTime.hour).padStart(2, '0')}
+                            maxLength={2}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                              setIntervalModeTime({ ...intervalModeTime, hour: parseInt(val) || 0 });
+                            }}
+                          />
+                          <span className="time-separator">:</span>
+                          <input
+                            type="text"
+                            className="time-input"
+                            value={String(intervalModeTime.minute).padStart(2, '0')}
+                            maxLength={2}
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 2);
+                              setIntervalModeTime({ ...intervalModeTime, minute: parseInt(val) || 0 });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Schedule Preview */}
+                    <div className="schedule-preview">
+                      <div className="preview-label">Scheduled Scans</div>
+                      <div className="preview-times">
+                        {Array.from({ length: Math.floor(24 / scanInterval) }, (_, i) => {
+                          const hour = (intervalModeTime.hour + (i * scanInterval)) % 24;
+                          return (
+                            <span key={i} className="preview-time">
+                              {String(hour).padStart(2, '0')}:{String(intervalModeTime.minute).padStart(2, '0')}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-end mt-5">
                   <button
                     onClick={handleSaveAutoRefresh}
                     className="settings-action-btn"
@@ -880,7 +996,7 @@ export default function Settings() {
                   </button>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 

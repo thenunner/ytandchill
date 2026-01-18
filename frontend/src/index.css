@@ -418,30 +418,189 @@
 .log-level.warn { @apply text-yellow-400; }
 .log-level.error { @apply text-red-400; }
 
-/* Expandable Content */
-.expandable-content {
-  @apply px-4 py-3 bg-dark-primary border-t border-dark-border;
+/* Auto-Scan Expandable Content */
+.autoscan-expand {
+  @apply overflow-hidden transition-all duration-300 ease-out;
+  max-height: 0;
+  opacity: 0;
 }
 
-/* Time Slots Grid */
+.autoscan-expand.expanded {
+  max-height: 400px;
+  opacity: 1;
+}
+
+.autoscan-inner {
+  @apply px-4 py-4 bg-dark-primary border-t border-dark-border;
+}
+
+/* Mode Selector Pills */
+.mode-selector {
+  @apply flex bg-dark-primary border border-dark-border rounded-lg p-1 mb-5;
+}
+
+.mode-btn {
+  @apply flex-1 px-4 py-2.5 text-sm font-medium text-text-secondary;
+  @apply bg-transparent border-none rounded-md cursor-pointer;
+  @apply transition-all duration-150;
+}
+
+.mode-btn:hover {
+  @apply text-text-primary;
+}
+
+.mode-btn.active {
+  @apply bg-dark-tertiary text-text-primary shadow-sm;
+}
+
+/* Time Slots Grid - 2 columns */
 .time-slots {
-  @apply grid grid-cols-2 lg:grid-cols-4 gap-2 mt-2;
+  @apply grid grid-cols-2 gap-3;
 }
 
 .time-slot {
-  @apply flex items-center gap-1.5 p-2 bg-dark-secondary border border-dark-border rounded-md;
+  @apply flex items-center gap-2 p-3 bg-dark-secondary border border-dark-border rounded-lg;
+  @apply transition-all duration-150;
+}
+
+.time-slot:hover {
+  @apply border-dark-border-light;
+}
+
+.time-slot.empty {
+  @apply border-dashed justify-center cursor-pointer text-text-muted;
+}
+
+.time-slot.empty:hover {
+  @apply border-accent text-accent bg-accent/10;
 }
 
 .time-slot-num {
-  @apply text-xs font-semibold text-text-muted w-4;
+  @apply text-xs font-semibold text-text-muted bg-dark-primary;
+  @apply px-2 py-1 rounded min-w-[28px] text-center;
+}
+
+.time-inputs {
+  @apply flex items-center gap-1 flex-1;
 }
 
 .time-input {
-  @apply w-11 px-1.5 py-1 text-xs font-mono text-center;
-  @apply bg-dark-primary border border-dark-border rounded text-text-primary;
+  @apply w-14 px-2 py-2 text-sm font-mono text-center font-medium;
+  @apply bg-dark-primary border border-dark-border rounded-md text-text-primary;
+  @apply transition-all duration-150;
+}
+
+.time-input:focus {
+  @apply outline-none border-accent ring-2 ring-accent/20;
 }
 
 .time-separator {
-  @apply text-text-muted font-semibold;
+  @apply text-text-muted font-semibold text-base;
+}
+
+.remove-slot-btn {
+  @apply w-7 h-7 flex items-center justify-center ml-auto;
+  @apply bg-transparent border-none rounded-md text-text-muted cursor-pointer;
+  @apply transition-all duration-150;
+}
+
+.remove-slot-btn:hover {
+  @apply bg-red-500/15 text-red-400;
+}
+
+.remove-slot-btn svg {
+  @apply w-4 h-4;
+}
+
+/* Interval Config */
+.interval-config {
+  @apply flex gap-5 flex-wrap;
+}
+
+.interval-group {
+  @apply flex-1 min-w-[180px];
+}
+
+.interval-group label {
+  @apply block text-xs font-medium text-text-muted uppercase tracking-wider mb-2;
+}
+
+.interval-buttons {
+  @apply flex gap-2;
+}
+
+.interval-btn {
+  @apply flex-1 px-4 py-3 text-sm font-mono font-medium;
+  @apply bg-dark-secondary border border-dark-border rounded-lg text-text-secondary;
+  @apply cursor-pointer transition-all duration-150;
+}
+
+.interval-btn:hover {
+  @apply border-dark-border-light text-text-primary;
+}
+
+.interval-btn.active {
+  @apply bg-accent/15 border-accent text-accent;
+}
+
+.start-time-picker {
+  @apply flex items-center gap-1.5 p-2.5 bg-dark-secondary border border-dark-border rounded-lg;
+}
+
+/* Schedule Preview */
+.schedule-preview {
+  @apply mt-5 p-4 bg-green-500/10 border border-green-500/30 rounded-lg;
+}
+
+.preview-label {
+  @apply text-xs font-semibold text-green-400 uppercase tracking-wider mb-2;
+}
+
+.preview-times {
+  @apply flex flex-wrap gap-2;
+}
+
+.preview-time {
+  @apply text-sm font-mono font-medium text-text-primary;
+  @apply bg-dark-secondary px-3 py-1.5 rounded-md;
+}
+
+/* Status Indicator for Auto-Scan */
+.autoscan-status {
+  @apply w-2 h-2 rounded-full mr-2 flex-shrink-0;
+  @apply bg-text-muted transition-all duration-300;
+}
+
+.autoscan-status.active {
+  @apply bg-green-400;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+}
+
+/* Toggle Switch */
+.toggle-switch {
+  @apply relative inline-block w-12 h-7 flex-shrink-0;
+}
+
+.toggle-switch input {
+  @apply opacity-0 w-0 h-0;
+}
+
+.toggle-slider {
+  @apply absolute cursor-pointer inset-0 bg-dark-tertiary border border-dark-border rounded-full;
+  @apply transition-all duration-200;
+}
+
+.toggle-slider:before {
+  @apply absolute content-[''] h-5 w-5 left-[3px] bottom-[3px];
+  @apply bg-text-secondary rounded-full transition-all duration-200;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  @apply bg-accent border-accent;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  @apply bg-white;
+  transform: translateX(20px);
 }
 
