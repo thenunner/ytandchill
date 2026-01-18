@@ -745,27 +745,42 @@ export default function Import() {
       </div>
 
       {/* Import Buttons */}
-      <div className="flex gap-4">
-        <button
-          onClick={() => handleStartImport('auto')}
-          disabled={smartIdentify.isLoading}
-          className="btn btn-primary flex-1 py-3 text-lg disabled:opacity-50"
-        >
-          Auto Import
-        </button>
-        <button
-          onClick={() => handleStartImport('manual')}
-          disabled={smartIdentify.isLoading}
-          className="btn btn-secondary flex-1 py-3 text-lg disabled:opacity-50"
-        >
-          Manual Import
-        </button>
-      </div>
+      {(() => {
+        const mkvPending = hasSkippedMkv && !mkvSettingEnabled && mkvChoice === null;
+        const buttonsDisabled = smartIdentify.isLoading || mkvPending;
 
-      <p className="text-center text-text-muted text-sm mt-4">
-        <strong>Auto:</strong> Imports confident matches automatically.{' '}
-        <strong>Manual:</strong> Review matches before importing.
-      </p>
+        return (
+          <>
+            <div className="flex gap-4">
+              <button
+                onClick={() => handleStartImport('auto')}
+                disabled={buttonsDisabled}
+                className={`btn btn-primary flex-1 py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed ${mkvPending ? 'opacity-40' : ''}`}
+              >
+                Auto Import
+              </button>
+              <button
+                onClick={() => handleStartImport('manual')}
+                disabled={buttonsDisabled}
+                className={`btn btn-secondary flex-1 py-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed ${mkvPending ? 'opacity-40' : ''}`}
+              >
+                Manual Import
+              </button>
+            </div>
+
+            {mkvPending ? (
+              <p className="text-center text-yellow-400/80 text-sm mt-4">
+                Choose what to do with MKV files above before importing
+              </p>
+            ) : (
+              <p className="text-center text-text-muted text-sm mt-4">
+                <strong>Auto:</strong> Imports confident matches automatically.{' '}
+                <strong>Manual:</strong> Review matches before importing.
+              </p>
+            )}
+          </>
+        );
+      })()}
     </div>
   );
 }
