@@ -66,6 +66,9 @@ export default function Settings() {
     return localStorage.getItem('library_date_display') || 'downloaded';
   });
 
+  // Default playback speed
+  const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState('1');
+
   // Initialize showLogs from localStorage, default to true (open) if not set
   const [showLogs, setShowLogs] = useState(() => {
     const saved = localStorage.getItem('logsVisible');
@@ -151,6 +154,8 @@ export default function Settings() {
       setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
       // Load cookie source setting
       setCookieSource(settings.cookie_source || 'file');
+      // Load default playback speed
+      setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
     }
   }, [settings]);
 
@@ -444,6 +449,19 @@ export default function Settings() {
     }
   };
 
+  const handlePlaybackSpeedChange = async (newSpeed) => {
+    setDefaultPlaybackSpeed(newSpeed);
+    try {
+      await updateSettings.mutateAsync({
+        default_playback_speed: newSpeed
+      });
+      showNotification(`Default playback speed set to ${newSpeed}x`, 'success');
+    } catch (err) {
+      showNotification('Failed to update playback speed', 'error');
+      setDefaultPlaybackSpeed(defaultPlaybackSpeed); // Revert on error
+    }
+  };
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -481,9 +499,14 @@ export default function Settings() {
               {/* Database */}
               <div className="flex flex-col items-center gap-1">
                 <span className="text-text-secondary text-xs">Database</span>
-                <span className={`font-mono text-xs ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}>
-                  {health?.database_size || 'N/A'}
-                </span>
+                <button
+                  onClick={handleQueueRepair}
+                  disabled={isCheckingRepair}
+                  className={`font-mono text-xs cursor-pointer hover:text-accent hover:underline transition-colors disabled:opacity-50 ${theme === 'online' || theme === 'pixel' || theme === 'debug' ? 'text-black' : 'text-text-primary'}`}
+                  title="Click to open database maintenance"
+                >
+                  {isCheckingRepair ? 'Checking...' : (health?.database_size || 'N/A')}
+                </button>
               </div>
               {/* Storage */}
               <div className="flex flex-col items-center gap-1">
@@ -637,177 +660,234 @@ export default function Settings() {
 
           {/* Card 3: Download Settings */}
           <div className="card p-4 w-full">
-            {/* Desktop: 3-column layout | Mobile: stacked */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              {/* Cookie Source - Left on desktop */}
-              <div className="flex flex-col items-center lg:items-start gap-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-text-primary">Cookies</h3>
-                  <button
-                    type="button"
-                    onClick={() => setShowCookieHelp(true)}
-                    className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
-                  >
-                    ?
-                  </button>
-                  <span className={`w-2 h-2 rounded-full ${
-                    cookieSource === 'none'
-                      ? 'bg-yellow-400'
-                      : cookieSource === 'browser'
-                      ? (health?.firefox_has_cookies ? 'bg-green-400' : 'bg-yellow-400')
-                      : (health?.cookies_available ? 'bg-green-400' : 'bg-yellow-400')
-                  }`} title={
-                    cookieSource === 'none'
-                      ? 'Anonymous'
-                      : cookieSource === 'browser'
-                      ? (health?.firefox_has_cookies ? 'Active' : 'Inactive')
-                      : (health?.cookies_available ? 'Active' : 'Inactive')
-                  }></span>
-                </div>
-                <div className="flex border border-dark-border rounded-md overflow-hidden">
-                  <button
-                    onClick={() => handleCookieSourceChange('file')}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      cookieSource === 'file'
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    File
-                  </button>
-                  <button
-                    onClick={() => handleCookieSourceChange('browser')}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
-                      cookieSource === 'browser'
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    Firefox
-                  </button>
-                  <button
-                    onClick={() => handleCookieSourceChange('none')}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+            {/* 2-row layout */}
+            <div className="flex flex-col gap-4">
+              {/* Row 1: Cookies | Card Date Display | Skip Segments */}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {/* Cookie Source - Left on desktop */}
+                <div className="flex flex-col items-center lg:items-start gap-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-primary">Cookies</h3>
+                    <button
+                      type="button"
+                      onClick={() => setShowCookieHelp(true)}
+                      className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                    >
+                      ?
+                    </button>
+                    <span className={`w-2 h-2 rounded-full ${
                       cookieSource === 'none'
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    None
-                  </button>
+                        ? 'bg-yellow-400'
+                        : cookieSource === 'browser'
+                        ? (health?.firefox_has_cookies ? 'bg-green-400' : 'bg-yellow-400')
+                        : (health?.cookies_available ? 'bg-green-400' : 'bg-yellow-400')
+                    }`} title={
+                      cookieSource === 'none'
+                        ? 'Anonymous'
+                        : cookieSource === 'browser'
+                        ? (health?.firefox_has_cookies ? 'Active' : 'Inactive')
+                        : (health?.cookies_available ? 'Active' : 'Inactive')
+                    }></span>
+                  </div>
+                  <div className="flex border border-dark-border rounded-md overflow-hidden">
+                    <button
+                      onClick={() => handleCookieSourceChange('file')}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                        cookieSource === 'file'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      File
+                    </button>
+                    <button
+                      onClick={() => handleCookieSourceChange('browser')}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                        cookieSource === 'browser'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      Firefox
+                    </button>
+                    <button
+                      onClick={() => handleCookieSourceChange('none')}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                        cookieSource === 'none'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      None
+                    </button>
+                  </div>
+                </div>
+
+                {/* Separator - Mobile only */}
+                <div className="border-t border-dark-border lg:hidden"></div>
+
+                {/* Card Date Display - Center */}
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-primary">Card Date Display</h3>
+                    <button
+                      type="button"
+                      className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                      title="Controls which date appears on video cards in Library: the date the video was uploaded to YouTube or the date you downloaded it"
+                    >
+                      ?
+                    </button>
+                  </div>
+                  <div className="flex border border-dark-border rounded-md overflow-hidden">
+                    <button
+                      onClick={() => {
+                        setLibraryDateDisplay('uploaded');
+                        localStorage.setItem('library_date_display', 'uploaded');
+                        showNotification('Library cards will show upload date', 'success');
+                      }}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                        libraryDateDisplay === 'uploaded'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      Uploaded
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLibraryDateDisplay('downloaded');
+                        localStorage.setItem('library_date_display', 'downloaded');
+                        showNotification('Library cards will show download date', 'success');
+                      }}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                        libraryDateDisplay === 'downloaded'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      Downloaded
+                    </button>
+                  </div>
+                </div>
+
+                {/* Separator - Mobile only */}
+                <div className="border-t border-dark-border lg:hidden"></div>
+
+                {/* SponsorBlock - Right on desktop */}
+                <div className="flex flex-col items-center lg:items-end gap-2">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-text-primary">Skip Segments</h3>
+                    <button
+                      onClick={() => setShowSponsorBlockHelp(true)}
+                      className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                      title="What is SponsorBlock?"
+                    >
+                      ?
+                    </button>
+                  </div>
+                  <div className="flex border border-dark-border rounded-md overflow-hidden">
+                    <button
+                      onClick={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                        removeSponsor
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      Sponsors
+                    </button>
+                    <button
+                      onClick={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                        removeSelfpromo
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      Promo
+                    </button>
+                    <button
+                      onClick={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                        removeInteraction
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      Like/Sub
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Separator - Mobile only */}
-              <div className="border-t border-dark-border lg:hidden"></div>
+              {/* Separator between rows */}
+              <div className="border-t border-dark-border"></div>
 
-              {/* Library Date Display - Between cookies and actions */}
-              <div className="flex flex-col items-center gap-2">
-                <h3 className="text-sm font-semibold text-text-primary">Date</h3>
-                <div className="flex border border-dark-border rounded-md overflow-hidden">
-                  <button
-                    onClick={() => {
-                      setLibraryDateDisplay('uploaded');
-                      localStorage.setItem('library_date_display', 'uploaded');
-                      showNotification('Library cards will show upload date', 'success');
-                    }}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      libraryDateDisplay === 'uploaded'
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    Uploaded
-                  </button>
-                  <button
-                    onClick={() => {
-                      setLibraryDateDisplay('downloaded');
-                      localStorage.setItem('library_date_display', 'downloaded');
-                      showNotification('Library cards will show download date', 'success');
-                    }}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
-                      libraryDateDisplay === 'downloaded'
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    Downloaded
-                  </button>
+              {/* Row 2: Video Speed | Reset User, Show Status */}
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                {/* Video Speed - Left */}
+                <div className="flex flex-col items-center lg:items-start gap-2">
+                  <h3 className="text-sm font-semibold text-text-primary">Video Speed</h3>
+                  <div className="flex border border-dark-border rounded-md overflow-hidden">
+                    <button
+                      onClick={() => handlePlaybackSpeedChange('1')}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                        defaultPlaybackSpeed === '1'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      1x
+                    </button>
+                    <button
+                      onClick={() => handlePlaybackSpeedChange('1.5')}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                        defaultPlaybackSpeed === '1.5'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      1.5x
+                    </button>
+                    <button
+                      onClick={() => handlePlaybackSpeedChange('2')}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                        defaultPlaybackSpeed === '2'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      2x
+                    </button>
+                    <button
+                      onClick={() => handlePlaybackSpeedChange('2.5')}
+                      className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                        defaultPlaybackSpeed === '2.5'
+                          ? 'bg-accent text-white'
+                          : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                      }`}
+                    >
+                      2.5x
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              {/* Separator - Mobile only */}
-              <div className="border-t border-dark-border lg:hidden"></div>
+                {/* Separator - Mobile only */}
+                <div className="border-t border-dark-border lg:hidden"></div>
 
-              {/* Actions - Center on desktop */}
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 order-last lg:order-none">
-                <button
-                  onClick={() => setShowPasswordChange(!showPasswordChange)}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center"
-                >
-                  Reset User
-                </button>
-                <button
-                  onClick={toggleStatusBar}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center"
-                >
-                  {statusBarVisible ? 'Hide Status' : 'Show Status'}
-                </button>
-                <button
-                  onClick={handleQueueRepair}
-                  disabled={isCheckingRepair}
-                  title="Cleans up database count issues, orphaned queue items, ghost videos from deleted channels, and other inconsistencies"
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCheckingRepair ? 'Checking...' : 'Repair'}
-                </button>
-              </div>
-
-              {/* Separator - Mobile only */}
-              <div className="border-t border-dark-border lg:hidden"></div>
-
-              {/* SponsorBlock - Right on desktop */}
-              <div className="flex flex-col items-center lg:items-end gap-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-text-primary">Skip Segments</h3>
+                {/* Actions - Right on desktop */}
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-end gap-2">
                   <button
-                    onClick={() => setShowSponsorBlockHelp(true)}
-                    className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
-                    title="What is SponsorBlock?"
+                    onClick={() => setShowPasswordChange(!showPasswordChange)}
+                    className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center"
                   >
-                    ?
-                  </button>
-                </div>
-                <div className="flex border border-dark-border rounded-md overflow-hidden">
-                  <button
-                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
-                      removeSponsor
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    Sponsors
+                    Reset User
                   </button>
                   <button
-                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
-                      removeSelfpromo
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
+                    onClick={toggleStatusBar}
+                    className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center"
                   >
-                    Promo
-                  </button>
-                  <button
-                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
-                      removeInteraction
-                        ? 'bg-accent text-white'
-                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
-                    }`}
-                  >
-                    Like/Sub
+                    {statusBarVisible ? 'Hide Status' : 'Show Status'}
                   </button>
                 </div>
               </div>

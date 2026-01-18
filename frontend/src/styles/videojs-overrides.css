@@ -402,3 +402,60 @@
   }
 
 }
+
+/* ---------------------------------------------
+ * PLAYBACK RATE MENU STYLING
+ * Touch-friendly menu for speed control
+ * --------------------------------------------- */
+
+/* Playback rate button */
+.video-js .vjs-playback-rate .vjs-playback-rate-value {
+  font-size: 13px;
+  line-height: 44px;
+  font-weight: 600;
+}
+
+/* Playback rate menu */
+.video-js .vjs-playback-rate .vjs-menu {
+  width: auto;
+  min-width: 60px;
+}
+
+.video-js .vjs-playback-rate .vjs-menu .vjs-menu-content {
+  bottom: 44px;  /* Position above control bar */
+  max-height: none;
+}
+
+/* Menu items - ensure 44px touch targets */
+.video-js .vjs-playback-rate .vjs-menu li {
+  min-height: 44px;
+  line-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Selected item highlight */
+.video-js .vjs-playback-rate .vjs-menu li.vjs-selected {
+  background-color: hsl(var(--accent));
+  color: white;
+}
+
+/* Mobile playback rate adjustments */
+@media (max-width: 1024px) {
+  .video-js .vjs-playback-rate .vjs-playback-rate-value {
+    font-size: 12px;
+    line-height: 40px;
+  }
+
+  .video-js .vjs-playback-rate .vjs-menu .vjs-menu-content {
+    bottom: 40px;
+  }
+
+  /* Ensure 44px touch targets on mobile */
+  .video-js .vjs-playback-rate .vjs-menu li {
+    min-height: 44px;
+    line-height: 44px;
+    padding: 0 20px;
+  }
+}

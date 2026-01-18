@@ -96,6 +96,8 @@ export function useVideoJsPlayer({
       inactivityTimeout: isMobile ? 0 : 2000,
       // Disable browser's native touch controls (we handle our own)
       nativeControlsForTouch: false,
+      // Playback speed options (unified across all devices)
+      playbackRates: [1, 1.5, 2, 2.5],
       html5: {
         vhs: {
           overrideNative: false,
@@ -118,16 +120,24 @@ export function useVideoJsPlayer({
 
     console.log('[useVideoJsPlayer] Seek coordinator plugin enabled');
 
+    // Apply default playback speed from settings
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(settings => {
+        const defaultSpeed = parseFloat(settings.default_playback_speed) || 1;
+        if (defaultSpeed !== 1 && player && !player.isDisposed()) {
+          player.playbackRate(defaultSpeed);
+          console.log(`[useVideoJsPlayer] Applied default playback speed: ${defaultSpeed}x`);
+        }
+      })
+      .catch(err => {
+        console.warn('[useVideoJsPlayer] Failed to fetch default playback speed:', err);
+      });
+
     // ============================================
     // DEVICE-SPECIFIC CONTROL VISIBILITY BEHAVIOR
     // ============================================
     if (isMobile) {
-      // Remove playback rate button on mobile
-      const playbackRateBtn = player.controlBar.getChild('playbackRateMenuButton');
-      if (playbackRateBtn) {
-        player.controlBar.removeChild(playbackRateBtn);
-        console.log('[useVideoJsPlayer] Removed playback rate button for mobile');
-      }
       // Mobile: Controls always visible EXCEPT in fullscreen (YouTube-style)
       let mobileFullscreenTimeout = null;
       const MOBILE_FULLSCREEN_HIDE_DELAY = 2000;

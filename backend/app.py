@@ -482,7 +482,8 @@ def init_settings():
     defaults = {
         'auto_refresh_enabled': 'false',
         'download_quality': 'best',
-        'concurrent_downloads': '1'
+        'concurrent_downloads': '1',
+        'default_playback_speed': '1'
     }
     for key, value in defaults.items():
         if not settings_manager.get(key):
