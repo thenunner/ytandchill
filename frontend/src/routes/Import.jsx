@@ -503,19 +503,47 @@ export default function Import() {
 
   // State 1: No files in import folder - Show drag and drop zone
   if (!scanData?.count || scanData.count === 0) {
+    const hasSkippedMkv = scanData?.skipped_mkv?.length > 0;
+
     return (
-      <div
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        className={`relative flex flex-col items-center justify-center min-h-[60vh] text-center px-4 mx-4 my-4 border-2 border-dashed rounded-xl transition-all duration-200 ${
-          rejectionError
-            ? 'border-red-500/50 bg-red-500/5'
-            : isDragging
-              ? 'border-accent bg-accent/10 scale-[1.02]'
-              : 'border-dark-border hover:border-dark-border-light'
-        }`}
-      >
+      <div className="flex flex-col">
+        {/* MKV Warning Banner - shown above drop zone */}
+        {hasSkippedMkv && (
+          <div className="mx-4 mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+            <div className="flex items-start gap-3">
+              <svg className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <div className="flex-1">
+                <div className="text-base font-semibold text-yellow-400 mb-1">
+                  {scanData.skipped_mkv.length} MKV file{scanData.skipped_mkv.length !== 1 ? 's' : ''} found
+                </div>
+                <div className="text-sm text-text-secondary mb-2">
+                  MKV files need to be re-encoded for web playback. Go to <strong>Settings</strong> and enable <strong>'Re-encode MKVs for web'</strong>.
+                </div>
+                <div className="text-xs text-text-muted">
+                  {scanData.skipped_mkv.slice(0, 3).map(f => f.name).join(', ')}
+                  {scanData.skipped_mkv.length > 3 && ` +${scanData.skipped_mkv.length - 3} more`}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`relative flex flex-col items-center justify-center min-h-[60vh] text-center px-4 mx-4 my-4 border-2 border-dashed rounded-xl transition-all duration-200 ${
+            rejectionError
+              ? 'border-red-500/50 bg-red-500/5'
+              : isDragging
+                ? 'border-accent bg-accent/10 scale-[1.02]'
+                : 'border-dark-border hover:border-dark-border-light'
+          }`}
+        >
         {/* Rejection error overlay */}
         {rejectionError && (
           <div className="absolute inset-0 flex items-center justify-center bg-dark-primary/95 rounded-xl z-10">
@@ -599,6 +627,7 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
         >
           Refresh
         </button>
+        </div>
       </div>
     );
   }
@@ -830,6 +859,31 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
           Found <span className="text-accent-text font-semibold">{scanData.count}</span> video file{scanData.count !== 1 ? 's' : ''} to import
         </p>
       </div>
+
+      {/* Skipped MKV Files Warning */}
+      {scanData?.skipped_mkv?.length > 0 && (
+        <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+          <div className="flex items-start gap-3">
+            <svg className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div className="flex-1">
+              <div className="text-base font-semibold text-yellow-400 mb-1">
+                {scanData.skipped_mkv.length} MKV file{scanData.skipped_mkv.length !== 1 ? 's' : ''} skipped
+              </div>
+              <div className="text-sm text-text-secondary mb-2">
+                MKV files need to be re-encoded for web playback. Go to <strong>Settings</strong> and enable <strong>'Re-encode MKVs for web'</strong>.
+              </div>
+              <div className="text-xs text-text-muted">
+                {scanData.skipped_mkv.slice(0, 3).map(f => f.name).join(', ')}
+                {scanData.skipped_mkv.length > 3 && ` +${scanData.skipped_mkv.length - 3} more`}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Skipped Unsupported Files Warning */}
       {skippedFiles.length > 0 && (
