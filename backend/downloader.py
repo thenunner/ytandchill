@@ -477,10 +477,18 @@ class DownloadWorker:
             browser_type = self.settings_manager.get('cookie_browser', 'firefox')
             try:
                 # yt-dlp format: (browser_name, profile, keyring, container)
-                # Use /firefox_profile as the profile path (where user mounts their Firefox profile)
-                firefox_profile_path = '/firefox_profile'
-                ydl_opts['cookiesfrombrowser'] = (browser_type, firefox_profile_path, None, None)
-                logger.info(f'Using cookies from {browser_type} browser at {firefox_profile_path}')
+                # Platform-specific handling:
+                # - Docker: use /firefox_profile mount point
+                # - Windows/Linux native: let yt-dlp auto-detect browser profile
+                if os.path.exists('/.dockerenv'):
+                    # Docker container - use mounted Firefox profile
+                    firefox_profile_path = '/firefox_profile'
+                    ydl_opts['cookiesfrombrowser'] = (browser_type, firefox_profile_path, None, None)
+                    logger.info(f'Using cookies from {browser_type} browser at {firefox_profile_path}')
+                else:
+                    # Native Windows/Linux - let yt-dlp auto-detect
+                    ydl_opts['cookiesfrombrowser'] = (browser_type, None, None, None)
+                    logger.info(f'Using cookies from {browser_type} browser (auto-detect profile)')
             except Exception as e:
                 logger.warning(f'Failed to extract cookies from browser: {e}')
                 logger.warning('Browser cookie extraction failed - continuing without cookies')

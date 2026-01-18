@@ -149,21 +149,15 @@ export default function UpdateModal({ isOpen, onClose, currentVersion, latestVer
         )}
 
         {/* Footer */}
-        <div className="flex gap-3 mt-6 pt-4 border-t border-dark-border">
+        <div className="mt-6 pt-4 border-t border-dark-border">
           <a
             href="https://github.com/thenunner/ytandchill/releases/latest"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover flex-1 text-center"
+            className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover w-full text-center"
           >
             View Changelog
           </a>
-          <button
-            onClick={onClose}
-            className="btn bg-accent text-white hover:bg-accent-hover flex-1"
-          >
-            Later
-          </button>
         </div>
       </div>
     </div>

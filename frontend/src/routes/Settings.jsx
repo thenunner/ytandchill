@@ -149,14 +149,24 @@ export default function Settings() {
     }
   }, [settings]);
 
+  // Compare semver versions properly (e.g., 6.12.10 > 6.12.6)
+  const compareSemver = (a, b) => {
+    const parseVersion = (v) => v.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const [aMajor, aMinor, aPatch] = parseVersion(a);
+    const [bMajor, bMinor, bPatch] = parseVersion(b);
+    if (aMajor !== bMajor) return aMajor - bMajor;
+    if (aMinor !== bMinor) return aMinor - bMinor;
+    return aPatch - bPatch;
+  };
+
   // Get latest version from health API (populated by backend scan operations)
   useEffect(() => {
     if (health?.latest_version) {
       const latest = health.latest_version;
       setLatestVersion(latest);
       if (latest && latest !== APP_VERSION) {
-        // Simple string comparison works for semver if format is consistent
-        setUpdateAvailable(latest > APP_VERSION);
+        // Use proper semver comparison (6.12.10 > 6.12.6, not string comparison)
+        setUpdateAvailable(compareSemver(latest, APP_VERSION) > 0);
       }
     }
   }, [health?.latest_version]);
@@ -622,11 +632,12 @@ export default function Settings() {
 
           {/* Card 3: Download Settings */}
           <div className="card p-4 w-full">
-            <div className="flex flex-col gap-4">
-              {/* Cookie Source */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <h3 className="text-sm font-semibold text-text-primary">Cookie Source</h3>
+            {/* Desktop: 3-column layout | Mobile: stacked */}
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              {/* Cookie Source - Left on desktop */}
+              <div className="flex flex-col items-center lg:items-start gap-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-text-primary">Cookies</h3>
                   <button
                     type="button"
                     onClick={() => setShowCookieHelp(true)}
@@ -634,109 +645,59 @@ export default function Settings() {
                   >
                     ?
                   </button>
-                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                  <span className={`w-2 h-2 rounded-full ${
                     cookieSource === 'none'
-                      ? 'bg-yellow-500/20 text-yellow-400'
+                      ? 'bg-yellow-400'
                       : cookieSource === 'browser'
-                      ? (health?.firefox_has_cookies ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400')
-                      : (health?.cookies_available ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400')
-                  }`}>
-                    {cookieSource === 'none'
+                      ? (health?.firefox_has_cookies ? 'bg-green-400' : 'bg-yellow-400')
+                      : (health?.cookies_available ? 'bg-green-400' : 'bg-yellow-400')
+                  }`} title={
+                    cookieSource === 'none'
                       ? 'Anonymous'
                       : cookieSource === 'browser'
                       ? (health?.firefox_has_cookies ? 'Active' : 'Inactive')
                       : (health?.cookies_available ? 'Active' : 'Inactive')
-                    }
-                  </span>
+                  }></span>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="cookieSource"
-                      value="file"
-                      checked={cookieSource === 'file'}
-                      onChange={(e) => handleCookieSourceChange(e.target.value)}
-                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                    />
-                    <span className="text-sm text-text-primary font-medium">cookies.txt</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="cookieSource"
-                      value="browser"
-                      checked={cookieSource === 'browser'}
-                      onChange={(e) => handleCookieSourceChange(e.target.value)}
-                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                    />
-                    <span className="text-sm text-text-primary font-medium">Firefox</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="cookieSource"
-                      value="none"
-                      checked={cookieSource === 'none'}
-                      onChange={(e) => handleCookieSourceChange(e.target.value)}
-                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                    />
-                    <span className="text-sm text-text-primary font-medium">None</span>
-                  </label>
-                </div>
-              </div>
-
-              {/* Separator */}
-              <div className="border-t border-dark-border"></div>
-
-              {/* SponsorBlock */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <h3 className="text-sm font-semibold text-text-primary">SponsorBlock</h3>
+                <div className="flex border border-dark-border rounded-md overflow-hidden">
                   <button
-                    onClick={() => setShowSponsorBlockHelp(true)}
-                    className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
-                    title="What is SponsorBlock?"
+                    onClick={() => handleCookieSourceChange('file')}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                      cookieSource === 'file'
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
                   >
-                    ?
+                    File
+                  </button>
+                  <button
+                    onClick={() => handleCookieSourceChange('browser')}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                      cookieSource === 'browser'
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    Firefox
+                  </button>
+                  <button
+                    onClick={() => handleCookieSourceChange('none')}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                      cookieSource === 'none'
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    None
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={removeSponsor}
-                      onChange={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                    />
-                    <span className="text-sm text-text-primary font-medium">Sponsors</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={removeSelfpromo}
-                      onChange={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                    />
-                    <span className="text-sm text-text-primary font-medium">Self-Promo</span>
-                  </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={removeInteraction}
-                      onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                    />
-                    <span className="text-sm text-text-primary font-medium">Like/Sub</span>
-                  </label>
-                </div>
               </div>
 
-              {/* Separator */}
-              <div className="border-t border-dark-border"></div>
+              {/* Separator - Mobile only */}
+              <div className="border-t border-dark-border lg:hidden"></div>
 
-              {/* Actions */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              {/* Actions - Center on desktop */}
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-2 order-last lg:order-none">
                 <button
                   onClick={() => setShowPasswordChange(!showPasswordChange)}
                   className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center"
@@ -759,8 +720,58 @@ export default function Settings() {
                 </button>
               </div>
 
-              {/* Password Change Form */}
-              {showPasswordChange && (
+              {/* Separator - Mobile only */}
+              <div className="border-t border-dark-border lg:hidden"></div>
+
+              {/* SponsorBlock - Right on desktop */}
+              <div className="flex flex-col items-center lg:items-end gap-2">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-text-primary">Skip Segments</h3>
+                  <button
+                    onClick={() => setShowSponsorBlockHelp(true)}
+                    className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
+                    title="What is SponsorBlock?"
+                  >
+                    ?
+                  </button>
+                </div>
+                <div className="flex border border-dark-border rounded-md overflow-hidden">
+                  <button
+                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                      removeSponsor
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    Sponsors
+                  </button>
+                  <button
+                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                      removeSelfpromo
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    Promo
+                  </button>
+                  <button
+                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                      removeInteraction
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    Like/Sub
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Password Change Form - Full width below the 3-column layout */}
+            {showPasswordChange && (
                 <form onSubmit={handlePasswordChange} className="space-y-3 pt-2 border-t border-dark-border">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
@@ -825,10 +836,9 @@ export default function Settings() {
                   </button>
                 </form>
               )}
-            </div>
           </div>
 
-          {/* Card 3: Auto-Scan Daily */}
+          {/* Card 4: Auto-Scan Daily */}
           <div className="card p-4 w-full">
             {/* Helper function for rendering time boxes */}
             {(() => {
