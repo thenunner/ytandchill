@@ -60,17 +60,12 @@ class AutoRefreshScheduler:
 
     def _remove_all_jobs(self):
         """Remove all auto-refresh jobs (both time-based and interval-based)"""
-        # Remove time-based jobs (up to 4)
-        for i in range(4):
-            job_id = f'auto_refresh_{i}'
-            if self.scheduler.get_job(job_id):
-                self.scheduler.remove_job(job_id)
-                logger.debug(f"Removed job: {job_id}")
-
-        # Remove interval-based job
-        if self.scheduler.get_job('auto_refresh_interval'):
-            self.scheduler.remove_job('auto_refresh_interval')
-            logger.debug("Removed job: auto_refresh_interval")
+        # Get all jobs and remove any that start with 'auto_refresh'
+        jobs = self.scheduler.get_jobs()
+        for job in jobs:
+            if job.id.startswith('auto_refresh'):
+                self.scheduler.remove_job(job.id)
+                logger.debug(f"Removed job: {job.id}")
 
     def _parse_time(self, time_str, default_hour=3, default_minute=0):
         """Parse a time string in HH:MM format, returning (hour, minute) tuple"""

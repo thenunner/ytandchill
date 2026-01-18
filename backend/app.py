@@ -141,7 +141,7 @@ elif os.path.exists('frontend/dist'):
     static_folder = os.path.abspath('frontend/dist')  # Running from project root (native Windows)
 else:
     static_folder = os.path.abspath('../frontend/dist')  # Running from backend folder (local dev)
-print(f"Static folder: {static_folder}")
+logger.debug(f"Static folder: {static_folder}")
 app = Flask(__name__, static_folder=static_folder)
 
 # Session configuration
@@ -431,14 +431,14 @@ def startup_recovery():
         for video in stuck_videos:
             video.status = 'queued'
         if stuck_videos:
-            print(f"Startup recovery: Reset {len(stuck_videos)} stuck 'downloading' videos to 'queued'")
+            logger.info(f"Startup recovery: Reset {len(stuck_videos)} stuck 'downloading' videos to 'queued'")
 
         # Compact queue positions to sequential order [1, 2, 3, ...]
         queue_items = session.query(QueueItem).order_by(QueueItem.queue_position.nullslast(), QueueItem.created_at).all()
         if queue_items:
             for idx, item in enumerate(queue_items, start=1):
                 item.queue_position = idx
-            print(f"Startup recovery: Compacted {len(queue_items)} queue positions")
+            logger.info(f"Startup recovery: Compacted {len(queue_items)} queue positions")
 
 startup_recovery()
 

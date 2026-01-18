@@ -6,7 +6,6 @@ import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSe
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { formatQueueError, getUserFriendlyError } from '../utils/errorMessages';
 import { formatFileSize } from '../utils/formatters';
 import { StickyBar } from '../components/stickybar';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -309,9 +308,6 @@ export default function Queue() {
   const queueItems = queue?.queue_items || [];
   const currentDownload = queue?.current_download || queueItems.find(item => item.video?.status === 'downloading');
   const pendingItems = queueItems.filter(item => item.video?.status === 'queued') || [];
-  // No more completed/failed items in queue - they're deleted after completion/failure
-  const completedItems = [];
-  const failedItems = [];
 
   // Check if worker is paused and there are queued items
   const workerPaused = queue?.is_paused;
@@ -460,112 +456,6 @@ export default function Queue() {
             </DndContext>
           )}
 
-          {/* Completed Items - Limited to 5 recent, Click to Remove */}
-          {completedItems.slice(0, 5).map(item => (
-            <div
-              key={item.id}
-              onClick={() => handleRemove(item.id)}
-              className="card p-3 bg-accent/5 border-accent/20 cursor-pointer hover:bg-accent/10 transition-colors group"
-            >
-              <div className="flex items-center gap-3">
-                {/* Thumbnail with checkmark overlay */}
-                <div className="hidden md:block flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden relative">
-                  {item.video?.thumb_url ? (
-                    <img
-                      src={item.video.thumb_url}
-                      alt={item.video.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                      </svg>
-                    </div>
-                  )}
-                  {/* Checkmark overlay */}
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Video Info */}
-                <div className="flex-1 min-w-0 flex items-center justify-between gap-3">
-                  <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-accent transition-colors" title={item.video?.title}>
-                    {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
-                  </p>
-                  <span className="text-xs text-accent-text font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                    Click to remove
-                  </span>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {/* Failed Items - Click to Remove */}
-          {failedItems.map(item => (
-            <div
-              key={item.id}
-              onClick={() => handleRemove(item.id)}
-              className="card p-3 bg-red-600/5 border-red-600/20 cursor-pointer hover:bg-red-600/10 transition-colors group"
-            >
-              <div className="flex items-start gap-3">
-                {/* Thumbnail with error overlay */}
-                <div className="hidden md:block flex-shrink-0 w-[100px] h-[56px] bg-dark-tertiary rounded overflow-hidden relative">
-                  {item.video?.thumb_url ? (
-                    <img
-                      src={item.video.thumb_url}
-                      alt={item.video.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                      </svg>
-                    </div>
-                  )}
-                  {/* Error overlay */}
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                    <svg className="w-6 h-6 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="15" y1="9" x2="9" y2="15"></line>
-                      <line x1="9" y1="9" x2="15" y2="15"></line>
-                    </svg>
-                  </div>
-                </div>
-
-                {/* Video Info */}
-                <div className="flex-1 min-w-0 space-y-1">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm text-text-primary font-medium line-clamp-2 md:truncate group-hover:text-red-400 transition-colors" title={item.video?.title}>
-                      {item.video?.title} <span className="text-text-secondary">• {item.video?.channel_title}</span>
-                    </p>
-                    <span className="text-xs text-red-400 font-medium opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                      Click to remove
-                    </span>
-                  </div>
-                  {item.log && (() => {
-                    const formattedError = formatQueueError(item.log);
-                    return (
-                      <div className="flex items-start gap-2 mt-1">
-                        {formattedError.icon && (
-                          <span className="text-sm flex-shrink-0">{formattedError.icon}</span>
-                        )}
-                        <p className={`text-xs flex-1 ${
-                          formattedError.type === 'warning' ? 'text-yellow-400' : 'text-red-400'
-                        }`}>
-                          {formattedError.message}
-                        </p>
-                      </div>
-                    );
-                  })()}
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 

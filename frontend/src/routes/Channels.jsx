@@ -282,7 +282,7 @@ export default function Channels() {
     }
 
     // Don't show "Queued X scans" message - scans happen too fast and cause double messaging
-    // The actual scan progress will show in the status bar
+    // The actual scan progress will show in the toast notification
     if (errorCount > 0) {
       const message = `Queued ${queued} scans (${alreadyQueued} already queued, ${errorCount} errors)`;
       showNotification(message, 'warning');
