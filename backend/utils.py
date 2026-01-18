@@ -20,6 +20,34 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 logger = logging.getLogger(__name__)
 
+
+def sanitize_folder_name(name, max_length=50):
+    """Sanitize a string for use as a folder name on all platforms.
+
+    Handles Windows-invalid characters: < > : " / \\ | ? *
+    Also handles spaces and truncates to max_length.
+
+    Args:
+        name: The folder name to sanitize
+        max_length: Maximum length of the result (default 50)
+
+    Returns:
+        str: Sanitized folder name safe for Windows and Unix
+    """
+    if not name:
+        return 'unknown'
+    # Replace Windows-invalid characters and common separators
+    sanitized = re.sub(r'[<>:"/\\|?*]', '_', name)
+    # Replace spaces with underscores
+    sanitized = sanitized.replace(' ', '_')
+    # Collapse multiple underscores
+    sanitized = re.sub(r'_+', '_', sanitized)
+    # Strip leading/trailing underscores
+    sanitized = sanitized.strip('_')
+    # Truncate to max length
+    return sanitized[:max_length] if sanitized else 'unknown'
+
+
 def makedirs_777(path):
     """Create directory with 777 permissions for remote access.
 

@@ -1,6 +1,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime, timezone, timedelta
 import subprocess
+import sys
 import os
 import json
 import requests
@@ -185,10 +186,10 @@ class AutoRefreshScheduler:
     def update_dependencies(self):
         """Update yt-dlp to latest version"""
         try:
-            # Get current yt-dlp version
+            # Get current yt-dlp version (use python -m for Windows compatibility)
             try:
                 version_result = subprocess.run(
-                    ['yt-dlp', '--version'],
+                    [sys.executable, '-m', 'yt_dlp', '--version'],
                     capture_output=True,
                     text=True,
                     timeout=10
@@ -217,8 +218,9 @@ class AutoRefreshScheduler:
 
             # Run pip upgrade using --user flag for non-root permissions
             # Use [default] extras to include yt-dlp-ejs for JavaScript runtime support
+            # Use python -m pip for Windows compatibility
             result = subprocess.run(
-                ['pip', 'install', '--user', '--upgrade', 'yt-dlp[default]'],
+                [sys.executable, '-m', 'pip', 'install', '--user', '--upgrade', 'yt-dlp[default]'],
                 capture_output=True,
                 text=True,
                 timeout=300  # 5 minute timeout
@@ -232,7 +234,7 @@ class AutoRefreshScheduler:
                     # Get new version
                     try:
                         new_version_result = subprocess.run(
-                            ['yt-dlp', '--version'],
+                            [sys.executable, '-m', 'yt_dlp', '--version'],
                             capture_output=True,
                             text=True,
                             timeout=10
