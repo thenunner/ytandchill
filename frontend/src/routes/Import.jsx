@@ -539,14 +539,13 @@ export default function Import() {
       <div className="flex flex-col">
         {/* MKV Prompt Card - shown above drop zone */}
         {showMkvPrompt && (
-          <div className="mx-4 mt-4">
+          <div className="max-w-2xl mx-auto px-4 mt-4">
             <MkvPromptCard
               mkvCount={scanData.skipped_mkv.length}
               onInclude={() => handleMkvChoice('include')}
               onSkip={() => handleMkvChoice('skip')}
               rememberChoice={rememberChoice}
               onRememberChange={setRememberChoice}
-              mkvFiles={scanData.skipped_mkv}
             />
           </div>
         )}
@@ -651,8 +650,8 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
     );
   }
 
-  // State: Import Complete
-  if (currentStep === 'complete') {
+  // State: Import Complete (but not if still encoding)
+  if (currentStep === 'complete' && stateData?.status !== 'encoding') {
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
         <div className="text-center mb-8">
@@ -848,8 +847,8 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
     );
   }
 
-  // State: Identifying / Importing progress
-  if (currentStep === 'identifying' || currentStep === 'importing') {
+  // State: Identifying / Importing progress (but not if encoding)
+  if ((currentStep === 'identifying' || currentStep === 'importing') && stateData?.status !== 'encoding') {
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
         <div className="text-center">
@@ -887,7 +886,6 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
           onSkip={() => handleMkvChoice('skip')}
           rememberChoice={rememberChoice}
           onRememberChange={setRememberChoice}
-          mkvFiles={scanData.skipped_mkv}
         />
       )}
 
