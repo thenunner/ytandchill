@@ -262,7 +262,8 @@ def fix_upload_dates():
                 }
 
                 # Add cookies if available
-                cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+                fix_data_dir = os.environ.get('DATA_DIR', 'data')
+                cookies_path = os.path.join(fix_data_dir, 'cookies.txt')
                 if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
                     ydl_opts['cookiefile'] = cookies_path
 
@@ -360,8 +361,9 @@ def health_check():
     auto_refresh_enabled = _settings_manager.get_bool('auto_refresh_enabled')
     auto_refresh_time = _settings_manager.get('auto_refresh_time', '03:00')
 
-    # Check cookies.txt (in backend folder)
-    cookies_path = os.path.join(os.path.dirname(__file__), '..', 'cookies.txt')
+    # Check cookies.txt (in data folder)
+    data_dir = os.environ.get('DATA_DIR', 'data')
+    cookies_path = os.path.join(data_dir, 'cookies.txt')
     cookies_available = os.path.exists(cookies_path)
 
     # Check Firefox profile availability at /firefox_profile mount
@@ -388,7 +390,7 @@ def health_check():
 
     # Calculate total storage size of downloads directory
     total_storage_bytes = 0
-    downloads_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'downloads')
+    downloads_path = os.environ.get('DOWNLOADS_DIR', 'downloads')
     if os.path.exists(downloads_path):
         for dirpath, dirnames, filenames in os.walk(downloads_path):
             for filename in filenames:
@@ -425,8 +427,9 @@ def health_check():
 
     # Calculate database size
     db_size = 0
-    # Database path relative to backend directory
-    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data', 'youtube_downloader.db')
+    # Database path from DATA_DIR environment variable
+    db_data_dir = os.environ.get('DATA_DIR', 'data')
+    db_path = os.path.join(db_data_dir, 'youtube_downloader.db')
     if os.path.exists(db_path):
         try:
             db_size = os.path.getsize(db_path)

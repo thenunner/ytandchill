@@ -4,6 +4,7 @@ from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash
 from contextlib import contextmanager
+import os
 
 Base = declarative_base()
 
@@ -124,7 +125,10 @@ class Setting(Base):
     key = Column(String(100), primary_key=True)
     value = Column(Text)
 
-def init_db(database_url='sqlite:///data/youtube_downloader.db'):
+def init_db(database_url=None):
+    if database_url is None:
+        data_dir = os.environ.get('DATA_DIR', 'data')
+        database_url = f'sqlite:///{os.path.join(data_dir, "youtube_downloader.db")}'
     engine = create_engine(database_url, echo=False)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)

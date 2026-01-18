@@ -312,8 +312,8 @@ cd ..
 
 echo.
 echo  Creating cookies.txt...
-if not exist backend\cookies.txt (
-    type nul > backend\cookies.txt
+if not exist data\cookies.txt (
+    type nul > data\cookies.txt
 )
 
 echo.

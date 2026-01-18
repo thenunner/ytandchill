@@ -464,7 +464,8 @@ class DownloadWorker:
         }
 
         # Add cookies if available
-        cookies_path = os.path.join(os.path.dirname(__file__), 'cookies.txt')
+        data_dir = os.environ.get('DATA_DIR', 'data')
+        cookies_path = os.path.join(data_dir, 'cookies.txt')
 
         # Check cookie source setting (default: 'file' for backward compatibility)
         cookie_source = self.settings_manager.get('cookie_source', 'file')

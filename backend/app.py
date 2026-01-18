@@ -28,7 +28,10 @@ os.environ['FLASK_ENV'] = 'production'
 os.environ['FLASK_DEBUG'] = '0'
 
 # Lock file to prevent multiple instances - uses ATOMIC file locking
-LOCK_FILE = 'app.lock'
+# Put lock file in data dir to keep project root clean
+data_dir = os.environ.get('DATA_DIR', 'data')
+os.makedirs(data_dir, exist_ok=True)
+LOCK_FILE = os.path.join(data_dir, 'app.lock')
 lock_file_handle = None
 
 def check_single_instance():

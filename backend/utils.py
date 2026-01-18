@@ -282,7 +282,7 @@ def _api_log(self, message, *args, **kwargs):
 logging.Logger.api = _api_log
 
 # Logging configuration
-LOG_DIR = 'logs'
+LOG_DIR = os.environ.get('LOGS_DIR', 'logs')
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, 'app.log')
 BACKUP_COUNT = 14  # Keep 2 weeks of daily logs
