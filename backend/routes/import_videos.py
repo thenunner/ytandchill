@@ -29,7 +29,7 @@ import yt_dlp
 from werkzeug.utils import secure_filename
 
 from database import Video, Channel, get_session
-from utils import makedirs_777, ensure_channel_thumbnail
+from utils import makedirs_777, ensure_channel_thumbnail, sanitize_folder_name
 
 logger = logging.getLogger(__name__)
 
@@ -763,8 +763,8 @@ def execute_import(file_path, video_info, channel_info, match_type):
                 raise ValueError(f"Failed to re-encode MKV file: {filename}")
 
     with get_session(_session_factory) as session:
-        # Sanitize channel title for folder name
-        safe_title = re.sub(r'[<>:"/\\|?*]', '_', channel_info['channel_title'])
+        # Sanitize channel title for folder name (Windows-safe)
+        safe_title = sanitize_folder_name(channel_info['channel_title'])
 
         # Get or create channel
         channel = session.query(Channel).filter(

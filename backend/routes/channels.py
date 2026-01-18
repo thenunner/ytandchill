@@ -16,7 +16,7 @@ import logging
 import os
 
 from database import Channel, Video, Playlist, ChannelCategory, get_session
-from utils import download_thumbnail
+from utils import download_thumbnail, sanitize_folder_name
 from scanner import resolve_channel_from_url, get_channel_info
 
 logger = logging.getLogger(__name__)
@@ -124,8 +124,8 @@ def create_channel():
 
             # channel_info already populated from resolve_channel_from_url above
 
-            # Create folder name
-            folder_name = channel_info['title'].replace(' ', '_').replace('/', '_')[:50]
+            # Create folder name (Windows-safe)
+            folder_name = sanitize_folder_name(channel_info['title'])
 
             # Download channel thumbnail locally
             thumbnail_path = None

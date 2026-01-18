@@ -16,7 +16,7 @@ import requests as http_requests
 
 from database import Video, Channel, QueueItem, get_session
 from scanner import extract_playlist_id, scan_playlist_videos, get_video_info
-from utils import download_thumbnail
+from utils import download_thumbnail, sanitize_folder_name
 
 logger = logging.getLogger(__name__)
 
@@ -126,8 +126,8 @@ def _get_or_create_channel(session, yt_channel_id, channel_title):
             logger.info(f"Restored soft-deleted channel: {channel.title}")
         return channel
 
-    # Create new channel
-    folder_name = channel_title.replace(' ', '_').replace('/', '_')[:50] if channel_title else yt_channel_id[:50]
+    # Create new channel (Windows-safe folder name)
+    folder_name = sanitize_folder_name(channel_title) if channel_title else yt_channel_id[:50]
 
     # Download channel thumbnail using real yt-dlp lookup
     from utils import ensure_channel_thumbnail

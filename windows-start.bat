@@ -256,6 +256,21 @@ if errorlevel 1 (
     )
 )
 
+REM Check Deno (required for yt-dlp JavaScript extractors)
+deno --version >nul 2>&1
+if errorlevel 1 (
+    echo  Deno not found. Installing via official installer...
+    powershell -Command "irm https://deno.land/install.ps1 | iex"
+    if errorlevel 1 (
+        echo  WARNING: Could not install Deno.
+        echo  Some yt-dlp features may not work.
+        echo  You can install manually from https://deno.land
+    ) else (
+        echo  Deno installed!
+        echo  NOTE: You may need to restart this terminal for PATH to update.
+    )
+)
+
 echo.
 echo  Creating directories...
 if not exist data mkdir data
