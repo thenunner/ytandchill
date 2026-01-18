@@ -2,25 +2,22 @@
 
 ## Quick Start
 
-### Option 1: Using the Build Script (Recommended)
+### Option 1: Docker Compose (Recommended)
 
-1. **Build the Docker image:**
+1. **Clone or copy the repository:**
    ```bash
-   cd /mnt/user/appdata/ytandchill
-   ./build-for-unraid.sh
+   cd /mnt/user/appdata
+   git clone https://github.com/thenunner/ytandchill.git
+   cd ytandchill
    ```
 
-2. **Copy template to Unraid:**
+2. **Build and start:**
    ```bash
-   cp ytandchill-unraid-template.xml /boot/config/plugins/dockerMan/templates-user/
+   docker-compose up -d --build
    ```
 
-3. **Add container in Unraid:**
-   - Go to Docker tab in Unraid
-   - Click "Add Container"
-   - Select "ytandchill" from template dropdown
-   - Adjust paths if needed
-   - Click "Apply"
+3. **Access the web interface:**
+   - Open http://YOUR-UNRAID-IP:4099
 
 ---
 
@@ -30,7 +27,6 @@
    ```bash
    cd /mnt/user/appdata/ytandchill
    docker-compose build --no-cache
-   docker image prune -f
    ```
 
 2. **Create container manually in Unraid Docker tab:**
@@ -74,21 +70,15 @@ chown -R 99:100 /mnt/user/data/media/youtube/ytandchill
 
 ## Updating the Container
 
-To rebuild and update:
+**If using GitHub Container Registry (templated):**
+- In Unraid Docker tab → click **Force Update** on ytandchill container
 
+**If using local docker-compose build:**
 ```bash
 cd /mnt/user/appdata/ytandchill
-
-# Stop the container in Unraid Docker tab, then:
-docker-compose build --no-cache
-docker image prune -f
-
-# Start the container again in Unraid Docker tab
-```
-
-Or use the build script:
-```bash
-./build-for-unraid.sh
+git pull
+docker-compose down
+docker-compose up -d --build
 ```
 
 ---

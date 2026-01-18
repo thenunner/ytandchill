@@ -261,12 +261,12 @@ If corruption persists, you may need to rebuild the database (your downloads wil
 
 **For Native Windows/Linux/macOS:**
 - Pull the latest code: `git pull origin main`
-- Re-run setup script: `setup-native-windows.bat` or `./setup-native-linux.sh`
+- Re-run setup: `windows-start.bat` (select Setup option) or `./linux-start.sh`
 - Restart the application
 
 **For Docker/Unraid:**
-- Click "Force Update" in Unraid Docker tab
-- Or manually: `docker pull ghcr.io/thenunner/ytandchill:latest` and restart container
+- If templated from GitHub Container Registry: **Force Update** in Unraid Docker tab
+- If local build: `git pull` then `docker-compose up -d --build`
 
 ### How do I update yt-dlp?
 
