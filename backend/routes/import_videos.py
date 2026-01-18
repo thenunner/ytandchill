@@ -69,6 +69,27 @@ _encode_lock = threading.Lock()
 _encode_thread = None
 
 
+def _ensure_state_keys():
+    """Ensure _import_state has all required keys.
+
+    This prevents KeyError when state is reset by scan endpoint
+    without the encode-related fields.
+    """
+    global _import_state
+    defaults = {
+        'encode_queue': [],
+        'encode_current': None,
+        'encode_progress': 0,
+        'failed': [],
+        'imported': [],
+        'skipped': [],
+        'pending': [],
+    }
+    for key, default in defaults.items():
+        if key not in _import_state:
+            _import_state[key] = default
+
+
 def init_import_routes(session_factory, settings_manager):
     """Initialize the import routes with required dependencies."""
     global _session_factory, _settings_manager
@@ -81,6 +102,8 @@ def _encode_worker():
     global _import_state
 
     logger.info("Encode worker thread started")
+
+    _ensure_state_keys()
 
     while True:
         item = None
@@ -163,6 +186,8 @@ def _start_encode_worker():
 def _queue_for_encoding(match):
     """Add a match to the encode queue (for MKV files)."""
     global _import_state
+
+    _ensure_state_keys()
 
     with _encode_lock:
         _import_state['encode_queue'].append(match)
@@ -1016,12 +1041,16 @@ def scan_folder():
         'pending': [],
         'imported': [],
         'skipped': [],
+        'failed': [],
         'known_channel_ids': known_channel_ids,
         'known_channel_handles': known_channel_handles,
         'current_channel_idx': 0,
         'status': 'idle',
         'progress': 0,
         'message': '',
+        'encode_progress': None,
+        'encode_queue': [],
+        'encode_current': None,
         'include_mkv_override': include_mkv_override,  # Session-level MKV re-encode override
     }
 
@@ -1351,6 +1380,8 @@ def execute_smart_import():
     For other files: imports directly (blocking)
     """
     global _import_state
+
+    _ensure_state_keys()
 
     data = request.json
     matches = data.get('matches', [])
@@ -1802,6 +1833,8 @@ def get_state():
 def get_encode_status():
     """Get encoding queue status for frontend polling."""
     global _import_state
+
+    _ensure_state_keys()
 
     with _encode_lock:
         encode_current = _import_state.get('encode_current')
