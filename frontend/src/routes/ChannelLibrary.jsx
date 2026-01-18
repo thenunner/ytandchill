@@ -314,9 +314,18 @@ export default function ChannelLibrary() {
 
   // Helper to parse video date for sorting
   const parseVideoDate = (video) => {
-    // Library mode: use downloaded_at (matches displayed date)
-    if (isLibraryMode && video.downloaded_at) {
-      return new Date(video.downloaded_at);
+    // Library mode: respect the date display setting (uploaded vs downloaded)
+    if (isLibraryMode) {
+      const dateDisplay = localStorage.getItem('library_date_display') || 'downloaded';
+      if (dateDisplay === 'uploaded' && video.upload_date) {
+        const year = video.upload_date.slice(0, 4);
+        const month = video.upload_date.slice(4, 6);
+        const day = video.upload_date.slice(6, 8);
+        return new Date(`${year}-${month}-${day}`);
+      }
+      if (video.downloaded_at) {
+        return new Date(video.downloaded_at);
+      }
     }
     // Discovery mode (to-review/ignored): use upload_date (matches displayed date)
     if (video.upload_date) {

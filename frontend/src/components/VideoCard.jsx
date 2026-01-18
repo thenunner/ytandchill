@@ -356,9 +356,17 @@ export default function VideoCard({
 
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
-          // Library view: downloaded date • size
+          // Library view: date (uploaded or downloaded based on setting) • size
           <div className={`${textSizes.metadata} text-text-secondary font-medium`}>
-            <span>{formatDateTime(video.downloaded_at)} • {formatFileSize(video.file_size_bytes)}</span>
+            <span>
+              {(() => {
+                const dateDisplay = localStorage.getItem('library_date_display') || 'downloaded';
+                if (dateDisplay === 'uploaded' && video.upload_date) {
+                  return formatDate(video.upload_date);
+                }
+                return formatDateTime(video.downloaded_at);
+              })()} • {formatFileSize(video.file_size_bytes)}
+            </span>
           </div>
         ) : (
           // Channel view: upload date and duration

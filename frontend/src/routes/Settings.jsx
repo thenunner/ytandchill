@@ -61,6 +61,11 @@ export default function Settings() {
   const [removeInteraction, setRemoveInteraction] = useState(false);
   const [showSponsorBlockHelp, setShowSponsorBlockHelp] = useState(false);
 
+  // Library date display preference (stored in localStorage)
+  const [libraryDateDisplay, setLibraryDateDisplay] = useState(() => {
+    return localStorage.getItem('library_date_display') || 'downloaded';
+  });
+
   // Initialize showLogs from localStorage, default to true (open) if not set
   const [showLogs, setShowLogs] = useState(() => {
     const saved = localStorage.getItem('logsVisible');
@@ -82,9 +87,6 @@ export default function Settings() {
   const [selectedChannels, setSelectedChannels] = useState([]);
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
-
-  // Fix upload dates state
-  const [isFixingDates, setIsFixingDates] = useState(false);
 
   // Version update check state
   const [latestVersion, setLatestVersion] = useState(null);
@@ -442,34 +444,6 @@ export default function Settings() {
     }
   };
 
-  const handleFixUploadDates = async () => {
-    setIsFixingDates(true);
-    try {
-      const response = await fetch('/api/settings/fix-upload-dates', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const data = await response.json();
-
-      if (data.error) {
-        showNotification(data.error, 'error');
-        return;
-      }
-
-      if (data.updated > 0) {
-        showNotification(`Fixed ${data.updated} upload date${data.updated !== 1 ? 's' : ''} (${data.skipped} already had dates, ${data.failed} failed)`, 'success');
-      } else if (data.skipped > 0) {
-        showNotification(`All ${data.skipped} videos already have upload dates`, 'success');
-      } else {
-        showNotification('No library videos found to check', 'warning');
-      }
-    } catch (error) {
-      showNotification(`Failed to fix upload dates: ${error.message}`, 'error');
-    } finally {
-      setIsFixingDates(false);
-    }
-  };
-
   if (isLoading) {
     return <LoadingSpinner />;
   }
@@ -727,6 +701,44 @@ export default function Settings() {
               {/* Separator - Mobile only */}
               <div className="border-t border-dark-border lg:hidden"></div>
 
+              {/* Library Date Display - Between cookies and actions */}
+              <div className="flex flex-col items-center gap-2">
+                <h3 className="text-sm font-semibold text-text-primary">Date</h3>
+                <div className="flex border border-dark-border rounded-md overflow-hidden">
+                  <button
+                    onClick={() => {
+                      setLibraryDateDisplay('uploaded');
+                      localStorage.setItem('library_date_display', 'uploaded');
+                      showNotification('Library cards will show upload date', 'success');
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all ${
+                      libraryDateDisplay === 'uploaded'
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    Uploaded
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLibraryDateDisplay('downloaded');
+                      localStorage.setItem('library_date_display', 'downloaded');
+                      showNotification('Library cards will show download date', 'success');
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold transition-all border-l border-dark-border ${
+                      libraryDateDisplay === 'downloaded'
+                        ? 'bg-accent text-white'
+                        : 'bg-dark-tertiary text-text-muted hover:bg-dark-hover'
+                    }`}
+                  >
+                    Downloaded
+                  </button>
+                </div>
+              </div>
+
+              {/* Separator - Mobile only */}
+              <div className="border-t border-dark-border lg:hidden"></div>
+
               {/* Actions - Center on desktop */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-2 order-last lg:order-none">
                 <button
@@ -748,14 +760,6 @@ export default function Settings() {
                   className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isCheckingRepair ? 'Checking...' : 'Repair'}
-                </button>
-                <button
-                  onClick={handleFixUploadDates}
-                  disabled={isFixingDates}
-                  title="Fetch missing upload dates for all library videos from YouTube"
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isFixingDates ? 'Fixing...' : 'Fix Dates'}
                 </button>
               </div>
 
