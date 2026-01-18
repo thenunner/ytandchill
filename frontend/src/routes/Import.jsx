@@ -12,6 +12,7 @@ import {
 } from '../api/queries';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { CheckmarkIcon } from '../components/icons';
+import MkvPromptCard from '../components/MkvPromptCard';
 
 // Max file size (must match backend MAX_CONTENT_LENGTH)
 const MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024; // 50GB
@@ -29,13 +30,18 @@ export default function Import() {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
 
-  // Queries
-  const { data: scanData, isLoading: scanLoading, refetch: refetchScan } = useScanImportFolder();
+  // MKV re-encode choice state (inline prompt) - defined early for query dependency
+  const [mkvChoice, setMkvChoice] = useState(null); // null = pending, 'include' | 'skip'
+  const [rememberChoice, setRememberChoice] = useState(false);
+
+  // Queries - pass mkvChoice to trigger refetch when user chooses to include MKVs
+  const { data: scanData, isLoading: scanLoading, refetch: refetchScan } = useScanImportFolder(mkvChoice === 'include');
   const { data: stateData, refetch: refetchState } = useImportState();
   const { data: settings } = useSettings();
 
-  // Dynamic extensions based on MKV re-encode setting
-  const reencodeMkv = settings?.import_reencode_mkv === 'true';
+  // Dynamic extensions based on MKV re-encode setting OR inline choice
+  const mkvSettingEnabled = settings?.import_reencode_mkv === 'true';
+  const reencodeMkv = mkvSettingEnabled || mkvChoice === 'include';
   const allowedExtensions = reencodeMkv ? ['.mkv', '.mp4', '.m4v', '.webm'] : ['.mp4', '.m4v', '.webm'];
   const VIDEO_EXTENSIONS_REGEX = reencodeMkv ? /\.(mp4|webm|m4v|mkv)$/i : /\.(mp4|webm|m4v)$/i;
 
@@ -195,6 +201,28 @@ export default function Import() {
   // View library after import
   const handleViewLibrary = () => {
     navigate('/library');
+  };
+
+  // Handle MKV choice from inline prompt
+  const handleMkvChoice = async (choice) => {
+    if (rememberChoice) {
+      // Save to settings
+      try {
+        await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            import_reencode_mkv: choice === 'include' ? 'true' : 'false'
+          })
+        });
+      } catch (error) {
+        console.error('Failed to save MKV preference:', error);
+      }
+    }
+
+    // Setting mkvChoice will automatically trigger a refetch via react-query
+    // when choice is 'include' (query key includes mkvChoice === 'include')
+    setMkvChoice(choice);
   };
 
   // Format duration
@@ -504,31 +532,22 @@ export default function Import() {
   // State 1: No files in import folder - Show drag and drop zone
   if (!scanData?.count || scanData.count === 0) {
     const hasSkippedMkv = scanData?.skipped_mkv?.length > 0;
+    // Show prompt when MKVs found, setting not enabled, and user hasn't chosen yet
+    const showMkvPrompt = hasSkippedMkv && !mkvSettingEnabled && mkvChoice === null;
 
     return (
       <div className="flex flex-col">
-        {/* MKV Warning Banner - shown above drop zone */}
-        {hasSkippedMkv && (
-          <div className="mx-4 mt-4 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-            <div className="flex items-start gap-3">
-              <svg className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-              <div className="flex-1">
-                <div className="text-base font-semibold text-yellow-400 mb-1">
-                  {scanData.skipped_mkv.length} MKV file{scanData.skipped_mkv.length !== 1 ? 's' : ''} found
-                </div>
-                <div className="text-sm text-text-secondary mb-2">
-                  MKV files need to be re-encoded for web playback. Go to <strong>Settings</strong> and enable <strong>'Re-encode MKVs for web'</strong>.
-                </div>
-                <div className="text-xs text-text-muted">
-                  {scanData.skipped_mkv.slice(0, 3).map(f => f.name).join(', ')}
-                  {scanData.skipped_mkv.length > 3 && ` +${scanData.skipped_mkv.length - 3} more`}
-                </div>
-              </div>
-            </div>
+        {/* MKV Prompt Card - shown above drop zone */}
+        {showMkvPrompt && (
+          <div className="mx-4 mt-4">
+            <MkvPromptCard
+              mkvCount={scanData.skipped_mkv.length}
+              onInclude={() => handleMkvChoice('include')}
+              onSkip={() => handleMkvChoice('skip')}
+              rememberChoice={rememberChoice}
+              onRememberChange={setRememberChoice}
+              mkvFiles={scanData.skipped_mkv}
+            />
           </div>
         )}
 
@@ -860,29 +879,16 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
         </p>
       </div>
 
-      {/* Skipped MKV Files Warning */}
-      {scanData?.skipped_mkv?.length > 0 && (
-        <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
-          <div className="flex items-start gap-3">
-            <svg className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-              <line x1="12" y1="9" x2="12" y2="13"></line>
-              <line x1="12" y1="17" x2="12.01" y2="17"></line>
-            </svg>
-            <div className="flex-1">
-              <div className="text-base font-semibold text-yellow-400 mb-1">
-                {scanData.skipped_mkv.length} MKV file{scanData.skipped_mkv.length !== 1 ? 's' : ''} skipped
-              </div>
-              <div className="text-sm text-text-secondary mb-2">
-                MKV files need to be re-encoded for web playback. Go to <strong>Settings</strong> and enable <strong>'Re-encode MKVs for web'</strong>.
-              </div>
-              <div className="text-xs text-text-muted">
-                {scanData.skipped_mkv.slice(0, 3).map(f => f.name).join(', ')}
-                {scanData.skipped_mkv.length > 3 && ` +${scanData.skipped_mkv.length - 3} more`}
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* MKV Prompt Card - shown when MKVs found, setting not enabled, and user hasn't chosen */}
+      {scanData?.skipped_mkv?.length > 0 && !mkvSettingEnabled && mkvChoice === null && (
+        <MkvPromptCard
+          mkvCount={scanData.skipped_mkv.length}
+          onInclude={() => handleMkvChoice('include')}
+          onSkip={() => handleMkvChoice('skip')}
+          rememberChoice={rememberChoice}
+          onRememberChange={setRememberChoice}
+          mkvFiles={scanData.skipped_mkv}
+        />
       )}
 
       {/* Skipped Unsupported Files Warning */}

@@ -19,6 +19,7 @@ import Import from './routes/Import';
 import NavItem from './components/NavItem';
 import ErrorBoundary from './components/ErrorBoundary';
 import UpdateModal from './components/UpdateModal';
+import UpdateBanner from './components/UpdateBanner';
 import { SettingsIcon } from './components/icons';
 import { version as APP_VERSION } from '../package.json';
 
@@ -41,6 +42,7 @@ function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [latestVersion, setLatestVersion] = useState(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Status bar visibility - sync with localStorage
   const [statusBarVisible, setStatusBarVisible] = useState(() => {
@@ -82,6 +84,9 @@ function App() {
 
       if (latest && latest !== APP_VERSION && latest > APP_VERSION) {
         setUpdateAvailable(true);
+        // Check if banner was dismissed for this version
+        const dismissedBannerVersion = localStorage.getItem('updateBannerDismissedVersion');
+        setBannerDismissed(dismissedBannerVersion === latest);
       }
     }
   }, [health?.latest_version]);
@@ -109,6 +114,14 @@ function App() {
     setShowUpdateModal(false);
     if (latestVersion) {
       localStorage.setItem('dismissedUpdateVersion', latestVersion);
+    }
+  };
+
+  // Handle update banner dismiss - store dismissed version in localStorage
+  const handleBannerDismiss = () => {
+    setBannerDismissed(true);
+    if (latestVersion) {
+      localStorage.setItem('updateBannerDismissedVersion', latestVersion);
     }
   };
 
@@ -413,6 +426,15 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col bg-dark-primary">
+      {/* Update Banner - above nav */}
+      {updateAvailable && !bannerDismissed && !isAuthPage && (
+        <UpdateBanner
+          currentVersion={APP_VERSION}
+          latestVersion={latestVersion}
+          onDismiss={handleBannerDismiss}
+        />
+      )}
+
       {/* Top Navigation Bar - Hidden on setup/login pages */}
       {!isAuthPage && (
         <header className="bg-dark-primary/95 backdrop-blur-lg sticky top-0 z-50 border-b border-dark-border">

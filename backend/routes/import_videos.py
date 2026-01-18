@@ -67,25 +67,6 @@ def init_import_routes(session_factory, settings_manager):
     _settings_manager = settings_manager
 
 
-def _check_for_app_update():
-    """Check GitHub for latest version and store in settings."""
-    try:
-        response = http_requests.get(
-            'https://api.github.com/repos/thenunner/ytandchill/releases/latest',
-            timeout=10,
-            headers={'Accept': 'application/vnd.github.v3+json'}
-        )
-        if response.status_code == 200:
-            data = response.json()
-            tag_name = data.get('tag_name', '')
-            latest_version = tag_name.lstrip('v') if tag_name else None
-            if latest_version and _settings_manager:
-                _settings_manager.set('latest_version', latest_version)
-                logger.debug(f"Import: Update check complete - latest version is {latest_version}")
-    except Exception as e:
-        logger.debug(f"Import: Update check failed: {e}")
-
-
 def get_downloads_folder():
     """Get the downloads folder path.
 
@@ -152,12 +133,16 @@ def resolve_channel_id(channel_url):
     return None
 
 
-def scan_import_folder():
-    """Scan import folder for video files and channel URL files."""
+def scan_import_folder(include_mkv_override=False):
+    """Scan import folder for video files and channel URL files.
+
+    Args:
+        include_mkv_override: If True, include MKVs regardless of setting (session override)
+    """
     import_folder = get_import_folder()
 
-    # Get MKV re-encode setting
-    reencode_mkv = _settings_manager.get('import_reencode_mkv', 'false') == 'true'
+    # Get MKV re-encode setting OR check session override
+    reencode_mkv = _settings_manager.get('import_reencode_mkv', 'false') == 'true' or include_mkv_override
     allowed_extensions = VIDEO_EXTENSIONS | ({MKV_EXTENSION} if reencode_mkv else set())
 
     # Accepted channel file names (one URL per line)
@@ -749,7 +734,8 @@ def execute_import(file_path, video_info, channel_info, match_type):
     # Check if MKV needs re-encoding
     if ext.lower() == '.mkv':
         reencode_enabled = _settings_manager.get('import_reencode_mkv', 'false') == 'true'
-        if reencode_enabled:
+        include_mkv_override = _import_state.get('include_mkv_override', False)
+        if reencode_enabled or include_mkv_override:
             mp4_path = file_path.rsplit('.', 1)[0] + '.mp4'
 
             # Get duration for progress tracking (video_info has it from identify phase)
@@ -884,10 +870,17 @@ def execute_import(file_path, video_info, channel_info, match_type):
 
 @import_bp.route('/api/import/scan', methods=['GET'])
 def scan_folder():
-    """Scan import folder and return file list."""
+    """Scan import folder and return file list.
+
+    Query params:
+        include_mkv: 'true' to include MKVs regardless of setting (session override)
+    """
     global _import_state
 
-    result = scan_import_folder()
+    # Check for session-level MKV include override
+    include_mkv_override = request.args.get('include_mkv', 'false').lower() == 'true'
+
+    result = scan_import_folder(include_mkv_override=include_mkv_override)
 
     # Extract channel identifiers from URLs (handles, IDs, custom names)
     # We'll match against these when checking search results
@@ -926,6 +919,7 @@ def scan_folder():
         'status': 'idle',
         'progress': 0,
         'message': '',
+        'include_mkv_override': include_mkv_override,  # Session-level MKV re-encode override
     }
 
     return jsonify(result)
@@ -1244,9 +1238,6 @@ def execute_smart_import():
                 'success': False,
                 'error': str(e),
             })
-
-    # Check for app updates after import operation
-    _check_for_app_update()
 
     return jsonify({
         'results': results,

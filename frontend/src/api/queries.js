@@ -477,10 +477,10 @@ export function useRemovePlaylistVideos() {
 }
 
 // Video Import
-export function useScanImportFolder() {
+export function useScanImportFolder(includeMkv = false) {
   return useQuery({
-    queryKey: ['import', 'scan'],
-    queryFn: () => api.scanImportFolder(),
+    queryKey: ['import', 'scan', { includeMkv }],
+    queryFn: () => api.scanImportFolder(includeMkv),
     staleTime: 0, // Always refetch
   });
 }

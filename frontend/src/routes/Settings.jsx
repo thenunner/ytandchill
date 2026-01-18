@@ -61,10 +61,6 @@ export default function Settings() {
   const [removeInteraction, setRemoveInteraction] = useState(false);
   const [showSponsorBlockHelp, setShowSponsorBlockHelp] = useState(false);
 
-  // Import Rules state
-  const [reencodeMkv, setReencodeMkv] = useState(false);
-  const [showImportHelp, setShowImportHelp] = useState(false);
-
   // Initialize showLogs from localStorage, default to true (open) if not set
   const [showLogs, setShowLogs] = useState(() => {
     const saved = localStorage.getItem('logsVisible');
@@ -150,8 +146,6 @@ export default function Settings() {
       setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
       // Load cookie source setting
       setCookieSource(settings.cookie_source || 'file');
-      // Load Import Rules settings
-      setReencodeMkv(settings.import_reencode_mkv === 'true');
     }
   }, [settings]);
 
@@ -183,23 +177,6 @@ export default function Settings() {
     } catch (error) {
       console.error(`Failed to save ${setting}:`, error);
       setValue(currentValue); // Revert on error
-    }
-  };
-
-  const handleReencodeMkvToggle = async () => {
-    const newValue = !reencodeMkv;
-    setReencodeMkv(newValue);
-    try {
-      await updateSettings.mutateAsync({
-        import_reencode_mkv: newValue ? 'true' : 'false',
-      });
-      showNotification(
-        newValue ? 'MKV re-encoding enabled' : 'MKV re-encoding disabled',
-        'success'
-      );
-    } catch (error) {
-      setReencodeMkv(!newValue); // Revert on error
-      showNotification('Failed to save setting', 'error');
     }
   };
 
@@ -461,29 +438,10 @@ export default function Settings() {
     <div className="animate-fade-in">
       {/* Single column layout for desktop */}
       <div className="flex flex-col gap-4 w-full">
-          {/* Card 1: Info */}
+          {/* Card 1: System Info (read-only) */}
           <div className="card p-4 w-full">
-
-            {/* System info grid */}
+            {/* Version info row */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3 text-sm mb-4">
-              {/* Cookies */}
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-text-secondary text-xs">Cookies</span>
-                <span className={`font-medium text-xs ${
-                  cookieSource === 'none'
-                    ? 'text-yellow-400'
-                    : cookieSource === 'browser'
-                    ? (health?.firefox_has_cookies ? 'text-text-primary' : health?.firefox_profile_mounted ? 'text-yellow-400' : 'text-red-400')
-                    : (health?.cookies_available ? 'text-text-primary' : 'text-yellow-400')
-                }`}>
-                  {cookieSource === 'none'
-                    ? 'Anonymous'
-                    : cookieSource === 'browser'
-                    ? (health?.firefox_has_cookies ? 'Firefox' : health?.firefox_profile_mounted ? 'No Login' : 'Not Mounted')
-                    : (health?.cookies_available ? 'cookies.txt' : 'Inactive')
-                  }
-                </span>
-              </div>
               {/* YT and Chill */}
               <div className="flex flex-col items-center gap-1">
                 <span className="text-text-secondary text-xs">YT and Chill</span>
@@ -512,13 +470,18 @@ export default function Settings() {
                   {health?.database_size || 'N/A'}
                 </span>
               </div>
+              {/* Storage */}
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-text-secondary text-xs">Storage</span>
+                <span className="text-text-primary font-mono text-xs font-semibold">{health?.total_storage || '0B'}</span>
+              </div>
             </div>
 
             {/* Separator */}
             <div className="border-t border-dark-border my-4"></div>
 
             {/* Stats grid */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-x-6 gap-y-3 text-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-6 gap-y-3 text-sm">
               {/* In Library */}
               <div className="flex flex-col items-center gap-1">
                 <span className="text-text-secondary text-xs">In Library</span>
@@ -539,21 +502,130 @@ export default function Settings() {
                 <span className="text-text-secondary text-xs">Channels</span>
                 <span className="text-text-primary font-mono font-semibold">{channels?.length || 0}</span>
               </div>
-              {/* Storage */}
-              <div className="flex flex-col items-center gap-1">
-                <span className="text-text-secondary text-xs">Storage</span>
-                <span className="text-text-primary font-mono font-semibold">{health?.total_storage || '0B'}</span>
-              </div>
             </div>
+          </div>
 
-            {/* Separator */}
-            <div className="border-t border-dark-border my-4"></div>
+          {/* Card 2: Appearance */}
+          <div className="card p-4 w-full">
+            <h3 className="text-sm font-semibold text-text-primary text-center mb-3">Theme</h3>
+            <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2">
+              <button
+                onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'kernel'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Dark theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Kernel</span>
+              </button>
+              <button
+                onClick={() => { setTheme('fatal'); showNotification('Theme changed to Fatal', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'fatal'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Dark theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Fatal</span>
+              </button>
+              <button
+                onClick={() => { setTheme('subnet'); showNotification('Theme changed to Subnet', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'subnet'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Dark theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Subnet</span>
+              </button>
+              <button
+                onClick={() => { setTheme('archive'); showNotification('Theme changed to Archive', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'archive'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Dark theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Archive</span>
+              </button>
+              <button
+                onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'buffer'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Dark theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Buffer</span>
+              </button>
+              <button
+                onClick={() => { setTheme('catppuccin'); showNotification('Theme changed to Catppuccin', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'catppuccin'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Dark theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: '#89b4fa' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Catppuccin</span>
+              </button>
+              <button
+                onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'online'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Light theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Online</span>
+              </button>
+              <button
+                onClick={() => { setTheme('pixel'); showNotification('Theme changed to Pixel', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'pixel'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Light theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Pixel</span>
+              </button>
+              <button
+                onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
+                className={`flex flex-col items-center gap-1.5 p-2 rounded-lg transition-all cursor-pointer ${
+                  theme === 'debug'
+                    ? 'bg-dark-tertiary ring-2 ring-accent'
+                    : 'hover:bg-dark-tertiary/50'
+                }`}
+                title="Light theme"
+              >
+                <div className="w-5 h-5 rounded-full border-2 border-dark-border" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
+                <span className="text-xs font-medium" style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}>Debug</span>
+              </button>
+            </div>
+          </div>
 
-            {/* Cookie Source Section */}
-            <div className="flex flex-col items-center gap-3">
-              {/* Cookie Source Row */}
-              <div className="flex items-center gap-3 flex-wrap justify-center">
-                <div className="flex items-center gap-2">
+          {/* Card 3: Download Settings */}
+          <div className="card p-4 w-full">
+            <div className="flex flex-col gap-4">
+              {/* Cookie Source */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <h3 className="text-sm font-semibold text-text-primary">Cookie Source</h3>
                   <button
                     type="button"
@@ -562,287 +634,64 @@ export default function Settings() {
                   >
                     ?
                   </button>
+                  <span className={`text-xs px-1.5 py-0.5 rounded ${
+                    cookieSource === 'none'
+                      ? 'bg-yellow-500/20 text-yellow-400'
+                      : cookieSource === 'browser'
+                      ? (health?.firefox_has_cookies ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400')
+                      : (health?.cookies_available ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400')
+                  }`}>
+                    {cookieSource === 'none'
+                      ? 'Anonymous'
+                      : cookieSource === 'browser'
+                      ? (health?.firefox_has_cookies ? 'Active' : 'Inactive')
+                      : (health?.cookies_available ? 'Active' : 'Inactive')
+                    }
+                  </span>
                 </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="cookieSource"
-                    value="file"
-                    checked={cookieSource === 'file'}
-                    onChange={(e) => handleCookieSourceChange(e.target.value)}
-                    className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                  />
-                  <span className="text-sm text-text-primary font-medium">cookies.txt</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="cookieSource"
-                    value="browser"
-                    checked={cookieSource === 'browser'}
-                    onChange={(e) => handleCookieSourceChange(e.target.value)}
-                    className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                  />
-                  <span className="text-sm text-text-primary font-medium">Firefox</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="radio"
-                    name="cookieSource"
-                    value="none"
-                    checked={cookieSource === 'none'}
-                    onChange={(e) => handleCookieSourceChange(e.target.value)}
-                    className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                  />
-                  <span className="text-sm text-text-primary font-medium">No Cookies <span className="text-xs text-text-muted">(Anonymous)</span></span>
-                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cookieSource"
+                      value="file"
+                      checked={cookieSource === 'file'}
+                      onChange={(e) => handleCookieSourceChange(e.target.value)}
+                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                    />
+                    <span className="text-sm text-text-primary font-medium">cookies.txt</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cookieSource"
+                      value="browser"
+                      checked={cookieSource === 'browser'}
+                      onChange={(e) => handleCookieSourceChange(e.target.value)}
+                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                    />
+                    <span className="text-sm text-text-primary font-medium">Firefox</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="cookieSource"
+                      value="none"
+                      checked={cookieSource === 'none'}
+                      onChange={(e) => handleCookieSourceChange(e.target.value)}
+                      className="w-4 h-4 rounded-full border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
+                    />
+                    <span className="text-sm text-text-primary font-medium">None</span>
+                  </label>
+                </div>
               </div>
 
-              {/* Reset User, Status Bar Toggle, and Repair Buttons Row */}
-              <div className="flex flex-wrap gap-2 justify-center">
-                <button
-                  onClick={() => setShowPasswordChange(!showPasswordChange)}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-3"
-                >
-                  Reset User
-                </button>
-                <button
-                  onClick={toggleStatusBar}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-3 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary"
-                >
-                  {statusBarVisible ? 'Hide Status' : 'Show Status'}
-                </button>
-                <button
-                  onClick={handleQueueRepair}
-                  disabled={isCheckingRepair}
-                  title="Cleans up database count issues, orphaned queue items, ghost videos from deleted channels, and other inconsistencies"
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover whitespace-nowrap py-1.5 text-sm font-bold px-3 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-dark-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isCheckingRepair ? 'Checking...' : 'Repair'}
-                </button>
-              </div>
+              {/* Separator */}
+              <div className="border-t border-dark-border"></div>
 
-              {/* Theme Selection */}
-              <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
-                <span className="text-sm font-semibold text-text-primary">Theme:</span>
-                <button
-                  onClick={() => { setTheme('kernel'); showNotification('Theme changed to Kernel', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'kernel'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-gray-500 after:to-gray-300'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Dark theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 10%, 70%)' }}></div>
-                  Kernel
-                </button>
-                <button
-                  onClick={() => { setTheme('fatal'); showNotification('Theme changed to Fatal', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'fatal'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-red-500 after:to-red-300'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Dark theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(0, 100%, 50%)' }}></div>
-                  Fatal
-                </button>
-                <button
-                  onClick={() => { setTheme('subnet'); showNotification('Theme changed to Subnet', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'subnet'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-700 after:to-blue-500'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Dark theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(220, 50%, 40%)' }}></div>
-                  Subnet
-                </button>
-                <button
-                  onClick={() => { setTheme('archive'); showNotification('Theme changed to Archive', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'archive'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-700 after:to-green-500'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Dark theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(95, 20%, 45%)' }}></div>
-                  Archive
-                </button>
-                <button
-                  onClick={() => { setTheme('buffer'); showNotification('Theme changed to Buffer', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'buffer'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-amber-300 after:to-amber-200'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Dark theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(35, 45%, 58%)' }}></div>
-                  Buffer
-                </button>
-                <button
-                  onClick={() => { setTheme('catppuccin'); showNotification('Theme changed to Catppuccin', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'catppuccin'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-purple-300'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Dark theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#89b4fa' }}></div>
-                  Catppuccin
-                </button>
-                <button
-                  onClick={() => { setTheme('online'); showNotification('Theme changed to Online', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'online'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-green-500 after:to-green-300'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Light theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(115, 25%, 50%)' }}></div>
-                  Online
-                </button>
-                <button
-                  onClick={() => { setTheme('pixel'); showNotification('Theme changed to Pixel', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'pixel'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-pink-400 after:to-pink-200'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Light theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(315, 80%, 75%)' }}></div>
-                  Pixel
-                </button>
-                <button
-                  onClick={() => { setTheme('debug'); showNotification('Theme changed to Debug', 'success'); }}
-                  className={`relative flex items-center justify-center gap-2 py-1.5 font-semibold text-sm transition-all cursor-pointer ${
-                    theme === 'debug'
-                      ? 'after:content-[""] after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-gradient-to-r after:from-blue-400 after:to-blue-200'
-                      : ''
-                  }`}
-                  style={{ color: theme === 'online' || theme === 'pixel' || theme === 'debug' ? '#000000' : '#ffffff' }}
-                  title="Light theme"
-                >
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(210, 30%, 55%)' }}></div>
-                  Debug
-                </button>
-              </div>
-            </div>
-
-            {/* Password Change Form */}
-            {showPasswordChange && (
-              <form onSubmit={handlePasswordChange} className="space-y-3 mt-3">
-                <div>
-                  <label className="block text-sm text-text-secondary mb-1">Current Password</label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Enter current password"
-                    className="input text-sm py-1.5 px-3 w-full"
-                    disabled={isChangingPassword}
-                    autoFocus
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-text-secondary mb-1">New Username</label>
-                  <input
-                    type="text"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    placeholder="Enter new username"
-                    className="input text-sm py-1.5 px-3 w-full"
-                    disabled={isChangingPassword}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-text-secondary mb-1">New Password</label>
-                  <input
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    placeholder="Enter new password"
-                    className="input text-sm py-1.5 px-3 w-full"
-                    disabled={isChangingPassword}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
-                  <input
-                    type="password"
-                    value={confirmNewPassword}
-                    onChange={(e) => setConfirmNewPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="input text-sm py-1.5 px-3 w-full"
-                    disabled={isChangingPassword}
-                  />
-                </div>
-
-                {passwordError && (
-                  <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
-                    {passwordError}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isChangingPassword}
-                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
-                </button>
-              </form>
-            )}
-          </div>
-
-          {/* Card 2: Import Rules + SponsorBlock */}
-          <div className="card p-4 w-full">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Left Column - Import Rules */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-text-primary">Import Rules</h3>
-                  <button
-                    onClick={() => setShowImportHelp(true)}
-                    className="w-4 h-4 rounded-full border border-text-muted text-text-muted hover:text-text-primary hover:border-text-primary transition-colors flex items-center justify-center text-xs font-bold"
-                    title="What is this?"
-                  >
-                    ?
-                  </button>
-                </div>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={reencodeMkv}
-                    onChange={handleReencodeMkvToggle}
-                    className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
-                  />
-                  <span className="text-sm text-text-primary font-medium">Re-encode MKVs for Web</span>
-                </label>
-              </div>
-
-              {/* Right Column - SponsorBlock */}
-              <div className="flex flex-col items-center gap-3">
-                <div className="flex items-center gap-2">
+              {/* SponsorBlock */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-2 flex-shrink-0">
                   <h3 className="text-sm font-semibold text-text-primary">SponsorBlock</h3>
                   <button
                     onClick={() => setShowSponsorBlockHelp(true)}
@@ -852,7 +701,7 @@ export default function Settings() {
                     ?
                   </button>
                 </div>
-                <div className="flex flex-wrap items-center justify-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -862,7 +711,6 @@ export default function Settings() {
                     />
                     <span className="text-sm text-text-primary font-medium">Sponsors</span>
                   </label>
-                  <span className="text-text-secondary">•</span>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -872,7 +720,6 @@ export default function Settings() {
                     />
                     <span className="text-sm text-text-primary font-medium">Self-Promo</span>
                   </label>
-                  <span className="text-text-secondary">•</span>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -880,10 +727,104 @@ export default function Settings() {
                       onChange={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
                       className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text focus:ring-2 focus:ring-accent cursor-pointer"
                     />
-                    <span className="text-sm text-text-primary font-medium">Like/Sub Requests</span>
+                    <span className="text-sm text-text-primary font-medium">Like/Sub</span>
                   </label>
                 </div>
               </div>
+
+              {/* Separator */}
+              <div className="border-t border-dark-border"></div>
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <button
+                  onClick={() => setShowPasswordChange(!showPasswordChange)}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center"
+                >
+                  Reset User
+                </button>
+                <button
+                  onClick={toggleStatusBar}
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center"
+                >
+                  {statusBarVisible ? 'Hide Status' : 'Show Status'}
+                </button>
+                <button
+                  onClick={handleQueueRepair}
+                  disabled={isCheckingRepair}
+                  title="Cleans up database count issues, orphaned queue items, ghost videos from deleted channels, and other inconsistencies"
+                  className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover py-1.5 text-sm font-bold px-3 justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isCheckingRepair ? 'Checking...' : 'Repair'}
+                </button>
+              </div>
+
+              {/* Password Change Form */}
+              {showPasswordChange && (
+                <form onSubmit={handlePasswordChange} className="space-y-3 pt-2 border-t border-dark-border">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm text-text-secondary mb-1">Current Password</label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="Enter current password"
+                        className="input text-sm py-1.5 px-3 w-full"
+                        disabled={isChangingPassword}
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-secondary mb-1">New Username</label>
+                      <input
+                        type="text"
+                        value={newUsername}
+                        onChange={(e) => setNewUsername(e.target.value)}
+                        placeholder="Enter new username"
+                        className="input text-sm py-1.5 px-3 w-full"
+                        disabled={isChangingPassword}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-secondary mb-1">New Password</label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Enter new password"
+                        className="input text-sm py-1.5 px-3 w-full"
+                        disabled={isChangingPassword}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm text-text-secondary mb-1">Confirm New Password</label>
+                      <input
+                        type="password"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                        className="input text-sm py-1.5 px-3 w-full"
+                        disabled={isChangingPassword}
+                      />
+                    </div>
+                  </div>
+
+                  {passwordError && (
+                    <div className="bg-red-900/20 border border-red-500 text-red-400 px-3 py-2 rounded text-sm">
+                      {passwordError}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isChangingPassword}
+                    className="btn bg-dark-tertiary text-text-primary hover:bg-dark-hover font-bold py-1.5 text-sm px-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
 
@@ -1435,32 +1376,6 @@ export default function Settings() {
               <p className="text-xs text-text-muted mt-4">
                 Data provided by <a href="https://sponsor.ajay.app" target="_blank" rel="noopener noreferrer" className="text-accent-text hover:underline">SponsorBlock API</a> - a community-driven project.
               </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Import Rules Help Modal */}
-      {showImportHelp && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowImportHelp(false)}>
-          <div className="card p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-text-primary">Import Rules</h2>
-              <button
-                onClick={() => setShowImportHelp(false)}
-                className="text-text-muted hover:text-text-primary transition-colors"
-              >
-                <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-              </button>
-            </div>
-            <div className="space-y-4 text-sm text-text-secondary">
-              <div className="bg-dark-tertiary p-3 rounded-lg">
-                <h3 className="font-semibold text-text-primary mb-2">Re-encode MKVs for Web</h3>
-                <p className="mb-2">When enabled, MKV files in the import folder will be re-encoded to MP4 (H.264 + AAC) for browser compatibility.</p>
-                <p className="text-xs text-text-muted">This process may take several minutes depending on file size. The original MKV is deleted after successful conversion.</p>
-              </div>
             </div>
           </div>
         </div>
