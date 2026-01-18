@@ -66,6 +66,18 @@ const EyeIcon = () => (
   </svg>
 );
 
+const ChevronIcon = ({ collapsed }) => (
+  <svg
+    className={`w-4 h-4 text-text-muted transition-transform duration-200 ${collapsed ? '-rotate-90' : ''}`}
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth="2"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+  </svg>
+);
+
 export default function Settings() {
   const { data: settings, isLoading } = useSettings();
   const { data: health } = useHealth();
@@ -145,6 +157,20 @@ export default function Settings() {
   const [latestVersion, setLatestVersion] = useState(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+
+  // Collapsible sections state (persisted in localStorage)
+  const [collapsedSections, setCollapsedSections] = useState(() => {
+    const saved = localStorage.getItem('settings_collapsed_sections');
+    return saved ? JSON.parse(saved) : {};
+  });
+
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => {
+      const updated = { ...prev, [section]: !prev[section] };
+      localStorage.setItem('settings_collapsed_sections', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   // Scroll to top on component mount
   useEffect(() => {
@@ -605,11 +631,13 @@ export default function Settings() {
 
         {/* PLAYBACK Section */}
         <div className="settings-section">
-          <div className="section-header">
+          <div className="section-header cursor-pointer" onClick={() => toggleSection('playback')}>
             <PlayIcon />
             Playback
+            <ChevronIcon collapsed={collapsedSections.playback} />
           </div>
 
+          <div className={`section-content ${collapsedSections.playback ? 'collapsed' : ''}`}>
           <div className="setting-row">
             <div className="setting-label">
               <div>
@@ -664,15 +692,18 @@ export default function Settings() {
               </Tooltip>
             </div>
           </div>
+          </div>
         </div>
 
         {/* DISPLAY Section */}
         <div className="settings-section">
-          <div className="section-header">
+          <div className="section-header cursor-pointer" onClick={() => toggleSection('display')}>
             <DisplayIcon />
             Display
+            <ChevronIcon collapsed={collapsedSections.display} />
           </div>
 
+          <div className={`section-content ${collapsedSections.display ? 'collapsed' : ''}`}>
           <div className="setting-row">
             <div className="setting-label">
               <div>
@@ -726,15 +757,18 @@ export default function Settings() {
               ))}
             </div>
           </div>
+          </div>
         </div>
 
         {/* DOWNLOADS Section */}
         <div className="settings-section">
-          <div className="section-header">
+          <div className="section-header cursor-pointer" onClick={() => toggleSection('downloads')}>
             <DownloadIcon />
             Downloads
+            <ChevronIcon collapsed={collapsedSections.downloads} />
           </div>
 
+          <div className={`section-content ${collapsedSections.downloads ? 'collapsed' : ''}`}>
           <div className="setting-row">
             <div className="setting-label">
               <span className={`autoscan-status ${
@@ -893,15 +927,18 @@ export default function Settings() {
               </button>
             </div>
           </div>
+          </div>
         </div>
 
         {/* SYSTEM Section */}
         <div className="settings-section">
-          <div className="section-header">
+          <div className="section-header cursor-pointer" onClick={() => toggleSection('system')}>
             <SystemIcon />
             System
+            <ChevronIcon collapsed={collapsedSections.system} />
           </div>
 
+          <div className={`section-content ${collapsedSections.system ? 'collapsed' : ''}`}>
           {/* Change Password */}
           <div className="setting-row flex-col !items-stretch gap-3">
             <div className="flex items-center justify-between">
@@ -992,15 +1029,18 @@ export default function Settings() {
               Reset to Setup
             </button>
           </div>
+          </div>
         </div>
 
         {/* LOGGING Section */}
         <div className="settings-section">
-          <div className="section-header">
+          <div className="section-header cursor-pointer" onClick={() => toggleSection('logging')}>
             <LogIcon />
             Logging
+            <ChevronIcon collapsed={collapsedSections.logging} />
           </div>
 
+          <div className={`section-content ${collapsedSections.logging ? 'collapsed' : ''}`}>
           <div className="setting-row flex-col !items-stretch gap-3">
             <div className="flex items-center justify-between">
               <div className="setting-label">
@@ -1078,6 +1118,7 @@ export default function Settings() {
                 )}
               </div>
             </div>
+          </div>
           </div>
         </div>
 

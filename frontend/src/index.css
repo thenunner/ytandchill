@@ -223,10 +223,30 @@
 .section-header {
   @apply flex items-center gap-2.5 px-4 py-3 bg-dark-tertiary border-b border-dark-border;
   @apply text-xs font-semibold uppercase tracking-wider text-text-secondary;
+  @apply select-none transition-colors;
+}
+
+.section-header:hover {
+  @apply bg-dark-tertiary/80;
 }
 
 .section-header svg {
   @apply w-4 h-4 opacity-70;
+}
+
+.section-header svg:last-child {
+  @apply ml-auto;
+}
+
+/* Collapsible section content */
+.section-content {
+  @apply overflow-hidden transition-all duration-200 ease-in-out;
+  max-height: 2000px;
+}
+
+.section-content.collapsed {
+  max-height: 0;
+  @apply opacity-0;
 }
 
 /* Setting Row */
