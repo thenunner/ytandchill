@@ -97,7 +97,8 @@ def create_channel():
                             # Re-download thumbnail
                             if restored_info['thumbnail']:
                                 thumbnail_filename = f"{existing.yt_id}.jpg"
-                                local_file_path = os.path.join('downloads', 'thumbnails', thumbnail_filename)
+                                downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
+                                local_file_path = os.path.join(downloads_dir, 'thumbnails', thumbnail_filename)
                                 if download_thumbnail(restored_info['thumbnail'], local_file_path):
                                     existing.thumbnail = os.path.join('thumbnails', thumbnail_filename)
                                     logger.info(f"Re-downloaded thumbnail for restored channel: {existing.title}")
@@ -131,7 +132,8 @@ def create_channel():
             thumbnail_path = None
             if channel_info['thumbnail']:
                 thumbnail_filename = f"{channel_id}.jpg"
-                local_file_path = os.path.join('downloads', 'thumbnails', thumbnail_filename)
+                downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
+                local_file_path = os.path.join(downloads_dir, 'thumbnails', thumbnail_filename)
                 if download_thumbnail(channel_info['thumbnail'], local_file_path):
                     # Store relative path (without 'downloads/' prefix) since media endpoint serves from downloads/
                     thumbnail_path = os.path.join('thumbnails', thumbnail_filename)
