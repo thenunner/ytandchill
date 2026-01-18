@@ -12,7 +12,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import api from '../api/client';
-import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 
 export default function ChannelLibrary() {
@@ -681,246 +681,193 @@ export default function ChannelLibrary() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Sticky Header Row */}
+      {/* Sticky Header Row - 2 column grid: LEFT (back, tabs, search) | RIGHT (controls) */}
       <StickyBar className="md:-mx-8 md:px-8 mb-4">
-        <div className="flex items-center justify-center gap-3 flex-wrap">
-          {/* Back Arrow - Library mode goes to /library, Discovery mode goes to / (main channels list) */}
-          <Link
-            to={isLibraryMode ? "/library" : "/"}
-            className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors"
-            title={isLibraryMode ? "Back to Library" : "Back to Channels"}
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
-          </Link>
+        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
+          {/* LEFT: Back, Tabs, Search */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Back Arrow */}
+            <Link
+              to={isLibraryMode ? "/library" : "/"}
+              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
+              title={isLibraryMode ? "Back to Library" : "Back to Channels"}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </Link>
 
-          {/* Tabs - Different for Library vs Discovery mode */}
-          <div className="flex gap-2">
-            {isLibraryMode ? (
-              <>
-                {/* Library Mode: Videos / Playlists */}
-                <button
-                  onClick={() => {
-                    const newParams = new URLSearchParams(searchParams);
-                    newParams.delete('filter');
-                    setSearchParams(newParams);
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    contentFilter === 'videos'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  Videos
-                </button>
-                <button
-                  onClick={() => {
-                    navigate('/library?tab=playlists');
-                  }}
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary"
-                >
-                  Playlists
-                </button>
-              </>
-            ) : (
-              <>
-                {/* Discovery Mode: To Review / Ignored */}
-                <button
-                  onClick={() => {
-                    const newParams = new URLSearchParams(searchParams);
-                    newParams.delete('filter');
-                    setSearchParams(newParams);
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    contentFilter === 'to-review'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  To Review
-                </button>
-                <button
-                  onClick={() => {
-                    const newParams = new URLSearchParams(searchParams);
-                    newParams.set('filter', 'ignored');
-                    setSearchParams(newParams);
-                  }}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    contentFilter === 'ignored'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  Ignored
-                </button>
-              </>
-            )}
+            {/* Tabs */}
+            <div className="flex gap-2">
+              {isLibraryMode ? (
+                <>
+                  <button
+                    onClick={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete('filter');
+                      setSearchParams(newParams);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      contentFilter === 'videos'
+                        ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                        : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                    }`}
+                  >
+                    Videos
+                  </button>
+                  <button
+                    onClick={() => navigate('/library?tab=playlists')}
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary"
+                  >
+                    Playlists
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.delete('filter');
+                      setSearchParams(newParams);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      contentFilter === 'to-review'
+                        ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                        : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                    }`}
+                  >
+                    To Review
+                  </button>
+                  <button
+                    onClick={() => {
+                      const newParams = new URLSearchParams(searchParams);
+                      newParams.set('filter', 'ignored');
+                      setSearchParams(newParams);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      contentFilter === 'ignored'
+                        ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                        : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                    }`}
+                  >
+                    Ignored
+                  </button>
+                </>
+              )}
+            </div>
+
+            {/* Search - left justified */}
+            <SearchInput
+              value={searchInput}
+              onChange={handleSearchChange}
+              placeholder="Search videos..."
+              className="w-full sm:w-[180px]"
+            />
           </div>
 
-          {/* Search */}
-          <SearchInput
-            value={searchInput}
-            onChange={handleSearchChange}
-            placeholder="Search videos..."
-            className="w-full sm:w-[180px]"
-          />
+          {/* RIGHT: Controls */}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <CardSizeSlider tab={isLibraryMode ? 'library' : 'channels'} />
 
-          {/* Card Size Slider */}
-          <CardSizeSlider tab={isLibraryMode ? 'library' : 'channels'} />
-
-          {/* Pagination */}
-          <Pagination
-            currentPage={currentPage}
-            totalItems={sortedVideos.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={(value) => {
-              setItemsPerPage(value);
-              localStorage.setItem('channelLibrary_itemsPerPage', value);
-              setCurrentPage(1);
-            }}
-          />
-
-          {/* Filters Button - Show for both videos and playlists */}
-          <button
-            onClick={() => setShowFiltersModal(true)}
-            title="Filter and sort videos"
-            className="filter-btn"
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
-            </svg>
-            <span>Filters</span>
-          </button>
-
-          {/* Edit Button - Only in library mode for videos */}
-          {isLibraryMode && contentFilter !== 'playlists' && (
-            <button
-              onClick={() => {
-                setEditMode(!editMode);
-                setSelectedVideos([]); // Clear selection when toggling
+            <Pagination
+              currentPage={currentPage}
+              totalItems={sortedVideos.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(value) => {
+                setItemsPerPage(value);
+                localStorage.setItem('channelLibrary_itemsPerPage', value);
+                setCurrentPage(1);
               }}
-              title={editMode ? "Exit selection mode" : "Select videos for bulk actions"}
-              className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
+            />
+
+            <button
+              onClick={() => setShowFiltersModal(true)}
+              title="Filter and sort videos"
+              className="filter-btn"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
               </svg>
-              <span>{editMode ? 'Done' : 'Edit'}</span>
+              <span>Filters</span>
             </button>
-          )}
 
-          {/* Edit Mode Actions - Only in library mode when edit mode is active */}
-          {isLibraryMode && editMode && contentFilter !== 'playlists' && (
-            <>
-              {/* Select All - Always visible */}
-              {sortedVideos.length > 0 && (
-                <>
-                  <button
-                    onClick={selectAll}
-                    className="btn btn-primary btn-sm"
-                  >
-                    Select All ({sortedVideos.length})
-                  </button>
-                  <button
-                    onClick={selectPage}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Select Page ({paginatedVideos.length})
-                  </button>
-                </>
-              )}
-
-              {/* Action Buttons - Appear when videos are selected */}
-              {selectedVideos.length > 0 && (
-                <>
-                  <span className="text-sm text-text-secondary">{selectedVideos.length} selected</span>
-                  <button
-                    onClick={() => handleBulkAction('delete')}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Delete All
-                  </button>
-                  <button
-                    onClick={() => handleBulkAction('playlist')}
-                    className="btn btn-primary btn-sm"
-                  >
-                    Playlist Options
-                  </button>
-                  <button
-                    onClick={clearSelection}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Clear
-                  </button>
-                </>
-              )}
-            </>
-          )}
-
-          {/* Select All and Bulk Actions - Only in discovery mode */}
-          {!isLibraryMode && contentFilter !== 'playlists' && (
-            <>
-              {/* Select All - Always visible */}
-              {sortedVideos.length > 0 && (
-                <>
-                  <button
-                    onClick={selectAll}
-                    className="btn btn-primary btn-sm"
-                  >
-                    Select All ({sortedVideos.length})
-                  </button>
-                  <button
-                    onClick={selectPage}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Select Page ({paginatedVideos.length})
-                  </button>
-                </>
-              )}
-
-              {/* Action Buttons - Appear when videos are selected */}
-              {selectedVideos.length > 0 && (
-                <>
-                  <span className="text-sm text-text-secondary">{selectedVideos.length} selected</span>
-                  {contentFilter === 'to-review' && (
-                    <>
-                      <button
-                        onClick={() => handleBulkAction('queue')}
-                        className="btn btn-primary btn-sm"
-                      >
-                        Add to Queue
-                      </button>
-                      <button
-                        onClick={() => handleBulkAction('ignore')}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        Ignore
-                      </button>
-                    </>
-                  )}
-                  {contentFilter === 'ignored' && (
-                    <button
-                      onClick={() => handleBulkAction('unignore')}
-                      className="btn btn-primary btn-sm"
-                    >
-                      Add to Queue
-                    </button>
-                  )}
-                  <button
-                    onClick={clearSelection}
-                    className="btn btn-secondary btn-sm"
-                  >
-                    Clear
-                  </button>
-                </>
-              )}
-            </>
-          )}
+            {/* Edit Button - Only in library mode */}
+            {isLibraryMode && contentFilter !== 'playlists' && (
+              <button
+                onClick={() => {
+                  setEditMode(!editMode);
+                  setSelectedVideos([]);
+                }}
+                title={editMode ? "Exit selection mode" : "Select videos for bulk actions"}
+                className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
+              >
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+                <span>{editMode ? 'Done' : 'Edit'}</span>
+              </button>
+            )}
+          </div>
         </div>
       </StickyBar>
+
+      {/* SelectionBar - Library mode edit actions */}
+      {isLibraryMode && contentFilter !== 'playlists' && (
+        <SelectionBar
+          show={editMode && sortedVideos.length > 0}
+          selectedCount={selectedVideos.length}
+          totalCount={sortedVideos.length}
+          onSelectAll={selectAll}
+          onClear={clearSelection}
+          onDone={() => {
+            setEditMode(false);
+            setSelectedVideos([]);
+          }}
+          actions={[
+            {
+              label: 'Delete',
+              onClick: () => handleBulkAction('delete'),
+              danger: true
+            },
+            {
+              label: 'Add to Playlist',
+              onClick: () => handleBulkAction('playlist'),
+              primary: true
+            }
+          ]}
+        />
+      )}
+
+      {/* SelectionBar - Discovery mode actions */}
+      {!isLibraryMode && contentFilter !== 'playlists' && (
+        <SelectionBar
+          show={sortedVideos.length > 0}
+          selectedCount={selectedVideos.length}
+          totalCount={sortedVideos.length}
+          onSelectAll={selectAll}
+          onClear={clearSelection}
+          onDone={clearSelection}
+          actions={contentFilter === 'to-review' ? [
+            {
+              label: 'Add to Queue',
+              onClick: () => handleBulkAction('queue'),
+              primary: true
+            },
+            {
+              label: 'Ignore',
+              onClick: () => handleBulkAction('ignore')
+            }
+          ] : [
+            {
+              label: 'Add to Queue',
+              onClick: () => handleBulkAction('unignore'),
+              primary: true
+            }
+          ]}
+        />
+      )}
 
       {/* Channel Header - Only show in discovery mode for videos, not in library mode or playlists */}
       {channel && contentFilter !== 'playlists' && !isLibraryMode && (
