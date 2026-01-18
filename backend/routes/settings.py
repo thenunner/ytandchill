@@ -12,6 +12,7 @@ from flask import Blueprint, jsonify, request, session, current_app
 from datetime import timedelta
 from werkzeug.security import generate_password_hash, check_password_hash
 import subprocess
+import shutil
 import os
 import logging
 import requests
@@ -254,13 +255,22 @@ def health_check():
     # Detect server platform
     server_platform = detect_server_platform()
 
-    # Check ffmpeg
+    # Check ffmpeg (cross-platform)
     ffmpeg_available = False
-    try:
-        result = subprocess.run(['ffmpeg', '-version'], capture_output=True, timeout=5)
-        ffmpeg_available = result.returncode == 0
-    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
-        pass
+    ffmpeg_path = shutil.which('ffmpeg') or shutil.which('ffmpeg.exe')
+    if ffmpeg_path:
+        try:
+            # On Windows, prevent console window from appearing
+            startupinfo = None
+            if os.name == 'nt':
+                startupinfo = subprocess.STARTUPINFO()
+                startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+                startupinfo.wShowWindow = subprocess.SW_HIDE
+
+            result = subprocess.run([ffmpeg_path, '-version'], capture_output=True, timeout=5, startupinfo=startupinfo)
+            ffmpeg_available = result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+            pass
 
     # Check yt-dlp version
     ytdlp_version = yt_dlp.version.__version__

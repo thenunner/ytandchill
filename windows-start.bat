@@ -243,16 +243,17 @@ if errorlevel 1 (
     goto menu
 )
 
-REM Check ffmpeg
+REM Check ffmpeg (includes ffprobe, needed for MKV re-encoding)
 ffmpeg -version >nul 2>&1
 if errorlevel 1 (
     echo  ffmpeg not found. Installing...
     winget install Gyan.FFmpeg --accept-package-agreements --accept-source-agreements
     if errorlevel 1 (
         echo  WARNING: Could not install ffmpeg.
-        echo  Some features may not work.
+        echo  MKV re-encoding will not work without ffmpeg.
     ) else (
         echo  ffmpeg installed!
+        echo  NOTE: You may need to restart this terminal for PATH to update.
     )
 )
 

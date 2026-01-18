@@ -28,6 +28,38 @@ from flask import Blueprint, jsonify, request
 import requests as http_requests
 import yt_dlp
 
+# Windows compatibility: find ffmpeg/ffprobe executables
+def _find_executable(name):
+    """Find an executable, handling Windows .exe extension."""
+    # Try shutil.which first (handles PATH on all platforms)
+    path = shutil.which(name)
+    if path:
+        return path
+
+    # On Windows, try with .exe extension
+    if os.name == 'nt':
+        path = shutil.which(f'{name}.exe')
+        if path:
+            return path
+
+        # Check common Windows installation paths
+        common_paths = [
+            os.path.join(os.environ.get('PROGRAMFILES', 'C:\\Program Files'), 'ffmpeg', 'bin', f'{name}.exe'),
+            os.path.join(os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'), 'ffmpeg', 'bin', f'{name}.exe'),
+            os.path.join(os.environ.get('LOCALAPPDATA', ''), 'ffmpeg', 'bin', f'{name}.exe'),
+            f'C:\\ffmpeg\\bin\\{name}.exe',
+        ]
+        for p in common_paths:
+            if os.path.isfile(p):
+                return p
+
+    # Fallback to just the name (will fail if not in PATH)
+    return name
+
+# Cache the executable paths
+FFPROBE_PATH = _find_executable('ffprobe')
+FFMPEG_PATH = _find_executable('ffmpeg')
+
 from werkzeug.utils import secure_filename
 
 from database import Video, Channel, get_session
@@ -351,10 +383,17 @@ def scan_import_folder(include_mkv_override=False):
 def get_video_duration(file_path):
     """Get video duration in seconds using ffprobe."""
     try:
+        # On Windows, prevent console window from appearing
+        startupinfo = None
+        if os.name == 'nt':
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
         result = subprocess.run([
-            'ffprobe', '-v', 'quiet', '-print_format', 'json',
+            FFPROBE_PATH, '-v', 'quiet', '-print_format', 'json',
             '-show_format', file_path
-        ], capture_output=True, text=True, timeout=30)
+        ], capture_output=True, text=True, timeout=30, startupinfo=startupinfo)
 
         if result.returncode != 0:
             logger.warning(f"ffprobe failed for {file_path}")
@@ -823,7 +862,7 @@ def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
     filename = os.path.basename(input_path)
 
     args = [
-        'ffmpeg', '-y',
+        FFMPEG_PATH, '-y',
         '-i', input_path,
         '-c:v', 'libx264',
         '-preset', 'medium',
@@ -836,7 +875,14 @@ def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
     ]
 
     try:
-        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        # On Windows, prevent console window from appearing
+        startupinfo = None
+        if os.name == 'nt':
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
+        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, startupinfo=startupinfo)
 
         for line in process.stdout:
             if line.startswith('out_time_ms='):
