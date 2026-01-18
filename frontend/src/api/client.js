@@ -441,9 +441,10 @@ class APIClient {
     });
   }
 
-  resetImport() {
+  resetImport(force = false) {
     return this.request('/import/reset', {
       method: 'POST',
+      body: JSON.stringify({ force }),
     });
   }
 
@@ -463,6 +464,13 @@ class APIClient {
 
   getEncodeStatus() {
     return this.request('/import/encode-status');
+  }
+
+  skipPendingItem(file) {
+    return this.request('/import/skip-pending', {
+      method: 'POST',
+      body: JSON.stringify({ file }),
+    });
   }
 }
 

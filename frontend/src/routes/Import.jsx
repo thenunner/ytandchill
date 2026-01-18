@@ -10,6 +10,7 @@ import {
   useExecuteSmartImport,
   useSettings,
   useEncodeStatus,
+  useSkipPendingItem,
 } from '../api/queries';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { CheckmarkIcon } from '../components/icons';
@@ -214,6 +215,7 @@ export default function Import() {
   const smartIdentify = useSmartIdentify();
   const executeSmartImport = useExecuteSmartImport();
   const resetImport = useResetImport();
+  const skipPendingItem = useSkipPendingItem();
 
   // Page state: 'setup' or 'progress'
   const [currentPage, setCurrentPage] = useState('setup');
@@ -239,6 +241,7 @@ export default function Import() {
   const [currentUploadProgress, setCurrentUploadProgress] = useState(0);
   const [rejectionError, setRejectionError] = useState(null);
   const rejectionTimerRef = useRef(null);
+  const hasRestoredRef = useRef(false);
 
   // Derived state
   const isEncoding = encodeStatus?.encoding || false;
@@ -280,8 +283,31 @@ export default function Import() {
     }
   }, [rejectionError?.files]);
 
+  // Restore progress page if there's active import state
+  useEffect(() => {
+    if (hasRestoredRef.current || !stateData) return;
+
+    const hasPending = stateData.pending?.length > 0;
+    const hasEncoding = encodeStatus?.encoding;
+    const hasImported = stateData.imported?.length > 0;
+    const hasFailed = stateData.failed?.length > 0;
+    const hasSkipped = stateData.skipped?.length > 0;
+
+    // If there's any active import state, restore to progress page
+    if (hasPending || hasEncoding || hasImported || hasFailed || hasSkipped) {
+      hasRestoredRef.current = true;
+      setCurrentPage('progress');
+      setPendingMatches(stateData.pending || []);
+      setCurrentPendingIdx(0);
+      setImportedList(stateData.imported || []);
+      setSkippedList(stateData.skipped || []);
+      setFailedList(stateData.failed || []);
+    }
+  }, [stateData, encodeStatus?.encoding]);
+
   // Start import
   const handleStartImport = async (mode) => {
+    hasRestoredRef.current = true; // Prevent restoration from overwriting new import
     setCurrentPage('progress');
     setImportMode(mode);
     setPendingMatches([]);
@@ -348,16 +374,21 @@ export default function Import() {
   };
 
   // Skip match
-  const handleSkipMatch = () => {
+  const handleSkipMatch = async () => {
     const pending = pendingMatches[currentPendingIdx];
-    setSkippedList(prev => [...prev, { filename: pending.filename, reason: 'Skipped by user' }]);
-    setCurrentPendingIdx(prev => prev + 1);
-    setSelectedVideoId(null);
+    try {
+      await skipPendingItem.mutateAsync(pending.file);
+      setSkippedList(prev => [...prev, { filename: pending.filename, reason: 'Skipped by user' }]);
+      setCurrentPendingIdx(prev => prev + 1);
+      setSelectedVideoId(null);
+    } catch (error) {
+      showNotification(`Error: ${error.message}`, 'error');
+    }
   };
 
   // Reset
-  const handleReset = async () => {
-    await resetImport.mutateAsync();
+  const handleReset = async (force = false) => {
+    await resetImport.mutateAsync({ force });
     await refetchScan();
     setCurrentPage('setup');
     setPendingMatches([]);
@@ -366,6 +397,8 @@ export default function Import() {
     setSkippedList([]);
     setFailedList([]);
     setImportMode(null);
+    // Allow restoration to work again in future
+    hasRestoredRef.current = false;
   };
 
   // MKV choice
@@ -612,17 +645,51 @@ export default function Import() {
         </div>
 
         {/* ACTION BUTTONS */}
-        <div className="flex gap-3">
-          <button onClick={handleReset} className="btn btn-secondary flex-1">
-            New Import
-          </button>
-          <button
-            onClick={() => navigate('/library')}
-            className={`btn flex-1 ${isComplete ? 'btn-primary' : 'btn-secondary'}`}
-          >
-            Go to Library
-          </button>
-        </div>
+        {(() => {
+          const pendingCount = pendingMatches.length - currentPendingIdx;
+          const importedCount = importedList.length;
+
+          // Determine button state (priority order)
+          const needsWarning = isEncoding || pendingCount > 0;
+          const warningText = isEncoding
+            ? 'Encoding will be cancelled'
+            : pendingCount > 0
+              ? `${pendingCount} pending match${pendingCount !== 1 ? 'es' : ''} will be lost`
+              : null;
+          const buttonText = needsWarning
+            ? 'Cancel & Start New'
+            : importedCount > 0
+              ? 'Start New Import'
+              : 'New Import';
+
+          return (
+            <div className="flex flex-col gap-1">
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handleReset(true)}
+                  className={`btn flex-1 ${
+                    needsWarning
+                      ? 'bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 border border-amber-600/50'
+                      : 'btn-secondary'
+                  }`}
+                >
+                  {buttonText}
+                </button>
+                <button
+                  onClick={() => navigate('/library')}
+                  className={`btn flex-1 ${isComplete ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  Go to Library
+                </button>
+              </div>
+              {warningText && (
+                <span className="text-xs text-amber-400/70 text-center">
+                  {warningText}
+                </span>
+              )}
+            </div>
+          );
+        })()}
       </div>
     );
   }

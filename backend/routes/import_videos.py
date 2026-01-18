@@ -20,6 +20,7 @@ import shutil
 import subprocess
 import logging
 import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
@@ -851,6 +852,15 @@ def download_thumbnail(video_id, channel_folder):
     return None
 
 
+def _stderr_reader(pipe, error_lines):
+    """Read stderr in a thread to prevent buffer deadlock."""
+    try:
+        for line in pipe:
+            error_lines.append(line)
+    except Exception:
+        pass
+
+
 def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
     """Re-encode MKV to web-compatible MP4 with progress tracking.
 
@@ -874,6 +884,9 @@ def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
         output_path
     ]
 
+    logger.info(f"Starting ffmpeg encode: {' '.join(args)}")
+    logger.info(f"Input duration: {total_duration}s, output: {output_path}")
+
     try:
         # On Windows, prevent console window from appearing
         startupinfo = None
@@ -882,8 +895,21 @@ def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
             startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             startupinfo.wShowWindow = subprocess.SW_HIDE
 
-        process = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, startupinfo=startupinfo)
+        process = subprocess.Popen(
+            args,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            startupinfo=startupinfo,
+            bufsize=1  # Line buffered
+        )
 
+        # Read stderr in a separate thread to prevent buffer deadlock on Windows
+        error_lines = []
+        stderr_thread = threading.Thread(target=_stderr_reader, args=(process.stderr, error_lines), daemon=True)
+        stderr_thread.start()
+
+        last_log_time = 0
         for line in process.stdout:
             if line.startswith('out_time_ms='):
                 try:
@@ -893,16 +919,24 @@ def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
                         percent = min(99, int((current_sec / total_duration) * 100))
                         _import_state['message'] = f"Encoding: {filename} ({percent}%)"
                         _import_state['encode_progress'] = percent
+
+                        # Log progress every 60 seconds
+                        now = time.time()
+                        if now - last_log_time > 60:
+                            logger.info(f"Encoding progress: {filename} - {percent}% ({current_sec:.0f}s / {total_duration}s)")
+                            last_log_time = now
                 except ValueError:
                     pass
 
         process.wait()
+        stderr_thread.join(timeout=5)
 
         if process.returncode != 0:
-            stderr = process.stderr.read()
-            logger.error(f"FFmpeg error: {stderr}")
+            stderr_output = ''.join(error_lines[-20:])  # Last 20 lines
+            logger.error(f"FFmpeg error (code {process.returncode}): {stderr_output}")
             return False
 
+        logger.info(f"Encoding complete: {filename}")
         _import_state['encode_progress'] = 100
         return True
 
@@ -1018,6 +1052,9 @@ def execute_import(file_path, video_info, channel_info, match_type):
                 existing.file_path = new_file_path
                 existing.file_size_bytes = os.path.getsize(new_file_path)
                 existing.thumb_url = thumb_url
+                existing.downloaded_at = datetime.now(timezone.utc)
+                if upload_date and not existing.upload_date:
+                    existing.upload_date = upload_date
                 session.commit()
             # Remove source file
             try:
@@ -1104,23 +1141,33 @@ def scan_folder():
 
     logger.info(f"Found {len(known_channel_ids)} channel IDs and {len(known_channel_handles)} handles from {len(result.get('csv_channels', []))} URLs")
 
-    # Reset import state
+    # Preserve encoding state if encoding is in progress
+    with _encode_lock:
+        encoding_in_progress = _import_state.get('encode_current') is not None or len(_import_state.get('encode_queue', [])) > 0
+        preserved_encode_queue = _import_state.get('encode_queue', []) if encoding_in_progress else []
+        preserved_encode_current = _import_state.get('encode_current') if encoding_in_progress else None
+        preserved_encode_progress = _import_state.get('encode_progress', 0) if encoding_in_progress else None
+        preserved_imported = _import_state.get('imported', []) if encoding_in_progress else []
+        preserved_failed = _import_state.get('failed', []) if encoding_in_progress else []
+        preserved_status = _import_state.get('status', 'idle') if encoding_in_progress else 'idle'
+
+    # Reset import state but preserve encoding data
     _import_state = {
         'channels': [],
         'files': result['files'],
         'pending': [],
-        'imported': [],
+        'imported': preserved_imported,
         'skipped': [],
-        'failed': [],
+        'failed': preserved_failed,
         'known_channel_ids': known_channel_ids,
         'known_channel_handles': known_channel_handles,
         'current_channel_idx': 0,
-        'status': 'idle',
+        'status': preserved_status,
         'progress': 0,
         'message': '',
-        'encode_progress': None,
-        'encode_queue': [],
-        'encode_current': None,
+        'encode_progress': preserved_encode_progress,
+        'encode_queue': preserved_encode_queue,
+        'encode_current': preserved_encode_current,
         'include_mkv_override': include_mkv_override,  # Session-level MKV re-encode override
     }
 
@@ -1474,6 +1521,11 @@ def execute_smart_import():
         video_info = match['video']
         channel_info = match['channel_info']
         match_type = match.get('match_type', 'smart')
+
+        # Remove this file from pending list (if it was there)
+        _import_state['pending'] = [
+            p for p in _import_state['pending'] if p.get('file') != file_path
+        ]
 
         # Check if this is an MKV that needs encoding
         if ext == '.mkv' and allow_mkv:
@@ -1872,6 +1924,48 @@ def skip_remaining():
     return jsonify({'success': True})
 
 
+@import_bp.route('/api/import/skip-pending', methods=['POST'])
+def skip_pending_item():
+    """Skip a single pending item (user chose to skip during manual review)."""
+    global _import_state
+
+    data = request.get_json() or {}
+    file_path = data.get('file')
+
+    if not file_path:
+        return jsonify({'error': 'file path is required'}), 400
+
+    # Find and remove from pending
+    pending_item = None
+    for item in _import_state['pending']:
+        if item.get('file') == file_path:
+            pending_item = item
+            break
+
+    if not pending_item:
+        return jsonify({'error': 'Pending item not found'}), 404
+
+    # Remove from pending
+    _import_state['pending'] = [
+        p for p in _import_state['pending'] if p.get('file') != file_path
+    ]
+
+    # Add to skipped
+    _import_state['skipped'].append({
+        'file': file_path,
+        'filename': pending_item.get('filename', os.path.basename(file_path)),
+        'file_size': pending_item.get('file_size', 0),
+        'reason': 'Skipped by user',
+        'reason_code': 'user_skipped',
+    })
+
+    return jsonify({
+        'success': True,
+        'pending_count': len(_import_state['pending']),
+        'skipped_count': len(_import_state['skipped']),
+    })
+
+
 @import_bp.route('/api/import/state', methods=['GET'])
 def get_state():
     """Get current import state."""
@@ -1944,25 +2038,63 @@ def get_allowed_extensions():
 
 @import_bp.route('/api/import/reset', methods=['POST'])
 def reset_state():
-    """Reset import state."""
+    """Reset import state.
+
+    By default, preserves encoding state if in progress.
+    Pass force=true to do a full reset (cancels encoding).
+    """
     global _import_state
+
+    data = request.get_json() or {}
+    force = data.get('force', False)
+
+    if force:
+        # Full reset - clears everything including encoding
+        _import_state = {
+            'channels': [],
+            'files': [],
+            'pending': [],
+            'imported': [],
+            'skipped': [],
+            'failed': [],
+            'known_channel_ids': set(),
+            'known_channel_handles': set(),
+            'current_channel_idx': 0,
+            'status': 'idle',
+            'progress': 0,
+            'message': '',
+            'encode_progress': None,
+            'encode_queue': [],
+            'encode_current': None,
+        }
+        return jsonify({'success': True, 'encoding_preserved': False, 'force_reset': True})
+
+    # Preserve encoding state if encoding is in progress
+    with _encode_lock:
+        encoding_in_progress = _import_state.get('encode_current') is not None or len(_import_state.get('encode_queue', [])) > 0
+        preserved_encode_queue = _import_state.get('encode_queue', []) if encoding_in_progress else []
+        preserved_encode_current = _import_state.get('encode_current') if encoding_in_progress else None
+        preserved_encode_progress = _import_state.get('encode_progress', 0) if encoding_in_progress else None
+        preserved_imported = _import_state.get('imported', []) if encoding_in_progress else []
+        preserved_failed = _import_state.get('failed', []) if encoding_in_progress else []
+        preserved_status = _import_state.get('status', 'idle') if encoding_in_progress else 'idle'
 
     _import_state = {
         'channels': [],
         'files': [],
         'pending': [],
-        'imported': [],
+        'imported': preserved_imported,
         'skipped': [],
-        'failed': [],
+        'failed': preserved_failed,
         'known_channel_ids': set(),
         'known_channel_handles': set(),
         'current_channel_idx': 0,
-        'status': 'idle',
+        'status': preserved_status,
         'progress': 0,
         'message': '',
-        'encode_progress': None,
-        'encode_queue': [],
-        'encode_current': None,
+        'encode_progress': preserved_encode_progress,
+        'encode_queue': preserved_encode_queue,
+        'encode_current': preserved_encode_current,
     }
 
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'encoding_preserved': encoding_in_progress})

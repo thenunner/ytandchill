@@ -570,7 +570,7 @@ export function useSkipRemainingImport() {
 export function useResetImport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => api.resetImport(),
+    mutationFn: ({ force } = {}) => api.resetImport(force),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['import', 'scan'] });
       queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
@@ -607,6 +607,16 @@ export function useEncodeStatus(enabled = true) {
     refetchInterval: enabled ? 500 : false, // Poll every 500ms when enabled
     staleTime: 0,
     enabled,
+  });
+}
+
+export function useSkipPendingItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (file) => api.skipPendingItem(file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
+    },
   });
 }
 
