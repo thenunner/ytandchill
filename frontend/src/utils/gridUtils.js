@@ -92,17 +92,20 @@ export const getTextSizes = (cardSize, itemCount = Infinity) => {
 
   const sizeConfig = {
     sm: {
-      title: 'text-sm',
+      title: 'text-xs',        // 12px - smaller to fit more text
+      titleClamp: 'line-clamp-3', // 3 lines for small cards
       metadata: 'text-xs',
       badge: 'text-xs',
     },
     md: {
-      title: 'text-base',
-      metadata: 'text-sm',
+      title: 'text-sm',        // 14px
+      titleClamp: 'line-clamp-2',
+      metadata: 'text-xs',
       badge: 'text-xs',
     },
     lg: {
-      title: 'text-lg',
+      title: 'text-base',      // 16px
+      titleClamp: 'line-clamp-2',
       metadata: 'text-sm',
       badge: 'text-sm',
     }
