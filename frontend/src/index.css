@@ -140,6 +140,11 @@
     @apply bg-dark-tertiary border-dark-border-light text-text-primary font-medium;
   }
 
+  /* Toolbar Divider - Visual separator between control groups */
+  .toolbar-divider {
+    @apply w-px h-6 bg-dark-border hidden sm:block flex-shrink-0;
+  }
+
   /* Focus indicators for keyboard navigation (accessibility) */
   .nav-tab:focus-visible {
     @apply outline-2 outline-offset-2 outline-accent ring-0;

@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
-import { StickyBar, SearchInput, CardSizeSlider, SortDropdown } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider, SortDropdown, SelectionBar } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
@@ -473,106 +473,101 @@ export default function Channels() {
   return (
     <div className="space-y-6 animate-fade-in">
       <StickyBar>
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
-          <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className={`w-8 h-8 p-0 flex items-center justify-center border rounded transition-all ${
-              filteredAndSortedChannels.length === 0 && !showAddForm
-                ? 'bg-green-600 hover:bg-green-700 border-green-500 text-white shadow-lg shadow-green-500/50 animate-pulse'
-                : 'bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary'
-            }`}
-            title={showAddForm ? 'Cancel' : filteredAndSortedChannels.length === 0 ? 'Add Your First Channel!' : 'Add Channel'}
-          >
-            {showAddForm ? (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            ) : (
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-              </svg>
-            )}
-          </button>
-
-          {/* Unified Scan Button Group */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-dark-secondary border border-dark-border rounded-lg">
-            {/* Spinning Icon */}
-            <svg
-              className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                isScanRunning ? 'animate-spin text-accent' : 'text-text-secondary'
+        {/* Mobile: Two-row layout, Desktop: Three-section layout */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          {/* Left Section: Add + Scan */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => setShowAddForm(!showAddForm)}
+              className={`h-9 w-9 p-0 flex items-center justify-center border rounded-lg transition-all flex-shrink-0 ${
+                filteredAndSortedChannels.length === 0 && !showAddForm
+                  ? 'bg-green-600 hover:bg-green-700 border-green-500 text-white shadow-lg shadow-green-500/50 animate-pulse'
+                  : 'bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary'
               }`}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+              title={showAddForm ? 'Cancel' : filteredAndSortedChannels.length === 0 ? 'Add Your First Channel!' : 'Add Channel'}
             >
-              <polyline points="23 4 23 10 17 10"></polyline>
-              <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
-            </svg>
-
-            {/* Scan Label */}
-            <span className="text-sm text-text-primary">Scan</span>
-
-            {/* New Button */}
-            <button
-              onClick={() => handleScanAllChannels(false)}
-              disabled={!channels || channels.length === 0 || isScanRunning}
-              className={`px-3 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
-                isScanRunning && lastScanType === 'new'
-                  ? 'bg-accent text-white'
-                  : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
-              } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
-              title={isScanRunning
-                ? "Scan in progress..."
-                : selectedChannels.length > 0
-                  ? "Scan selected channels for new videos since last scan"
-                  : "Scan all channels for new videos since last scan"}
-            >
-              New
+              {showAddForm ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              )}
             </button>
 
-            {/* All Button */}
-            <button
-              onClick={() => handleScanAllChannels(true)}
-              disabled={!channels || channels.length === 0 || isScanRunning}
-              className={`px-3 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
-                isScanRunning && lastScanType === 'all'
-                  ? 'bg-accent text-white'
-                  : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
-              } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
-              title={isScanRunning
-                ? "Scan in progress..."
-                : selectedChannels.length > 0
-                  ? "Rescan selected channels for all videos"
-                  : "Rescan all channels for all videos"}
-            >
-              All
-            </button>
+            {/* Unified Scan Button Group */}
+            <div className="flex items-center gap-1.5 px-2 py-1.5 bg-dark-secondary border border-dark-border rounded-lg">
+              {/* Spinning Icon */}
+              <svg
+                className={`w-4 h-4 flex-shrink-0 transition-colors ${
+                  isScanRunning ? 'animate-spin text-accent' : 'text-text-secondary'
+                }`}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <polyline points="23 4 23 10 17 10"></polyline>
+                <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
+              </svg>
+
+              {/* Scan Label */}
+              <span className="text-sm text-text-primary hidden sm:inline">Scan</span>
+
+              {/* New Button */}
+              <button
+                onClick={() => handleScanAllChannels(false)}
+                disabled={!channels || channels.length === 0 || isScanRunning}
+                className={`px-2.5 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
+                  isScanRunning && lastScanType === 'new'
+                    ? 'bg-accent text-white'
+                    : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
+                } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
+                title={isScanRunning
+                  ? "Scan in progress..."
+                  : selectedChannels.length > 0
+                    ? "Scan selected channels for new videos since last scan"
+                    : "Scan all channels for new videos since last scan"}
+              >
+                New
+              </button>
+
+              {/* All Button */}
+              <button
+                onClick={() => handleScanAllChannels(true)}
+                disabled={!channels || channels.length === 0 || isScanRunning}
+                className={`px-2.5 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
+                  isScanRunning && lastScanType === 'all'
+                    ? 'bg-accent text-white'
+                    : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
+                } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
+                title={isScanRunning
+                  ? "Scan in progress..."
+                  : selectedChannels.length > 0
+                    ? "Rescan selected channels for all videos"
+                    : "Rescan all channels for all videos"}
+              >
+                All
+              </button>
+            </div>
           </div>
 
-          {/* Show scanning progress OR search input */}
-          {isScanRunning && currentOperation?.progress !== undefined ? (
-            <div className="flex items-center gap-3 px-4 py-2 bg-dark-secondary border border-dark-border-light rounded-lg w-full sm:w-auto">
-              <span className="text-sm font-medium text-text-primary whitespace-nowrap">
-                Scanning: {currentOperation.progress}%
-              </span>
-              <div className="flex-1 sm:w-[120px] bg-dark-tertiary rounded-full h-2 overflow-hidden">
-                <div
-                  className="bg-accent h-full transition-all duration-300"
-                  style={{ width: `${currentOperation.progress}%` }}
-                ></div>
-              </div>
-            </div>
-          ) : (
+          {/* Center Section: Search - Full width on mobile, fixed width on desktop */}
+          <div className="order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-[280px] sm:mx-4">
             <SearchInput
               value={searchInput}
               onChange={setSearchInput}
               placeholder="Search channels..."
-              className="w-full sm:w-[200px]"
+              className="w-full"
             />
-          )}
+          </div>
+
+          {/* Right Section: Filters + View Controls */}
+          <div className="flex items-center gap-2">
 
           {/* Sort Button */}
           <div className="relative" ref={sortMenuRef}>
@@ -864,52 +859,54 @@ export default function Channels() {
             )}
           </div>
 
-          {/* Edit/Done Button */}
-          <button
-            onClick={() => {
-              setEditMode(!editMode);
-              setSelectedChannels([]);
-            }}
-            className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
-          >
-            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-            </svg>
-            <span>{editMode ? 'Done' : 'Edit'}</span>
-          </button>
+            {/* Divider */}
+            <div className="toolbar-divider" />
 
-          {/* Selection indicator and bulk actions - only in edit mode */}
-          {editMode && (
-            <>
-              {selectedChannels.length > 0 && (
-                <span className="text-xs text-accent-text font-medium">
-                  {selectedChannels.length} selected
-                </span>
-              )}
-              {filteredAndSortedChannels.length > 0 && (
-                <button
-                  onClick={() => setSelectedChannels(filteredAndSortedChannels.map(c => c.id))}
-                  className="btn btn-primary btn-sm"
-                >
-                  Select All ({filteredAndSortedChannels.length})
-                </button>
-              )}
-              {selectedChannels.length > 0 && (
-                <button
-                  onClick={() => setSelectedChannels([])}
-                  className="btn btn-secondary btn-sm"
-                >
-                  Clear
-                </button>
-              )}
-            </>
-          )}
+            {/* Edit/Done Button */}
+            <button
+              onClick={() => {
+                setEditMode(!editMode);
+                setSelectedChannels([]);
+              }}
+              className={`filter-btn ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <span>{editMode ? 'Done' : 'Edit'}</span>
+            </button>
 
-          {/* Card Size Slider */}
-          <CardSizeSlider tab="channels" />
+            {/* Card Size Slider */}
+            <CardSizeSlider tab="channels" />
+          </div>
         </div>
       </StickyBar>
+
+      {/* Floating Selection Bar for Edit Mode */}
+      <SelectionBar
+        show={editMode && filteredAndSortedChannels.length > 0}
+        selectedCount={selectedChannels.length}
+        totalCount={filteredAndSortedChannels.length}
+        onSelectAll={() => setSelectedChannels(filteredAndSortedChannels.map(c => c.id))}
+        onClear={() => setSelectedChannels([])}
+        onDone={() => {
+          setEditMode(false);
+          setSelectedChannels([]);
+        }}
+        actions={[
+          {
+            label: 'Assign Category',
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+            ),
+            onClick: () => setShowCategoryFilter(true),
+            primary: true
+          }
+        ]}
+      />
 
       {showAddForm && (
         <div className="card p-4 animate-slide-down max-w-2xl mx-auto">

@@ -141,6 +141,9 @@ def get_random_video_thumbnail(playlist_videos):
     """
     Get a random thumbnail URL from a list of playlist videos.
 
+    This function properly converts local thumbnail paths to API URLs,
+    using the same logic as serialize_video.
+
     Args:
         playlist_videos: List of PlaylistVideo objects
 
@@ -149,8 +152,29 @@ def get_random_video_thumbnail(playlist_videos):
     """
     if not playlist_videos:
         return None
-    random_video = random.choice(playlist_videos).video
-    return random_video.thumb_url if random_video else None
+
+    random_pv = random.choice(playlist_videos)
+    video = random_pv.video
+    if not video:
+        return None
+
+    # Convert local thumbnail path to URL, or construct from folder if not set
+    # (same logic as serialize_video)
+    if video.thumb_url:
+        if video.thumb_url.startswith('http'):
+            # YouTube URL - keep as fallback
+            return video.thumb_url
+        else:
+            # Local path - convert to API URL
+            normalized_path = video.thumb_url.replace('\\', '/')
+            return f"/api/media/{normalized_path}"
+    elif video.channel and video.yt_id:
+        # Construct local path from channel folder and video ID
+        folder = video.channel.folder_name
+        local_path = f"{folder}/{video.yt_id}.jpg"
+        return f"/api/media/{local_path}"
+
+    return None
 
 
 # =============================================================================
