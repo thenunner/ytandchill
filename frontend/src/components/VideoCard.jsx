@@ -280,7 +280,7 @@ export default function VideoCard({
       <div className={`p-3 space-y-2 rounded-b-xl transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
         {/* Title + 3-dot menu (library videos only) */}
         <div className="flex items-start justify-between gap-2">
-          <h3 className={`${textSizes.title} font-medium text-text-primary line-clamp-2 leading-tight flex-1 min-w-0`} title={video.title}>
+          <h3 className={`${textSizes.title} font-medium text-text-primary ${textSizes.titleClamp || 'line-clamp-2'} leading-tight flex-1 min-w-0`} title={video.title}>
             {video.title}
           </h3>
 

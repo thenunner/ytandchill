@@ -134,6 +134,9 @@ def _encode_worker():
 
             logger.info(f"Encode worker processing: {filename}")
 
+            # Fetch full metadata before import (gets upload_date)
+            video_info = _ensure_full_metadata(video_info)
+
             # Execute the import (which handles MKV re-encoding)
             success, video_id = execute_import(file_path, video_info, channel_info, match_type)
 
@@ -181,6 +184,27 @@ def _start_encode_worker():
         _encode_thread = threading.Thread(target=_encode_worker, daemon=True)
         _encode_thread.start()
         logger.info("Started encode worker thread")
+
+
+def _ensure_full_metadata(video_info):
+    """Fetch full metadata if upload_date is missing.
+
+    Args:
+        video_info: Video info dict that may have incomplete metadata
+
+    Returns:
+        Updated video_info with upload_date if it was fetched
+    """
+    if not video_info.get('upload_date') and video_info.get('id'):
+        logger.info(f"Fetching upload_date for {video_info['id']}")
+        try:
+            full_info = identify_video_by_id(video_info['id'])
+            if full_info and full_info.get('upload_date'):
+                video_info['upload_date'] = full_info['upload_date']
+                logger.info(f"Got upload_date: {video_info['upload_date']}")
+        except Exception as e:
+            logger.warning(f"Failed to fetch upload_date for {video_info['id']}: {e}")
+    return video_info
 
 
 def _queue_for_encoding(match):
@@ -1426,7 +1450,10 @@ def execute_smart_import():
         else:
             # Import non-MKV files directly
             try:
-                success, video_id = execute_import(
+                # Fetch full metadata before import (gets upload_date)
+                video_info = _ensure_full_metadata(video_info)
+
+                success, db_video_id = execute_import(
                     file_path, video_info, channel_info, match_type
                 )
 
@@ -1441,7 +1468,7 @@ def execute_smart_import():
                     results.append({
                         'file': filename,
                         'success': True,
-                        'video_id': video_id,
+                        'video_id': db_video_id,
                     })
                 else:
                     results.append({
