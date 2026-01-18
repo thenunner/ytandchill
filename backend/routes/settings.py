@@ -16,7 +16,7 @@ import os
 import logging
 import requests
 import yt_dlp
-from database import Setting, get_session
+from database import Setting, Video, get_session
 from utils import update_log_level, get_stored_credentials, check_auth_credentials
 
 logger = logging.getLogger(__name__)
@@ -157,6 +157,68 @@ def clear_discoveries_flag():
     """Clear the new discoveries notification flag"""
     _settings_manager.set('new_discoveries_flag', 'false')
     return jsonify({'status': 'ok'})
+
+
+@settings_bp.route('/api/settings/fix-upload-dates', methods=['POST'])
+def fix_upload_dates():
+    """Fetch missing upload_date for all library videos."""
+    global _session_factory
+
+    updated_count = 0
+    skipped_count = 0
+    failed_count = 0
+
+    with get_session(_session_factory) as session:
+        # Get all library videos missing upload_date
+        videos = session.query(Video).filter(
+            Video.status == 'library',
+            (Video.upload_date == None) | (Video.upload_date == '')
+        ).all()
+
+        total = len(videos)
+        logger.info(f"Fixing upload dates for {total} videos")
+
+        for video in videos:
+            if not video.yt_id:
+                skipped_count += 1
+                continue
+
+            try:
+                # Fetch metadata from YouTube
+                ydl_opts = {
+                    'quiet': True,
+                    'no_warnings': True,
+                    'noplaylist': True,
+                }
+
+                # Add cookies if available
+                cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+                if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
+                    ydl_opts['cookiefile'] = cookies_path
+
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    url = f'https://youtube.com/watch?v={video.yt_id}'
+                    data = ydl.extract_info(url, download=False)
+
+                    if data and data.get('upload_date'):
+                        video.upload_date = data['upload_date']
+                        session.commit()
+                        updated_count += 1
+                        logger.info(f"Updated upload_date for {video.yt_id}: {video.upload_date}")
+                    else:
+                        skipped_count += 1
+
+            except Exception as e:
+                logger.warning(f"Failed to fetch upload_date for {video.yt_id}: {e}")
+                failed_count += 1
+
+    return jsonify({
+        'success': True,
+        'updated': updated_count,
+        'skipped': skipped_count,
+        'failed': failed_count,
+        'total': total if 'total' in dir() else 0,
+    })
 
 
 # =============================================================================
