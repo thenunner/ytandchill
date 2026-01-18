@@ -7,6 +7,7 @@ Uses yt-dlp's --flat-playlist mode for fast metadata extraction.
 
 import os
 import re
+import sys
 import json
 import subprocess
 import logging
@@ -36,7 +37,8 @@ def _run_ytdlp(args, timeout=300):
     Returns:
         tuple: (success, stdout, stderr)
     """
-    cmd = ['yt-dlp', '--no-warnings'] + args
+    # Use python -m yt_dlp for cross-platform compatibility (Windows PATH issues)
+    cmd = [sys.executable, '-m', 'yt_dlp', '--no-warnings'] + args
 
     # Add cookies if available
     cookies_path = get_cookies_path()
