@@ -19,6 +19,8 @@ import json
 import shutil
 import subprocess
 import logging
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -51,13 +53,20 @@ _import_state = {
     'pending': [],  # Files needing user selection (multiple matches)
     'imported': [],  # Successfully imported files
     'skipped': [],  # Skipped files with reasons
+    'failed': [],  # Failed files with detailed reasons
     'known_channel_ids': set(),  # Channel IDs from channels.txt for prioritization
     'current_channel_idx': 0,
     'status': 'idle',  # idle, fetching, matching, importing, encoding, complete
     'progress': 0,
     'message': '',
     'encode_progress': None,  # 0-100 when encoding MKV
+    'encode_queue': [],  # MKVs waiting to be encoded
+    'encode_current': None,  # Currently encoding file info
 }
+
+# Lock for thread-safe encode queue operations
+_encode_lock = threading.Lock()
+_encode_thread = None
 
 
 def init_import_routes(session_factory, settings_manager):
@@ -65,6 +74,100 @@ def init_import_routes(session_factory, settings_manager):
     global _session_factory, _settings_manager
     _session_factory = session_factory
     _settings_manager = settings_manager
+
+
+def _encode_worker():
+    """Background worker that processes the encode queue sequentially."""
+    global _import_state
+
+    logger.info("Encode worker thread started")
+
+    while True:
+        item = None
+
+        with _encode_lock:
+            if not _import_state['encode_queue']:
+                # Queue empty, exit thread
+                _import_state['encode_current'] = None
+                _import_state['status'] = 'idle' if not _import_state['pending'] else 'idle'
+                logger.info("Encode queue empty, worker exiting")
+                break
+
+            # Pop next item from queue
+            item = _import_state['encode_queue'].pop(0)
+            _import_state['encode_current'] = item
+            _import_state['status'] = 'encoding'
+            _import_state['encode_progress'] = 0
+
+        if not item:
+            break
+
+        try:
+            file_path = item['file']
+            video_info = item['video']
+            channel_info = item['channel_info']
+            match_type = item.get('match_type', 'smart')
+            filename = os.path.basename(file_path)
+
+            logger.info(f"Encode worker processing: {filename}")
+
+            # Execute the import (which handles MKV re-encoding)
+            success, video_id = execute_import(file_path, video_info, channel_info, match_type)
+
+            with _encode_lock:
+                if success:
+                    _import_state['imported'].append({
+                        'file': file_path,
+                        'filename': item.get('filename', filename),
+                        'video': video_info,
+                        'match_type': match_type,
+                        'channel': channel_info['channel_title'],
+                    })
+                else:
+                    _import_state['failed'].append({
+                        'file': file_path,
+                        'filename': item.get('filename', filename),
+                        'file_size': item.get('file_size', 0),
+                        'reason': 'Encoding failed',
+                        'reason_code': 'encode_failed',
+                    })
+
+        except Exception as e:
+            logger.error(f"Encode worker error for {item.get('filename', 'unknown')}: {e}")
+            with _encode_lock:
+                _import_state['failed'].append({
+                    'file': item.get('file', ''),
+                    'filename': item.get('filename', 'unknown'),
+                    'file_size': item.get('file_size', 0),
+                    'reason': str(e),
+                    'reason_code': 'encode_error',
+                })
+
+    logger.info("Encode worker thread finished")
+
+
+def _start_encode_worker():
+    """Start the background encode worker thread if not already running."""
+    global _encode_thread
+
+    with _encode_lock:
+        if _encode_thread is not None and _encode_thread.is_alive():
+            logger.debug("Encode worker already running")
+            return
+
+        _encode_thread = threading.Thread(target=_encode_worker, daemon=True)
+        _encode_thread.start()
+        logger.info("Started encode worker thread")
+
+
+def _queue_for_encoding(match):
+    """Add a match to the encode queue (for MKV files)."""
+    global _import_state
+
+    with _encode_lock:
+        _import_state['encode_queue'].append(match)
+
+    _start_encode_worker()
 
 
 def get_downloads_folder():
@@ -991,12 +1094,175 @@ def upload_import_file():
         return jsonify({'error': f'Failed to save file: {str(e)}'}), 500
 
 
+def _process_single_file(file_info, mode, known_channel_ids, known_channel_handles):
+    """Process a single file for identification (used by ThreadPoolExecutor).
+
+    Returns a dict with 'type' (identified/pending/failed) and the result data.
+    """
+    file_path = file_info['path']
+    filename = file_info['name']
+    file_size = file_info.get('size', 0)
+    name_without_ext = os.path.splitext(filename)[0]
+
+    # Get local file duration
+    local_duration = get_video_duration(file_path)
+
+    # Method 1: Filename is video ID (11 chars)
+    if re.match(r'^[a-zA-Z0-9_-]{11}$', name_without_ext):
+        logger.info(f"Identifying by video ID: {name_without_ext}")
+        video_info = identify_video_by_id(name_without_ext)
+
+        if video_info:
+            return {
+                'type': 'identified',
+                'data': {
+                    'file': file_path,
+                    'filename': filename,
+                    'file_size': file_size,
+                    'video': video_info,
+                    'match_type': 'video_id',
+                    'channel_info': {
+                        'channel_id': video_info['channel_id'],
+                        'channel_title': video_info['channel_title'],
+                        'channel_url': video_info.get('channel_url', f"https://youtube.com/channel/{video_info['channel_id']}"),
+                    },
+                }
+            }
+        else:
+            return {
+                'type': 'failed',
+                'data': {
+                    'file': file_path,
+                    'filename': filename,
+                    'file_size': file_size,
+                    'reason': 'Video ID not found on YouTube',
+                    'reason_code': 'id_not_found',
+                }
+            }
+
+    # Method 2: Search by title
+    logger.info(f"=== Processing file: {filename} ===")
+    logger.info(f"Title to search: '{name_without_ext}'")
+    logger.info(f"Local duration: {local_duration} seconds")
+
+    search_results = search_video_by_title(
+        name_without_ext,
+        expected_duration=local_duration,
+        known_channel_ids=known_channel_ids,
+        known_channel_handles=known_channel_handles
+    )
+
+    if not search_results:
+        logger.warning(f"No search results found for: {name_without_ext}")
+        return {
+            'type': 'failed',
+            'data': {
+                'file': file_path,
+                'filename': filename,
+                'file_size': file_size,
+                'reason': 'No search results found on YouTube',
+                'reason_code': 'no_results',
+            }
+        }
+
+    logger.info(f"Got {len(search_results)} search results")
+
+    # Check for matches
+    channel_title_duration = [r for r in search_results if r.get('channel_match') and r.get('title_match') and r.get('duration_match')]
+    title_duration = [r for r in search_results if r.get('title_match') and r.get('duration_match')]
+
+    # Determine if we should auto-import based on mode
+    best_match = None
+    match_type = None
+    should_auto_import = False
+
+    if mode == 'auto':
+        if len(channel_title_duration) == 1:
+            best_match = channel_title_duration[0]
+            match_type = 'channel+title+duration'
+            should_auto_import = True
+        elif len(title_duration) == 1:
+            best_match = title_duration[0]
+            match_type = 'title+duration'
+            should_auto_import = True
+
+    if should_auto_import and best_match:
+        logger.info(f"AUTO-IDENTIFIED: '{filename}' -> '{best_match.get('title')}' (match_type={match_type})")
+        return {
+            'type': 'identified',
+            'data': {
+                'file': file_path,
+                'filename': filename,
+                'file_size': file_size,
+                'video': best_match,
+                'match_type': match_type,
+                'channel_info': {
+                    'channel_id': best_match['channel_id'],
+                    'channel_title': best_match['channel_title'],
+                    'channel_url': f"https://youtube.com/channel/{best_match['channel_id']}",
+                },
+            }
+        }
+    else:
+        # Need user review
+        viable_matches = [r for r in search_results if r.get('duration_match') and r.get('title_match_fuzzy')]
+
+        if viable_matches:
+            viable_matches.sort(key=lambda x: (x.get('duration_diff', 999), -x.get('title_similarity', 0)))
+            logger.info(f"PENDING: '{filename}' - {mode} mode, {len(viable_matches)} viable options")
+            return {
+                'type': 'pending',
+                'data': {
+                    'file': file_path,
+                    'filename': filename,
+                    'file_size': file_size,
+                    'matches': viable_matches[:5],
+                    'match_type': 'multiple',
+                    'local_duration': local_duration,
+                }
+            }
+        else:
+            # Build enhanced failed data with closest match info
+            best_result = search_results[0] if search_results else None
+            closest_match = None
+
+            if best_result:
+                best_similarity = best_result.get('title_similarity', 0)
+                best_duration = best_result.get('duration')
+                duration_diff = abs(best_duration - local_duration) if best_duration and local_duration else None
+
+                closest_match = {
+                    'title': best_result.get('title'),
+                    'video_id': best_result.get('id'),
+                    'duration': best_duration,
+                    'local_duration': local_duration,
+                    'duration_diff': duration_diff,
+                    'similarity': round(best_similarity * 100),
+                }
+                reason = f'No match found. Best: "{best_result.get("title", "")[:40]}..." ({best_similarity:.0%} similar)'
+            else:
+                reason = 'No search results found on YouTube'
+
+            logger.warning(f"FAILED: '{filename}' - no videos match both duration AND title")
+            return {
+                'type': 'failed',
+                'data': {
+                    'file': file_path,
+                    'filename': filename,
+                    'file_size': file_size,
+                    'reason': reason,
+                    'reason_code': 'no_match',
+                    'closest_match': closest_match,
+                }
+            }
+
+
 @import_bp.route('/api/import/smart-identify', methods=['POST'])
 def smart_identify():
     """Identify videos directly without scanning channels.
 
     This is MUCH faster than channel-by-channel scanning.
-    Uses yt-dlp to either:
+    Uses yt-dlp with PARALLEL lookups (3 at a time) to either:
     1. Get video info directly (if filename is video ID)
     2. Search YouTube by title and match by duration
 
@@ -1011,162 +1277,52 @@ def smart_identify():
     # Get mode from request
     data = request.get_json() or {}
     mode = data.get('mode', 'auto')  # 'auto' or 'manual'
-    logger.info(f"Smart identify starting in {mode.upper()} mode")
+    logger.info(f"Smart identify starting in {mode.upper()} mode with PARALLEL processing")
 
     if not _import_state['files']:
         return jsonify({'error': 'No files to identify. Run scan first.'}), 400
 
-    results = []
     identified = []
-    pending = []  # Multiple matches needing user selection
+    pending = []
     failed = []
 
-    for file_info in _import_state['files']:
-        file_path = file_info['path']
-        filename = file_info['name']
-        name_without_ext = os.path.splitext(filename)[0]
+    known_channel_ids = _import_state.get('known_channel_ids', set())
+    known_channel_handles = _import_state.get('known_channel_handles', set())
+    logger.info(f"Known channels from channels.txt: {len(known_channel_ids)} IDs, {len(known_channel_handles)} handles")
 
-        # Get local file duration
-        local_duration = get_video_duration(file_path)
+    # Process files in parallel (3 at a time)
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        # Submit all files for processing
+        future_to_file = {
+            executor.submit(
+                _process_single_file,
+                file_info,
+                mode,
+                known_channel_ids,
+                known_channel_handles
+            ): file_info
+            for file_info in _import_state['files']
+        }
 
-        # Method 1: Filename is video ID (11 chars)
-        if re.match(r'^[a-zA-Z0-9_-]{11}$', name_without_ext):
-            logger.info(f"Identifying by video ID: {name_without_ext}")
-            video_info = identify_video_by_id(name_without_ext)
-
-            if video_info:
-                identified.append({
-                    'file': file_path,
-                    'filename': filename,
-                    'video': video_info,
-                    'match_type': 'video_id',
-                    'channel_info': {
-                        'channel_id': video_info['channel_id'],
-                        'channel_title': video_info['channel_title'],
-                        'channel_url': video_info.get('channel_url', f"https://youtube.com/channel/{video_info['channel_id']}"),
-                    },
-                })
-                continue
-            else:
+        # Collect results as they complete
+        for future in as_completed(future_to_file):
+            file_info = future_to_file[future]
+            try:
+                result = future.result()
+                if result['type'] == 'identified':
+                    identified.append(result['data'])
+                elif result['type'] == 'pending':
+                    pending.append(result['data'])
+                else:  # failed
+                    failed.append(result['data'])
+            except Exception as e:
+                logger.error(f"Error processing {file_info['name']}: {e}")
                 failed.append({
-                    'file': file_path,
-                    'filename': filename,
-                    'reason': 'Video ID not found on YouTube',
-                })
-                continue
-
-        # Method 2: Search by title (pass known channels for prioritization)
-        logger.info(f"=== Processing file: {filename} ===")
-        logger.info(f"Title to search: '{name_without_ext}'")
-        logger.info(f"Local duration: {local_duration} seconds")
-        known_channel_ids = _import_state.get('known_channel_ids', set())
-        known_channel_handles = _import_state.get('known_channel_handles', set())
-        logger.info(f"Known channels from channels.txt: {len(known_channel_ids)} IDs, {len(known_channel_handles)} handles")
-
-        search_results = search_video_by_title(
-            name_without_ext,
-            expected_duration=local_duration,
-            known_channel_ids=known_channel_ids,
-            known_channel_handles=known_channel_handles
-        )
-
-        if not search_results:
-            logger.warning(f"No search results found for: {name_without_ext}")
-            failed.append({
-                'file': file_path,
-                'filename': filename,
-                'reason': 'No search results found',
-            })
-            continue
-
-        logger.info(f"Got {len(search_results)} search results")
-
-        # Log first few results for debugging
-        for i, r in enumerate(search_results[:3]):
-            logger.info(f"  Result {i+1}: '{r.get('title')}' by {r.get('channel_title')} ({r.get('uploader_id')})")
-            logger.info(f"    - channel_match={r.get('channel_match')}, title_match={r.get('title_match')}, duration_match={r.get('duration_match')}")
-            logger.info(f"    - duration: {r.get('duration')}s (expected: {local_duration}s)")
-
-        # Check for matches - prioritize channel+title+duration, then combinations
-        # Channel match from channels.txt is a strong signal
-        channel_title_duration = [r for r in search_results if r.get('channel_match') and r.get('title_match') and r.get('duration_match')]
-        channel_title = [r for r in search_results if r.get('channel_match') and r.get('title_match')]
-        channel_duration = [r for r in search_results if r.get('channel_match') and r.get('duration_match')]
-        title_duration = [r for r in search_results if r.get('title_match') and r.get('duration_match')]
-        title_matches = [r for r in search_results if r.get('title_match')]
-        duration_matches = [r for r in search_results if r.get('duration_match')]
-
-        logger.info(f"Match counts: channel+title+dur={len(channel_title_duration)}, channel+title={len(channel_title)}, "
-                    f"channel+dur={len(channel_duration)}, title+dur={len(title_duration)}, "
-                    f"title={len(title_matches)}, dur={len(duration_matches)}")
-
-        # Determine if we should auto-import based on mode
-        # Auto mode: only exact title+duration matches (high confidence)
-        # Manual mode: everything goes to pending
-        best_match = None
-        match_type = None
-        should_auto_import = False
-
-        if mode == 'auto':
-            # Only auto-import with title AND duration match (high confidence)
-            if len(channel_title_duration) == 1:
-                best_match = channel_title_duration[0]
-                match_type = 'channel+title+duration'
-                should_auto_import = True
-            elif len(title_duration) == 1:
-                best_match = title_duration[0]
-                match_type = 'title+duration'
-                should_auto_import = True
-            # Everything else needs manual review
-        # Manual mode: everything goes to pending (no auto-import)
-
-        if should_auto_import and best_match:
-            logger.info(f"AUTO-IDENTIFIED: '{filename}' -> '{best_match.get('title')}' (match_type={match_type})")
-            identified.append({
-                'file': file_path,
-                'filename': filename,
-                'video': best_match,
-                'match_type': match_type,
-                'channel_info': {
-                    'channel_id': best_match['channel_id'],
-                    'channel_title': best_match['channel_title'],
-                    'channel_url': f"https://youtube.com/channel/{best_match['channel_id']}",
-                },
-            })
-        else:
-            # Manual mode, or no confident match - user needs to choose
-            # CRITICAL: Only show videos that match BOTH:
-            # 1. Duration (within 3 seconds), AND
-            # 2. Title (95%+ fuzzy match)
-            # Duration alone is meaningless (1000s of videos have same duration)
-            viable_matches = [r for r in search_results if r.get('duration_match') and r.get('title_match_fuzzy')]
-
-            if viable_matches:
-                # Sort by duration accuracy (exact match first), then title similarity
-                viable_matches.sort(key=lambda x: (x.get('duration_diff', 999), -x.get('title_similarity', 0)))
-                logger.info(f"PENDING: '{filename}' - {mode} mode, {len(viable_matches)} viable options (duration AND title match)")
-                pending.append({
-                    'file': file_path,
-                    'filename': filename,
-                    'matches': viable_matches[:5],  # Top 5
-                    'match_type': 'multiple',
-                    'local_duration': local_duration,
-                })
-            else:
-                # No videos match BOTH duration AND title - can't reliably match
-                best_result = search_results[0] if search_results else None
-                if best_result:
-                    best_similarity = best_result.get('title_similarity', 0)
-                    best_duration = best_result.get('duration')
-                    duration_diff = abs(best_duration - local_duration) if best_duration and local_duration else None
-                    reason = f'No match found. Best: "{best_result.get("title")[:40]}..." (duration: {best_duration}s vs {local_duration}s, title: {best_similarity:.0%} similar)'
-                else:
-                    reason = 'No search results found on YouTube'
-                logger.warning(f"FAILED: '{filename}' - no videos match both duration ({local_duration}s) AND title (90%+)")
-                failed.append({
-                    'file': file_path,
-                    'filename': filename,
-                    'reason': reason,
+                    'file': file_info['path'],
+                    'filename': file_info['name'],
+                    'file_size': file_info.get('size', 0),
+                    'reason': f'Processing error: {str(e)}',
+                    'reason_code': 'processing_error',
                 })
 
     # Update import state
@@ -1190,6 +1346,9 @@ def execute_smart_import():
     """Execute import for smart-identified files.
 
     Expects matches from smart-identify endpoint.
+
+    For MKV files: queues for background encoding (non-blocking)
+    For other files: imports directly (blocking)
     """
     global _import_state
 
@@ -1200,48 +1359,77 @@ def execute_smart_import():
         return jsonify({'error': 'No matches to import'}), 400
 
     results = []
+    queued_for_encoding = 0
+
+    # Check if MKV re-encoding is enabled
+    reencode_enabled = _settings_manager.get('import_reencode_mkv', 'false') == 'true'
+    include_mkv_override = _import_state.get('include_mkv_override', False)
+    allow_mkv = reencode_enabled or include_mkv_override
 
     for match in matches:
         file_path = match['file']
+        filename = match.get('filename', os.path.basename(file_path))
+        ext = os.path.splitext(filename)[1].lower()
         video_info = match['video']
         channel_info = match['channel_info']
         match_type = match.get('match_type', 'smart')
 
-        try:
-            success, video_id = execute_import(
-                file_path, video_info, channel_info, match_type
-            )
-
-            if success:
-                _import_state['imported'].append({
-                    'file': file_path,
-                    'filename': match['filename'],
-                    'video': video_info,
-                    'match_type': match_type,
-                    'channel': channel_info['channel_title'],
-                })
-                results.append({
-                    'file': match['filename'],
-                    'success': True,
-                    'video_id': video_id,
-                })
-            else:
-                results.append({
-                    'file': match['filename'],
-                    'success': False,
-                    'error': 'Import failed',
-                })
-        except Exception as e:
-            logger.error(f"Smart import error for {file_path}: {e}")
-            results.append({
-                'file': match['filename'],
-                'success': False,
-                'error': str(e),
+        # Check if this is an MKV that needs encoding
+        if ext == '.mkv' and allow_mkv:
+            # Queue for background encoding instead of blocking
+            logger.info(f"Queuing MKV for background encoding: {filename}")
+            _queue_for_encoding({
+                'file': file_path,
+                'filename': filename,
+                'file_size': match.get('file_size', 0),
+                'video': video_info,
+                'channel_info': channel_info,
+                'match_type': match_type,
             })
+            queued_for_encoding += 1
+            results.append({
+                'file': filename,
+                'success': True,
+                'queued': True,  # Indicates queued for encoding, not yet imported
+            })
+        else:
+            # Import non-MKV files directly
+            try:
+                success, video_id = execute_import(
+                    file_path, video_info, channel_info, match_type
+                )
+
+                if success:
+                    _import_state['imported'].append({
+                        'file': file_path,
+                        'filename': filename,
+                        'video': video_info,
+                        'match_type': match_type,
+                        'channel': channel_info['channel_title'],
+                    })
+                    results.append({
+                        'file': filename,
+                        'success': True,
+                        'video_id': video_id,
+                    })
+                else:
+                    results.append({
+                        'file': filename,
+                        'success': False,
+                        'error': 'Import failed',
+                    })
+            except Exception as e:
+                logger.error(f"Smart import error for {file_path}: {e}")
+                results.append({
+                    'file': filename,
+                    'success': False,
+                    'error': str(e),
+                })
 
     return jsonify({
         'results': results,
-        'imported_count': len([r for r in results if r['success']]),
+        'imported_count': len([r for r in results if r.get('success') and not r.get('queued')]),
+        'queued_count': queued_for_encoding,
     })
 
 
@@ -1600,10 +1788,39 @@ def get_state():
         'imported_count': len(_import_state['imported']),
         'pending_count': len(_import_state['pending']),
         'skipped_count': len(_import_state['skipped']),
+        'failed_count': len(_import_state.get('failed', [])),
         'imported': _import_state['imported'],
         'pending': _import_state['pending'],
         'skipped': _import_state['skipped'],
+        'failed': _import_state.get('failed', []),
+        'encode_queue_count': len(_import_state.get('encode_queue', [])),
+        'encode_current': _import_state.get('encode_current'),
     })
+
+
+@import_bp.route('/api/import/encode-status', methods=['GET'])
+def get_encode_status():
+    """Get encoding queue status for frontend polling."""
+    global _import_state
+
+    with _encode_lock:
+        encode_current = _import_state.get('encode_current')
+        encode_queue = _import_state.get('encode_queue', [])
+        encode_progress = _import_state.get('encode_progress', 0)
+
+        return jsonify({
+            'encoding': encode_current is not None,
+            'current': {
+                'filename': encode_current.get('filename') if encode_current else None,
+                'file_size': encode_current.get('file_size', 0) if encode_current else 0,
+            } if encode_current else None,
+            'progress': encode_progress,
+            'queue_count': len(encode_queue),
+            'queue': [{
+                'filename': item.get('filename'),
+                'file_size': item.get('file_size', 0),
+            } for item in encode_queue[:5]],  # First 5 in queue
+        })
 
 
 @import_bp.route('/api/import/allowed-extensions', methods=['GET'])
@@ -1630,11 +1847,16 @@ def reset_state():
         'pending': [],
         'imported': [],
         'skipped': [],
+        'failed': [],
+        'known_channel_ids': set(),
+        'known_channel_handles': set(),
         'current_channel_idx': 0,
         'status': 'idle',
         'progress': 0,
         'message': '',
         'encode_progress': None,
+        'encode_queue': [],
+        'encode_current': None,
     }
 
     return jsonify({'success': True})

@@ -460,6 +460,10 @@ class APIClient {
       body: JSON.stringify({ matches }),
     });
   }
+
+  getEncodeStatus() {
+    return this.request('/import/encode-status');
+  }
 }
 
 export default new APIClient();

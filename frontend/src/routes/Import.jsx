@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import {
@@ -9,6 +10,7 @@ import {
   useSmartIdentify,
   useExecuteSmartImport,
   useSettings,
+  useEncodeStatus,
 } from '../api/queries';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { CheckmarkIcon } from '../components/icons';
@@ -24,6 +26,206 @@ function formatBytes(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// Format duration from seconds
+function formatDurationShort(seconds) {
+  if (!seconds) return 'Unknown';
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${String(secs).padStart(2, '0')}`;
+}
+
+// Encoding Progress Bar Component (shown at top during encoding)
+function EncodingBar({ encodeStatus }) {
+  if (!encodeStatus?.encoding) return null;
+
+  const { current, progress, queue_count } = encodeStatus;
+
+  return (
+    <div className="bg-dark-secondary border border-dark-border rounded-lg p-3 mb-4">
+      <div className="flex items-center gap-3">
+        <div className="animate-spin h-4 w-4 border-2 border-accent border-t-transparent rounded-full flex-shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-sm text-text-primary truncate">
+              Encoding: {current?.filename || 'Processing...'}
+            </span>
+            <span className="text-xs text-text-muted ml-2 flex-shrink-0">
+              {progress}%{queue_count > 0 && ` • ${queue_count} queued`}
+            </span>
+          </div>
+          <div className="h-1.5 bg-dark-tertiary rounded-full overflow-hidden">
+            <div
+              className="h-full bg-accent transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Failed Files Modal Component
+function FailedFilesModal({ failed, onClose }) {
+  // Group failed files by reason code
+  const grouped = {
+    id_not_found: failed.filter(f => f.reason_code === 'id_not_found'),
+    no_match: failed.filter(f => f.reason_code === 'no_match'),
+    unsupported: failed.filter(f => f.reason_code === 'unsupported'),
+    other: failed.filter(f => !['id_not_found', 'no_match', 'unsupported'].includes(f.reason_code)),
+  };
+
+  // Generate copy text for clipboard
+  const generateCopyText = () => {
+    let text = `IMPORT FAILURES (${failed.length} files)\n${'='.repeat(26)}\n\n`;
+
+    failed.forEach(item => {
+      text += `${item.filename} (${formatBytes(item.file_size || 0)})\n`;
+      text += `  Status: ${getReasonLabel(item.reason_code)}\n`;
+      text += `  Reason: ${item.reason}\n`;
+
+      if (item.closest_match) {
+        text += `  Closest: "${item.closest_match.title}"\n`;
+        text += `  Video ID: ${item.closest_match.video_id}\n`;
+        if (item.closest_match.duration && item.closest_match.local_duration) {
+          const diff = item.closest_match.duration_diff;
+          const sign = diff > 0 ? '+' : '';
+          text += `  Duration: Local ${item.closest_match.local_duration}s vs Match ${item.closest_match.duration}s (${sign}${diff}s)\n`;
+        }
+        text += `  Similarity: ${item.closest_match.similarity}%\n`;
+      }
+      text += '\n';
+    });
+
+    return text;
+  };
+
+  const handleCopyAll = async () => {
+    const text = generateCopyText();
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const getReasonLabel = (code) => {
+    switch (code) {
+      case 'id_not_found': return 'ID Not Found';
+      case 'no_match': return 'No Match';
+      case 'unsupported': return 'Unsupported';
+      case 'no_results': return 'No Results';
+      default: return 'Error';
+    }
+  };
+
+  const getReasonColor = (code) => {
+    switch (code) {
+      case 'id_not_found': return 'text-orange-400';
+      case 'no_match': return 'text-yellow-400';
+      case 'unsupported': return 'text-red-400';
+      default: return 'text-text-muted';
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+      <div className="bg-dark-primary border border-dark-border rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col shadow-2xl">
+        {/* Header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-dark-border">
+          <h2 className="text-lg font-semibold text-text-primary">
+            Failed Files ({failed.length})
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-text-muted hover:text-text-primary p-1"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        {/* Summary bar */}
+        <div className="px-4 py-2 bg-dark-secondary border-b border-dark-border flex gap-4 text-sm">
+          {grouped.id_not_found.length > 0 && (
+            <span className="text-orange-400">ID Not Found: {grouped.id_not_found.length}</span>
+          )}
+          {grouped.no_match.length > 0 && (
+            <span className="text-yellow-400">No Match: {grouped.no_match.length}</span>
+          )}
+          {grouped.unsupported.length > 0 && (
+            <span className="text-red-400">Unsupported: {grouped.unsupported.length}</span>
+          )}
+          {grouped.other.length > 0 && (
+            <span className="text-text-muted">Other: {grouped.other.length}</span>
+          )}
+        </div>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {failed.map((item, idx) => (
+            <div
+              key={idx}
+              className="bg-dark-secondary border border-dark-border rounded-lg p-3"
+            >
+              <div className="flex items-start justify-between gap-2 mb-1">
+                <span className="text-text-primary font-medium truncate">{item.filename}</span>
+                <span className="text-text-muted text-sm flex-shrink-0">
+                  {formatBytes(item.file_size || 0)}
+                </span>
+              </div>
+              <div className={`text-sm font-medium ${getReasonColor(item.reason_code)}`}>
+                {getReasonLabel(item.reason_code)}
+              </div>
+              <div className="text-sm text-text-muted mt-1">{item.reason}</div>
+
+              {/* Closest match info */}
+              {item.closest_match && (
+                <div className="mt-2 bg-dark-tertiary rounded p-2 text-xs">
+                  <div className="text-text-secondary font-medium mb-1">Closest Match</div>
+                  <div className="text-text-primary truncate">{item.closest_match.title}</div>
+                  <div className="text-text-muted mt-1 flex flex-wrap gap-x-3">
+                    <span>ID: {item.closest_match.video_id}</span>
+                    {item.closest_match.duration && (
+                      <span>
+                        Duration: {item.closest_match.duration}s vs {item.closest_match.local_duration}s
+                        {item.closest_match.duration_diff !== null && (
+                          <span className={item.closest_match.duration_diff > 5 ? 'text-red-400' : 'text-green-400'}>
+                            {' '}({item.closest_match.duration_diff > 0 ? '+' : ''}{item.closest_match.duration_diff}s)
+                          </span>
+                        )}
+                      </span>
+                    )}
+                    <span>{item.closest_match.similarity}% match</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-between px-4 py-3 border-t border-dark-border">
+          <button
+            onClick={handleCopyAll}
+            className="btn btn-secondary flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+            Copy All
+          </button>
+          <button onClick={onClose} className="btn btn-primary">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
 }
 
 export default function Import() {
@@ -57,6 +259,14 @@ export default function Import() {
   const [pendingMatches, setPendingMatches] = useState([]);
   const [currentPendingIdx, setCurrentPendingIdx] = useState(0);
   const [selectedVideoId, setSelectedVideoId] = useState(null);
+  const [isImporting, setIsImporting] = useState(false); // Loading state for Import button
+  const [isTransitioning, setIsTransitioning] = useState(false); // Smooth transition to encoding UI
+  const [showFailedModal, setShowFailedModal] = useState(false); // Failed files modal
+
+  // Encoding status (polls during encoding)
+  const { data: encodeStatus } = useEncodeStatus(
+    currentStep === 'review' || stateData?.status === 'encoding'
+  );
 
   // Drag and drop state
   const [isDragging, setIsDragging] = useState(false);
@@ -122,7 +332,15 @@ export default function Import() {
         // All files identified - proceed to import
         setCurrentStep('importing');
         await executeSmartImport.mutateAsync(result.identified);
-        await refetchState();
+        const updatedState = await refetchState();
+
+        // If encoding started, let encoding UI take over
+        if (updatedState.data?.status === 'encoding') {
+          setIsTransitioning(true);
+          setTimeout(() => setIsTransitioning(false), 300);
+          return;
+        }
+
         setCurrentStep('complete');
       } else {
         // Nothing identified
@@ -144,6 +362,7 @@ export default function Import() {
       return;
     }
 
+    setIsImporting(true);
     try {
       if (!skip) {
         // Find selected video and add to identified list
@@ -163,6 +382,14 @@ export default function Import() {
 
           // Add to identified and import immediately
           await executeSmartImport.mutateAsync([match]);
+
+          // Check if encoding started - if so, let encoding UI take over
+          const updatedState = await refetchState();
+          if (updatedState.data?.status === 'encoding') {
+            setIsTransitioning(true);
+            setTimeout(() => setIsTransitioning(false), 300);
+            return;
+          }
         }
       }
 
@@ -172,18 +399,35 @@ export default function Import() {
         setSelectedVideoId(null);
       } else {
         // All pending resolved
-        await refetchState();
+        const updatedState = await refetchState();
+
+        // If encoding is in progress, let encoding UI handle it
+        if (updatedState.data?.status === 'encoding') {
+          setIsTransitioning(true);
+          setTimeout(() => setIsTransitioning(false), 300);
+          return;
+        }
 
         // Import any remaining identified files
         if (identifyResult?.identified?.length > 0) {
           setCurrentStep('importing');
           await executeSmartImport.mutateAsync(identifyResult.identified);
+
+          // Check again after import
+          const finalState = await refetchState();
+          if (finalState.data?.status === 'encoding') {
+            setIsTransitioning(true);
+            setTimeout(() => setIsTransitioning(false), 300);
+            return;
+          }
         }
 
         setCurrentStep('complete');
       }
     } catch (error) {
       showNotification(`Error: ${error.message}`, 'error');
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -196,6 +440,7 @@ export default function Import() {
     setPendingMatches([]);
     setCurrentPendingIdx(0);
     setSelectedVideoId(null);
+    setShowFailedModal(false);
   };
 
   // View library after import
@@ -652,8 +897,18 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
 
   // State: Import Complete (but not if still encoding)
   if (currentStep === 'complete' && stateData?.status !== 'encoding') {
+    const failedCount = identifyResult?.failed?.length || 0;
+
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
+        {/* Failed Files Modal */}
+        {showFailedModal && identifyResult?.failed?.length > 0 && (
+          <FailedFilesModal
+            failed={identifyResult.failed}
+            onClose={() => setShowFailedModal(false)}
+          />
+        )}
+
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-accent/20 flex items-center justify-center">
             <CheckmarkIcon className="w-8 h-8 text-accent-text" strokeWidth={3} />
@@ -682,26 +937,26 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
                     <div className="text-sm text-text-secondary">Resolved</div>
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-text-muted">{identifyResult.summary.failed}</div>
-                    <div className="text-sm text-text-secondary">Failed</div>
+                    {/* Clickable failed count */}
+                    {failedCount > 0 ? (
+                      <button
+                        onClick={() => setShowFailedModal(true)}
+                        className="group"
+                      >
+                        <div className="text-2xl font-bold text-red-400 group-hover:text-red-300 transition-colors">
+                          {failedCount}
+                        </div>
+                        <div className="text-sm text-text-secondary group-hover:text-text-primary transition-colors underline decoration-dashed underline-offset-2">
+                          Failed
+                        </div>
+                      </button>
+                    ) : (
+                      <>
+                        <div className="text-2xl font-bold text-text-muted">0</div>
+                        <div className="text-sm text-text-secondary">Failed</div>
+                      </>
+                    )}
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Failed files */}
-            {identifyResult.failed?.length > 0 && (
-              <div className="bg-dark-secondary border border-dark-border rounded-lg overflow-hidden">
-                <div className="px-4 py-3 border-b border-dark-border">
-                  <h3 className="font-semibold text-text-secondary">Not Found ({identifyResult.failed.length})</h3>
-                </div>
-                <div className="divide-y divide-dark-border max-h-48 overflow-y-auto">
-                  {identifyResult.failed.map((item, idx) => (
-                    <div key={idx} className="px-4 py-2 text-sm">
-                      <div className="text-text-primary truncate">{item.filename}</div>
-                      <div className="text-text-muted">{item.reason}</div>
-                    </div>
-                  ))}
                 </div>
               </div>
             )}
@@ -709,7 +964,7 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
         )}
 
         {/* Only show if there are failed files still in the folder */}
-        {identifyResult?.failed?.length > 0 && (
+        {failedCount > 0 && (
           <div className="mt-6 text-center">
             <button onClick={handleReset} className="btn btn-secondary">
               Retry Failed Files
@@ -726,9 +981,12 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
 
     return (
       <div className="max-w-2xl mx-auto py-8 px-4">
+        {/* Encoding progress bar at top (stacked layout) */}
+        <EncodingBar encodeStatus={encodeStatus} />
+
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-text-primary">Select Correct Video</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Select Match</h2>
             <span className="text-text-secondary text-sm">
               {currentPendingIdx + 1} of {pendingMatches.length}
             </span>
@@ -794,18 +1052,34 @@ My Video Title.mp4   ← Exact video title (searches YouTube)`}
         <div className="flex gap-3">
           <button
             onClick={() => handleSelectMatch(true)}
-            className="btn btn-secondary flex-1"
+            disabled={isImporting}
+            className="btn btn-secondary flex-1 disabled:opacity-50"
           >
             Skip
           </button>
           <button
             onClick={() => handleSelectMatch(false)}
-            disabled={!selectedVideoId}
+            disabled={!selectedVideoId || isImporting}
             className="btn btn-primary flex-1 disabled:opacity-50"
           >
-            Import
+            {isImporting ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                Importing...
+              </span>
+            ) : 'Import'}
           </button>
         </div>
+      </div>
+    );
+  }
+
+  // State: Transitioning to encoding (brief smooth transition)
+  if (isTransitioning) {
+    return (
+      <div className="max-w-2xl mx-auto py-8 px-4 text-center">
+        <div className="animate-spin h-8 w-8 border-4 border-accent border-t-transparent rounded-full mx-auto mb-4" />
+        <p className="text-text-secondary">Starting re-encode...</p>
       </div>
     );
   }
