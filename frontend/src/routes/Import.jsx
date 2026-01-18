@@ -248,6 +248,9 @@ export default function Import() {
   const hasPendingMatches = pendingMatches.length > 0 && currentPendingIdx < pendingMatches.length;
   const isComplete = currentPage === 'progress' && !isEncoding && !hasPendingMatches && !isProcessing;
 
+  // Track if we've shown the completion notification
+  const hasShownCompleteRef = useRef(false);
+
   // Poll during progress page
   useEffect(() => {
     if (currentPage === 'progress') {
@@ -258,6 +261,25 @@ export default function Import() {
       return () => clearInterval(interval);
     }
   }, [currentPage, refetchState, refetchEncode]);
+
+  // Show import complete notification
+  useEffect(() => {
+    if (isComplete && !hasShownCompleteRef.current && importedList.length > 0) {
+      hasShownCompleteRef.current = true;
+      const total = importedList.length + skippedList.length + failedList.length;
+      if (failedList.length > 0) {
+        showNotification(`Import complete: ${importedList.length} imported, ${failedList.length} failed`, 'warning');
+      } else if (skippedList.length > 0) {
+        showNotification(`Import complete: ${importedList.length} imported, ${skippedList.length} skipped`, 'success');
+      } else {
+        showNotification(`Import complete: ${importedList.length} video${importedList.length !== 1 ? 's' : ''} imported`, 'success');
+      }
+    }
+    // Reset flag when starting new import
+    if (currentPage === 'setup') {
+      hasShownCompleteRef.current = false;
+    }
+  }, [isComplete, importedList.length, skippedList.length, failedList.length, currentPage, showNotification]);
 
   // Sync imported from backend
   useEffect(() => {
@@ -308,6 +330,7 @@ export default function Import() {
   // Start import
   const handleStartImport = async (mode) => {
     hasRestoredRef.current = true; // Prevent restoration from overwriting new import
+    hasShownCompleteRef.current = false; // Reset completion notification flag
     setCurrentPage('progress');
     setImportMode(mode);
     setPendingMatches([]);
@@ -317,6 +340,8 @@ export default function Import() {
     setSkippedList([]);
     setFailedList([]);
     setIsProcessing(true);
+
+    showNotification(`Starting ${mode === 'auto' ? 'auto' : 'manual'} import...`, 'info');
 
     try {
       const result = await smartIdentify.mutateAsync({ mode });
@@ -366,6 +391,7 @@ export default function Import() {
       await refetchState();
       setCurrentPendingIdx(prev => prev + 1);
       setSelectedVideoId(null);
+      showNotification('Video matched and imported', 'success');
     } catch (error) {
       showNotification(`Error: ${error.message}`, 'error');
     } finally {
@@ -381,6 +407,7 @@ export default function Import() {
       setSkippedList(prev => [...prev, { filename: pending.filename, reason: 'Skipped by user' }]);
       setCurrentPendingIdx(prev => prev + 1);
       setSelectedVideoId(null);
+      showNotification('File skipped', 'info');
     } catch (error) {
       showNotification(`Error: ${error.message}`, 'error');
     }
@@ -410,7 +437,11 @@ export default function Import() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ import_reencode_mkv: choice === 'include' ? 'true' : 'false' })
         });
-      } catch (e) { console.error(e); }
+        showNotification('MKV preference saved', 'success');
+      } catch (e) {
+        console.error(e);
+        showNotification('Failed to save MKV preference', 'error');
+      }
     }
     setMkvChoice(choice);
   };
@@ -468,6 +499,15 @@ export default function Import() {
 
     setIsUploading(false);
     refetchScan();
+
+    // Show upload complete notification
+    const successCount = filesWithStatus.filter((_, i) => i <= currentUploadIndex).length;
+    const errorCount = filesWithStatus.filter(f => f.status === 'error').length;
+    if (errorCount > 0) {
+      showNotification(`Uploaded ${successCount - errorCount} files, ${errorCount} failed`, 'warning');
+    } else {
+      showNotification(`Uploaded ${successCount} file${successCount !== 1 ? 's' : ''}`, 'success');
+    }
   };
 
   const uploadFile = (file, onProgress) => new Promise((resolve, reject) => {

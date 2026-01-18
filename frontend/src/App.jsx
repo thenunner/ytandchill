@@ -144,6 +144,8 @@ function App() {
       showNotification(cookieWarning, 'warning', { id: 'cookie-warning', persistent: true });
     } else if (!cookieWarning && prevCookieWarningRef.current) {
       removeToast('cookie-warning');
+      // Show success notification when cookies are loaded/fixed
+      showNotification('Cookies loaded successfully', 'success');
     }
     prevCookieWarningRef.current = cookieWarning;
   }, [cookieWarning, showNotification, removeToast]);
@@ -182,6 +184,8 @@ function App() {
       showNotification(delayInfo, 'delay', { id: 'delay', persistent: true });
     } else if (!delayInfo && prevDelayInfoRef.current) {
       removeToast('delay');
+      // Show notification that queue has resumed after delay
+      showNotification('Queue resumed', 'success');
     }
     prevDelayInfoRef.current = delayInfo;
   }, [delayInfo, showNotification, removeToast]);
@@ -208,6 +212,9 @@ function App() {
       );
     } else if (!currentDownload && prevDownloadRef.current) {
       removeToast('download-progress');
+      // Show download complete notification with the previous download's title
+      const completedTitle = prevDownloadRef.current.title || 'Video';
+      showNotification(`Downloaded: ${completedTitle}`, 'success');
     }
     prevDownloadRef.current = currentDownload;
   }, [currentDownload, isPaused, showNotification, removeToast]);

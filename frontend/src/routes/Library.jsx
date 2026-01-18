@@ -5,7 +5,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
@@ -515,13 +515,13 @@ export default function Library() {
       {/* Header */}
       <StickyBar className="mb-4">
         {activeTab === 'channels' ? (
-          /* Channels: Responsive layout - wraps on mobile */
-          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-            {/* Tabs */}
-            <div className="flex gap-2">
+          /* Channels: Three-section layout */
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Left Section: Tabs */}
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveTab('channels')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === 'channels'
                     ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                     : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -531,7 +531,7 @@ export default function Library() {
               </button>
               <button
                 onClick={() => setActiveTab('playlists')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                   activeTab === 'playlists'
                     ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                     : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -541,184 +541,193 @@ export default function Library() {
               </button>
               <Link
                 to="/import"
-                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary flex items-center gap-2"
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary flex items-center gap-2"
               >
                 <UploadIcon className="w-4 h-4" />
                 <span className="hidden sm:inline">Import</span>
               </Link>
             </div>
 
-            {/* Search - Full width on mobile */}
-            <SearchInput
-              value={searchInput}
-              onChange={setSearchInput}
-              placeholder="Search channels..."
-              className="w-full sm:w-[180px]"
-            />
-
-            {/* Sort Button */}
-            <div className="relative" ref={channelSortMenuRef}>
-              <button
-                onClick={() => setShowChannelSortMenu(!showChannelSortMenu)}
-                className="filter-btn"
-              >
-                <FilterIcon />
-                <span>Sort</span>
-              </button>
-
-              {/* Sort Dropdown Menu */}
-              {showChannelSortMenu && (
-                <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
-                  <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
-
-                  {/* A-Z / Z-A */}
-                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex gap-4">
-                        <button
-                          onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
-                          className={`${channelSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                        >
-                          A-Z
-                        </button>
-                        <button
-                          onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
-                          className={`${channelSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                        >
-                          Z-A
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Videos */}
-                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-text-primary">Videos</span>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                          title="Most Videos"
-                        >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                            <path d="M12 5v14M5 12l7-7 7 7"></path>
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                          title="Least Videos"
-                        >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                            <path d="M12 19V5M5 12l7 7 7-7"></path>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Added */}
-                  <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                    <div className="flex items-center gap-3 text-sm">
-                      <span className="text-text-primary">Added</span>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                          title="Newest Added"
-                        >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                            <path d="M12 5v14M5 12l7-7 7 7"></path>
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
-                          className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                          title="Oldest Added"
-                        >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                            <path d="M12 19V5M5 12l7 7 7-7"></path>
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Card Size Slider */}
-            <CardSizeSlider tab="library" />
-
-            {/* Pagination */}
-            <Pagination
-              currentPage={currentPage}
-              totalItems={channelsList.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={(value) => {
-                setItemsPerPage(value);
-                localStorage.setItem('library_itemsPerPage', value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-        ) : (
-          /* Playlists: Responsive layout - wraps on mobile */
-          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4">
-              {/* Tabs */}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setActiveTab('channels')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'channels'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  Channels
-                </button>
-                <button
-                  onClick={() => setActiveTab('playlists')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'playlists'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  Playlists
-                </button>
-                <Link
-                  to="/import"
-                  className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary flex items-center gap-2"
-                >
-                  <UploadIcon className="w-4 h-4" />
-                  <span className="hidden sm:inline">Import</span>
-                </Link>
-              </div>
-
-              {/* Search - Full width on mobile */}
+            {/* Center Section: Search - Full width on mobile */}
+            <div className="order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-[240px] sm:mx-4">
               <SearchInput
                 value={searchInput}
                 onChange={setSearchInput}
-                placeholder="Search playlists..."
-                className="w-full sm:w-[180px]"
+                placeholder="Search channels..."
+                className="w-full"
               />
+            </div>
+
+            {/* Right Section: Filters + Controls */}
+            <div className="flex items-center gap-2">
+              {/* Sort Button */}
+              <div className="relative" ref={channelSortMenuRef}>
+                <button
+                  onClick={() => setShowChannelSortMenu(!showChannelSortMenu)}
+                  className="filter-btn"
+                >
+                  <FilterIcon />
+                  <span>Sort</span>
+                </button>
+
+                {/* Sort Dropdown Menu */}
+                {showChannelSortMenu && (
+                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
+                    <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
+
+                    {/* A-Z / Z-A */}
+                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex gap-4">
+                          <button
+                            onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
+                            className={`${channelSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
+                          >
+                            A-Z
+                          </button>
+                          <button
+                            onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
+                            className={`${channelSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
+                          >
+                            Z-A
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Videos */}
+                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-text-primary">Videos</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
+                            className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                            title="Most Videos"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                              <path d="M12 5v14M5 12l7-7 7 7"></path>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
+                            className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                            title="Least Videos"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                              <path d="M12 19V5M5 12l7 7 7-7"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Added */}
+                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-text-primary">Added</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
+                            className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                            title="Newest Added"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                              <path d="M12 5v14M5 12l7-7 7 7"></path>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
+                            className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                            title="Oldest Added"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                              <path d="M12 19V5M5 12l7 7 7-7"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Divider */}
+              <div className="toolbar-divider" />
+
+              {/* Card Size Slider */}
+              <CardSizeSlider tab="library" />
+
+              {/* Pagination */}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={channelsList.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value);
+                  localStorage.setItem('library_itemsPerPage', value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+        ) : (
+          /* Playlists: Three-section layout */
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Left Section: Tabs + Add Category */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('channels')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'channels'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                }`}
+              >
+                Channels
+              </button>
+              <button
+                onClick={() => setActiveTab('playlists')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'playlists'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                }`}
+              >
+                Playlists
+              </button>
+              <Link
+                to="/import"
+                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary flex items-center gap-2"
+              >
+                <UploadIcon className="w-4 h-4" />
+                <span className="hidden sm:inline">Import</span>
+              </Link>
 
               {/* + Category Button */}
               <button
                 onClick={() => setShowCreateCategoryModal(true)}
-                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-text-primary border border-dark-border hover:border-dark-border-light flex items-center gap-2 whitespace-nowrap"
+                className="px-2.5 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-text-primary border border-dark-border hover:border-dark-border-light flex items-center gap-1.5"
                 title="Create new category"
               >
                 <PlusIcon />
                 <span className="hidden sm:inline">Category</span>
               </button>
+            </div>
 
-              {/* Card Size Slider */}
-              <CardSizeSlider tab="library" />
+            {/* Center Section: Search - Full width on mobile */}
+            <div className="order-last sm:order-none w-full sm:w-auto sm:flex-1 sm:max-w-[240px] sm:mx-4">
+              <SearchInput
+                value={searchInput}
+                onChange={setSearchInput}
+                placeholder="Search playlists..."
+                className="w-full"
+              />
+            </div>
 
+            {/* Right Section: Filters + Controls */}
+            <div className="flex items-center gap-2">
               {/* Sort Button */}
               <div className="relative" ref={playlistSortMenuRef}>
                 <button
@@ -784,13 +793,16 @@ export default function Library() {
                 )}
               </div>
 
+              {/* Divider */}
+              <div className="toolbar-divider" />
+
               {/* Edit Button */}
               <button
-              onClick={() => {
-                setEditMode(!editMode);
-                setSelectedPlaylists([]);
-              }}
-                className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
+                onClick={() => {
+                  setEditMode(!editMode);
+                  setSelectedPlaylists([]);
+                }}
+                className={`filter-btn ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -799,48 +811,51 @@ export default function Library() {
                 <span>{editMode ? 'Done' : 'Edit'}</span>
               </button>
 
-              {/* Bulk Actions - only show in edit mode */}
-              {editMode && (
-                <>
-                  {filteredPlaylists.length > 0 && (
-                    <button
-                      onClick={selectAllPlaylists}
-                      className="btn btn-primary btn-sm"
-                    >
-                      Select All ({filteredPlaylists.length})
-                    </button>
-                  )}
-                  {selectedPlaylists.length > 0 && (
-                    <>
-                      <span className="text-sm text-text-secondary">{selectedPlaylists.length} selected</span>
-                      <button
-                        onClick={() => {
-                          setCategoryActionType('bulk');
-                          setShowCategorySelectorModal(true);
-                        }}
-                        className="btn btn-primary btn-sm"
-                      >
-                        Category Options
-                      </button>
-                      <button
-                        onClick={handleBulkDeletePlaylists}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        Delete All
-                      </button>
-                      <button
-                        onClick={clearPlaylistSelection}
-                        className="btn btn-secondary btn-sm"
-                      >
-                        Clear
-                      </button>
-                    </>
-                  )}
-                </>
-              )}
+              {/* Card Size Slider */}
+              <CardSizeSlider tab="library" />
             </div>
+          </div>
         )}
       </StickyBar>
+
+      {/* Floating Selection Bar for Playlists Edit Mode */}
+      <SelectionBar
+        show={editMode && activeTab === 'playlists' && filteredPlaylists.length > 0}
+        selectedCount={selectedPlaylists.length}
+        totalCount={filteredPlaylists.length}
+        onSelectAll={selectAllPlaylists}
+        onClear={clearPlaylistSelection}
+        onDone={() => {
+          setEditMode(false);
+          setSelectedPlaylists([]);
+        }}
+        actions={[
+          {
+            label: 'Assign Category',
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+              </svg>
+            ),
+            onClick: () => {
+              setCategoryActionType('bulk');
+              setShowCategorySelectorModal(true);
+            },
+            primary: true
+          },
+          {
+            label: 'Delete',
+            icon: (
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            ),
+            onClick: handleBulkDeletePlaylists,
+            danger: true
+          }
+        ]}
+      />
 
       {/* Channels Tab */}
       {activeTab === 'channels' && (
