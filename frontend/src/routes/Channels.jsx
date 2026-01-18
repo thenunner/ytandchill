@@ -984,7 +984,6 @@ export default function Channels() {
         const effectiveCardSize = getEffectiveCardSize(cardSize, filteredAndSortedChannels.length);
         const textSizes = getTextSizes(effectiveCardSize);
         return (
-      <div className="px-6 lg:px-12 xl:px-16">
         <div className={`grid ${getGridClass(gridColumns, filteredAndSortedChannels.length)} gap-4 w-full [&>*]:min-w-0`}>
           {filteredAndSortedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
@@ -1300,7 +1299,6 @@ export default function Channels() {
           </div>
           ))}
         </div>
-      </div>
         );
       })()}
 
