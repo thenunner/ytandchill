@@ -164,6 +164,7 @@ def scan_import_folder():
     CHANNEL_FILE_NAMES = {'channels.txt', 'channels.csv', 'channels.list', 'urls.txt', 'urls.csv'}
 
     files = []
+    skipped_mkv = []  # MKV files skipped when re-encode disabled
     csv_channels = []
     csv_found = False
     channel_file_name = None
@@ -181,6 +182,14 @@ def scan_import_folder():
                     'path': filepath,
                     'size': os.path.getsize(filepath),
                 })
+            elif ext == '.mkv' and not reencode_mkv:
+                # Track MKV files that are skipped due to re-encode setting
+                skipped_mkv.append({
+                    'name': filename,
+                    'path': filepath,
+                    'size': os.path.getsize(filepath),
+                    'reason': "MKV files need to be re-encoded for web playback. Go to Settings and enable 'Re-encode MKVs for web'.",
+                })
             elif filename.lower() in CHANNEL_FILE_NAMES:
                 csv_found = True
                 channel_file_name = filename
@@ -194,6 +203,7 @@ def scan_import_folder():
     return {
         'files': files,
         'count': len(files),
+        'skipped_mkv': skipped_mkv,
         'csv_found': csv_found,
         'csv_channels': csv_channels,
         'channel_file': channel_file_name,
@@ -734,6 +744,8 @@ def execute_import(file_path, video_info, channel_info, match_type):
     filename = os.path.basename(file_path)
     ext = os.path.splitext(filename)[1]
 
+    logger.info(f"execute_import called: file_path={file_path}, video_id={video_id}, match_type={match_type}")
+
     # Check if MKV needs re-encoding
     if ext.lower() == '.mkv':
         reencode_enabled = _settings_manager.get('import_reencode_mkv', 'false') == 'true'
@@ -824,7 +836,14 @@ def execute_import(file_path, video_info, channel_info, match_type):
                 existing.thumb_url = thumb_url
                 session.commit()
             # Remove source file
-            os.remove(file_path)
+            try:
+                if os.path.exists(file_path):
+                    os.remove(file_path)
+                    logger.info(f"Removed source file: {file_path}")
+                else:
+                    logger.warning(f"Source file not found for removal: {file_path}")
+            except OSError as e:
+                logger.error(f"Failed to remove source file {file_path}: {e}")
             return True, existing.id
 
         # Create video record
@@ -845,7 +864,14 @@ def execute_import(file_path, video_info, channel_info, match_type):
         session.commit()
 
         # Remove source file from import folder
-        os.remove(file_path)
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                logger.info(f"Removed source file: {file_path}")
+            else:
+                logger.warning(f"Source file not found for removal: {file_path}")
+        except OSError as e:
+            logger.error(f"Failed to remove source file {file_path}: {e}")
 
         logger.info(f"Imported: {video_info['title']} ({video_id}) via {match_type}")
 
@@ -926,6 +952,11 @@ def upload_import_file():
     # Check extension
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in allowed_extensions:
+        # Specific message for MKV files
+        if ext == '.mkv':
+            return jsonify({
+                'error': "MKV files need to be re-encoded for web playback. Go to Settings and enable 'Re-encode MKVs for web'."
+            }), 400
         return jsonify({
             'error': f'Invalid file type: {ext}. Supported: {", ".join(sorted(allowed_extensions))}'
         }), 400
