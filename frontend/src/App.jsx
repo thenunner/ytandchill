@@ -18,7 +18,6 @@ import Login from './routes/Login';
 import Import from './routes/Import';
 import NavItem from './components/NavItem';
 import ErrorBoundary from './components/ErrorBoundary';
-import UpdateModal from './components/UpdateModal';
 import UpdateBanner from './components/UpdateBanner';
 import Toast from './components/Toast';
 import { SettingsIcon } from './components/icons';
@@ -35,14 +34,13 @@ function App() {
   const kebabMenuRef = useRef(null);
   const clearingCookieWarningRef = useRef(false);
 
-  // Update modal state
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  // Update state
   const [latestVersion, setLatestVersion] = useState(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  // Track if user has interacted (navigated) since last check
-  const previousPathRef = useRef(location.pathname);
+  // Track if update toast has been shown (one-time notification)
+  const updateToastShownRef = useRef(false);
 
   // Refs for tracking previous states (to detect changes)
   const prevOperationRef = useRef(null);
@@ -62,32 +60,17 @@ function App() {
         setUpdateAvailable(true);
         const dismissedBannerVersion = localStorage.getItem('updateBannerDismissedVersion');
         setBannerDismissed(dismissedBannerVersion === latest);
+
+        // Show one-time toast notification when update is first detected
+        const toastShownVersion = localStorage.getItem('updateToastShownVersion');
+        if (!updateToastShownRef.current && toastShownVersion !== latest) {
+          updateToastShownRef.current = true;
+          localStorage.setItem('updateToastShownVersion', latest);
+          showNotification(`Update available: v${latest}`, 'info', { duration: 8000 });
+        }
       }
     }
-  }, [health?.latest_version]);
-
-  // Show update modal on route change when update is available and not dismissed
-  useEffect(() => {
-    if (location.pathname === previousPathRef.current) {
-      return;
-    }
-    previousPathRef.current = location.pathname;
-
-    if (updateAvailable && latestVersion) {
-      const dismissedVersion = localStorage.getItem('dismissedUpdateVersion');
-      if (dismissedVersion !== latestVersion) {
-        setShowUpdateModal(true);
-      }
-    }
-  }, [location.pathname, updateAvailable, latestVersion]);
-
-  // Handle update modal close
-  const handleUpdateModalClose = () => {
-    setShowUpdateModal(false);
-    if (latestVersion) {
-      localStorage.setItem('dismissedUpdateVersion', latestVersion);
-    }
-  };
+  }, [health?.latest_version, showNotification]);
 
   // Handle update banner dismiss
   const handleBannerDismiss = () => {
@@ -395,6 +378,7 @@ function App() {
                 to="/settings"
                 icon={<SettingsIcon />}
                 label="Settings"
+                indicator={updateAvailable && !bannerDismissed}
                 className="hidden md:flex"
               />
 
@@ -437,10 +421,13 @@ function App() {
                     <Link
                       to="/settings"
                       onClick={() => setShowKebabMenu(false)}
-                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2 relative"
                     >
                       <SettingsIcon />
                       Settings
+                      {updateAvailable && !bannerDismissed && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-accent rounded-full" />
+                      )}
                     </Link>
                     <button
                       onClick={handleLogout}
@@ -483,15 +470,6 @@ function App() {
           </Routes>
         </ErrorBoundary>
       </main>
-
-      {/* Update Available Modal */}
-      <UpdateModal
-        isOpen={showUpdateModal}
-        onClose={handleUpdateModalClose}
-        currentVersion={APP_VERSION}
-        latestVersion={latestVersion}
-        serverPlatform={health?.server_platform}
-      />
 
       {/* Toast Notifications */}
       <Toast />

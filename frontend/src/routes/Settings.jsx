@@ -4,7 +4,6 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import UpdateModal from '../components/UpdateModal';
 import Tooltip from '../components/ui/Tooltip';
 import { version as APP_VERSION } from '../../package.json';
 
@@ -156,7 +155,6 @@ export default function Settings() {
   // Version update check state
   const [latestVersion, setLatestVersion] = useState(null);
   const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   // Collapsible sections state (persisted in localStorage)
   const [collapsedSections, setCollapsedSections] = useState(() => {
@@ -582,18 +580,7 @@ export default function Settings() {
         <div className="stats-bar">
           <div className="stat-item">
             <div className="stat-label">YT and Chill</div>
-            <div className="stat-value flex items-center justify-center gap-1.5">
-              v{APP_VERSION}
-              {updateAvailable && (
-                <button
-                  onClick={() => setShowUpdateModal(true)}
-                  className="update-badge"
-                  title={`Update available: v${latestVersion}`}
-                >
-                  <UploadIcon />
-                </button>
-              )}
-            </div>
+            <div className="stat-value">v{APP_VERSION}</div>
           </div>
           <div className="stat-item">
             <div className="stat-label">YT-DLP</div>
@@ -628,6 +615,37 @@ export default function Settings() {
             <div className="stat-value">{channels?.length || 0}</div>
           </div>
         </div>
+
+        {/* Update Available Card */}
+        {updateAvailable && (
+          <div className="bg-accent/10 border border-accent/30 rounded-xl p-4">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+                  <svg className="w-5 h-5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                </div>
+                <div>
+                  <div className="text-text-primary font-medium">Update Available</div>
+                  <div className="text-text-secondary text-sm">
+                    v{APP_VERSION} → v{latestVersion}
+                  </div>
+                </div>
+              </div>
+              <a
+                href="https://github.com/thenunner/ytandchill/releases/latest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-4 py-2 bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors text-sm"
+              >
+                View Release
+              </a>
+            </div>
+          </div>
+        )}
 
         {/* PLAYBACK Section */}
         <div className="settings-section">
@@ -1322,14 +1340,6 @@ export default function Settings() {
         />
       )}
 
-      {/* Update Modal */}
-      <UpdateModal
-        isOpen={showUpdateModal}
-        onClose={() => setShowUpdateModal(false)}
-        currentVersion={APP_VERSION}
-        latestVersion={latestVersion}
-        serverPlatform={health?.server_platform}
-      />
     </div>
     </>
   );
