@@ -196,3 +196,252 @@
   background: hsl(var(--scrollbar-thumb-hover));
 }
 
+/* ===== SETTINGS PAGE STYLES ===== */
+
+/* Stats Bar */
+.stats-bar {
+  @apply flex justify-around p-4 bg-dark-secondary border border-dark-border rounded-xl;
+}
+
+.stat-item {
+  @apply text-center;
+}
+
+.stat-label {
+  @apply text-xs text-text-muted uppercase tracking-wide;
+}
+
+.stat-value {
+  @apply text-sm font-semibold font-mono text-text-primary mt-1;
+}
+
+/* Settings Section */
+.settings-section {
+  @apply bg-dark-secondary border border-dark-border rounded-xl overflow-hidden;
+}
+
+.section-header {
+  @apply flex items-center gap-2.5 px-4 py-3 bg-dark-tertiary border-b border-dark-border;
+  @apply text-xs font-semibold uppercase tracking-wider text-text-secondary;
+}
+
+.section-header svg {
+  @apply w-4 h-4 opacity-70;
+}
+
+/* Setting Row */
+.setting-row {
+  @apply flex items-center justify-between px-4 py-3.5 border-b border-dark-border;
+  @apply transition-colors duration-150;
+}
+
+.setting-row:last-child {
+  @apply border-b-0;
+}
+
+.setting-row:hover {
+  @apply bg-white/[0.02];
+}
+
+.setting-label {
+  @apply flex items-center gap-2;
+}
+
+.setting-name {
+  @apply text-sm font-medium text-text-primary;
+}
+
+.setting-desc {
+  @apply text-xs text-text-muted mt-0.5;
+}
+
+/* Toggle Group */
+.settings-toggle-group {
+  @apply flex border border-dark-border rounded-md overflow-hidden bg-dark-primary;
+}
+
+.settings-toggle-btn {
+  @apply px-3 py-1.5 text-xs font-semibold text-text-muted bg-transparent;
+  @apply border-r border-dark-border transition-all duration-150;
+}
+
+.settings-toggle-btn:last-child {
+  @apply border-r-0;
+}
+
+.settings-toggle-btn:hover:not(.active) {
+  @apply bg-dark-hover text-text-secondary;
+}
+
+.settings-toggle-btn.active {
+  @apply bg-accent text-white;
+}
+
+/* Status Dot */
+.status-dot {
+  @apply w-1.5 h-1.5 rounded-full flex-shrink-0;
+}
+
+.status-dot.active {
+  @apply bg-green-400;
+}
+
+.status-dot.warning {
+  @apply bg-yellow-400;
+}
+
+.status-dot.inactive {
+  @apply bg-text-muted;
+}
+
+/* Settings Action Button */
+.settings-action-btn {
+  @apply inline-flex items-center gap-1.5 px-3 py-1.5;
+  @apply text-xs font-semibold text-text-primary;
+  @apply bg-dark-tertiary border border-dark-border rounded-md;
+  @apply transition-all duration-150 cursor-pointer;
+}
+
+.settings-action-btn:hover {
+  @apply bg-dark-hover border-dark-border-light;
+}
+
+.settings-action-btn svg {
+  @apply w-3.5 h-3.5 opacity-70;
+}
+
+/* Database Button (in stats bar) */
+.db-action-btn {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 mt-1;
+  @apply text-sm font-semibold font-mono text-text-primary;
+  @apply bg-dark-tertiary border border-dark-border rounded-md;
+  @apply transition-all duration-150 cursor-pointer;
+}
+
+.db-action-btn:hover {
+  @apply bg-dark-hover border-accent/50;
+}
+
+.db-action-btn:hover svg {
+  @apply text-accent;
+}
+
+.db-action-btn svg {
+  @apply w-3.5 h-3.5 text-text-muted transition-colors duration-150;
+}
+
+/* Theme Grid */
+.theme-grid {
+  @apply flex gap-2;
+}
+
+.theme-option {
+  @apply w-7 h-7 rounded-full border-2 border-transparent cursor-pointer;
+  @apply transition-all duration-150 relative;
+}
+
+.theme-option:hover {
+  @apply scale-110;
+}
+
+.theme-option.active {
+  @apply border-accent;
+}
+
+.theme-option.active::after {
+  content: '✓';
+  @apply absolute inset-0 flex items-center justify-center;
+  @apply text-xs text-white;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+/* Update Badge */
+.update-badge {
+  @apply inline-flex items-center justify-center w-5 h-5;
+  @apply bg-green-600 rounded-full text-white cursor-pointer;
+  @apply transition-transform duration-150;
+  animation: pulse-update 2s infinite;
+}
+
+.update-badge:hover {
+  @apply scale-110 bg-green-500;
+  animation: none;
+}
+
+@keyframes pulse-update {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.5); }
+  50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+}
+
+/* Log Viewer */
+.log-viewer {
+  @apply overflow-hidden transition-all duration-300 ease-out;
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.log-viewer.expanded {
+  max-height: 400px;
+  opacity: 1;
+  @apply mt-3;
+}
+
+.log-header {
+  @apply flex justify-end mb-2;
+}
+
+.log-content {
+  @apply bg-dark-primary border border-dark-border rounded-md p-3;
+  @apply font-mono text-xs max-h-[350px] overflow-y-auto;
+}
+
+.log-line {
+  @apply flex gap-2 py-1 border-b border-white/[0.03];
+}
+
+.log-line:last-child {
+  @apply border-b-0;
+}
+
+.log-time {
+  @apply text-text-muted flex-shrink-0;
+}
+
+.log-level {
+  @apply flex-shrink-0 font-semibold;
+}
+
+.log-level.debug { @apply text-text-secondary; }
+.log-level.info { @apply text-blue-400; }
+.log-level.api { @apply text-purple-400; }
+.log-level.warn { @apply text-yellow-400; }
+.log-level.error { @apply text-red-400; }
+
+/* Expandable Content */
+.expandable-content {
+  @apply px-4 py-3 bg-dark-primary border-t border-dark-border;
+}
+
+/* Time Slots Grid */
+.time-slots {
+  @apply grid grid-cols-2 lg:grid-cols-4 gap-2 mt-2;
+}
+
+.time-slot {
+  @apply flex items-center gap-1.5 p-2 bg-dark-secondary border border-dark-border rounded-md;
+}
+
+.time-slot-num {
+  @apply text-xs font-semibold text-text-muted w-4;
+}
+
+.time-input {
+  @apply w-11 px-1.5 py-1 text-xs font-mono text-center;
+  @apply bg-dark-primary border border-dark-border rounded text-text-primary;
+}
+
+.time-separator {
+  @apply text-text-muted font-semibold;
+}
+
