@@ -799,25 +799,14 @@ export default function Import() {
   // PAGE 1: SETUP PAGE - Drag/drop (if empty) OR file list + buttons
   // ============================================================================
 
-  // Empty state - show drag/drop zone
-  if (!scanData?.count || scanData.count === 0) {
-    const hasSkippedMkv = scanData?.skipped_mkv?.length > 0;
-    const showMkvPrompt = hasSkippedMkv && !mkvSettingEnabled && mkvChoice === null;
+  const hasFiles = scanData?.count > 0;
+  const hasSkippedMkv = scanData?.skipped_mkv?.length > 0;
+  const showMkvPrompt = hasSkippedMkv && !mkvSettingEnabled && mkvChoice === null;
 
+  // Empty state - show drag/drop zone ONLY if no files AND no skipped MKVs
+  if (!hasFiles && !hasSkippedMkv) {
     return (
       <div className="flex flex-col">
-        {showMkvPrompt && (
-          <div className="max-w-2xl mx-auto px-4 mt-4">
-            <MkvPromptCard
-              mkvCount={scanData.skipped_mkv.length}
-              onInclude={() => handleMkvChoice('include')}
-              onSkip={() => handleMkvChoice('skip')}
-              rememberChoice={rememberChoice}
-              onRememberChange={setRememberChoice}
-            />
-          </div>
-        )}
-
         <div
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -886,12 +875,14 @@ My Video Title.mp4   <- Exact video title (searches YouTube)`}
   }
 
   // Files found - show file list + MKV prompt + import buttons
+  const totalFileCount = (scanData?.count || 0) + (scanData?.skipped_mkv?.length || 0);
+
   return (
     <div className="max-w-2xl mx-auto py-8 px-4">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-text-primary mb-2">Import Videos</h1>
         <p className="text-text-secondary">
-          Found <span className="text-accent-text font-semibold">{scanData.count}</span> video file{scanData.count !== 1 ? 's' : ''} to import
+          Found <span className="text-accent-text font-semibold">{totalFileCount}</span> video file{totalFileCount !== 1 ? 's' : ''} to import
         </p>
       </div>
 
@@ -912,17 +903,30 @@ My Video Title.mp4   <- Exact video title (searches YouTube)`}
           <h3 className="font-semibold text-text-primary">Files</h3>
         </div>
         <div className="divide-y divide-dark-border max-h-64 overflow-y-auto">
+          {/* Regular video files */}
           {scanData.files?.slice(0, 20).map((file, idx) => (
-            <div key={idx} className="px-4 py-3 flex items-center gap-3">
+            <div key={`file-${idx}`} className="px-4 py-3 flex items-center gap-3">
               <div className="flex-1 min-w-0">
                 <div className="text-text-primary truncate">{file.name}</div>
                 <div className="text-text-muted text-sm">{formatBytes(file.size)}</div>
               </div>
             </div>
           ))}
-          {scanData.files?.length > 20 && (
+          {/* Skipped MKV files (shown with indicator) */}
+          {scanData.skipped_mkv?.slice(0, 20 - (scanData.files?.length || 0)).map((file, idx) => (
+            <div key={`mkv-${idx}`} className="px-4 py-3 flex items-center gap-3">
+              <div className="flex-1 min-w-0">
+                <div className="text-text-primary truncate">{file.name}</div>
+                <div className="text-text-muted text-sm flex items-center gap-2">
+                  {formatBytes(file.size)}
+                  <span className="text-yellow-400 text-xs">needs re-encoding</span>
+                </div>
+              </div>
+            </div>
+          ))}
+          {totalFileCount > 20 && (
             <div className="px-4 py-3 text-center text-text-muted text-sm">
-              ...and {scanData.files.length - 20} more files
+              ...and {totalFileCount - 20} more files
             </div>
           )}
         </div>
