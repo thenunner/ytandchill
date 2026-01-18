@@ -793,6 +793,7 @@ function App() {
         onClose={handleUpdateModalClose}
         currentVersion={APP_VERSION}
         latestVersion={latestVersion}
+        serverPlatform={health?.server_platform}
       />
     </div>
   );
