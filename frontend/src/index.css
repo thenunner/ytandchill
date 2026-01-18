@@ -373,6 +373,22 @@
   50% { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
 }
 
+/* Toast slide-up animation */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
 /* Log Viewer */
 .log-viewer {
   @apply overflow-hidden transition-all duration-300 ease-out;
@@ -421,7 +437,8 @@
 /* Auto-Scan Compact Config Row */
 .autoscan-config {
   @apply flex items-center gap-2.5 flex-wrap;
-  @apply px-4 py-3 bg-dark-tertiary border-t border-dark-border;
+  @apply bg-dark-tertiary border-t border-dark-border;
+  @apply -mx-4 px-4; /* Break out of parent padding, then add own padding */
   max-height: 0;
   overflow: hidden;
   padding-top: 0;
@@ -530,6 +547,49 @@
 
 .interval-select:focus {
   @apply outline-none border-accent;
+}
+
+/* Preset Time Buttons */
+.preset-times {
+  @apply flex flex-wrap gap-1.5;
+}
+
+.preset-time-btn {
+  @apply px-2.5 py-1.5 text-xs font-medium;
+  @apply bg-dark-primary border border-dark-border rounded;
+  @apply text-text-secondary cursor-pointer;
+  @apply transition-all duration-150;
+}
+
+.preset-time-btn:hover {
+  @apply border-dark-border-light text-text-primary;
+}
+
+.preset-time-btn.selected {
+  @apply bg-accent/15 border-accent text-accent;
+}
+
+/* AM/PM Toggle */
+.ampm-toggle {
+  @apply flex bg-dark-primary border border-dark-border rounded overflow-hidden;
+}
+
+.ampm-btn {
+  @apply px-2 py-1.5 text-xs font-medium;
+  @apply bg-transparent border-none text-text-secondary cursor-pointer;
+  @apply transition-all duration-150;
+}
+
+.ampm-btn:first-child {
+  @apply border-r border-dark-border;
+}
+
+.ampm-btn:hover {
+  @apply text-text-primary;
+}
+
+.ampm-btn.active {
+  @apply bg-dark-secondary text-text-primary;
 }
 
 /* Status Indicator for Auto-Scan */

@@ -90,24 +90,26 @@ export default function Settings() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [refreshHour, setRefreshHour] = useState(3);
   const [refreshMinute, setRefreshMinute] = useState(0);
-  // New multi-scan state
+  // Auto-scan state
   const [scanMode, setScanMode] = useState('times'); // 'times' or 'interval'
-  const [scanTimes, setScanTimes] = useState([{ hour: 3, minute: 0 }]); // Array of 1-4 times
+  // Preset times for "Set Times" mode - array of selected time labels
+  const PRESET_TIMES = ['12 AM', '3 AM', '6 AM', '9 AM', '12 PM', '3 PM', '6 PM', '9 PM'];
+  const [selectedPresetTimes, setSelectedPresetTimes] = useState(['3 AM']); // Default to 3 AM
+  // Interval mode state (12-hour format)
   const [scanInterval, setScanInterval] = useState(6); // 6, 8, or 12 hours
-  // Separate state to preserve times for each mode
-  const [manualModeTimes, setManualModeTimes] = useState([{ hour: 3, minute: 0 }]);
-  const [intervalModeTime, setIntervalModeTime] = useState({ hour: 3, minute: 0 });
-  const [intervalModeHours, setIntervalModeHours] = useState(6);
+  const [intervalHour, setIntervalHour] = useState(3); // 1-12
+  const [intervalMinute, setIntervalMinute] = useState(0); // 0-59
+  const [intervalAmPm, setIntervalAmPm] = useState('AM'); // 'AM' or 'PM'
   const [logLevel, setLogLevel] = useState('INFO');
 
   // Password change state
   const [showPasswordChange, setShowPasswordChange] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
-  const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [showResetAuthModal, setShowResetAuthModal] = useState(false);
 
   // Cookie source state
   const [cookieSource, setCookieSource] = useState('file');
@@ -133,11 +135,6 @@ export default function Settings() {
     return saved !== null ? saved === 'true' : false;
   });
 
-  // Initialize status bar visibility from localStorage, default to true (visible)
-  const [statusBarVisible, setStatusBarVisible] = useState(() => {
-    const saved = localStorage.getItem('statusBarVisible');
-    return saved !== null ? saved === 'true' : true;
-  });
 
   // Queue/DB Repair state
   const [showRepairModal, setShowRepairModal] = useState(false);
@@ -266,65 +263,77 @@ export default function Settings() {
   };
 
   const handleModeSwitch = (newMode) => {
-    if (scanMode === 'times') {
-      setManualModeTimes(scanTimes);
-    } else if (scanMode === 'interval') {
-      setIntervalModeTime(scanTimes[0] || { hour: 3, minute: 0 });
-      setIntervalModeHours(scanInterval);
-    }
-
     setScanMode(newMode);
+  };
 
-    if (newMode === 'interval') {
-      setScanTimes([intervalModeTime]);
-      setScanInterval(intervalModeHours);
+  // Convert preset time label to 24h hour value
+  const presetTo24h = (preset) => {
+    const map = {
+      '12 AM': 0, '3 AM': 3, '6 AM': 6, '9 AM': 9,
+      '12 PM': 12, '3 PM': 15, '6 PM': 18, '9 PM': 21
+    };
+    return map[preset] ?? 0;
+  };
+
+  // Convert 12h time to 24h
+  const to24Hour = (hour, ampm) => {
+    if (ampm === 'AM') {
+      return hour === 12 ? 0 : hour;
     } else {
-      setScanTimes(manualModeTimes);
+      return hour === 12 ? 12 : hour + 12;
     }
   };
 
-  const updateScanTime = (index, field, value) => {
-    const newTimes = [...scanTimes];
-    newTimes[index] = { ...newTimes[index], [field]: parseInt(value) };
-    setScanTimes(newTimes);
-
-    if (scanMode === 'times') {
-      setManualModeTimes(newTimes);
-    } else if (scanMode === 'interval' && index === 0) {
-      setIntervalModeTime(newTimes[0]);
+  // Toggle preset time selection
+  const togglePresetTime = (time) => {
+    if (selectedPresetTimes.includes(time)) {
+      // Don't allow deselecting if it's the last one
+      if (selectedPresetTimes.length > 1) {
+        setSelectedPresetTimes(selectedPresetTimes.filter(t => t !== time));
+      }
+    } else {
+      setSelectedPresetTimes([...selectedPresetTimes, time]);
     }
   };
 
   const handleSaveAutoRefresh = async () => {
     try {
-      const config = {
-        mode: scanMode,
-        times: scanMode === 'times'
-          ? scanTimes.map(t => `${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`)
-          : [],
-        interval_hours: scanMode === 'interval' ? scanInterval : null,
-        interval_start: scanMode === 'interval' && scanTimes.length > 0
-          ? `${String(scanTimes[0].hour).padStart(2, '0')}:${String(scanTimes[0].minute).padStart(2, '0')}`
-          : null
-      };
+      let config;
+
+      if (scanMode === 'times') {
+        // Convert preset times to 24h format
+        const times = selectedPresetTimes.map(preset => {
+          const hour24 = presetTo24h(preset);
+          return `${String(hour24).padStart(2, '0')}:00`;
+        });
+        config = {
+          mode: 'times',
+          times: times,
+          interval_hours: null,
+          interval_start: null
+        };
+      } else {
+        // Convert 12h interval start to 24h
+        const hour24 = to24Hour(intervalHour, intervalAmPm);
+        config = {
+          mode: 'interval',
+          times: [],
+          interval_hours: scanInterval,
+          interval_start: `${String(hour24).padStart(2, '0')}:${String(intervalMinute).padStart(2, '0')}`
+        };
+      }
 
       await updateSettings.mutateAsync({
         auto_refresh_enabled: autoRefresh ? 'true' : 'false',
         auto_refresh_config: JSON.stringify(config)
       });
 
-      showNotification('Auto-scan schedule updated', 'success');
+      showNotification('Auto-scan schedule saved', 'success');
     } catch (error) {
       showNotification(error.message || 'Failed to save auto-scan settings', 'error');
     }
   };
 
-  const toggleStatusBar = () => {
-    const newValue = !statusBarVisible;
-    setStatusBarVisible(newValue);
-    localStorage.setItem('statusBarVisible', newValue.toString());
-    window.dispatchEvent(new CustomEvent('statusBarVisibilityChanged', { detail: { visible: newValue } }));
-  };
 
   const handleQueueRepair = async () => {
     setIsCheckingRepair(true);
@@ -419,13 +428,8 @@ export default function Settings() {
     e.preventDefault();
     setPasswordError('');
 
-    if (!currentPassword || !newUsername || !newPassword || !confirmNewPassword) {
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
       setPasswordError('All fields are required');
-      return;
-    }
-
-    if (newUsername.length < 3) {
-      setPasswordError('Username must be at least 3 characters');
       return;
     }
 
@@ -449,7 +453,6 @@ export default function Settings() {
         },
         body: JSON.stringify({
           current_password: currentPassword,
-          new_username: newUsername,
           new_password: newPassword,
         }),
       });
@@ -457,15 +460,14 @@ export default function Settings() {
       const data = await response.json();
 
       if (!response.ok) {
-        setPasswordError(data.error || 'Failed to change credentials');
+        setPasswordError(data.error || 'Failed to change password');
         setIsChangingPassword(false);
         return;
       }
 
-      showNotification('Credentials changed successfully!', 'success');
+      showNotification('Password changed successfully!', 'success');
 
       setCurrentPassword('');
-      setNewUsername('');
       setNewPassword('');
       setConfirmNewPassword('');
       setShowPasswordChange(false);
@@ -473,6 +475,24 @@ export default function Settings() {
       setPasswordError('Failed to connect to server');
       setIsChangingPassword(false);
     }
+  };
+
+  const handleResetAuth = async () => {
+    try {
+      const response = await fetch('/api/auth/reset', {
+        method: 'POST',
+      });
+
+      if (response.ok) {
+        // Redirect to setup page
+        window.location.href = '/setup';
+      } else {
+        showNotification('Failed to reset authentication', 'error');
+      }
+    } catch (err) {
+      showNotification('Failed to connect to server', 'error');
+    }
+    setShowResetAuthModal(false);
   };
 
   const handleCookieSourceChange = async (newSource) => {
@@ -726,29 +746,6 @@ export default function Settings() {
           <div className="setting-row">
             <div className="setting-label">
               <div>
-                <div className="setting-name">Status Bar</div>
-                <div className="setting-desc">Show download progress in header</div>
-              </div>
-            </div>
-            <div className="settings-toggle-group">
-              <button
-                onClick={() => { if (!statusBarVisible) toggleStatusBar(); }}
-                className={`settings-toggle-btn ${statusBarVisible ? 'active' : ''}`}
-              >
-                Show
-              </button>
-              <button
-                onClick={() => { if (statusBarVisible) toggleStatusBar(); }}
-                className={`settings-toggle-btn ${!statusBarVisible ? 'active' : ''}`}
-              >
-                Hide
-              </button>
-            </div>
-          </div>
-
-          <div className="setting-row">
-            <div className="setting-label">
-              <div>
                 <div className="setting-name">Theme</div>
               </div>
             </div>
@@ -808,7 +805,7 @@ export default function Settings() {
           </div>
 
           <div className="setting-row flex-col !items-stretch !py-0 !border-b-0">
-            <div className="flex items-center justify-between py-3.5 px-4">
+            <div className="flex items-center justify-between py-3.5">
               <div className="setting-label">
                 <span className={`autoscan-status ${autoRefresh ? 'active' : ''}`}></span>
                 <div>
@@ -846,79 +843,29 @@ export default function Settings() {
 
               <span className="config-divider"></span>
 
-              {/* Set Times Mode - Inline chips */}
+              {/* Set Times Mode - Preset buttons */}
               {scanMode === 'times' && (
-                <>
-                  <div className="time-chips">
-                    {scanTimes.map((time, index) => (
-                      <div key={index} className="time-chip">
-                        <input
-                          type="text"
-                          value={String(time.hour).padStart(2, '0')}
-                          maxLength={2}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 2);
-                            const newTimes = [...scanTimes];
-                            newTimes[index] = { ...newTimes[index], hour: parseInt(val) || 0 };
-                            setScanTimes(newTimes);
-                            setManualModeTimes(newTimes);
-                          }}
-                        />
-                        <span className="sep">:</span>
-                        <input
-                          type="text"
-                          value={String(time.minute).padStart(2, '0')}
-                          maxLength={2}
-                          onChange={(e) => {
-                            const val = e.target.value.replace(/\D/g, '').slice(0, 2);
-                            const newTimes = [...scanTimes];
-                            newTimes[index] = { ...newTimes[index], minute: parseInt(val) || 0 };
-                            setScanTimes(newTimes);
-                            setManualModeTimes(newTimes);
-                          }}
-                        />
-                        {scanTimes.length > 1 && (
-                          <span
-                            className="remove-x"
-                            onClick={() => {
-                              const newTimes = scanTimes.filter((_, i) => i !== index);
-                              setScanTimes(newTimes);
-                              setManualModeTimes(newTimes);
-                            }}
-                          >
-                            ✕
-                          </span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                  {scanTimes.length < 4 && (
+                <div className="preset-times">
+                  {PRESET_TIMES.map((time) => (
                     <button
-                      className="add-time-btn"
-                      onClick={() => {
-                        const newTimes = [...scanTimes, { hour: 12, minute: 0 }];
-                        setScanTimes(newTimes);
-                        setManualModeTimes(newTimes);
-                      }}
+                      key={time}
+                      className={`preset-time-btn ${selectedPresetTimes.includes(time) ? 'selected' : ''}`}
+                      onClick={() => togglePresetTime(time)}
                     >
-                      + Add
+                      {time}
                     </button>
-                  )}
-                </>
+                  ))}
+                </div>
               )}
 
-              {/* Interval Mode - Inline */}
+              {/* Interval Mode - 12h format with AM/PM */}
               {scanMode === 'interval' && (
                 <div className="interval-inline">
                   <span className="interval-label">Every</span>
                   <select
                     className="interval-select"
                     value={scanInterval}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value);
-                      setScanInterval(val);
-                      setIntervalModeHours(val);
-                    }}
+                    onChange={(e) => setScanInterval(parseInt(e.target.value))}
                   >
                     <option value={6}>6 hours</option>
                     <option value={8}>8 hours</option>
@@ -928,23 +875,41 @@ export default function Settings() {
                   <div className="time-chip">
                     <input
                       type="text"
-                      value={String(intervalModeTime.hour).padStart(2, '0')}
+                      value={String(intervalHour).padStart(2, '0')}
                       maxLength={2}
                       onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '').slice(0, 2);
-                        setIntervalModeTime({ ...intervalModeTime, hour: parseInt(val) || 0 });
+                        let val = parseInt(e.target.value.replace(/\D/g, '')) || 0;
+                        if (val > 12) val = 12;
+                        if (val < 0) val = 0;
+                        setIntervalHour(val);
                       }}
                     />
                     <span className="sep">:</span>
                     <input
                       type="text"
-                      value={String(intervalModeTime.minute).padStart(2, '0')}
+                      value={String(intervalMinute).padStart(2, '0')}
                       maxLength={2}
                       onChange={(e) => {
-                        const val = e.target.value.replace(/\D/g, '').slice(0, 2);
-                        setIntervalModeTime({ ...intervalModeTime, minute: parseInt(val) || 0 });
+                        let val = parseInt(e.target.value.replace(/\D/g, '')) || 0;
+                        if (val > 59) val = 59;
+                        if (val < 0) val = 0;
+                        setIntervalMinute(val);
                       }}
                     />
+                  </div>
+                  <div className="ampm-toggle">
+                    <button
+                      className={`ampm-btn ${intervalAmPm === 'AM' ? 'active' : ''}`}
+                      onClick={() => setIntervalAmPm('AM')}
+                    >
+                      AM
+                    </button>
+                    <button
+                      className={`ampm-btn ${intervalAmPm === 'PM' ? 'active' : ''}`}
+                      onClick={() => setIntervalAmPm('PM')}
+                    >
+                      PM
+                    </button>
                   </div>
                 </div>
               )}
@@ -966,12 +931,13 @@ export default function Settings() {
             System
           </div>
 
+          {/* Change Password */}
           <div className="setting-row flex-col !items-stretch gap-3">
             <div className="flex items-center justify-between">
               <div className="setting-label">
                 <div>
-                  <div className="setting-name">Account</div>
-                  <div className="setting-desc">Change username and password</div>
+                  <div className="setting-name">Password</div>
+                  <div className="setting-desc">Change your account password</div>
                 </div>
               </div>
               <button
@@ -979,35 +945,24 @@ export default function Settings() {
                 className="settings-action-btn"
               >
                 <KeyIcon />
-                Reset Credentials
+                Change Password
               </button>
             </div>
 
             {/* Password change form */}
             {showPasswordChange && (
               <form onSubmit={handlePasswordChange} className="expandable-content -mx-4 -mb-3.5 rounded-none space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
                     <label className="block text-xs text-text-secondary mb-1">Current Password</label>
                     <input
                       type="password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      placeholder="Enter current password"
+                      placeholder="Current password"
                       className="input text-sm py-1.5 px-3 w-full"
                       disabled={isChangingPassword}
                       autoFocus
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">New Username</label>
-                    <input
-                      type="text"
-                      value={newUsername}
-                      onChange={(e) => setNewUsername(e.target.value)}
-                      placeholder="Enter new username"
-                      className="input text-sm py-1.5 px-3 w-full"
-                      disabled={isChangingPassword}
                     />
                   </div>
                   <div>
@@ -1016,7 +971,7 @@ export default function Settings() {
                       type="password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Enter new password"
+                      placeholder="New password"
                       className="input text-sm py-1.5 px-3 w-full"
                       disabled={isChangingPassword}
                     />
@@ -1027,7 +982,7 @@ export default function Settings() {
                       type="password"
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      placeholder="Confirm new password"
+                      placeholder="Confirm password"
                       className="input text-sm py-1.5 px-3 w-full"
                       disabled={isChangingPassword}
                     />
@@ -1045,10 +1000,26 @@ export default function Settings() {
                   disabled={isChangingPassword}
                   className="settings-action-btn disabled:opacity-50"
                 >
-                  {isChangingPassword ? 'Saving...' : 'Save New Credentials'}
+                  {isChangingPassword ? 'Saving...' : 'Save Password'}
                 </button>
               </form>
             )}
+          </div>
+
+          {/* Forgot Password */}
+          <div className="setting-row">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">Forgot Password?</div>
+                <div className="setting-desc">Reset to setup if you've forgotten your password</div>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowResetAuthModal(true)}
+              className="settings-action-btn text-red-400 hover:text-red-300"
+            >
+              Reset to Setup
+            </button>
           </div>
         </div>
 
@@ -1387,6 +1358,19 @@ export default function Settings() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Reset Auth Confirmation Modal */}
+      {showResetAuthModal && (
+        <ConfirmModal
+          isOpen={showResetAuthModal}
+          onClose={() => setShowResetAuthModal(false)}
+          onConfirm={handleResetAuth}
+          title="Reset Authentication?"
+          message="This will clear your password and redirect you to the setup page to create new credentials. You'll need to log in again after setup."
+          confirmText="Reset to Setup"
+          confirmStyle="danger"
+        />
       )}
 
       {/* Update Modal */}

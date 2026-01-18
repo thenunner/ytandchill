@@ -575,20 +575,16 @@ def setup_auth():
 
 @settings_bp.route('/api/auth/change', methods=['POST'])
 def change_auth():
-    """Change username/password (requires current password)"""
+    """Change password (requires current password)"""
     data = request.json
     current_password = data.get('current_password', '').strip()
-    new_username = data.get('new_username', '').strip()
     new_password = data.get('new_password', '').strip()
 
     if not current_password:
         return jsonify({'error': 'Current password is required'}), 400
 
-    if not new_username or not new_password:
-        return jsonify({'error': 'New username and password are required'}), 400
-
-    if len(new_username) < 3:
-        return jsonify({'error': 'Username must be at least 3 characters'}), 400
+    if not new_password:
+        return jsonify({'error': 'New password is required'}), 400
 
     if len(new_password) < 3:
         return jsonify({'error': 'Password must be at least 3 characters'}), 400
@@ -599,21 +595,39 @@ def change_auth():
         return jsonify({'error': 'Current password is incorrect'}), 401
 
     try:
-        # Update username
-        _settings_manager.set('auth_username', new_username)
-
         # Update password hash
         new_password_hash = generate_password_hash(new_password)
         _settings_manager.set('auth_password_hash', new_password_hash)
 
-        # Keep user logged in with new credentials
+        # Keep user logged in
         session['authenticated'] = True
 
-        logger.info(f"Credentials changed for user: {new_username}")
-        return jsonify({'success': True, 'message': 'Credentials updated successfully'})
+        logger.info(f"Password changed for user: {stored_username}")
+        return jsonify({'success': True, 'message': 'Password updated successfully'})
     except Exception as e:
-        logger.error(f"Error changing credentials: {str(e)}")
-        return jsonify({'error': 'Failed to update credentials'}), 500
+        logger.error(f"Error changing password: {str(e)}")
+        return jsonify({'error': 'Failed to update password'}), 500
+
+
+@settings_bp.route('/api/auth/reset', methods=['POST'])
+def reset_auth():
+    """Reset authentication - reverts to setup mode (for forgotten passwords)"""
+    try:
+        # Clear stored credentials
+        _settings_manager.set('auth_username', '')
+        _settings_manager.set('auth_password_hash', '')
+
+        # Mark as first run again
+        _settings_manager.set('first_run', 'true')
+
+        # Clear current session
+        session.clear()
+
+        logger.info("Authentication reset - reverting to setup mode")
+        return jsonify({'success': True, 'message': 'Authentication reset. Please set up new credentials.'})
+    except Exception as e:
+        logger.error(f"Error resetting authentication: {str(e)}")
+        return jsonify({'error': 'Failed to reset authentication'}), 500
 
 
 # =============================================================================
