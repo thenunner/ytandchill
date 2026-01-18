@@ -1,13 +1,4 @@
-import { useState, useEffect } from 'react';
-
-// Platform detection
-const detectPlatform = () => {
-  const ua = navigator.userAgent.toLowerCase();
-  if (ua.includes('win')) return 'windows';
-  if (ua.includes('linux')) return 'linux';
-  if (ua.includes('mac')) return 'linux';
-  return 'docker'; // Default for unknown
-};
+import { useState } from 'react';
 
 // Platform instructions
 const platformInstructions = {
@@ -52,13 +43,14 @@ const platformInstructions = {
   }
 };
 
-export default function UpdateModal({ isOpen, onClose, currentVersion, latestVersion }) {
+export default function UpdateModal({ isOpen, onClose, currentVersion, latestVersion, serverPlatform = 'docker' }) {
   const [showOtherPlatforms, setShowOtherPlatforms] = useState(false);
-  const detectedPlatform = detectPlatform();
 
   if (!isOpen) return null;
 
-  const primaryPlatform = platformInstructions[detectedPlatform];
+  // Use server-detected platform (docker, windows, or linux)
+  const detectedPlatform = serverPlatform;
+  const primaryPlatform = platformInstructions[detectedPlatform] || platformInstructions.docker;
   const otherPlatforms = Object.entries(platformInstructions).filter(([key]) => key !== detectedPlatform);
 
   return (

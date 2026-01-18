@@ -1661,6 +1661,7 @@ export default function Settings() {
         onClose={() => setShowUpdateModal(false)}
         currentVersion={APP_VERSION}
         latestVersion={latestVersion}
+        serverPlatform={health?.server_platform}
       />
     </div>
     </>

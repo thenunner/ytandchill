@@ -163,8 +163,35 @@ def clear_discoveries_flag():
 # Health & Logs Endpoints
 # =============================================================================
 
+def detect_server_platform():
+    """Detect the server's platform (docker, windows, or linux).
+
+    Returns the platform where the server is actually running,
+    not the client's browser platform.
+    """
+    # Check for Docker container (presence of /.dockerenv or cgroup info)
+    if os.path.exists('/.dockerenv'):
+        return 'docker'
+    try:
+        with open('/proc/1/cgroup', 'r') as f:
+            if 'docker' in f.read():
+                return 'docker'
+    except (FileNotFoundError, PermissionError):
+        pass
+
+    # Check for Windows
+    if os.name == 'nt':
+        return 'windows'
+
+    # Default to Linux
+    return 'linux'
+
+
 @settings_bp.route('/api/health', methods=['GET'])
 def health_check():
+    # Detect server platform
+    server_platform = detect_server_platform()
+
     # Check ffmpeg
     ffmpeg_available = False
     try:
@@ -259,6 +286,7 @@ def health_check():
 
     return jsonify({
         'status': 'ok',
+        'server_platform': server_platform,
         'ffmpeg_available': ffmpeg_available,
         'ytdlp_version': ytdlp_version,
         'auto_refresh_enabled': auto_refresh_enabled,
