@@ -328,8 +328,8 @@ def titles_match(filename_title, video_title):
     return norm_file == norm_video
 
 
-def titles_match_fuzzy(filename_title, video_title, threshold=0.95):
-    """Check if titles match with fuzzy matching (95% similarity by default).
+def titles_match_fuzzy(filename_title, video_title, threshold=0.90):
+    """Check if titles match with fuzzy matching (90% similarity by default).
 
     Handles minor differences like:
     - "dont" vs "don't"
@@ -501,6 +501,9 @@ def search_video_by_title(title, expected_duration=None, known_channel_ids=None,
             if uploader_id and uploader_id.lower() in known_channel_handles:
                 channel_match = True
 
+            # Calculate duration difference for sorting
+            duration_diff = abs(video_duration - expected_duration) if expected_duration and video_duration else 999
+
             match_info = {
                 'id': data['id'],
                 'title': video_title,
@@ -511,6 +514,7 @@ def search_video_by_title(title, expected_duration=None, known_channel_ids=None,
                 'upload_date': data.get('upload_date'),
                 'match_type': 'search',
                 'duration_match': False,
+                'duration_diff': duration_diff,
                 'title_match': False,
                 'title_match_fuzzy': False,
                 'title_similarity': 0.0,
@@ -525,7 +529,7 @@ def search_video_by_title(title, expected_duration=None, known_channel_ids=None,
                 match_info['match_type'] = 'search+title'
                 logger.info(f"Title match found: '{normalized_filename}' ~ '{normalized_video_title}'")
             else:
-                # Check fuzzy title match (95%+ similarity)
+                # Check fuzzy title match (90%+ similarity)
                 is_fuzzy_match, similarity = titles_match_fuzzy(title, video_title)
                 match_info['title_similarity'] = similarity
                 if is_fuzzy_match:
@@ -1113,8 +1117,8 @@ def smart_identify():
             viable_matches = [r for r in search_results if r.get('duration_match') and r.get('title_match_fuzzy')]
 
             if viable_matches:
-                # Sort by title similarity (highest first)
-                viable_matches.sort(key=lambda x: -x.get('title_similarity', 0))
+                # Sort by duration accuracy (exact match first), then title similarity
+                viable_matches.sort(key=lambda x: (x.get('duration_diff', 999), -x.get('title_similarity', 0)))
                 logger.info(f"PENDING: '{filename}' - {mode} mode, {len(viable_matches)} viable options (duration AND title match)")
                 pending.append({
                     'file': file_path,
@@ -1133,7 +1137,7 @@ def smart_identify():
                     reason = f'No match found. Best: "{best_result.get("title")[:40]}..." (duration: {best_duration}s vs {local_duration}s, title: {best_similarity:.0%} similar)'
                 else:
                     reason = 'No search results found on YouTube'
-                logger.warning(f"FAILED: '{filename}' - no videos match both duration ({local_duration}s) AND title (95%+)")
+                logger.warning(f"FAILED: '{filename}' - no videos match both duration ({local_duration}s) AND title (90%+)")
                 failed.append({
                     'file': file_path,
                     'filename': filename,
