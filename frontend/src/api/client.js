@@ -384,8 +384,9 @@ class APIClient {
   }
 
   // Video Import
-  scanImportFolder() {
-    return this.request('/import/scan');
+  scanImportFolder(includeMkv = false) {
+    const params = includeMkv ? '?include_mkv=true' : '';
+    return this.request(`/import/scan${params}`);
   }
 
   getImportState() {
