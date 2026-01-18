@@ -160,9 +160,78 @@ def clear_discoveries_flag():
     return jsonify({'status': 'ok'})
 
 
+def _embed_date_metadata(file_path, upload_date):
+    """Embed upload date into video file metadata using ffmpeg.
+
+    Args:
+        file_path: Path to video file
+        upload_date: Date in YYYYMMDD format
+
+    Returns:
+        True if successful, False otherwise
+    """
+    if not file_path or not os.path.exists(file_path):
+        return False
+
+    # Convert YYYYMMDD to YYYY-MM-DD for metadata
+    try:
+        formatted_date = f"{upload_date[:4]}-{upload_date[4:6]}-{upload_date[6:8]}"
+    except (IndexError, TypeError):
+        return False
+
+    # Find ffmpeg
+    ffmpeg_path = shutil.which('ffmpeg') or shutil.which('ffmpeg.exe')
+    if not ffmpeg_path:
+        logger.warning("ffmpeg not found, cannot embed metadata")
+        return False
+
+    # Create temp output path
+    base, ext = os.path.splitext(file_path)
+    temp_path = f"{base}_temp{ext}"
+
+    try:
+        # On Windows, prevent console window from appearing
+        startupinfo = None
+        if os.name == 'nt':
+            startupinfo = subprocess.STARTUPINFO()
+            startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+            startupinfo.wShowWindow = subprocess.SW_HIDE
+
+        # Use ffmpeg to copy streams and add date metadata
+        result = subprocess.run([
+            ffmpeg_path, '-y',
+            '-i', file_path,
+            '-c', 'copy',  # Copy streams without re-encoding
+            '-metadata', f'date={formatted_date}',
+            '-metadata', f'creation_time={formatted_date}T00:00:00Z',
+            temp_path
+        ], capture_output=True, timeout=120, startupinfo=startupinfo)
+
+        if result.returncode == 0 and os.path.exists(temp_path):
+            # Replace original with updated file
+            os.replace(temp_path, file_path)
+            return True
+        else:
+            logger.warning(f"ffmpeg metadata embed failed: {result.stderr.decode()[:200]}")
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            return False
+
+    except subprocess.TimeoutExpired:
+        logger.warning(f"ffmpeg timeout embedding metadata for {file_path}")
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return False
+    except Exception as e:
+        logger.warning(f"Failed to embed metadata: {e}")
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        return False
+
+
 @settings_bp.route('/api/settings/fix-upload-dates', methods=['POST'])
 def fix_upload_dates():
-    """Fetch missing upload_date for all library videos."""
+    """Fetch missing upload_date for all library videos and embed in file metadata."""
     global _session_factory
 
     updated_count = 0
@@ -202,10 +271,22 @@ def fix_upload_dates():
                     data = ydl.extract_info(url, download=False)
 
                     if data and data.get('upload_date'):
-                        video.upload_date = data['upload_date']
+                        upload_date = data['upload_date']
+
+                        # Update database
+                        video.upload_date = upload_date
                         session.commit()
+
+                        # Embed in file metadata
+                        if video.file_path and os.path.exists(video.file_path):
+                            if _embed_date_metadata(video.file_path, upload_date):
+                                logger.info(f"Updated upload_date for {video.yt_id}: {upload_date} (DB + file)")
+                            else:
+                                logger.info(f"Updated upload_date for {video.yt_id}: {upload_date} (DB only)")
+                        else:
+                            logger.info(f"Updated upload_date for {video.yt_id}: {upload_date} (DB only, file not found)")
+
                         updated_count += 1
-                        logger.info(f"Updated upload_date for {video.yt_id}: {video.upload_date}")
                     else:
                         skipped_count += 1
 
