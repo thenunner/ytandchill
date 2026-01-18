@@ -41,9 +41,8 @@ export default function Import() {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
 
-  // MKV choice
+  // MKV choice (session only, always asks)
   const [mkvChoice, setMkvChoice] = useState(null);
-  const [rememberChoice, setRememberChoice] = useState(false);
 
   // Queries
   const { data: scanData, isLoading: scanLoading, refetch: refetchScan } = useScanImportFolder(mkvChoice === 'include');
@@ -262,6 +261,7 @@ export default function Import() {
   // Reset
   const handleReset = async (force = false) => {
     await resetImport.mutateAsync({ force });
+    setMkvChoice(null);  // Reset MKV choice so user gets prompted again
     await refetchScan();
     setCurrentPage('setup');
     setPendingMatches([]);
@@ -274,21 +274,8 @@ export default function Import() {
     hasRestoredRef.current = false;
   };
 
-  // MKV choice
-  const handleMkvChoice = async (choice) => {
-    if (rememberChoice) {
-      try {
-        await fetch('/api/settings', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ import_reencode_mkv: choice === 'include' ? 'true' : 'false' })
-        });
-        showNotification('MKV preference saved', 'success');
-      } catch (e) {
-        console.error(e);
-        showNotification('Failed to save MKV preference', 'error');
-      }
-    }
+  // MKV choice - session only
+  const handleMkvChoice = (choice) => {
     setMkvChoice(choice);
   };
 
@@ -664,13 +651,11 @@ export default function Import() {
       </div>
 
       {/* MKV Prompt */}
-      {hasSkippedMkv && !mkvSettingEnabled && mkvChoice === null && (
+      {hasSkippedMkv && mkvChoice === null && (
         <MkvPromptCard
           mkvCount={scanData.skipped_mkv.length}
           onInclude={() => handleMkvChoice('include')}
           onSkip={() => handleMkvChoice('skip')}
-          rememberChoice={rememberChoice}
-          onRememberChange={setRememberChoice}
         />
       )}
 
