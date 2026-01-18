@@ -1,14 +1,8 @@
 /**
  * Inline prompt card for MKV re-encoding decision.
- * Shows when MKV files are found during import and the user hasn't pre-configured the setting.
+ * Shows when MKV files are found during import.
  */
-export default function MkvPromptCard({
-  mkvCount,
-  onInclude,
-  onSkip,
-  rememberChoice,
-  onRememberChange
-}) {
+export default function MkvPromptCard({ mkvCount, onInclude, onSkip }) {
   return (
     <div className="bg-dark-secondary border-l-4 border-l-accent border border-dark-border rounded-lg p-3 mb-4">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -37,17 +31,6 @@ export default function MkvPromptCard({
           </button>
         </div>
       </div>
-
-      {/* Remember checkbox */}
-      <label className="inline-flex items-center gap-2 text-xs text-text-muted cursor-pointer hover:text-text-secondary transition-colors mt-2">
-        <input
-          type="checkbox"
-          checked={rememberChoice}
-          onChange={(e) => onRememberChange(e.target.checked)}
-          className="w-3 h-3 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-accent focus:ring-offset-0 cursor-pointer"
-        />
-        Remember my choice
-      </label>
     </div>
   );
 }
