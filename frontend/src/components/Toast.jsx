@@ -81,7 +81,10 @@ function ToastItem({ toast, onDismiss }) {
   // Progress toast has a special layout
   if (type === 'progress' && progress) {
     return (
-      <div className="animate-slide-up bg-dark-secondary border border-dark-border rounded-lg shadow-lg text-white overflow-hidden">
+      <div
+        onClick={onDismiss}
+        className="animate-slide-up bg-dark-secondary border border-dark-border rounded-lg shadow-lg text-white overflow-hidden cursor-pointer hover:bg-dark-secondary/80 transition-colors"
+      >
         <div className="flex items-center gap-3 px-4 py-3">
           {icons.progress}
           <div className="flex-1 min-w-0">
@@ -92,14 +95,6 @@ function ToastItem({ toast, onDismiss }) {
               <span className="text-accent font-semibold">{progress.percent}%</span>
             </div>
           </div>
-          <button
-            onClick={onDismiss}
-            className="p-1 hover:bg-white/10 rounded transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
         </div>
         {/* Progress bar */}
         <div className="h-1 bg-dark-border">
@@ -113,17 +108,12 @@ function ToastItem({ toast, onDismiss }) {
   }
 
   return (
-    <div className={`animate-slide-up flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg text-white ${typeStyles[type] || typeStyles.info}`}>
+    <div
+      onClick={onDismiss}
+      className={`animate-slide-up flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg text-white cursor-pointer hover:opacity-90 transition-opacity ${typeStyles[type] || typeStyles.info}`}
+    >
       {icons[type] || icons.info}
       <span className="text-sm font-medium flex-1">{message}</span>
-      <button
-        onClick={onDismiss}
-        className="p-1 hover:bg-white/20 rounded transition-colors"
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-        </svg>
-      </button>
     </div>
   );
 }

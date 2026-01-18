@@ -5,6 +5,7 @@ import { useTheme, themes } from '../contexts/ThemeContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import UpdateModal from '../components/UpdateModal';
+import Tooltip from '../components/ui/Tooltip';
 import { version as APP_VERSION } from '../../package.json';
 
 // Icons as components for cleaner JSX
@@ -637,24 +638,30 @@ export default function Settings() {
               </div>
             </div>
             <div className="settings-toggle-group">
-              <button
-                onClick={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-                className={`settings-toggle-btn ${removeSponsor ? 'active' : ''}`}
-              >
-                Sponsors
-              </button>
-              <button
-                onClick={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-                className={`settings-toggle-btn ${removeSelfpromo ? 'active' : ''}`}
-              >
-                Promo
-              </button>
-              <button
-                onClick={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-                className={`settings-toggle-btn ${removeInteraction ? 'active' : ''}`}
-              >
-                Like/Sub
-              </button>
+              <Tooltip text="Paid promotions and sponsored segments">
+                <button
+                  onClick={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+                  className={`settings-toggle-btn ${removeSponsor ? 'active' : ''}`}
+                >
+                  Sponsors
+                </button>
+              </Tooltip>
+              <Tooltip text="Self-promotion of own products, channels, or social media">
+                <button
+                  onClick={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+                  className={`settings-toggle-btn ${removeSelfpromo ? 'active' : ''}`}
+                >
+                  Promo
+                </button>
+              </Tooltip>
+              <Tooltip text="Reminders to like, subscribe, or follow">
+                <button
+                  onClick={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+                  className={`settings-toggle-btn ${removeInteraction ? 'active' : ''}`}
+                >
+                  Like/Sub
+                </button>
+              </Tooltip>
             </div>
           </div>
         </div>
@@ -674,26 +681,30 @@ export default function Settings() {
               </div>
             </div>
             <div className="settings-toggle-group">
-              <button
-                onClick={() => {
-                  setLibraryDateDisplay('uploaded');
-                  localStorage.setItem('library_date_display', 'uploaded');
-                  showNotification('Library cards will show upload date', 'success');
-                }}
-                className={`settings-toggle-btn ${libraryDateDisplay === 'uploaded' ? 'active' : ''}`}
-              >
-                Uploaded
-              </button>
-              <button
-                onClick={() => {
-                  setLibraryDateDisplay('downloaded');
-                  localStorage.setItem('library_date_display', 'downloaded');
-                  showNotification('Library cards will show download date', 'success');
-                }}
-                className={`settings-toggle-btn ${libraryDateDisplay === 'downloaded' ? 'active' : ''}`}
-              >
-                Downloaded
-              </button>
+              <Tooltip text="When the video was originally published on YouTube">
+                <button
+                  onClick={() => {
+                    setLibraryDateDisplay('uploaded');
+                    localStorage.setItem('library_date_display', 'uploaded');
+                    showNotification('Library cards will show upload date', 'success');
+                  }}
+                  className={`settings-toggle-btn ${libraryDateDisplay === 'uploaded' ? 'active' : ''}`}
+                >
+                  Uploaded
+                </button>
+              </Tooltip>
+              <Tooltip text="When the video was added to your library">
+                <button
+                  onClick={() => {
+                    setLibraryDateDisplay('downloaded');
+                    localStorage.setItem('library_date_display', 'downloaded');
+                    showNotification('Library cards will show download date', 'success');
+                  }}
+                  className={`settings-toggle-btn ${libraryDateDisplay === 'downloaded' ? 'active' : ''}`}
+                >
+                  Downloaded
+                </button>
+              </Tooltip>
             </div>
           </div>
 
@@ -737,24 +748,30 @@ export default function Settings() {
               </div>
             </div>
             <div className="settings-toggle-group">
-              <button
-                onClick={() => handleCookieSourceChange('file')}
-                className={`settings-toggle-btn ${cookieSource === 'file' ? 'active' : ''}`}
-              >
-                File
-              </button>
-              <button
-                onClick={() => handleCookieSourceChange('browser')}
-                className={`settings-toggle-btn ${cookieSource === 'browser' ? 'active' : ''}`}
-              >
-                Firefox
-              </button>
-              <button
-                onClick={() => handleCookieSourceChange('none')}
-                className={`settings-toggle-btn ${cookieSource === 'none' ? 'active' : ''}`}
-              >
-                None
-              </button>
+              <Tooltip text="Use cookies.txt file from downloads folder">
+                <button
+                  onClick={() => handleCookieSourceChange('file')}
+                  className={`settings-toggle-btn ${cookieSource === 'file' ? 'active' : ''}`}
+                >
+                  File
+                </button>
+              </Tooltip>
+              <Tooltip text="Extract cookies from local Firefox browser">
+                <button
+                  onClick={() => handleCookieSourceChange('browser')}
+                  className={`settings-toggle-btn ${cookieSource === 'browser' ? 'active' : ''}`}
+                >
+                  Firefox
+                </button>
+              </Tooltip>
+              <Tooltip text="No auth - may fail on age-restricted videos">
+                <button
+                  onClick={() => handleCookieSourceChange('none')}
+                  className={`settings-toggle-btn ${cookieSource === 'none' ? 'active' : ''}`}
+                >
+                  None
+                </button>
+              </Tooltip>
             </div>
           </div>
 
@@ -994,22 +1011,29 @@ export default function Settings() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="settings-toggle-group">
-                  {['DEBUG', 'INFO', 'API', 'WARNING', 'ERROR'].map(level => (
-                    <button
-                      key={level}
-                      onClick={async () => {
-                        setLogLevel(level);
-                        try {
-                          await updateSettings.mutateAsync({ log_level: level });
-                          showNotification(`Log level changed to ${level}`, 'success');
-                        } catch (error) {
-                          showNotification(error.message || 'Failed to save log level', 'error');
-                        }
-                      }}
-                      className={`settings-toggle-btn ${logLevel === level ? 'active' : ''}`}
-                    >
-                      {level === 'WARNING' ? 'WARN' : level}
-                    </button>
+                  {[
+                    { level: 'DEBUG', tip: 'All messages including detailed debugging info' },
+                    { level: 'INFO', tip: 'General information about operations' },
+                    { level: 'API', tip: 'HTTP request/response logs' },
+                    { level: 'WARNING', tip: 'Warnings and errors only' },
+                    { level: 'ERROR', tip: 'Only error messages' },
+                  ].map(({ level, tip }) => (
+                    <Tooltip key={level} text={tip}>
+                      <button
+                        onClick={async () => {
+                          setLogLevel(level);
+                          try {
+                            await updateSettings.mutateAsync({ log_level: level });
+                            showNotification(`Log level changed to ${level}`, 'success');
+                          } catch (error) {
+                            showNotification(error.message || 'Failed to save log level', 'error');
+                          }
+                        }}
+                        className={`settings-toggle-btn ${logLevel === level ? 'active' : ''}`}
+                      >
+                        {level === 'WARNING' ? 'WARN' : level}
+                      </button>
+                    </Tooltip>
                   ))}
                 </div>
                 <button onClick={toggleLogs} className="settings-action-btn">
