@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import {
@@ -15,6 +14,7 @@ import {
 import LoadingSpinner from '../components/LoadingSpinner';
 import { CheckmarkIcon } from '../components/icons';
 import MkvPromptCard from '../components/MkvPromptCard';
+import ImportResultsModal from '../components/ImportResultsModal';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024; // 50GB
 
@@ -33,160 +33,6 @@ function formatDuration(seconds) {
   return `${mins}:${String(secs).padStart(2, '0')}`;
 }
 
-// ============================================================================
-// RESULTS DETAIL MODAL - Shows all imports with filtering
-// ============================================================================
-function ResultsDetailModal({ imported, skipped, failed, onClose }) {
-  const [filter, setFilter] = useState('all'); // 'all', 'imported', 'skipped', 'failed'
-  const [copied, setCopied] = useState(false);
-
-  const allItems = [
-    ...(imported || []).map(item => ({ ...item, _type: 'imported' })),
-    ...(skipped || []).map(item => ({ ...item, _type: 'skipped' })),
-    ...(failed || []).map(item => ({ ...item, _type: 'failed' })),
-  ];
-
-  const filteredItems = filter === 'all'
-    ? allItems
-    : allItems.filter(item => item._type === filter);
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'imported': return 'text-green-400 bg-green-400/10';
-      case 'skipped': return 'text-yellow-400 bg-yellow-400/10';
-      case 'failed': return 'text-red-400 bg-red-400/10';
-      default: return 'text-text-muted';
-    }
-  };
-
-  const getTypeLabel = (type) => {
-    switch (type) {
-      case 'imported': return 'Imported';
-      case 'skipped': return 'Skipped';
-      case 'failed': return 'Failed';
-      default: return type;
-    }
-  };
-
-  const generateExportText = (items) => {
-    let text = `IMPORT RESULTS (${items.length} files)\n${'='.repeat(30)}\n\n`;
-    items.forEach(item => {
-      text += `[${item._type.toUpperCase()}] ${item.filename}\n`;
-      if (item.video?.title) text += `  Title: ${item.video.title}\n`;
-      if (item.channel) text += `  Channel: ${item.channel}\n`;
-      if (item.reason) text += `  Reason: ${item.reason}\n`;
-      text += '\n';
-    });
-    return text;
-  };
-
-  const handleExport = async (items) => {
-    try {
-      await navigator.clipboard.writeText(generateExportText(items));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
-  return createPortal(
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-primary border border-dark-border rounded-xl max-w-2xl w-full max-h-[80vh] flex flex-col shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-dark-border">
-          <h2 className="text-lg font-semibold text-text-primary">Import Results</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-text-primary p-1">
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Filter tabs */}
-        <div className="px-4 py-2 border-b border-dark-border flex gap-2">
-          {[
-            { key: 'all', label: 'All', count: allItems.length },
-            { key: 'imported', label: 'Imported', count: imported?.length || 0, color: 'text-green-400' },
-            { key: 'skipped', label: 'Skipped', count: skipped?.length || 0, color: 'text-yellow-400' },
-            { key: 'failed', label: 'Failed', count: failed?.length || 0, color: 'text-red-400' },
-          ].map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setFilter(tab.key)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                filter === tab.key
-                  ? 'bg-accent/20 text-accent-text'
-                  : 'text-text-secondary hover:text-text-primary hover:bg-dark-tertiary'
-              }`}
-            >
-              <span className={tab.color}>{tab.count}</span> {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {filteredItems.length === 0 ? (
-            <div className="text-center text-text-muted py-8">No items</div>
-          ) : (
-            filteredItems.map((item, idx) => (
-              <div key={idx} className="bg-dark-secondary border border-dark-border rounded-lg p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className={`text-xs px-2 py-0.5 rounded ${getTypeColor(item._type)}`}>
-                        {getTypeLabel(item._type)}
-                      </span>
-                      <span className="text-text-primary font-medium truncate">{item.filename}</span>
-                    </div>
-                    {item.video?.title && (
-                      <div className="text-sm text-text-secondary truncate">{item.video.title}</div>
-                    )}
-                    {item.channel && (
-                      <div className="text-xs text-text-muted">{item.channel}</div>
-                    )}
-                    {item.reason && (
-                      <div className="text-sm text-red-400 mt-1">{item.reason}</div>
-                    )}
-                  </div>
-                  <span className="text-text-muted text-xs flex-shrink-0">
-                    {formatBytes(item.file_size || item.video?.file_size || 0)}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-dark-border">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleExport(filteredItems)}
-              className="btn btn-secondary text-sm"
-            >
-              Copy {filter === 'all' ? 'All' : getTypeLabel(filter)}
-            </button>
-            {filter !== 'failed' && failed?.length > 0 && (
-              <button
-                onClick={() => handleExport(failed.map(f => ({ ...f, _type: 'failed' })))}
-                className="btn btn-secondary text-sm text-red-400"
-              >
-                Copy Failed Only
-              </button>
-            )}
-            {copied && (
-              <span className="text-green-400 text-sm animate-pulse">Copied to clipboard!</span>
-            )}
-          </div>
-          <button onClick={onClose} className="btn btn-primary">Close</button>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 // ============================================================================
 // MAIN COMPONENT
@@ -539,7 +385,7 @@ export default function Import() {
       <div className="max-w-2xl mx-auto py-8 px-4">
         {/* Results Modal */}
         {showResultsModal && (
-          <ResultsDetailModal
+          <ImportResultsModal
             imported={importedList}
             skipped={skippedList}
             failed={failedList}
