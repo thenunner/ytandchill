@@ -472,9 +472,9 @@ export default function Channels() {
   return (
     <div className="space-y-6 animate-fade-in">
       <StickyBar>
-        {/* Mobile: Two-row layout */}
-        <div className="flex flex-col gap-3">
-          {/* Row 1: Add + Scan + Category + Edit */}
+        {/* Desktop: single row, Mobile: two rows */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          {/* Left: Add + Scan + Category + Edit + CardSize */}
           <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowAddForm(!showAddForm)}
@@ -734,8 +734,8 @@ export default function Channels() {
             <CardSizeSlider tab="channels" />
           </div>
 
-          {/* Row 2: Search + Sort */}
-          <div className="flex items-center gap-2">
+          {/* Right: Search + Sort */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <SearchInput
               value={searchInput}
               onChange={setSearchInput}
