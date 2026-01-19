@@ -23,17 +23,21 @@ YT channel downloader and video library manager. Monitor channels, queue downloa
 
 ## Screenshots
 
-### Channels View
-![Channels](images/Channels.png)
+| Channels | Ignored Videos |
+|:---:|:---:|
+| ![Channels](images/Channels.png) | ![Ignored](images/ignored.png) |
 
-### Library View
-![Library](images/library.png)
+| Library | Playlist |
+|:---:|:---:|
+| ![Library](images/library.png) | ![Playlist](images/playlist.png) |
 
-### Playlist View
-![Playlist](images/playlist.png)
+| Video Player | Import |
+|:---:|:---:|
+| ![Video Player](images/video.png) | ![Import](images/import.png) |
 
-### Video Player
-![Video Player](images/video.png)
+| Settings | |
+|:---:|:---:|
+| ![Settings](images/settings.png) | |
 
 ## Quick Start
 

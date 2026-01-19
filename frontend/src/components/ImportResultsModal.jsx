@@ -444,6 +444,18 @@ function ResultItem({ item }) {
 
   const s = styles[type] || styles.matched;
 
+  // Format duration seconds to MM:SS or HH:MM:SS
+  const formatDuration = (seconds) => {
+    if (!seconds) return null;
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+    return `${mins}:${String(secs).padStart(2, '0')}`;
+  };
+
   // Get display info based on type
   const getDisplayInfo = () => {
     if (type === 'matched') {
@@ -452,6 +464,8 @@ function ResultItem({ item }) {
         channel: item.video?.channel_title || item.channel || '',
         videoId: item.video?.id || '',
         similarity: null,
+        localDuration: null,
+        ytDuration: null,
       };
     } else if (type === 'skipped') {
       return {
@@ -459,6 +473,8 @@ function ResultItem({ item }) {
         channel: '',
         videoId: '',
         similarity: null,
+        localDuration: null,
+        ytDuration: null,
       };
     } else {
       // Failed - show closest match if available
@@ -468,6 +484,8 @@ function ResultItem({ item }) {
         channel: closest?.channel_title || '',
         videoId: closest?.id || '',
         similarity: closest?.similarity,
+        localDuration: formatDuration(closest?.local_duration),
+        ytDuration: formatDuration(closest?.duration),
       };
     }
   };
@@ -503,9 +521,9 @@ function ResultItem({ item }) {
           )}
         </div>
 
-        {/* Badges - video ID and similarity */}
-        {(info.videoId || info.similarity) && (
-          <div className="flex gap-1.5 flex-shrink-0">
+        {/* Badges - video ID, similarity, and duration */}
+        {(info.videoId || info.similarity || info.localDuration) && (
+          <div className="flex gap-1.5 flex-shrink-0 flex-wrap justify-end">
             {info.videoId && (
               <span className="font-mono text-[9px] text-[#64748b] bg-white/5 px-1.5 py-0.5 rounded">
                 {info.videoId}
@@ -514,6 +532,11 @@ function ResultItem({ item }) {
             {info.similarity && (
               <span className="text-[9px] font-semibold text-[#f87171] bg-[#f87171]/10 px-1.5 py-0.5 rounded">
                 {info.similarity}%
+              </span>
+            )}
+            {(info.localDuration || info.ytDuration) && (
+              <span className="text-[9px] text-[#64748b] bg-white/5 px-1.5 py-0.5 rounded">
+                {info.localDuration || '--:--'} / {info.ytDuration || '--:--'}
               </span>
             )}
           </div>
