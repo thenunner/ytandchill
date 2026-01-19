@@ -86,12 +86,14 @@ export default function ImportResultsModal({ imported = [], skipped = [], failed
     // Add failed/closest items
     if (exportCategories.failed) {
       failed.forEach(item => {
-        const duration = formatDuration(item.duration || item.local_duration);
         const closest = item.closestMatch || item.closest_match;
+        const localDur = formatDuration(closest?.local_duration || item.local_duration);
+        const ytDur = formatDuration(closest?.duration);
+        const durationStr = `${localDur || '--:--'} / ${ytDur || '--:--'}`;
         const title = closest?.title || '';
         const videoId = closest?.id || '';
         const similarity = closest?.similarity ? `${closest.similarity}%` : 'No match';
-        lines.push(`${item.filename} - ${duration} - Closest - ${title} - ${videoId} - ${similarity}`);
+        lines.push(`${item.filename} - ${durationStr} - Closest - ${title} - ${videoId} - ${similarity}`);
       });
     }
 
@@ -106,7 +108,8 @@ export default function ImportResultsModal({ imported = [], skipped = [], failed
     lines.push([
       'Status',
       'Filename',
-      'Duration',
+      'Local Duration',
+      'YT Duration',
       'File Size',
       'Matched Video Title',
       'Matched Video ID',
@@ -126,6 +129,7 @@ export default function ImportResultsModal({ imported = [], skipped = [], failed
           'Matched',
           `"${(item.filename || '').replace(/"/g, '""')}"`,
           duration,
+          duration, // YT duration same as local for matched
           formatBytes(item.file_size || item.video?.file_size || 0),
           `"${(item.video?.title || '').replace(/"/g, '""')}"`,
           item.video?.id || '',
@@ -147,6 +151,7 @@ export default function ImportResultsModal({ imported = [], skipped = [], failed
           'Skipped',
           `"${(item.filename || '').replace(/"/g, '""')}"`,
           duration,
+          '', // YT duration - N/A for skipped
           formatBytes(item.file_size || 0),
           '', // Matched title - N/A
           '', // Matched ID - N/A
@@ -163,12 +168,14 @@ export default function ImportResultsModal({ imported = [], skipped = [], failed
     // Add failed items
     if (exportCategories.failed) {
       failed.forEach(item => {
-        const duration = formatDuration(item.duration || item.local_duration);
         const closest = item.closestMatch || item.closest_match;
+        const localDuration = formatDuration(closest?.local_duration || item.local_duration);
+        const ytDuration = formatDuration(closest?.duration);
         lines.push([
           'Closest',
           `"${(item.filename || '').replace(/"/g, '""')}"`,
-          duration,
+          localDuration || '',
+          ytDuration || '',
           formatBytes(item.file_size || 0),
           '', // Matched title - N/A for failed
           '', // Matched ID - N/A for failed
