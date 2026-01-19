@@ -290,7 +290,6 @@ export default function PlaylistPlayer() {
   const handleDelete = useCallback(async () => {
     if (!currentVideo) return;
     try {
-      showNotification('Deleting video...', 'info', { persistent: true });
       await deleteVideo.mutateAsync(currentVideo.id);
       showNotification('Video deleted', 'success');
       setShowDeleteConfirm(false);

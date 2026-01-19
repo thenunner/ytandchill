@@ -188,7 +188,6 @@ export default function Channels() {
 
   const handleDeleteChannel = async (channelId) => {
     try {
-      showNotification(`Deleting channel...`, 'info', { persistent: true });
       await deleteChannel.mutateAsync(channelId);
       showNotification('Channel deleted', 'success');
       setDeleteConfirm(null);
