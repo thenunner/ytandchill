@@ -9,6 +9,8 @@ import api from '../api/client';
 import { StickyBar, SearchInput, CardSizeSlider, SortDropdown, SelectionBar } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
+import Pagination from '../components/Pagination';
+import LoadMore from '../components/LoadMore';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
 
@@ -63,6 +65,12 @@ export default function Channels() {
 
   // Track which scan type was last initiated ('new' or 'all')
   const [lastScanType, setLastScanType] = useState(null);
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
+  const itemsPerPage = Number(localStorage.getItem('global_items_per_page')) || 50;
+  const isMobile = window.innerWidth < 640;
 
   // Watch for scan completion and refetch channels
   const currentOperation = queueData?.current_operation;
@@ -464,6 +472,23 @@ export default function Channels() {
 
     return sorted;
   }, [channels, searchInput, selectedCategories, sortBy]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+    setLoadedPages(1);
+  }, [searchInput, sortBy, selectedCategories]);
+
+  // Paginate channels (mobile: infinite scroll, desktop: pagination)
+  const paginatedChannels = useMemo(() => {
+    if (isMobile) {
+      // Mobile: show loadedPages worth of items
+      return filteredAndSortedChannels.slice(0, loadedPages * itemsPerPage);
+    }
+    // Desktop: standard pagination
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredAndSortedChannels.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredAndSortedChannels, currentPage, itemsPerPage, loadedPages, isMobile]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -867,6 +892,16 @@ export default function Channels() {
               </div>
             )}
           </div>
+
+            {/* Pagination - desktop only */}
+            {!isMobile && (
+              <Pagination
+                currentPage={currentPage}
+                totalItems={filteredAndSortedChannels.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            )}
           </div>
         </div>
       </StickyBar>
@@ -969,11 +1004,11 @@ export default function Channels() {
 
       {/* Channels Grid */}
       {(() => {
-        const effectiveCardSize = getEffectiveCardSize(cardSize, filteredAndSortedChannels.length);
+        const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedChannels.length);
         const textSizes = getTextSizes(effectiveCardSize);
         return (
-        <div className={`grid ${getGridClass(gridColumns, filteredAndSortedChannels.length)} gap-4 w-full [&>*]:min-w-0`}>
-          {filteredAndSortedChannels.map(channel => (
+        <div className={`grid ${getGridClass(gridColumns, paginatedChannels.length)} gap-4 w-full [&>*]:min-w-0`}>
+          {paginatedChannels.map(channel => (
           <div key={channel.id} className="relative group channel-card-container">
             {/* Dropdown Menu - OUTSIDE card to avoid overflow:hidden clipping */}
             {menuOpen === channel.id && (
@@ -1289,6 +1324,15 @@ export default function Channels() {
         </div>
         );
       })()}
+
+      {/* Load More - mobile only */}
+      {isMobile && filteredAndSortedChannels.length > 0 && (
+        <LoadMore
+          currentCount={paginatedChannels.length}
+          totalCount={filteredAndSortedChannels.length}
+          onLoadMore={() => setLoadedPages(prev => prev + 1)}
+        />
+      )}
 
       {filteredAndSortedChannels.length === 0 && (
         searchInput ? (

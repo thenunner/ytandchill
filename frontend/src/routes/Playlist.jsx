@@ -8,6 +8,7 @@ import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
 import FiltersModal from '../components/FiltersModal';
 import Pagination from '../components/Pagination';
+import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
@@ -33,10 +34,9 @@ export default function Playlist() {
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [showBulkPlaylistOptions, setShowBulkPlaylistOptions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(() => {
-    const stored = localStorage.getItem('playlist_itemsPerPage');
-    return stored ? Number(stored) : 50;
-  });
+  const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
+  const itemsPerPage = Number(localStorage.getItem('global_items_per_page')) || 50;
+  const isMobile = window.innerWidth < 640;
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete', count: number }
 
 
@@ -169,13 +169,19 @@ export default function Playlist() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setLoadedPages(1); // Reset mobile infinite scroll
   }, [searchInput, sort, hideWatched]);
 
-  // Paginate videos
+  // Paginate videos (mobile: infinite scroll, desktop: pagination)
   const paginatedVideos = useMemo(() => {
+    if (isMobile) {
+      // Mobile: show loadedPages worth of items
+      return sortedVideos.slice(0, loadedPages * itemsPerPage);
+    }
+    // Desktop: standard pagination
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
-  }, [sortedVideos, currentPage, itemsPerPage]);
+  }, [sortedVideos, currentPage, itemsPerPage, loadedPages, isMobile]);
 
   if (isLoading) {
     return <div className="text-center py-20 text-text-secondary">Loading playlist...</div>;
@@ -237,17 +243,14 @@ export default function Playlist() {
           <div className="flex items-center gap-2 flex-wrap justify-end">
             <CardSizeSlider tab="library" />
 
-            <Pagination
-              currentPage={currentPage}
-              totalItems={sortedVideos.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={(value) => {
-                setItemsPerPage(value);
-                localStorage.setItem('playlist_itemsPerPage', value);
-                setCurrentPage(1);
-              }}
-            />
+            {!isMobile && (
+              <Pagination
+                currentPage={currentPage}
+                totalItems={sortedVideos.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
+            )}
 
             <button
               onClick={() => setShowFiltersModal(true)}
@@ -333,21 +336,24 @@ export default function Playlist() {
         />
       )}
 
-      {/* Bottom Pagination */}
+      {/* Bottom Pagination (desktop) or Load More (mobile) */}
       {sortedVideos.length > 0 && (
-        <div className="flex justify-center mt-6">
-          <Pagination
-            currentPage={currentPage}
-            totalItems={sortedVideos.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={setCurrentPage}
-            onItemsPerPageChange={(value) => {
-              setItemsPerPage(value);
-              localStorage.setItem('playlist_itemsPerPage', value);
-              setCurrentPage(1);
-            }}
+        isMobile ? (
+          <LoadMore
+            currentCount={paginatedVideos.length}
+            totalCount={sortedVideos.length}
+            onLoadMore={() => setLoadedPages(prev => prev + 1)}
           />
-        </div>
+        ) : (
+          <div className="flex justify-center mt-6">
+            <Pagination
+              currentPage={currentPage}
+              totalItems={sortedVideos.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        )
       )}
 
       {/* Filters Modal */}

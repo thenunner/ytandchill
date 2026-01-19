@@ -137,6 +137,12 @@ export default function Settings() {
     return localStorage.getItem('library_date_display') || 'downloaded';
   });
 
+  // Global items per page setting (stored in localStorage)
+  const [globalItemsPerPage, setGlobalItemsPerPage] = useState(() => {
+    const stored = localStorage.getItem('global_items_per_page');
+    return stored ? Number(stored) : 50;
+  });
+
   // Default playback speed
   const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState('1');
 
@@ -251,6 +257,13 @@ export default function Settings() {
       setHasApiKey(!!settings.youtube_api_key);
     }
   }, [settings]);
+
+  // One-time cleanup of old per-screen pagination keys (now using global setting)
+  useEffect(() => {
+    localStorage.removeItem('library_itemsPerPage');
+    localStorage.removeItem('channelLibrary_itemsPerPage');
+    localStorage.removeItem('playlist_itemsPerPage');
+  }, []);
 
   // Compare semver versions properly
   const compareSemver = (a, b) => {
@@ -875,6 +888,29 @@ export default function Settings() {
                   Downloaded
                 </button>
               </Tooltip>
+            </div>
+          </div>
+
+          <div className="setting-row mobile-hide-desc">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">Items Per Page</div>
+                <div className="setting-desc">Number of items to display in card views</div>
+              </div>
+            </div>
+            <div className="settings-toggle-group">
+              {[25, 50, 100, 250].map(option => (
+                <button
+                  key={option}
+                  onClick={() => {
+                    setGlobalItemsPerPage(option);
+                    localStorage.setItem('global_items_per_page', option);
+                  }}
+                  className={`settings-toggle-btn ${globalItemsPerPage === option ? 'active' : ''}`}
+                >
+                  {option}
+                </button>
+              ))}
             </div>
           </div>
 

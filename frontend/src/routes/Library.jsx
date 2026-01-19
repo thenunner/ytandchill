@@ -4,6 +4,7 @@ import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCateg
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
+import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
@@ -75,10 +76,9 @@ export default function Library() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(() => {
-    const stored = localStorage.getItem('library_itemsPerPage');
-    return stored ? Number(stored) : 50;
-  });
+  const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
+  const itemsPerPage = Number(localStorage.getItem('global_items_per_page')) || 50;
+  const isMobile = window.innerWidth < 640;
 
   // Sync activeTab with URL parameter
   useEffect(() => {
@@ -224,13 +224,19 @@ export default function Library() {
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
+    setLoadedPages(1); // Reset mobile infinite scroll
   }, [searchInput, channelSortBy, playlistSortBy, activeTab]);
 
-  // Paginate channels list
+  // Paginate channels list (mobile: infinite scroll, desktop: pagination)
   const paginatedChannelsList = useMemo(() => {
+    if (isMobile) {
+      // Mobile: show loadedPages worth of items
+      return channelsList.slice(0, loadedPages * itemsPerPage);
+    }
+    // Desktop: standard pagination
     const startIndex = (currentPage - 1) * itemsPerPage;
     return channelsList.slice(startIndex, startIndex + itemsPerPage);
-  }, [channelsList, currentPage, itemsPerPage]);
+  }, [channelsList, currentPage, itemsPerPage, loadedPages, isMobile]);
 
   // Filter and sort playlists
   const filteredPlaylists = useMemo(() => {
@@ -550,109 +556,11 @@ export default function Library() {
                 </Link>
               </div>
 
-              {/* Sort + Pagination */}
-              <div className="flex items-center gap-2">
-                {/* Sort Button */}
-                <div className="relative" ref={channelSortMenuRef}>
-                  <button
-                    onClick={() => setShowChannelSortMenu(!showChannelSortMenu)}
-                    className="filter-btn"
-                  >
-                    <FilterIcon />
-                    <span className="hidden sm:inline">Sort</span>
-                  </button>
-
-                  {/* Sort Dropdown Menu */}
-                  {showChannelSortMenu && (
-                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
-                      <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
-
-                      {/* A-Z / Z-A */}
-                      <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex gap-4">
-                            <button
-                              onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
-                              className={`${channelSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                            >
-                              A-Z
-                            </button>
-                            <button
-                              onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
-                              className={`${channelSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                            >
-                              Z-A
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Videos */}
-                      <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="text-text-primary">Videos</span>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
-                              className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                              title="Most Videos"
-                            >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                                <path d="M12 5v14M5 12l7-7 7 7"></path>
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
-                              className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                              title="Least Videos"
-                            >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                                <path d="M12 19V5M5 12l7 7 7-7"></path>
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Added */}
-                      <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                        <div className="flex items-center gap-3 text-sm">
-                          <span className="text-text-primary">Added</span>
-                          <div className="flex gap-1">
-                            <button
-                              onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
-                              className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                              title="Newest Added"
-                            >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                                <path d="M12 5v14M5 12l7-7 7 7"></path>
-                              </svg>
-                            </button>
-                            <button
-                              onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
-                              className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                              title="Oldest Added"
-                            >
-                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                                <path d="M12 19V5M5 12l7 7 7-7"></path>
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Divider - hidden on mobile */}
-                <div className="toolbar-divider hidden sm:block" />
-
-                {/* Card Size Slider - hidden on mobile */}
-                <CardSizeSlider tab="library" />
-              </div>
+              {/* Card Size Slider - hidden on mobile */}
+              <CardSizeSlider tab="library" />
             </div>
 
-            {/* Right: Search + Pagination */}
+            {/* Right: Search + Sort + Pagination */}
             <div className="flex items-center gap-2 flex-shrink-0">
               <SearchInput
                 value={searchInput}
@@ -660,17 +568,107 @@ export default function Library() {
                 placeholder="Search..."
                 className="w-24 sm:w-[160px]"
               />
-              <Pagination
-                currentPage={currentPage}
-                totalItems={channelsList.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={(value) => {
-                  setItemsPerPage(value);
-                  localStorage.setItem('library_itemsPerPage', value);
-                  setCurrentPage(1);
-                }}
-              />
+
+              {/* Sort Button */}
+              <div className="relative" ref={channelSortMenuRef}>
+                <button
+                  onClick={() => setShowChannelSortMenu(!showChannelSortMenu)}
+                  className="filter-btn"
+                >
+                  <FilterIcon />
+                  <span className="hidden sm:inline">Sort</span>
+                </button>
+
+                {/* Sort Dropdown Menu */}
+                {showChannelSortMenu && (
+                  <div className="absolute right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
+                    <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
+
+                    {/* A-Z / Z-A */}
+                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex gap-4">
+                          <button
+                            onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
+                            className={`${channelSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
+                          >
+                            A-Z
+                          </button>
+                          <button
+                            onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
+                            className={`${channelSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
+                          >
+                            Z-A
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Videos */}
+                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-text-primary">Videos</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
+                            className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                            title="Most Videos"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                              <path d="M12 5v14M5 12l7-7 7 7"></path>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
+                            className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                            title="Least Videos"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                              <path d="M12 19V5M5 12l7 7 7-7"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Added */}
+                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-text-primary">Added</span>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
+                            className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                            title="Newest Added"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                              <path d="M12 5v14M5 12l7-7 7 7"></path>
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
+                            className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                            title="Oldest Added"
+                          >
+                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                              <path d="M12 19V5M5 12l7 7 7-7"></path>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {!isMobile && (
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={channelsList.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                />
+              )}
             </div>
           </div>
         ) : (
@@ -970,21 +968,24 @@ export default function Library() {
             );
           })()}
 
-          {/* Bottom Pagination */}
+          {/* Bottom Pagination (desktop) or Load More (mobile) */}
           {channelsList.length > 0 && (
-            <div className="flex justify-center mt-6">
-              <Pagination
-                currentPage={currentPage}
-                totalItems={channelsList.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={(value) => {
-                  setItemsPerPage(value);
-                  localStorage.setItem('library_itemsPerPage', value);
-                  setCurrentPage(1);
-                }}
+            isMobile ? (
+              <LoadMore
+                currentCount={paginatedChannelsList.length}
+                totalCount={channelsList.length}
+                onLoadMore={() => setLoadedPages(prev => prev + 1)}
               />
-            </div>
+            ) : (
+              <div className="flex justify-center mt-6">
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={channelsList.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                />
+              </div>
+            )
           )}
         </>
       )}
