@@ -9,8 +9,10 @@ import { useEffect, useState } from 'react';
  * @param {Function} props.onSelectAll - Callback when "Select All" is clicked
  * @param {Function} props.onClear - Callback when "Clear" is clicked
  * @param {Function} props.onDone - Callback when "Done" is clicked
- * @param {Array} props.actions - Additional action buttons [{label, icon, onClick, primary?, danger?}]
+ * @param {Array} props.actions - Additional action buttons [{label, icon, onClick, disabled?, variant: 'primary'|'danger'|'warning'|'success'}]
  * @param {boolean} props.show - Whether to show the bar (usually editMode && hasItems)
+ * @param {boolean} props.hideDone - Hide the Done button (for non-edit-mode contexts)
+ * @param {boolean} props.hideSelectControls - Hide Select All/Clear when nothing selected
  */
 export default function SelectionBar({
   selectedCount = 0,
@@ -19,7 +21,9 @@ export default function SelectionBar({
   onClear,
   onDone,
   actions = [],
-  show = false
+  show = false,
+  hideDone = false,
+  hideSelectControls = false
 }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -72,16 +76,16 @@ export default function SelectionBar({
             </div>
 
             {/* Center: Selection actions */}
-            <div className="flex items-center gap-2">
-              {totalCount > 0 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              {!hideSelectControls && totalCount > 0 && (
                 <button
                   onClick={onSelectAll}
                   className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors"
                 >
-                  Select All ({totalCount})
+                  All ({totalCount})
                 </button>
               )}
-              {selectedCount > 0 && (
+              {!hideSelectControls && selectedCount > 0 && (
                 <button
                   onClick={onClear}
                   className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors"
@@ -91,37 +95,44 @@ export default function SelectionBar({
               )}
 
               {/* Divider if we have additional actions */}
-              {actions.length > 0 && selectedCount > 0 && (
+              {actions.length > 0 && selectedCount > 0 && !hideSelectControls && (
                 <div className="w-px h-6 bg-dark-border mx-1 hidden sm:block" />
               )}
 
               {/* Additional actions */}
-              {selectedCount > 0 && actions.map((action, index) => (
-                <button
-                  key={index}
-                  onClick={action.onClick}
-                  disabled={action.disabled}
-                  className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
-                    action.danger
-                      ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300'
-                      : action.primary
-                        ? 'bg-accent hover:bg-accent-hover text-white font-medium'
-                        : 'bg-dark-tertiary hover:bg-dark-hover text-text-primary'
-                  }`}
-                >
-                  {action.icon && <span className="w-4 h-4">{action.icon}</span>}
-                  <span className="hidden sm:inline">{action.label}</span>
-                </button>
-              ))}
+              {actions.map((action, index) => {
+                const variantClasses = {
+                  primary: 'bg-accent hover:bg-accent-hover text-white font-medium',
+                  danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300',
+                  warning: 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300',
+                  success: 'bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300',
+                  default: 'bg-dark-tertiary hover:bg-dark-hover text-text-primary'
+                };
+                const variant = action.variant || (action.danger ? 'danger' : action.primary ? 'primary' : 'default');
+
+                return (
+                  <button
+                    key={index}
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]}`}
+                  >
+                    {action.icon && <span className="w-4 h-4">{action.icon}</span>}
+                    <span className="hidden sm:inline">{action.label}</span>
+                  </button>
+                );
+              })}
             </div>
 
             {/* Right: Done button */}
-            <button
-              onClick={onDone}
-              className="px-4 py-1.5 text-sm bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors"
-            >
-              Done
-            </button>
+            {!hideDone && (
+              <button
+                onClick={onDone}
+                className="px-4 py-1.5 text-sm bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors"
+              >
+                Done
+              </button>
+            )}
           </div>
         </div>
       </div>

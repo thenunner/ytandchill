@@ -151,6 +151,108 @@ def scan_channel_videos(channel_url, max_results=250):
     return channel_info, videos, all_video_ids
 
 
+def scan_channel_videos_full(channel_url, max_results=50):
+    """
+    Scan channel videos with FULL metadata extraction.
+
+    This is slower than scan_channel_videos() but reliably includes upload_date.
+    Use for auto-scan and scan-new where only small batches are needed.
+
+    Process:
+    1. Use flat-playlist to quickly discover video IDs
+    2. Fetch full metadata for each video (includes upload_date)
+
+    Args:
+        channel_url: YouTube channel URL (any format)
+        max_results: Maximum number of videos to fetch (default: 50)
+
+    Returns:
+        tuple: (channel_info, videos, all_video_ids) - same format as scan_channel_videos()
+
+    Note:
+        Expect ~1-3 seconds per video. For 50 videos = ~1-2 minutes.
+    """
+    logger.info(f'Full scan of channel: {channel_url} (max: {max_results})')
+
+    # Step 1: Use flat-playlist to quickly get video IDs
+    args = [
+        '--flat-playlist',
+        '--dump-json',
+        '--playlist-end', str(max_results),
+        channel_url
+    ]
+
+    success, stdout, stderr = _run_ytdlp(args)
+
+    if not success:
+        logger.error(f'Failed to scan channel {channel_url}: {stderr}')
+        return None, [], set()
+
+    # Parse flat-playlist results to get video IDs
+    video_ids = []
+    all_video_ids = set()
+    channel_info = None
+
+    for line in stdout.strip().split('\n'):
+        if not line:
+            continue
+
+        try:
+            data = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+
+        # Extract channel info from first entry
+        if not channel_info and data.get('channel_id'):
+            channel_info = {
+                'id': data.get('channel_id'),
+                'title': data.get('channel') or data.get('uploader'),
+                'thumbnail': None,
+            }
+
+        video_id = data.get('id')
+        if not video_id:
+            continue
+
+        all_video_ids.add(video_id)
+
+        # Get duration to filter shorts
+        duration = data.get('duration')
+        if duration is None:
+            continue
+
+        # Skip shorts
+        if duration < MIN_DURATION_SECONDS:
+            continue
+
+        video_ids.append(video_id)
+
+        # Set channel thumbnail from first valid video
+        if channel_info and not channel_info['thumbnail']:
+            channel_info['thumbnail'] = f'https://img.youtube.com/vi/{video_id}/default.jpg'
+
+    logger.info(f'Found {len(video_ids)} videos to fetch full metadata for')
+
+    # Step 2: Fetch full metadata for each video
+    videos = []
+    for idx, video_id in enumerate(video_ids, 1):
+        logger.debug(f'Fetching full metadata [{idx}/{len(video_ids)}]: {video_id}')
+
+        video_info = get_video_info(video_id)
+        if video_info:
+            # Convert to same format as scan_channel_videos
+            videos.append({
+                'id': video_info['yt_id'],
+                'title': video_info['title'],
+                'duration_sec': video_info['duration_sec'],
+                'upload_date': video_info['upload_date'],
+                'thumbnail': video_info['thumbnail'],
+            })
+
+    logger.info(f'Full scan complete: {len(videos)} videos with metadata')
+    return channel_info, videos, all_video_ids
+
+
 def get_channel_info(channel_url):
     """
     Get channel metadata using yt-dlp.

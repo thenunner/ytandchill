@@ -656,3 +656,139 @@
   transform: translateX(20px);
 }
 
+/* ===== MOBILE STYLES (max-width: 480px) ===== */
+@media (max-width: 480px) {
+  /* Hide CardSizeSlider on mobile */
+  .card-size-slider {
+    display: none !important;
+  }
+
+  /* Hide Import link/button on mobile in Library */
+  .import-link-mobile-hide {
+    display: none !important;
+  }
+
+  /* Settings Stats Bar - 4+3 Grid Layout */
+  .stats-bar {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    padding: 12px;
+  }
+
+  .stats-bar .stat-item {
+    padding: 4px 0;
+  }
+
+  .stats-bar .stat-item:nth-child(n+5) {
+    grid-column: span 1;
+  }
+
+  /* Center last row (3 items) */
+  .stats-bar-mobile-center {
+    grid-column: 2 / 4;
+    justify-self: center;
+  }
+
+  /* Settings Toggle Groups - Stacked Layout */
+  .setting-row.mobile-stack {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .setting-row.mobile-stack .settings-toggle-group {
+    width: 100%;
+  }
+
+  .setting-row.mobile-stack .settings-toggle-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Theme Grid - Scrollable Pills */
+  .theme-grid {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+  }
+
+  .theme-option {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+  }
+
+  /* Sticky Bar Mobile Adjustments */
+  .sticky-bar-mobile {
+    padding: 10px 12px;
+  }
+
+  .sticky-bar-mobile .sticky-row {
+    gap: 6px;
+  }
+
+  /* Compact tabs on mobile */
+  .mobile-tabs .tab {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+
+  /* Full width search on mobile */
+  .mobile-search-full {
+    width: 100%;
+  }
+
+  /* Status filter full width */
+  .status-filter-mobile {
+    width: 100%;
+  }
+
+  .status-filter-mobile .status-btn {
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  /* Pagination compact */
+  .pagination-mobile {
+    gap: 2px;
+  }
+
+  .pagination-mobile .page-btn {
+    width: 26px;
+    height: 26px;
+    font-size: 11px;
+  }
+
+  .pagination-mobile span {
+    font-size: 11px;
+    min-width: 32px;
+    text-align: center;
+  }
+
+  /* Selection Bar Mobile */
+  .selection-bar-mobile {
+    padding: 10px;
+  }
+
+  .selection-bar-mobile .action-btn {
+    padding: 8px 6px;
+    font-size: 11px;
+  }
+
+  /* Filter button compact */
+  .filter-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+
+  .filter-btn span {
+    display: none;
+  }
+
+  .filter-btn.show-label span {
+    display: inline;
+  }
+}
+

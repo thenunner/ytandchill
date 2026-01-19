@@ -4,7 +4,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
-import { StickyBar, SearchInput, CardSizeSlider } from '../components/stickybar';
+import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { formatDuration } from '../utils/videoPlayerUtils';
 import { formatDate } from '../utils/formatters';
@@ -307,8 +307,9 @@ export default function Videos() {
       {/* Results Summary */}
       {scanResults && (
         <StickyBar className="rounded-lg">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex flex-col gap-3">
+            {/* Row 1: Found count (mobile & desktop) */}
+            <div className="flex items-center justify-between">
               <div className="text-text-secondary">
                 {scanResults.videos.length === 0 ? (
                   <span>No new videos to import</span>
@@ -321,27 +322,28 @@ export default function Videos() {
                   </span>
                 )}
               </div>
-              {scanResults.videos.length > 0 && (
-                <SearchInput
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  placeholder="Search..."
-                  className="w-40 max-w-none"
-                />
-              )}
-
-              {/* Card Size Slider */}
+              {/* Card Size Slider - hidden on mobile */}
               <CardSizeSlider show={scanResults.videos.length > 0} tab="videos" />
             </div>
 
             {scanResults.videos.length > 0 && (
-              <div className="flex items-center gap-4">
-                {/* Status Filter (only in All mode) */}
+              <>
+                {/* Row 2: Search (full width on mobile) */}
+                <div className="w-full sm:w-auto sm:max-w-xs">
+                  <SearchInput
+                    value={searchInput}
+                    onChange={setSearchInput}
+                    placeholder="Search videos..."
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Row 3: Status Filter (only in All mode) */}
                 {filterMode === 'all' && (
-                  <div className="flex items-center gap-1 bg-dark-tertiary rounded-lg p-1">
+                  <div className="flex items-center gap-1 bg-dark-tertiary rounded-lg p-1 w-full sm:w-auto">
                     <button
                       onClick={() => setStatusFilter('available')}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`flex-1 sm:flex-none px-3 py-1.5 text-xs rounded transition-colors ${
                         statusFilter === 'available' ? 'bg-accent text-white' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -349,7 +351,7 @@ export default function Videos() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('ignored')}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`flex-1 sm:flex-none px-3 py-1.5 text-xs rounded transition-colors ${
                         statusFilter === 'ignored' ? 'bg-yellow-500 text-black' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -357,7 +359,7 @@ export default function Videos() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('error')}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`flex-1 sm:flex-none px-3 py-1.5 text-xs rounded transition-colors ${
                         statusFilter === 'error' ? 'bg-red-500 text-white' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -365,7 +367,7 @@ export default function Videos() {
                     </button>
                     <button
                       onClick={() => setStatusFilter('all')}
-                      className={`px-2 py-1 text-xs rounded transition-colors ${
+                      className={`flex-1 sm:flex-none px-3 py-1.5 text-xs rounded transition-colors ${
                         statusFilter === 'all' ? 'bg-dark-border text-text-primary' : 'text-text-secondary hover:text-text-primary'
                       }`}
                     >
@@ -373,48 +375,48 @@ export default function Videos() {
                     </button>
                   </div>
                 )}
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleSelectAll}
-                    className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-border text-text-secondary rounded-lg transition-colors"
-                  >
-                    Select All
-                  </button>
-                  <button
-                    onClick={handleClearSelection}
-                    className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-border text-text-secondary rounded-lg transition-colors"
-                  >
-                    Clear
-                  </button>
-                  <span className="text-text-muted text-sm">
-                    {selectedVideos.size} selected
-                  </span>
-                </div>
-              </div>
+              </>
             )}
           </div>
-
-          {/* Action Bar */}
-          {scanResults.videos.length > 0 && selectedVideos.size > 0 && (
-            <div className="mt-4 pt-4 border-t border-dark-border flex justify-end gap-2">
-              <button
-                onClick={handleRemoveSelected}
-                disabled={isRemoving}
-                className="px-4 py-2 bg-dark-tertiary hover:bg-yellow-500/20 text-text-secondary hover:text-yellow-400 disabled:opacity-50 rounded-lg transition-colors"
-              >
-                {isRemoving ? 'Ignoring...' : 'Ignore'}
-              </button>
-              <button
-                onClick={handleQueueSelected}
-                disabled={isQueueing}
-                className="px-4 py-2 bg-accent hover:bg-accent/80 disabled:bg-dark-tertiary disabled:text-text-secondary text-white font-semibold rounded-lg transition-colors"
-              >
-                {isQueueing ? 'Queueing...' : `Queue ${selectedVideos.size} Videos`}
-              </button>
-            </div>
-          )}
         </StickyBar>
+      )}
+
+      {/* Selection Bar for Videos */}
+      {scanResults?.videos && scanResults.videos.length > 0 && (
+        <SelectionBar
+          show={true}
+          selectedCount={selectedVideos.size}
+          totalCount={scanResults.videos.length}
+          onSelectAll={handleSelectAll}
+          onClear={handleClearSelection}
+          hideDone={true}
+          actions={selectedVideos.size > 0 ? [
+            {
+              label: 'Ignore',
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
+                </svg>
+              ),
+              onClick: handleRemoveSelected,
+              disabled: isRemoving,
+              variant: 'warning'
+            },
+            {
+              label: 'Queue',
+              icon: (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <polyline points="19 12 12 19 5 12"></polyline>
+                </svg>
+              ),
+              onClick: handleQueueSelected,
+              disabled: isQueueing,
+              variant: 'primary'
+            }
+          ] : []}
+        />
       )}
 
       {/* Video Grid */}
