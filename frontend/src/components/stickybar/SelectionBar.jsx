@@ -57,12 +57,13 @@ export default function SelectionBar({
       }`}
     >
       <div className="bg-dark-secondary/95 backdrop-blur-lg border-t border-dark-border shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <div className="flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
+          {/* Mobile: 2 rows, Desktop: 1 row */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
             {/* Left: Selection info */}
             <div className="flex items-center gap-3">
-              {/* Checkmark icon */}
-              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+              {/* Checkmark icon - hidden on mobile */}
+              <div className="hidden sm:flex w-8 h-8 rounded-full bg-accent/20 items-center justify-center">
                 <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                   <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
@@ -75,12 +76,12 @@ export default function SelectionBar({
               </div>
             </div>
 
-            {/* Center: Selection actions */}
-            <div className="flex items-center gap-2 flex-wrap">
+            {/* Bottom row on mobile: Actions */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
               {!hideSelectControls && totalCount > 0 && (
                 <button
                   onClick={onSelectAll}
-                  className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors"
+                  className="flex-shrink-0 px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors"
                 >
                   All ({totalCount})
                 </button>
@@ -88,7 +89,7 @@ export default function SelectionBar({
               {!hideSelectControls && selectedCount > 0 && (
                 <button
                   onClick={onClear}
-                  className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors"
+                  className="flex-shrink-0 px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors"
                 >
                   Clear
                 </button>
@@ -96,7 +97,7 @@ export default function SelectionBar({
 
               {/* Divider if we have additional actions */}
               {actions.length > 0 && selectedCount > 0 && !hideSelectControls && (
-                <div className="w-px h-6 bg-dark-border mx-1 hidden sm:block" />
+                <div className="w-px h-6 bg-dark-border mx-1 hidden sm:block flex-shrink-0" />
               )}
 
               {/* Additional actions */}
@@ -115,24 +116,14 @@ export default function SelectionBar({
                     key={index}
                     onClick={action.onClick}
                     disabled={action.disabled}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]}`}
+                    className={`flex-shrink-0 px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${variantClasses[variant]}`}
                   >
-                    {action.icon && <span className="w-4 h-4">{action.icon}</span>}
-                    <span className="hidden sm:inline">{action.label}</span>
+                    {action.icon && <span className="w-4 h-4 sm:hidden">{action.icon}</span>}
+                    <span>{action.label}</span>
                   </button>
                 );
               })}
             </div>
-
-            {/* Right: Done button */}
-            {!hideDone && (
-              <button
-                onClick={onDone}
-                className="px-4 py-1.5 text-sm bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors"
-              >
-                Done
-              </button>
-            )}
           </div>
         </div>
       </div>
