@@ -125,7 +125,6 @@ export default function Settings() {
   // YouTube API key state
   const [youtubeApiKey, setYoutubeApiKey] = useState('');
   const [hasApiKey, setHasApiKey] = useState(false);
-  const [apiKeyTesting, setApiKeyTesting] = useState(false);
   const [apiKeySaving, setApiKeySaving] = useState(false);
 
   // SponsorBlock state
@@ -585,32 +584,27 @@ export default function Settings() {
   };
 
   const handleSaveApiKey = async () => {
-    setApiKeySaving(true);
-    try {
-      await updateSettings.mutateAsync({
-        youtube_api_key: youtubeApiKey.trim()
-      });
-      setHasApiKey(!!youtubeApiKey.trim());
-      showNotification(youtubeApiKey.trim() ? 'YouTube API key saved' : 'YouTube API key cleared', 'success');
-    } catch (err) {
-      showNotification('Failed to save API key', 'error');
-    } finally {
-      setApiKeySaving(false);
-    }
-  };
+    const key = youtubeApiKey.trim();
 
-  const handleTestApiKey = async () => {
-    if (!youtubeApiKey.trim()) {
-      showNotification('Enter an API key first', 'warning');
+    // If clearing the key, just save
+    if (!key) {
+      setApiKeySaving(true);
+      try {
+        await updateSettings.mutateAsync({ youtube_api_key: '' });
+        setHasApiKey(false);
+        showNotification('YouTube API key cleared', 'success');
+      } catch (err) {
+        showNotification('Failed to clear API key', 'error');
+      } finally {
+        setApiKeySaving(false);
+      }
       return;
     }
 
-    // Save first, then test
-    setApiKeyTesting(true);
+    // Save and test in one operation
+    setApiKeySaving(true);
     try {
-      await updateSettings.mutateAsync({
-        youtube_api_key: youtubeApiKey.trim()
-      });
+      await updateSettings.mutateAsync({ youtube_api_key: key });
 
       const response = await fetch('/api/settings/test-youtube-api', {
         method: 'POST',
@@ -620,14 +614,15 @@ export default function Settings() {
 
       if (data.valid) {
         setHasApiKey(true);
-        showNotification('API key is valid!', 'success');
+        showNotification('API key saved and verified!', 'success');
       } else {
-        showNotification(data.error || 'API key is invalid', 'error');
+        setHasApiKey(false);
+        showNotification(data.error || 'API key saved but invalid', 'warning');
       }
     } catch (err) {
-      showNotification('Failed to test API key', 'error');
+      showNotification('Failed to save API key', 'error');
     } finally {
-      setApiKeyTesting(false);
+      setApiKeySaving(false);
     }
   };
 
@@ -951,17 +946,10 @@ export default function Settings() {
               />
               <button
                 onClick={handleSaveApiKey}
-                disabled={apiKeySaving || !youtubeApiKey.trim()}
+                disabled={apiKeySaving}
                 className="settings-action-btn"
               >
                 {apiKeySaving ? 'Saving...' : 'Save'}
-              </button>
-              <button
-                onClick={handleTestApiKey}
-                disabled={apiKeyTesting || !youtubeApiKey.trim()}
-                className="settings-action-btn"
-              >
-                {apiKeyTesting ? 'Testing...' : 'Test'}
               </button>
             </div>
           </div>
@@ -987,19 +975,27 @@ export default function Settings() {
 
             {/* Compact Config Row */}
             <div className={`autoscan-config ${autoRefresh ? 'show' : ''}`}>
-              {/* Mode Pills */}
-              <div className="mode-pills">
+              {/* Mode Pills + Save on same line */}
+              <div className="flex items-center gap-2 w-full">
+                <div className="mode-pills">
+                  <button
+                    onClick={() => handleModeSwitch('times')}
+                    className={`mode-pill ${scanMode === 'times' ? 'active' : ''}`}
+                  >
+                    Set Times
+                  </button>
+                  <button
+                    onClick={() => handleModeSwitch('interval')}
+                    className={`mode-pill ${scanMode === 'interval' ? 'active' : ''}`}
+                  >
+                    Interval
+                  </button>
+                </div>
                 <button
-                  onClick={() => handleModeSwitch('times')}
-                  className={`mode-pill ${scanMode === 'times' ? 'active' : ''}`}
+                  onClick={handleSaveAutoRefresh}
+                  className="settings-action-btn ml-auto"
                 >
-                  Set Times
-                </button>
-                <button
-                  onClick={() => handleModeSwitch('interval')}
-                  className={`mode-pill ${scanMode === 'interval' ? 'active' : ''}`}
-                >
-                  Interval
+                  {!serverAutoRefresh && autoRefresh ? 'Enable' : (serverAutoRefresh && !autoRefresh ? 'Disable' : 'Save')}
                 </button>
               </div>
 
@@ -1075,13 +1071,6 @@ export default function Settings() {
                   </div>
                 </div>
               )}
-
-              <button
-                onClick={handleSaveAutoRefresh}
-                className="settings-action-btn ml-auto"
-              >
-                {!serverAutoRefresh && autoRefresh ? 'Enable & Save' : (serverAutoRefresh && !autoRefresh ? 'Disable' : 'Save')}
-              </button>
             </div>
           </div>
           </div>
