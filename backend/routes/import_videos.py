@@ -1379,7 +1379,8 @@ def _process_single_file(file_info, mode, known_channel_ids, known_channel_handl
 
                 closest_match = {
                     'title': best_result.get('title'),
-                    'video_id': best_result.get('id'),
+                    'id': best_result.get('id'),
+                    'channel_title': best_result.get('channel_title'),
                     'duration': best_duration,
                     'local_duration': local_duration,
                     'duration_diff': duration_diff,
