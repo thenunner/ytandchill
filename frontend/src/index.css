@@ -217,7 +217,7 @@
 }
 
 .stat-value {
-  @apply text-sm font-semibold font-mono text-text-primary mt-1;
+  @apply text-sm font-semibold font-mono text-text-primary mt-1 py-1;
 }
 
 /* Settings Section */
