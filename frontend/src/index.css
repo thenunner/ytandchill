@@ -731,6 +731,10 @@
     gap: 8px;
   }
 
+  .autoscan-config.show {
+    max-height: 200px;
+  }
+
   .autoscan-config .config-divider {
     display: none;
   }

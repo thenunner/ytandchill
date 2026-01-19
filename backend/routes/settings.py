@@ -254,14 +254,41 @@ def _embed_date_metadata(file_path, upload_date):
         return False
 
 
+@settings_bp.route('/api/settings/missing-metadata', methods=['GET'])
+def get_missing_metadata():
+    """Get count of library videos missing upload_date."""
+    global _session_factory
+
+    with get_session(_session_factory) as session:
+        videos = session.query(Video).filter(
+            Video.status == 'library',
+            (Video.upload_date == None) | (Video.upload_date == '')
+        ).all()
+
+        # Return video IDs for potential display
+        missing_videos = [{
+            'id': v.id,
+            'yt_id': v.yt_id,
+            'title': v.title,
+            'channel_title': v.channel_title
+        } for v in videos[:100]]  # Limit to 100 for display
+
+        return jsonify({
+            'count': len(videos),
+            'videos': missing_videos
+        })
+
+
 @settings_bp.route('/api/settings/fix-upload-dates', methods=['POST'])
 def fix_upload_dates():
-    """Fetch missing upload_date for all library videos and embed in file metadata."""
-    global _session_factory
+    """Fetch missing upload_date for all library videos using YouTube API (fast) or yt-dlp (fallback)."""
+    global _session_factory, _settings_manager
+    from youtube_api import fetch_video_dates
 
     updated_count = 0
     skipped_count = 0
     failed_count = 0
+    api_used = False
 
     with get_session(_session_factory) as session:
         # Get all library videos missing upload_date
@@ -271,61 +298,98 @@ def fix_upload_dates():
         ).all()
 
         total = len(videos)
-        logger.info(f"Fixing upload dates for {total} videos")
+        if total == 0:
+            return jsonify({
+                'success': True,
+                'updated': 0,
+                'skipped': 0,
+                'failed': 0,
+                'total': 0,
+                'method': 'none'
+            })
 
-        for video in videos:
-            if not video.yt_id:
-                skipped_count += 1
-                continue
+        logger.info(f"Fixing upload dates for {total} library videos")
 
-            try:
-                # Fetch metadata from YouTube
-                ydl_opts = {
-                    'quiet': True,
-                    'no_warnings': True,
-                    'noplaylist': True,
-                }
+        # Build list of video IDs that have yt_id
+        videos_with_yt_id = [(v, v.yt_id) for v in videos if v.yt_id]
+        videos_without_yt_id = [v for v in videos if not v.yt_id]
+        skipped_count += len(videos_without_yt_id)
 
-                # Add cookies if available
-                fix_data_dir = os.environ.get('DATA_DIR', 'data')
-                cookies_path = os.path.join(fix_data_dir, 'cookies.txt')
-                if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
-                    ydl_opts['cookiefile'] = cookies_path
+        # Try YouTube API first (much faster - 50 videos per request)
+        api_key = _settings_manager.get('youtube_api_key') if _settings_manager else None
+        remaining_videos = []
 
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    url = f'https://youtube.com/watch?v={video.yt_id}'
-                    data = ydl.extract_info(url, download=False)
+        if api_key and videos_with_yt_id:
+            logger.info(f"Using YouTube API to fetch {len(videos_with_yt_id)} upload dates")
+            api_used = True
 
-                    if data and data.get('upload_date'):
-                        upload_date = data['upload_date']
+            # Fetch all dates via API
+            yt_ids = [yt_id for _, yt_id in videos_with_yt_id]
+            dates = fetch_video_dates(yt_ids, api_key)
 
-                        # Update database
-                        video.upload_date = upload_date
-                        session.commit()
+            # Update videos with API results
+            for video, yt_id in videos_with_yt_id:
+                if yt_id in dates:
+                    upload_date = dates[yt_id]
+                    video.upload_date = upload_date
+                    updated_count += 1
 
-                        # Embed in file metadata
-                        if video.file_path and os.path.exists(video.file_path):
-                            if _embed_date_metadata(video.file_path, upload_date):
-                                logger.info(f"Updated upload_date for {video.yt_id}: {upload_date} (DB + file)")
-                            else:
-                                logger.info(f"Updated upload_date for {video.yt_id}: {upload_date} (DB only)")
+                    # Embed in file metadata
+                    if video.file_path and os.path.exists(video.file_path):
+                        _embed_date_metadata(video.file_path, upload_date)
+                else:
+                    # API didn't return this video - add to fallback list
+                    remaining_videos.append((video, yt_id))
+
+            session.commit()
+            logger.info(f"YouTube API updated {updated_count} videos, {len(remaining_videos)} remaining")
+        else:
+            remaining_videos = videos_with_yt_id
+
+        # Fallback to yt-dlp for remaining videos (slower but works without API key)
+        if remaining_videos:
+            logger.info(f"Using yt-dlp fallback for {len(remaining_videos)} videos")
+
+            fix_data_dir = os.environ.get('DATA_DIR', 'data')
+            cookies_path = os.path.join(fix_data_dir, 'cookies.txt')
+
+            ydl_opts = {
+                'quiet': True,
+                'no_warnings': True,
+                'noplaylist': True,
+            }
+            if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
+                ydl_opts['cookiefile'] = cookies_path
+
+            for video, yt_id in remaining_videos:
+                try:
+                    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                        url = f'https://youtube.com/watch?v={yt_id}'
+                        data = ydl.extract_info(url, download=False)
+
+                        if data and data.get('upload_date'):
+                            upload_date = data['upload_date']
+                            video.upload_date = upload_date
+                            session.commit()
+
+                            if video.file_path and os.path.exists(video.file_path):
+                                _embed_date_metadata(video.file_path, upload_date)
+
+                            updated_count += 1
                         else:
-                            logger.info(f"Updated upload_date for {video.yt_id}: {upload_date} (DB only, file not found)")
+                            skipped_count += 1
 
-                        updated_count += 1
-                    else:
-                        skipped_count += 1
-
-            except Exception as e:
-                logger.warning(f"Failed to fetch upload_date for {video.yt_id}: {e}")
-                failed_count += 1
+                except Exception as e:
+                    logger.warning(f"yt-dlp failed for {yt_id}: {e}")
+                    failed_count += 1
 
     return jsonify({
         'success': True,
         'updated': updated_count,
         'skipped': skipped_count,
         'failed': failed_count,
-        'total': total if 'total' in dir() else 0,
+        'total': total,
+        'method': 'api' if api_used else 'yt-dlp'
     })
 
 

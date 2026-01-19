@@ -529,8 +529,7 @@ export default function Library() {
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
-                  <span className="hidden sm:inline">Channels</span>
-                  <span className="sm:hidden">Ch</span>
+                  Channels
                 </button>
                 <button
                   onClick={() => setActiveTab('playlists')}
@@ -540,8 +539,7 @@ export default function Library() {
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
-                  <span className="hidden sm:inline">Playlists</span>
-                  <span className="sm:hidden">PL</span>
+                  Playlists
                 </button>
                 <Link
                   to="/import"
@@ -651,29 +649,27 @@ export default function Library() {
 
                 {/* Card Size Slider - hidden on mobile */}
                 <CardSizeSlider tab="library" />
-
-                {/* Pagination */}
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={channelsList.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
-                  onItemsPerPageChange={(value) => {
-                    setItemsPerPage(value);
-                    localStorage.setItem('library_itemsPerPage', value);
-                    setCurrentPage(1);
-                  }}
-                />
               </div>
             </div>
 
-            {/* Right: Search */}
-            <div className="w-full sm:w-auto flex-shrink-0">
+            {/* Right: Search + Pagination */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               <SearchInput
                 value={searchInput}
                 onChange={setSearchInput}
-                placeholder="Search channels..."
-                className="w-full"
+                placeholder="Search..."
+                className="w-24 sm:w-[160px]"
+              />
+              <Pagination
+                currentPage={currentPage}
+                totalItems={channelsList.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                onItemsPerPageChange={(value) => {
+                  setItemsPerPage(value);
+                  localStorage.setItem('library_itemsPerPage', value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
           </div>
@@ -692,8 +688,7 @@ export default function Library() {
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
-                  <span className="hidden sm:inline">Channels</span>
-                  <span className="sm:hidden">Ch</span>
+                  Channels
                 </button>
                 <button
                   onClick={() => setActiveTab('playlists')}
@@ -703,8 +698,7 @@ export default function Library() {
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
                   }`}
                 >
-                  <span className="hidden sm:inline">Playlists</span>
-                  <span className="sm:hidden">PL</span>
+                  Playlists
                 </button>
                 <Link
                   to="/import"
@@ -753,14 +747,12 @@ export default function Library() {
             {/* Right: Search + Sort */}
             <div className="flex items-center gap-2 flex-shrink-0">
               {/* Search */}
-              <div className="flex-1">
-                <SearchInput
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  placeholder="Search playlists..."
-                  className="w-full"
-                />
-              </div>
+              <SearchInput
+                value={searchInput}
+                onChange={setSearchInput}
+                placeholder="Search..."
+                className="w-24 sm:w-[160px]"
+              />
 
               {/* Sort Button */}
               <div className="relative" ref={playlistSortMenuRef}>

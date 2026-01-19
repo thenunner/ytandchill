@@ -58,47 +58,35 @@ export default function SelectionBar({
     >
       <div className="bg-dark-secondary/95 backdrop-blur-lg border-t border-dark-border shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
-          {/* Mobile: stacked, Desktop: single row with 3 sections */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-            {/* Left: Selection info */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              {/* Checkmark icon - hidden on mobile */}
-              <div className="hidden sm:flex w-8 h-8 rounded-full bg-accent/20 items-center justify-center">
-                <svg className="w-4 h-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-              </div>
-
-              {/* Selection count */}
-              <div className="text-sm whitespace-nowrap">
-                <span className="text-text-primary font-semibold">{selectedCount}</span>
-                <span className="text-text-secondary"> selected</span>
-              </div>
+          {/* Single row layout - wraps on mobile if needed */}
+          <div className="flex flex-row flex-wrap items-center gap-2 sm:gap-3">
+            {/* Selection count */}
+            <div className="text-sm whitespace-nowrap flex-shrink-0">
+              <span className="text-text-primary font-semibold">{selectedCount}</span>
+              <span className="text-text-secondary"> selected</span>
             </div>
 
-            {/* Center: Select All / Clear buttons */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {!hideSelectControls && totalCount > 0 && (
-                <button
-                  onClick={onSelectAll}
-                  className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors whitespace-nowrap"
-                >
-                  All ({totalCount})
-                </button>
-              )}
-              {!hideSelectControls && selectedCount > 0 && (
-                <button
-                  onClick={onClear}
-                  className="px-3 py-1.5 text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
+            {/* Select All / Clear buttons */}
+            {!hideSelectControls && totalCount > 0 && (
+              <button
+                onClick={onSelectAll}
+                className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors whitespace-nowrap"
+              >
+                All ({totalCount})
+              </button>
+            )}
+            {!hideSelectControls && selectedCount > 0 && (
+              <button
+                onClick={onClear}
+                className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors"
+              >
+                Clear
+              </button>
+            )}
 
-            {/* Right: Action buttons - push to right on desktop */}
+            {/* Action buttons - push to right on desktop */}
             {actions.length > 0 && (
-              <div className="flex items-center gap-2 sm:ml-auto overflow-x-auto pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
+              <div className="flex items-center gap-2 sm:ml-auto">
                 {actions.map((action, index) => {
                   const variantClasses = {
                     primary: 'bg-accent hover:bg-accent-hover text-white font-medium',
@@ -114,7 +102,7 @@ export default function SelectionBar({
                       key={index}
                       onClick={action.onClick}
                       disabled={action.disabled}
-                      className={`flex-shrink-0 px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${variantClasses[variant]}`}
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${variantClasses[variant]}`}
                     >
                       {action.icon && <span className="w-4 h-4">{action.icon}</span>}
                       <span>{action.label}</span>
