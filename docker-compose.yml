@@ -14,6 +14,10 @@ services:
       - PUID=99   # Change to your UID (run 'id -u')
       - PGID=100  # Change to your GID (run 'id -g')
     volumes:
+      # IMPORTANT: Use absolute paths only! Tilde (~) does NOT expand in docker-compose.
+      # Wrong:   ~/downloads:/app/downloads
+      # Correct: /home/yourusername/downloads:/app/downloads
+      #
       # Database and config
       - /mnt/user/appdata/ytandchill/data:/app/data
       # Downloads (videos and thumbnails)
@@ -23,7 +27,7 @@ services:
       # Cookies file for age-restricted content (manual export)
       - /mnt/user/appdata/ytandchill/cookies.txt:/app/cookies.txt
       # Firefox profile for automatic cookie extraction (optional)
-      # Linux: ~/.mozilla/firefox | macOS: ~/Library/Application Support/Firefox/Profiles
+      # Linux: /home/USERNAME/.mozilla/firefox | macOS: /Users/USERNAME/Library/Application Support/Firefox/Profiles
       # - /home/YOUR_USERNAME/.mozilla/firefox:/firefox_profile:ro
     restart: unless-stopped
     labels:
