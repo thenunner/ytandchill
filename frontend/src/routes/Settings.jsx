@@ -152,11 +152,14 @@ export default function Settings() {
   const [showRepairModal, setShowRepairModal] = useState(false);
   const [showNotFoundModal, setShowNotFoundModal] = useState(false);
   const [showShrinkDBModal, setShowShrinkDBModal] = useState(false);
+  const [showMetadataFixModal, setShowMetadataFixModal] = useState(false);
   const [repairData, setRepairData] = useState(null);
+  const [missingMetadataData, setMissingMetadataData] = useState(null);
   const [selectedNotFoundVideos, setSelectedNotFoundVideos] = useState([]);
   const [selectedChannels, setSelectedChannels] = useState([]);
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
+  const [isFixingMetadata, setIsFixingMetadata] = useState(false);
 
   // Version update check state
   const [latestVersion, setLatestVersion] = useState(null);
@@ -374,8 +377,14 @@ export default function Settings() {
   const handleQueueRepair = async () => {
     setIsCheckingRepair(true);
     try {
-      const response = await fetch('/api/queue/check-orphaned');
-      const data = await response.json();
+      // Fetch repair data and missing metadata count in parallel
+      const [repairResponse, metadataResponse] = await Promise.all([
+        fetch('/api/queue/check-orphaned'),
+        fetch('/api/settings/missing-metadata')
+      ]);
+
+      const data = await repairResponse.json();
+      const metadataData = await metadataResponse.json();
 
       if (data.error) {
         showNotification(data.error, 'error');
@@ -388,6 +397,7 @@ export default function Settings() {
         .catch(err => console.error('Failed to fetch stats:', err));
 
       setRepairData(data);
+      setMissingMetadataData(metadataData);
       setShowRepairModal(true);
     } catch (error) {
       showNotification(`Failed to check database: ${error.message}`, 'error');
@@ -457,6 +467,36 @@ export default function Settings() {
       showNotification('Failed to purge channels', 'error');
     } finally {
       setIsRemoving(false);
+    }
+  };
+
+  const handleFixMetadata = async () => {
+    setIsFixingMetadata(true);
+    try {
+      const response = await fetch('/api/settings/fix-upload-dates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      const method = data.method === 'api' ? 'YouTube API' : 'yt-dlp';
+      showNotification(
+        `Fixed ${data.updated} of ${data.total} videos using ${method}${data.failed > 0 ? ` (${data.failed} failed)` : ''}`,
+        data.failed > 0 ? 'warning' : 'success'
+      );
+
+      setShowMetadataFixModal(false);
+      setShowRepairModal(false);
+      setMissingMetadataData(null);
+    } catch (error) {
+      showNotification('Failed to fix metadata', 'error');
+    } finally {
+      setIsFixingMetadata(false);
     }
   };
 
@@ -883,7 +923,7 @@ export default function Settings() {
           </div>
 
           {/* YouTube API Key */}
-          <div className="setting-row">
+          <div className="setting-row mobile-hide-desc">
             <div className="setting-label">
               <span className={`autoscan-status ${hasApiKey ? 'active' : ''}`}></span>
               <div>
@@ -906,8 +946,8 @@ export default function Settings() {
                 type="text"
                 value={youtubeApiKey}
                 onChange={(e) => setYoutubeApiKey(e.target.value)}
-                placeholder="Paste API key"
-                className="input text-sm py-1.5 px-3 w-48"
+                placeholder="API key"
+                className="input text-sm py-1.5 px-2 w-28 sm:w-40"
               />
               <button
                 onClick={handleSaveApiKey}
@@ -1289,6 +1329,21 @@ export default function Settings() {
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
               </button>
+
+              <button
+                onClick={() => { setShowRepairModal(false); setShowMetadataFixModal(true); }}
+                className="w-full p-4 bg-dark-tertiary hover:bg-dark-hover border border-dark-border-light rounded-lg text-left transition-colors"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-text-primary">Fix Video Metadata</div>
+                    <div className="text-xs text-text-secondary mt-1">
+                      {missingMetadataData?.count || 0} library video{missingMetadataData?.count !== 1 ? 's' : ''} missing upload date
+                    </div>
+                  </div>
+                  <div className="text-2xl text-text-muted">→</div>
+                </div>
+              </button>
             </div>
             <div className="px-6 py-4 border-t border-dark-border">
               <button onClick={() => setShowRepairModal(false)} className="btn btn-secondary w-full">
@@ -1419,6 +1474,63 @@ export default function Settings() {
                   className="btn bg-red-600 hover:bg-red-700 text-white flex-1 disabled:opacity-50"
                 >
                   {isRemoving ? 'Purging...' : `Purge Selected (${selectedChannels.length})`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Fix Video Metadata Modal */}
+      {showMetadataFixModal && missingMetadataData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowMetadataFixModal(false)} />
+          <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-2xl w-full">
+            <div className="px-6 py-4 border-b border-dark-border">
+              <h3 className="text-lg font-semibold text-text-primary">Fix Video Metadata</h3>
+            </div>
+            <div className="px-6 py-4">
+              {missingMetadataData.count === 0 ? (
+                <p className="text-sm text-text-secondary">✓ All library videos have upload dates</p>
+              ) : (
+                <>
+                  <p className="text-sm text-text-secondary mb-3">
+                    Found <span className="font-semibold text-text-primary">{missingMetadataData.count}</span> library video{missingMetadataData.count !== 1 ? 's' : ''} missing upload date.
+                  </p>
+                  <p className="text-sm text-text-secondary mb-4">
+                    {hasApiKey
+                      ? 'Will use YouTube API for fast batch fetching.'
+                      : 'Will use yt-dlp (slower). Add a YouTube API key in settings for faster processing.'}
+                  </p>
+                  {missingMetadataData.videos?.length > 0 && (
+                    <div className="max-h-64 overflow-y-auto space-y-2 mb-4">
+                      {missingMetadataData.videos.slice(0, 20).map((video) => (
+                        <div key={video.id} className="p-2 bg-dark-tertiary border border-dark-border rounded text-sm">
+                          <div className="font-medium text-text-primary truncate">{video.title}</div>
+                          <div className="text-xs text-text-secondary">{video.channel_title}</div>
+                        </div>
+                      ))}
+                      {missingMetadataData.count > 20 && (
+                        <p className="text-xs text-text-muted text-center py-2">
+                          ...and {missingMetadataData.count - 20} more
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-dark-border flex gap-3">
+              <button onClick={() => setShowMetadataFixModal(false)} className="btn btn-secondary flex-1">
+                Cancel
+              </button>
+              {missingMetadataData.count > 0 && (
+                <button
+                  onClick={handleFixMetadata}
+                  disabled={isFixingMetadata}
+                  className="btn btn-primary flex-1 disabled:opacity-50"
+                >
+                  {isFixingMetadata ? 'Fixing...' : `Fix ${missingMetadataData.count} Video${missingMetadataData.count !== 1 ? 's' : ''}`}
                 </button>
               )}
             </div>

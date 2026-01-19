@@ -839,10 +839,10 @@ export default function ChannelLibrary() {
         />
       )}
 
-      {/* SelectionBar - Discovery mode actions */}
+      {/* SelectionBar - Discovery mode actions (only shows when items selected) */}
       {!isLibraryMode && contentFilter !== 'playlists' && (
         <SelectionBar
-          show={sortedVideos.length > 0}
+          show={selectedVideos.length > 0}
           selectedCount={selectedVideos.length}
           totalCount={sortedVideos.length}
           onSelectAll={selectAll}
