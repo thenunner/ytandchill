@@ -103,6 +103,10 @@ Have existing YouTube videos? Import them into your library:
 2. Go to Import page in the app
 3. Click "Smart Import" (Auto or Manual mode)
 
+**Supported Formats:**
+- **Web-ready:** `.mp4`, `.webm`, `.m4v` - import directly
+- **Requires re-encoding:** `.mkv` - enable "Re-encode MKVs" in Settings first
+
 **Tips:**
 - Add a `channels.txt` file with channel URLs to improve matching accuracy
 - Supported channel file formats: `channels.txt`, `channels.csv`, `channels.list`, `urls.txt`, `urls.csv` (one URL per line)
