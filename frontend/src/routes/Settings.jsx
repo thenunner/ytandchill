@@ -140,6 +140,9 @@ export default function Settings() {
   // Default playback speed
   const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState('1');
 
+  // Download subtitles setting
+  const [downloadSubtitles, setDownloadSubtitles] = useState(false);
+
   // Initialize showLogs from localStorage, default to false (closed) for new design
   const [showLogs, setShowLogs] = useState(() => {
     const saved = localStorage.getItem('logsVisible');
@@ -243,6 +246,7 @@ export default function Settings() {
       setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
       setCookieSource(settings.cookie_source || 'file');
       setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
+      setDownloadSubtitles(settings.download_subtitles === 'true');
       setYoutubeApiKey(settings.youtube_api_key || '');
       setHasApiKey(!!settings.youtube_api_key);
     }
@@ -769,6 +773,33 @@ export default function Settings() {
           <div className="setting-row mobile-hide-desc">
             <div className="setting-label">
               <div>
+                <div className="setting-name">Closed Captions</div>
+                <div className="setting-desc">Download subtitles with videos (English, if available)</div>
+              </div>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={downloadSubtitles}
+                onChange={async (e) => {
+                  const newValue = e.target.checked;
+                  setDownloadSubtitles(newValue);
+                  try {
+                    await updateSettings.mutateAsync({
+                      download_subtitles: newValue ? 'true' : 'false'
+                    });
+                  } catch (err) {
+                    setDownloadSubtitles(!newValue);
+                  }
+                }}
+              />
+              <span className="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div className="setting-row mobile-hide-desc">
+            <div className="setting-label">
+              <div>
                 <div className="setting-name">Skip Segments</div>
                 <div className="setting-desc">Auto-remove sponsor content via SponsorBlock</div>
               </div>
@@ -993,7 +1024,7 @@ export default function Settings() {
                 </div>
                 <button
                   onClick={handleSaveAutoRefresh}
-                  className="settings-action-btn ml-auto"
+                  className="mode-pill active ml-auto"
                 >
                   {!serverAutoRefresh && autoRefresh ? 'Enable' : (serverAutoRefresh && !autoRefresh ? 'Disable' : 'Save')}
                 </button>

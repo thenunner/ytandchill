@@ -528,6 +528,14 @@ class DownloadWorker:
         except Exception as sb_error:
             logger.warning(f'Failed to load SponsorBlock settings: {sb_error}')
 
+        # Add subtitles if enabled
+        if self.settings_manager.get('download_subtitles', 'false') == 'true':
+            ydl_opts['writesubtitles'] = True
+            ydl_opts['writeautomaticsub'] = True  # Include auto-generated captions
+            ydl_opts['subtitleslangs'] = ['en.*', 'a.en']  # English variants + auto-English
+            ydl_opts['subtitlesformat'] = 'srt/vtt/best'
+            logger.info('Subtitle download enabled - will fetch English subtitles if available')
+
         return ydl_opts, cookies_path
 
     def _execute_download(self, session, video, queue_item, channel_dir, ydl_opts, cookies_path):
