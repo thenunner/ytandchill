@@ -357,7 +357,7 @@ See [UNRAID-SETUP.md](UNRAID-SETUP.md) for detailed manual setup instructions in
 
 ### Non-Unraid Docker Users
 
-If you're running Docker on generic Linux (not Unraid), you may need different user permissions. The container defaults to UID:GID `99:100` (Unraid's nobody:users).
+If you're running Docker on generic Linux (not Unraid), you need to set your user permissions via environment variables. The container defaults to UID:GID `99:100` (Unraid's nobody:users).
 
 **To use your own UID/GID:**
 
@@ -367,16 +367,15 @@ If you're running Docker on generic Linux (not Unraid), you may need different u
    id -g  # Your GID (usually 1000)
    ```
 
-2. Edit the Dockerfile - change these two lines:
-   ```dockerfile
-   # Change 99:100 to your PUID:PGID
-   RUN chown -R 1000:1000 /app
-
-   # Change to your PUID:PGID
-   USER 1000:1000
+2. Set `PUID` and `PGID` in your docker-compose.yml:
+   ```yaml
+   environment:
+     - PORT=4099
+     - PUID=1000  # Your UID
+     - PGID=1000  # Your GID
    ```
 
-3. Rebuild the image:
+3. Rebuild and restart:
    ```bash
    docker-compose down
    docker-compose up -d --build
