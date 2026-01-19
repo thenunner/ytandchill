@@ -85,8 +85,22 @@ Required for reliable downloads due to YouTube's bot detection.
 4. Select "cookies.txt" in Settings → Cookie Source
 
 **Option 2: Firefox Integration (Docker only)**
-1. Mount Firefox profile to `/firefox_profile:ro`
-2. Select "Firefox" in Settings → Cookie Source
+
+Mount your Firefox profile directory to automatically extract cookies:
+
+1. Find your Firefox profile path:
+   - **Linux:** `~/.mozilla/firefox`
+   - **macOS:** `~/Library/Application Support/Firefox/Profiles`
+
+2. Add volume mount to docker-compose.yml:
+   ```yaml
+   volumes:
+     # ... other volumes ...
+     - /home/YOUR_USERNAME/.mozilla/firefox:/firefox_profile:ro
+   ```
+
+3. Rebuild container: `docker-compose up -d --build`
+4. Select "Firefox" in Settings → Cookie Source
 
 ## Importing Existing Videos
 
