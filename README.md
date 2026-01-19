@@ -111,8 +111,9 @@ A YouTube API key enables fast upload date fetching when adding new channels. Wi
 2. Create a new project (or select existing)
 3. Enable the **YouTube Data API v3**
 4. Go to Credentials → Create Credentials → API Key
-5. Copy the API key
-6. In the app: Settings → Downloads → YouTube API Key → paste and Save
+5. (Recommended) Click the API key → Under "API restrictions", select "Restrict key" → Choose **YouTube Data API v3** only
+6. Copy the API key
+7. In the app: Settings → Downloads → YouTube API Key → paste and Save
 
 **Usage:** The API is used when adding new channels and running "Scan All" (batch date fetching). Regular auto-scans and "Scan New" use yt-dlp directly and don't consume API quota.
 
