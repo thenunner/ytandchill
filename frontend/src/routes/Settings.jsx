@@ -122,6 +122,11 @@ export default function Settings() {
   // Cookie source state
   const [cookieSource, setCookieSource] = useState('file');
 
+  // YouTube API key state
+  const [youtubeApiKey, setYoutubeApiKey] = useState('');
+  const [apiKeyTesting, setApiKeyTesting] = useState(false);
+  const [apiKeySaving, setApiKeySaving] = useState(false);
+
   // SponsorBlock state
   const [removeSponsor, setRemoveSponsor] = useState(false);
   const [removeSelfpromo, setRemoveSelfpromo] = useState(false);
@@ -235,6 +240,7 @@ export default function Settings() {
       setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
       setCookieSource(settings.cookie_source || 'file');
       setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
+      setYoutubeApiKey(settings.youtube_api_key || '');
     }
   }, [settings]);
 
@@ -536,6 +542,51 @@ export default function Settings() {
     }
   };
 
+  const handleSaveApiKey = async () => {
+    setApiKeySaving(true);
+    try {
+      await updateSettings.mutateAsync({
+        youtube_api_key: youtubeApiKey.trim()
+      });
+      showNotification(youtubeApiKey.trim() ? 'YouTube API key saved' : 'YouTube API key cleared', 'success');
+    } catch (err) {
+      showNotification('Failed to save API key', 'error');
+    } finally {
+      setApiKeySaving(false);
+    }
+  };
+
+  const handleTestApiKey = async () => {
+    if (!youtubeApiKey.trim()) {
+      showNotification('Enter an API key first', 'warning');
+      return;
+    }
+
+    // Save first, then test
+    setApiKeyTesting(true);
+    try {
+      await updateSettings.mutateAsync({
+        youtube_api_key: youtubeApiKey.trim()
+      });
+
+      const response = await fetch('/api/settings/test-youtube-api', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.valid) {
+        showNotification('API key is valid!', 'success');
+      } else {
+        showNotification(data.error || 'API key is invalid', 'error');
+      }
+    } catch (err) {
+      showNotification('Failed to test API key', 'error');
+    } finally {
+      setApiKeyTesting(false);
+    }
+  };
+
   const handlePlaybackSpeedChange = async (newSpeed) => {
     setDefaultPlaybackSpeed(newSpeed);
     try {
@@ -824,6 +875,49 @@ export default function Settings() {
                   None
                 </button>
               </Tooltip>
+            </div>
+          </div>
+
+          {/* YouTube API Key */}
+          <div className="setting-row">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">YouTube API Key</div>
+                <div className="setting-desc">
+                  Fetches upload dates quickly for new channels.{' '}
+                  <a
+                    href="https://developers.google.com/youtube/v3/getting-started"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-accent hover:underline"
+                  >
+                    Get an API key
+                  </a>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="password"
+                value={youtubeApiKey}
+                onChange={(e) => setYoutubeApiKey(e.target.value)}
+                placeholder="AIza..."
+                className="settings-input w-48"
+              />
+              <button
+                onClick={handleSaveApiKey}
+                disabled={apiKeySaving}
+                className="settings-btn"
+              >
+                {apiKeySaving ? 'Saving...' : 'Save'}
+              </button>
+              <button
+                onClick={handleTestApiKey}
+                disabled={apiKeyTesting || !youtubeApiKey.trim()}
+                className="settings-btn"
+              >
+                {apiKeyTesting ? 'Testing...' : 'Test'}
+              </button>
             </div>
           </div>
 

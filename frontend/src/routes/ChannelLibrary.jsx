@@ -680,10 +680,10 @@ export default function ChannelLibrary() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Sticky Header Row - 2 column grid: LEFT (back, tabs, search) | RIGHT (controls) */}
+      {/* Sticky Header - Mobile: 2 rows, Desktop: 1 row */}
       <StickyBar className="md:-mx-8 md:px-8 mb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
-          {/* LEFT: Back, Tabs, Search */}
+        <div className="flex flex-col gap-3">
+          {/* Row 1: Back + Tabs + Filters + Edit */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Back Arrow */}
             <Link
@@ -697,7 +697,7 @@ export default function ChannelLibrary() {
             </Link>
 
             {/* Tabs */}
-            <div className="flex gap-2">
+            <div className="flex gap-1 sm:gap-2">
               {isLibraryMode ? (
                 <>
                   <button
@@ -706,7 +706,7 @@ export default function ChannelLibrary() {
                       newParams.delete('filter');
                       setSearchParams(newParams);
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       contentFilter === 'videos'
                         ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                         : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -716,7 +716,7 @@ export default function ChannelLibrary() {
                   </button>
                   <button
                     onClick={() => navigate('/library?tab=playlists')}
-                    className="px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary"
+                    className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary"
                   >
                     Playlists
                   </button>
@@ -729,7 +729,7 @@ export default function ChannelLibrary() {
                       newParams.delete('filter');
                       setSearchParams(newParams);
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       contentFilter === 'to-review'
                         ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                         : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -743,7 +743,7 @@ export default function ChannelLibrary() {
                       newParams.set('filter', 'ignored');
                       setSearchParams(newParams);
                     }}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
                       contentFilter === 'ignored'
                         ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                         : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -755,31 +755,7 @@ export default function ChannelLibrary() {
               )}
             </div>
 
-            {/* Search - left justified */}
-            <SearchInput
-              value={searchInput}
-              onChange={handleSearchChange}
-              placeholder="Search videos..."
-              className="w-full sm:w-[180px]"
-            />
-          </div>
-
-          {/* RIGHT: Controls */}
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <CardSizeSlider tab={isLibraryMode ? 'library' : 'channels'} />
-
-            <Pagination
-              currentPage={currentPage}
-              totalItems={sortedVideos.length}
-              itemsPerPage={itemsPerPage}
-              onPageChange={setCurrentPage}
-              onItemsPerPageChange={(value) => {
-                setItemsPerPage(value);
-                localStorage.setItem('channelLibrary_itemsPerPage', value);
-                setCurrentPage(1);
-              }}
-            />
-
+            {/* Filters Button */}
             <button
               onClick={() => setShowFiltersModal(true)}
               title="Filter and sort videos"
@@ -788,7 +764,7 @@ export default function ChannelLibrary() {
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
               </svg>
-              <span>Filters</span>
+              <span className="hidden sm:inline">Filters</span>
             </button>
 
             {/* Edit Button - Only in library mode */}
@@ -805,9 +781,33 @@ export default function ChannelLibrary() {
                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
                 </svg>
-                <span>{editMode ? 'Done' : 'Edit'}</span>
+                <span className="hidden sm:inline">{editMode ? 'Done' : 'Edit'}</span>
               </button>
             )}
+
+            {/* Card Size Slider - hidden on mobile */}
+            <CardSizeSlider tab={isLibraryMode ? 'library' : 'channels'} />
+          </div>
+
+          {/* Row 2: Search + Pagination */}
+          <div className="flex items-center gap-2">
+            <SearchInput
+              value={searchInput}
+              onChange={handleSearchChange}
+              placeholder="Search videos..."
+              className="flex-1 sm:flex-none sm:w-[200px]"
+            />
+            <Pagination
+              currentPage={currentPage}
+              totalItems={sortedVideos.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              onItemsPerPageChange={(value) => {
+                setItemsPerPage(value);
+                localStorage.setItem('channelLibrary_itemsPerPage', value);
+                setCurrentPage(1);
+              }}
+            />
           </div>
         </div>
       </StickyBar>

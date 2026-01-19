@@ -506,11 +506,24 @@ class DownloadWorker:
             logger.warning(f'Unknown cookie_source: {cookie_source}, using anonymous access')
 
         # Add SponsorBlock if enabled
+        # Note: Must add postprocessors explicitly when using yt-dlp Python API
+        # The sponsorblock_remove option alone doesn't work - need SponsorBlock PP to fetch
+        # segment data, then ModifyChapters PP to remove them
         try:
             sponsorblock_categories = self.settings_manager.get_sponsorblock_categories()
 
             if sponsorblock_categories:
-                ydl_opts['sponsorblock_remove'] = sponsorblock_categories
+                # Add SponsorBlock postprocessor to fetch segment data from API
+                ydl_opts['postprocessors'].append({
+                    'key': 'SponsorBlock',
+                    'categories': sponsorblock_categories,
+                    'api': 'https://sponsor.ajay.app',
+                })
+                # Add ModifyChapters postprocessor to remove the segments
+                ydl_opts['postprocessors'].append({
+                    'key': 'ModifyChapters',
+                    'remove_sponsor_segments': sponsorblock_categories,
+                })
                 logger.info(f'SponsorBlock enabled - removing categories: {", ".join(sponsorblock_categories)}')
         except Exception as sb_error:
             logger.warning(f'Failed to load SponsorBlock settings: {sb_error}')

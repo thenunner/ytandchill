@@ -472,10 +472,10 @@ export default function Channels() {
   return (
     <div className="space-y-6 animate-fade-in">
       <StickyBar>
-        {/* Mobile: Two-row layout, Desktop: Three-section layout */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          {/* Left Section: Add + Scan */}
-          <div className="flex items-center gap-2 sm:gap-3">
+        {/* Mobile: Two-row layout */}
+        <div className="flex flex-col gap-3">
+          {/* Row 1: Add + Scan + Category + Edit */}
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowAddForm(!showAddForm)}
               className={`h-9 w-9 p-0 flex items-center justify-center border rounded-lg transition-all flex-shrink-0 ${
@@ -553,149 +553,6 @@ export default function Channels() {
                 All
               </button>
             </div>
-          </div>
-
-          {/* Search - Full width on mobile, fixed on desktop */}
-          <div className="order-last sm:order-none w-full sm:w-[200px]">
-            <SearchInput
-              value={searchInput}
-              onChange={setSearchInput}
-              placeholder="Search channels..."
-              className="w-full"
-            />
-          </div>
-
-          {/* Right Section: Filters + View Controls */}
-          <div className="flex items-center gap-2 sm:ml-auto">
-
-          {/* Sort Button */}
-          <div className="relative" ref={sortMenuRef}>
-            <button
-              onClick={() => setShowSortMenu(!showSortMenu)}
-              className="filter-btn"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="4" y1="6" x2="16" y2="6"></line>
-                <line x1="4" y1="12" x2="13" y2="12"></line>
-                <line x1="4" y1="18" x2="10" y2="18"></line>
-              </svg>
-              <span>Sort</span>
-            </button>
-
-            {/* Sort Dropdown Menu */}
-            {showSortMenu && (
-              <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-56 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
-                <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
-
-                {/* A-Z / Z-A */}
-                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => { setSortBy('a_z'); setShowSortMenu(false); }}
-                        className={`${sortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
-                      >
-                        A-Z
-                      </button>
-                      <button
-                        onClick={() => { setSortBy('z_a'); setShowSortMenu(false); }}
-                        className={`${sortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
-                      >
-                        Z-A
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Downloaded */}
-                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-primary">Downloaded</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => { setSortBy('most_downloaded'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Most Downloaded"
-                        aria-label="Sort by most downloaded"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 5v14M5 12l7-7 7 7"></path>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => { setSortBy('least_downloaded'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Least Downloaded"
-                        aria-label="Sort by least downloaded"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 19V5M5 12l7 7 7-7"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Needs Review */}
-                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-primary">To Review</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => { setSortBy('most_to_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Most To Review"
-                        aria-label="Sort by most to review"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 5v14M5 12l7-7 7 7"></path>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => { setSortBy('least_to_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Least To Review"
-                        aria-label="Sort by least to review"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 19V5M5 12l7 7 7-7"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Last Scanned */}
-                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-primary">Last Scanned</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => { setSortBy('newest_scanned'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Newest Scanned"
-                        aria-label="Sort by newest scanned"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 5v14M5 12l7-7 7 7"></path>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => { setSortBy('oldest_scanned'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Oldest Scanned"
-                        aria-label="Sort by oldest scanned"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 19V5M5 12l7 7 7-7"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
 
           {/* Category Filter */}
           <div className="relative" ref={categoryFilterRef}>
@@ -706,7 +563,7 @@ export default function Channels() {
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
               </svg>
-              <span>
+              <span className="hidden sm:inline">
                 {selectedCategories.length === 0
                   ? 'Category'
                   : selectedCategories.length === 1
@@ -858,9 +715,6 @@ export default function Channels() {
             )}
           </div>
 
-            {/* Divider */}
-            <div className="toolbar-divider" />
-
             {/* Edit/Done Button */}
             <button
               onClick={() => {
@@ -873,11 +727,150 @@ export default function Channels() {
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
               </svg>
-              <span>{editMode ? 'Done' : 'Edit'}</span>
+              <span className="hidden sm:inline">{editMode ? 'Done' : 'Edit'}</span>
             </button>
 
-            {/* Card Size Slider */}
+            {/* Card Size Slider - hidden on mobile */}
             <CardSizeSlider tab="channels" />
+          </div>
+
+          {/* Row 2: Search + Sort */}
+          <div className="flex items-center gap-2">
+            <SearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder="Search channels..."
+              className="flex-1 sm:flex-none sm:w-[200px]"
+            />
+
+          {/* Sort Button */}
+          <div className="relative" ref={sortMenuRef}>
+            <button
+              onClick={() => setShowSortMenu(!showSortMenu)}
+              className="filter-btn"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="4" y1="6" x2="16" y2="6"></line>
+                <line x1="4" y1="12" x2="13" y2="12"></line>
+                <line x1="4" y1="18" x2="10" y2="18"></line>
+              </svg>
+              <span className="hidden sm:inline">Sort</span>
+            </button>
+
+            {/* Sort Dropdown Menu */}
+            {showSortMenu && (
+              <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-56 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
+                <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
+
+                {/* A-Z / Z-A */}
+                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex gap-4">
+                      <button
+                        onClick={() => { setSortBy('a_z'); setShowSortMenu(false); }}
+                        className={`${sortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
+                      >
+                        A-Z
+                      </button>
+                      <button
+                        onClick={() => { setSortBy('z_a'); setShowSortMenu(false); }}
+                        className={`${sortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
+                      >
+                        Z-A
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Downloaded */}
+                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-primary">Downloaded</span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => { setSortBy('most_downloaded'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'most_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Most Downloaded"
+                        aria-label="Sort by most downloaded"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                          <path d="M12 5v14M5 12l7-7 7 7"></path>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => { setSortBy('least_downloaded'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'least_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Least Downloaded"
+                        aria-label="Sort by least downloaded"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                          <path d="M12 19V5M5 12l7 7 7-7"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Needs Review */}
+                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-primary">To Review</span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => { setSortBy('most_to_review'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Most To Review"
+                        aria-label="Sort by most to review"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                          <path d="M12 5v14M5 12l7-7 7 7"></path>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => { setSortBy('least_to_review'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Least To Review"
+                        aria-label="Sort by least to review"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                          <path d="M12 19V5M5 12l7 7 7-7"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Last Scanned */}
+                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-text-primary">Last Scanned</span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => { setSortBy('newest_scanned'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Newest Scanned"
+                        aria-label="Sort by newest scanned"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                          <path d="M12 5v14M5 12l7-7 7 7"></path>
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => { setSortBy('oldest_scanned'); setShowSortMenu(false); }}
+                        className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                        title="Oldest Scanned"
+                        aria-label="Sort by oldest scanned"
+                      >
+                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                          <path d="M12 19V5M5 12l7 7 7-7"></path>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           </div>
         </div>
       </StickyBar>

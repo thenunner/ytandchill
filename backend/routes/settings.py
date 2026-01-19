@@ -19,6 +19,7 @@ import requests
 import yt_dlp
 from database import Setting, Video, get_session
 from utils import update_log_level, get_stored_credentials, check_auth_credentials
+from youtube_api import test_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +159,30 @@ def clear_discoveries_flag():
     """Clear the new discoveries notification flag"""
     _settings_manager.set('new_discoveries_flag', 'false')
     return jsonify({'status': 'ok'})
+
+
+@settings_bp.route('/api/settings/test-youtube-api', methods=['POST'])
+def test_youtube_api_endpoint():
+    """Test if the configured YouTube API key is valid"""
+    api_key = _settings_manager.get('youtube_api_key')
+
+    if not api_key:
+        return jsonify({
+            'valid': False,
+            'error': 'No YouTube API key configured'
+        }), 400
+
+    is_valid, error = test_api_key(api_key)
+
+    if is_valid:
+        logger.info("YouTube API key test: valid")
+        return jsonify({'valid': True})
+    else:
+        logger.warning(f"YouTube API key test failed: {error}")
+        return jsonify({
+            'valid': False,
+            'error': error
+        }), 400
 
 
 def _embed_date_metadata(file_path, upload_date):

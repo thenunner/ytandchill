@@ -10,7 +10,8 @@ from database import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem
 from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
 from routes import register_blueprints
-from scanner import scan_channel_videos
+from scanner import scan_channel_videos, scan_channel_videos_full
+from youtube_api import fetch_video_dates
 import logging
 import atexit
 from sqlalchemy.orm import joinedload
@@ -597,23 +598,30 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     # Note: Per-channel status updates removed - too fast for frontend polling
     # Batch-level status is set when scan batch starts
 
-    # Scan videos using yt-dlp (no API quota limits!)
-    # For full scan, get ALL videos (999999 effectively means no limit)
-    # For incremental scans:
-    #   - If auto-scan is OFF: use 250 (manual scans are infrequent, need larger buffer)
-    #   - If auto-scan is ON: use 50 (scans daily, smaller buffer is fine)
+    # Scan videos using yt-dlp
+    # Strategy depends on scan type:
+    #   - Full scan (new channel, scan all): Use flat-playlist (fast) + YouTube API for dates
+    #   - Incremental scan (auto-scan, scan new): Use full extraction (slower but has upload_date)
     logger.debug(f"Scanning channel: {channel.title}")
-    if force_full:
-        max_results = 999999
-    else:
-        # Check if auto-scan is enabled
-        auto_scan_enabled = settings_manager.get_bool('auto_refresh_enabled')
-        max_results = 50 if auto_scan_enabled else 250
-    logger.debug(f"Fetching up to {max_results} videos for channel: {channel.title}")
 
     # Build channel URL from stored channel ID
     channel_url = f'https://youtube.com/channel/{channel.yt_id}'
-    channel_info, videos, all_video_ids = scan_channel_videos(channel_url, max_results=max_results)
+
+    if force_full:
+        # Full scan: Use fast flat-playlist, API will fill in dates later
+        max_results = 999999
+        logger.debug(f"Full scan using flat-playlist for {channel.title}")
+        channel_info, videos, all_video_ids = scan_channel_videos(channel_url, max_results=max_results)
+        use_api_for_dates = True
+    else:
+        # Incremental scan: Use full extraction (slower but includes upload_date)
+        auto_scan_enabled = settings_manager.get_bool('auto_refresh_enabled')
+        max_results = 50 if auto_scan_enabled else 250
+        logger.debug(f"Incremental scan using full extraction for {channel.title} (max: {max_results})")
+        channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results)
+        use_api_for_dates = False
+
+    logger.debug(f"Fetched up to {max_results} videos for channel: {channel.title}")
 
     if channel_info is None and len(all_video_ids) == 0:
         logger.error(f"Failed to scan channel: {channel.title}")
@@ -694,6 +702,36 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
             new_count += 1
 
     logger.debug(f"Scan results for '{channel.title}': {new_count} new, {ignored_count} ignored, {existing_count} already in database")
+
+    # Fetch upload dates via YouTube API for videos missing them (only for full scans)
+    if use_api_for_dates and (new_count > 0 or ignored_count > 0):
+        api_key = settings_manager.get('youtube_api_key')
+        if api_key:
+            # Find all videos for this channel that are missing upload_date
+            videos_needing_dates = session.query(Video).filter(
+                Video.channel_id == channel.id,
+                Video.upload_date.is_(None)
+            ).all()
+
+            if videos_needing_dates:
+                logger.info(f"Fetching upload dates for {len(videos_needing_dates)} videos via YouTube API")
+                video_ids = [v.yt_id for v in videos_needing_dates]
+                dates = fetch_video_dates(video_ids, api_key)
+
+                updated_count = 0
+                for video in videos_needing_dates:
+                    if video.yt_id in dates:
+                        video.upload_date = dates[video.yt_id]
+                        updated_count += 1
+
+                        # Update latest_upload_date if this is newer
+                        upload_dt = datetime.strptime(dates[video.yt_id], '%Y%m%d')
+                        if latest_upload_date is None or upload_dt > latest_upload_date:
+                            latest_upload_date = upload_dt
+
+                logger.info(f"Updated upload dates for {updated_count}/{len(videos_needing_dates)} videos")
+        else:
+            logger.debug("No YouTube API key configured, skipping date fetch")
 
     # Clean up videos removed from YouTube (only on full scans)
     not_found_count = 0
@@ -845,7 +883,7 @@ def serialize_video(video):
         'yt_id': video.yt_id,
         'channel_id': video.channel_id,
         'channel_title': video.channel.title if video.channel else None,
-        'folder_name': video.folder_name,  # For playlist videos without channel
+        'folder_name': video.channel.folder_name if video.channel else video.folder_name,  # Actual download folder
         'title': video.title,
         'duration_sec': video.duration_sec,
         'upload_date': video.upload_date,

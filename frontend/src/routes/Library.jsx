@@ -515,41 +515,160 @@ export default function Library() {
       {/* Header */}
       <StickyBar className="mb-4">
         {activeTab === 'channels' ? (
-          /* Channels: Three-section layout */
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Left Section: Tabs */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setActiveTab('channels')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'channels'
-                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                }`}
-              >
-                Channels
-              </button>
-              <button
-                onClick={() => setActiveTab('playlists')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'playlists'
-                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                }`}
-              >
-                Playlists
-              </button>
-              <Link
-                to="/import"
-                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary flex items-center gap-2"
-              >
-                <UploadIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Import</span>
-              </Link>
+          /* Channels Tab: Mobile = 2 rows (Tabs+Sort+Pagination, Search), Desktop = single row */
+          <div className="flex flex-col gap-3">
+            {/* Row 1: Tabs + Sort + Pagination */}
+            <div className="flex items-center justify-between gap-2">
+              {/* Tabs */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('channels')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'channels'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                  }`}
+                >
+                  <span className="hidden sm:inline">Channels</span>
+                  <span className="sm:hidden">Ch</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('playlists')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'playlists'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                  }`}
+                >
+                  <span className="hidden sm:inline">Playlists</span>
+                  <span className="sm:hidden">PL</span>
+                </button>
+                <Link
+                  to="/import"
+                  className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
+                >
+                  <UploadIcon className="w-4 h-4" />
+                  <span>Import</span>
+                </Link>
+              </div>
+
+              {/* Sort + Pagination */}
+              <div className="flex items-center gap-2">
+                {/* Sort Button */}
+                <div className="relative" ref={channelSortMenuRef}>
+                  <button
+                    onClick={() => setShowChannelSortMenu(!showChannelSortMenu)}
+                    className="filter-btn"
+                  >
+                    <FilterIcon />
+                    <span className="hidden sm:inline">Sort</span>
+                  </button>
+
+                  {/* Sort Dropdown Menu */}
+                  {showChannelSortMenu && (
+                    <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
+                      <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
+
+                      {/* A-Z / Z-A */}
+                      <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex gap-4">
+                            <button
+                              onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
+                              className={`${channelSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
+                            >
+                              A-Z
+                            </button>
+                            <button
+                              onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
+                              className={`${channelSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
+                            >
+                              Z-A
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Videos */}
+                      <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-text-primary">Videos</span>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
+                              className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                              title="Most Videos"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                                <path d="M12 5v14M5 12l7-7 7 7"></path>
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
+                              className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                              title="Least Videos"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                                <path d="M12 19V5M5 12l7 7 7-7"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Added */}
+                      <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
+                        <div className="flex items-center gap-3 text-sm">
+                          <span className="text-text-primary">Added</span>
+                          <div className="flex gap-1">
+                            <button
+                              onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
+                              className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                              title="Newest Added"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                                <path d="M12 5v14M5 12l7-7 7 7"></path>
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
+                              className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
+                              title="Oldest Added"
+                            >
+                              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
+                                <path d="M12 19V5M5 12l7 7 7-7"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Divider - hidden on mobile */}
+                <div className="toolbar-divider hidden sm:block" />
+
+                {/* Card Size Slider - hidden on mobile */}
+                <CardSizeSlider tab="library" />
+
+                {/* Pagination */}
+                <Pagination
+                  currentPage={currentPage}
+                  totalItems={channelsList.length}
+                  itemsPerPage={itemsPerPage}
+                  onPageChange={setCurrentPage}
+                  onItemsPerPageChange={(value) => {
+                    setItemsPerPage(value);
+                    localStorage.setItem('library_itemsPerPage', value);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
             </div>
 
-            {/* Search - Full width on mobile, fixed on desktop */}
-            <div className="order-last sm:order-none w-full sm:w-[200px]">
+            {/* Row 2: Search (full width) */}
+            <div className="w-full">
               <SearchInput
                 value={searchInput}
                 onChange={setSearchInput}
@@ -557,177 +676,92 @@ export default function Library() {
                 className="w-full"
               />
             </div>
-
-            {/* Right Section: Filters + Controls */}
-            <div className="flex items-center gap-2 sm:ml-auto">
-              {/* Sort Button */}
-              <div className="relative" ref={channelSortMenuRef}>
-                <button
-                  onClick={() => setShowChannelSortMenu(!showChannelSortMenu)}
-                  className="filter-btn"
-                >
-                  <FilterIcon />
-                  <span>Sort</span>
-                </button>
-
-                {/* Sort Dropdown Menu */}
-                {showChannelSortMenu && (
-                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
-                    <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
-
-                    {/* A-Z / Z-A */}
-                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
-                            className={`${channelSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                          >
-                            A-Z
-                          </button>
-                          <button
-                            onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
-                            className={`${channelSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                          >
-                            Z-A
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Videos */}
-                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="text-text-primary">Videos</span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
-                            className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Most Videos"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 5v14M5 12l7-7 7 7"></path>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
-                            className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Least Videos"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 19V5M5 12l7 7 7-7"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Added */}
-                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="text-text-primary">Added</span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
-                            className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Newest Added"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 5v14M5 12l7-7 7 7"></path>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
-                            className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Oldest Added"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 19V5M5 12l7 7 7-7"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Divider */}
-              <div className="toolbar-divider" />
-
-              {/* Card Size Slider */}
-              <CardSizeSlider tab="library" />
-
-              {/* Pagination */}
-              <Pagination
-                currentPage={currentPage}
-                totalItems={channelsList.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-                onItemsPerPageChange={(value) => {
-                  setItemsPerPage(value);
-                  localStorage.setItem('library_itemsPerPage', value);
-                  setCurrentPage(1);
-                }}
-              />
-            </div>
           </div>
         ) : (
-          /* Playlists: Three-section layout */
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Left Section: Tabs + Add Category */}
+          /* Playlists Tab: Mobile = 2 rows (Tabs+Category+Edit, Search+Sort), Desktop = single row */
+          <div className="flex flex-col gap-3">
+            {/* Row 1: Tabs + Category + Edit */}
+            <div className="flex items-center justify-between gap-2">
+              {/* Tabs + Category */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setActiveTab('channels')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'channels'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                  }`}
+                >
+                  <span className="hidden sm:inline">Channels</span>
+                  <span className="sm:hidden">Ch</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab('playlists')}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    activeTab === 'playlists'
+                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                  }`}
+                >
+                  <span className="hidden sm:inline">Playlists</span>
+                  <span className="sm:hidden">PL</span>
+                </button>
+                <Link
+                  to="/import"
+                  className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
+                >
+                  <UploadIcon className="w-4 h-4" />
+                  <span>Import</span>
+                </Link>
+
+                {/* + Category Button */}
+                <button
+                  onClick={() => setShowCreateCategoryModal(true)}
+                  className="px-2.5 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-text-primary border border-dark-border hover:border-dark-border-light flex items-center gap-1.5"
+                  title="Create new category"
+                >
+                  <PlusIcon />
+                  <span className="hidden sm:inline">Category</span>
+                </button>
+              </div>
+
+              {/* Edit + CardSize (desktop only) */}
+              <div className="flex items-center gap-2">
+                {/* Divider - hidden on mobile */}
+                <div className="toolbar-divider hidden sm:block" />
+
+                {/* Edit Button */}
+                <button
+                  onClick={() => {
+                    setEditMode(!editMode);
+                    setSelectedPlaylists([]);
+                  }}
+                  className={`filter-btn ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                  </svg>
+                  <span className="hidden sm:inline">{editMode ? 'Done' : 'Edit'}</span>
+                </button>
+
+                {/* Card Size Slider - hidden on mobile */}
+                <CardSizeSlider tab="library" />
+              </div>
+            </div>
+
+            {/* Row 2: Search + Sort */}
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setActiveTab('channels')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'channels'
-                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                }`}
-              >
-                Channels
-              </button>
-              <button
-                onClick={() => setActiveTab('playlists')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === 'playlists'
-                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                }`}
-              >
-                Playlists
-              </button>
-              <Link
-                to="/import"
-                className="px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary flex items-center gap-2"
-              >
-                <UploadIcon className="w-4 h-4" />
-                <span className="hidden sm:inline">Import</span>
-              </Link>
+              {/* Search */}
+              <div className="flex-1">
+                <SearchInput
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  placeholder="Search playlists..."
+                  className="w-full"
+                />
+              </div>
 
-              {/* + Category Button */}
-              <button
-                onClick={() => setShowCreateCategoryModal(true)}
-                className="px-2.5 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-text-primary border border-dark-border hover:border-dark-border-light flex items-center gap-1.5"
-                title="Create new category"
-              >
-                <PlusIcon />
-                <span className="hidden sm:inline">Category</span>
-              </button>
-            </div>
-
-            {/* Search - Full width on mobile, fixed on desktop */}
-            <div className="order-last sm:order-none w-full sm:w-[200px]">
-              <SearchInput
-                value={searchInput}
-                onChange={setSearchInput}
-                placeholder="Search playlists..."
-                className="w-full"
-              />
-            </div>
-
-            {/* Right Section: Filters + Controls */}
-            <div className="flex items-center gap-2 sm:ml-auto">
               {/* Sort Button */}
               <div className="relative" ref={playlistSortMenuRef}>
                 <button
@@ -735,12 +769,12 @@ export default function Library() {
                   className="filter-btn"
                 >
                   <FilterIcon />
-                  <span>Sort</span>
+                  <span className="hidden sm:inline">Sort</span>
                 </button>
 
                 {/* Sort Dropdown Menu */}
                 {showPlaylistSortMenu && (
-                  <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-50">
                     <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
 
                     {/* A-Z / Z-A */}
@@ -792,27 +826,6 @@ export default function Library() {
                   </div>
                 )}
               </div>
-
-              {/* Divider */}
-              <div className="toolbar-divider" />
-
-              {/* Edit Button */}
-              <button
-                onClick={() => {
-                  setEditMode(!editMode);
-                  setSelectedPlaylists([]);
-                }}
-                className={`filter-btn ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                </svg>
-                <span>{editMode ? 'Done' : 'Edit'}</span>
-              </button>
-
-              {/* Card Size Slider */}
-              <CardSizeSlider tab="library" />
             </div>
           </div>
         )}

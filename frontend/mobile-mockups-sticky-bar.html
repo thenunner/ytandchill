@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Sticky Bar Mockups - Compact</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: #1a1a1a;
+      color: #e5e5e5;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #fff;
+      margin-bottom: 10px;
+      font-size: 24px;
+      text-align: center;
+    }
+
+    h2 {
+      color: #888;
+      font-size: 14px;
+      font-weight: normal;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .mockup-container {
+      max-width: 393px;
+      margin: 0 auto 40px;
+      background: #0d0d0d;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+
+    .mockup-label {
+      background: #222;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #888;
+      border-bottom: 1px solid #333;
+    }
+
+    .mockup-label strong {
+      color: #fff;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    /* Sticky Bar Styles */
+    .sticky-bar {
+      background: rgba(13, 13, 13, 0.98);
+      border-bottom: 1px solid #2a2a2a;
+      padding: 12px;
+    }
+
+    .sticky-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .sticky-row + .sticky-row {
+      margin-top: 10px;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid #3a3a3a;
+      background: #1a1a1a;
+      color: #ccc;
+      white-space: nowrap;
+      min-height: 36px;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+    }
+
+    .btn-small {
+      padding: 6px 10px;
+      font-size: 12px;
+      min-height: 32px;
+    }
+
+    .btn-green {
+      background: #16a34a;
+      border-color: #16a34a;
+      color: #fff;
+    }
+
+    /* Tab Group */
+    .tab-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tab {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      background: transparent;
+      border: 1px solid #3a3a3a;
+      color: #888;
+    }
+
+    .tab-active {
+      background: #2a2a2a;
+      border-color: #4a4a4a;
+      color: #fff;
+    }
+
+    /* Search Input */
+    .search-input {
+      flex: 1;
+      min-width: 0;
+      padding: 8px 12px 8px 36px;
+      border-radius: 8px;
+      border: 1px solid #3a3a3a;
+      background: #1a1a1a url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") 10px center no-repeat;
+      color: #e5e5e5;
+      font-size: 13px;
+    }
+
+    .search-input::placeholder {
+      color: #666;
+    }
+
+    /* Scan Group */
+    .scan-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      border-radius: 8px;
+    }
+
+    .scan-group .scan-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #2a2a2a;
+      color: #e5e5e5;
+      border: none;
+    }
+
+    /* Status Filter */
+    .status-filter {
+      display: flex;
+      gap: 2px;
+      padding: 4px;
+      background: #1a1a1a;
+      border-radius: 8px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .status-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      color: #888;
+      background: transparent;
+      border: none;
+      flex: 1;
+      text-align: center;
+    }
+
+    .status-btn.active {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+    /* Pagination */
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #888;
+      flex-shrink: 0;
+    }
+
+    .pagination .page-btn {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      color: #888;
+    }
+
+    /* Info Text */
+    .info-text {
+      font-size: 13px;
+      color: #888;
+    }
+
+    .info-text strong {
+      color: #fff;
+    }
+
+    /* Back button */
+    .back-btn {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      background: #1a1a1a;
+      border: 1px solid #3a3a3a;
+      color: #888;
+      flex-shrink: 0;
+    }
+
+    /* SVG icons */
+    .icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    .icon-sm {
+      width: 14px;
+      height: 14px;
+    }
+
+    /* Divider */
+    .divider {
+      width: 1px;
+      height: 24px;
+      background: #3a3a3a;
+    }
+
+    /* Spacer */
+    .spacer {
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mobile Sticky Bar Mockups</h1>
+  <h2>iPhone 16 Pro (393px) - Compact 2-Row Layout, No Card Slider</h2>
+
+  <!-- 1. Discovery/Videos Page (After Scan) -->
+  <div class="mockup-container">
+    <div class="mockup-label">
+      <strong>1. Discovery Page - After Scan</strong>
+      Row 1: Found count, Row 2: Search (full width), Row 3: Status filter
+    </div>
+    <div class="sticky-bar">
+      <!-- Row 1: Found count only -->
+      <div class="sticky-row">
+        <span class="info-text">Found <strong>24</strong> new videos</span>
+      </div>
+
+      <!-- Row 2: Search (full width) -->
+      <div class="sticky-row">
+        <input type="text" class="search-input" placeholder="Search videos...">
+      </div>
+
+      <!-- Row 3: Status Filter (full width) -->
+      <div class="sticky-row">
+        <div class="status-filter">
+          <button class="status-btn active">Available</button>
+          <button class="status-btn">Ignored</button>
+          <button class="status-btn">Errors</button>
+          <button class="status-btn">All</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Channel Library - Discovery Mode -->
+  <div class="mockup-container">
+    <div class="mockup-label">
+      <strong>2. Channel Library - Discovery Mode</strong>
+      Row 1: Back + Tabs + Filters, Row 2: Search + Pagination
+    </div>
+    <div class="sticky-bar">
+      <!-- Row 1: Back + Tabs + Filters -->
+      <div class="sticky-row">
+        <div class="back-btn">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </div>
+        <div class="tab-group">
+          <button class="tab tab-active">To Review</button>
+          <button class="tab">Ignored</button>
+        </div>
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+          </svg>
+          Filters
+        </button>
+      </div>
+
+      <!-- Row 2: Search + Pagination -->
+      <div class="sticky-row">
+        <input type="text" class="search-input" placeholder="Search videos...">
+        <div class="pagination">
+          <button class="page-btn">&lt;</button>
+          <span>1/5</span>
+          <button class="page-btn">&gt;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Channel Library - Library Mode -->
+  <div class="mockup-container">
+    <div class="mockup-label">
+      <strong>3. Channel Library - Library Mode</strong>
+      Row 1: Back + Tabs + Filters + Edit, Row 2: Search + Pagination
+    </div>
+    <div class="sticky-bar">
+      <!-- Row 1: Back + Tabs + Filters + Edit -->
+      <div class="sticky-row">
+        <div class="back-btn">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </div>
+        <div class="tab-group">
+          <button class="tab tab-active">Videos</button>
+          <button class="tab">Playlists</button>
+        </div>
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+          </svg>
+          Filters
+        </button>
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit
+        </button>
+      </div>
+
+      <!-- Row 2: Search + Pagination -->
+      <div class="sticky-row">
+        <input type="text" class="search-input" placeholder="Search videos...">
+        <div class="pagination">
+          <button class="page-btn">&lt;</button>
+          <span>1/12</span>
+          <button class="page-btn">&gt;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Channels Page -->
+  <div class="mockup-container">
+    <div class="mockup-label">
+      <strong>4. Channels Page</strong>
+      Row 1: Add + Scan + Category + Edit, Row 2: Search + Sort
+    </div>
+    <div class="sticky-bar">
+      <!-- Row 1: Add, Scan, Category, Edit -->
+      <div class="sticky-row">
+        <button class="btn btn-icon btn-green" title="Add Channel">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+        <div class="scan-group">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="#888" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/>
+            <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"/>
+          </svg>
+          <button class="scan-btn">New</button>
+          <button class="scan-btn">All</button>
+        </div>
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+          </svg>
+          Category
+        </button>
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit
+        </button>
+      </div>
+
+      <!-- Row 2: Search + Sort -->
+      <div class="sticky-row">
+        <input type="text" class="search-input" placeholder="Search channels...">
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="6" x2="16" y2="6"/>
+            <line x1="4" y1="12" x2="13" y2="12"/>
+            <line x1="4" y1="18" x2="10" y2="18"/>
+          </svg>
+          Sort
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Library - Channels Tab -->
+  <div class="mockup-container">
+    <div class="mockup-label">
+      <strong>5. Library - Channels Tab</strong>
+      Row 1: Tabs + Sort + Pagination, Row 2: Search
+    </div>
+    <div class="sticky-bar">
+      <!-- Row 1: Tabs + Sort + Pagination -->
+      <div class="sticky-row">
+        <div class="tab-group">
+          <button class="tab tab-active">Channels</button>
+          <button class="tab">Playlists</button>
+        </div>
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="6" x2="16" y2="6"/>
+            <line x1="4" y1="12" x2="13" y2="12"/>
+            <line x1="4" y1="18" x2="10" y2="18"/>
+          </svg>
+          Sort
+        </button>
+        <div class="pagination">
+          <button class="page-btn">&lt;</button>
+          <span>1/3</span>
+          <button class="page-btn">&gt;</button>
+        </div>
+      </div>
+
+      <!-- Row 2: Search -->
+      <div class="sticky-row">
+        <input type="text" class="search-input" placeholder="Search channels...">
+      </div>
+    </div>
+  </div>
+
+  <!-- 6. Library - Playlists Tab -->
+  <div class="mockup-container">
+    <div class="mockup-label">
+      <strong>6. Library - Playlists Tab</strong>
+      Row 1: Tabs + Category + Edit (no Import), Row 2: Search + Sort
+    </div>
+    <div class="sticky-bar">
+      <!-- Row 1: Tabs + Category + Edit -->
+      <div class="sticky-row">
+        <div class="tab-group">
+          <button class="tab">Channels</button>
+          <button class="tab tab-active">Playlists</button>
+        </div>
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Category
+        </button>
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+          </svg>
+          Edit
+        </button>
+      </div>
+
+      <!-- Row 2: Search + Sort -->
+      <div class="sticky-row">
+        <input type="text" class="search-input" placeholder="Search playlists...">
+        <button class="btn btn-small">
+          <svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="6" x2="16" y2="6"/>
+            <line x1="4" y1="12" x2="13" y2="12"/>
+            <line x1="4" y1="18" x2="10" y2="18"/>
+          </svg>
+          Sort
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align: center; padding: 20px; color: #666; font-size: 12px;">
+    Compact 2-row layouts for mobile<br>
+    No card slider on mobile, Import hidden on Library tabs
+  </div>
+
+</body>
+</html>
