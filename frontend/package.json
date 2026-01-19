@@ -1,6 +1,6 @@
 {
   "name": "youtube-downloader-frontend",
-  "version": "7.0.12",
+  "version": "7.0.13",
   "type": "module",
   "scripts": {
     "dev": "vite",
