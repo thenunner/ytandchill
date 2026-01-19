@@ -20,8 +20,11 @@ services:
       - /mnt/user/data/media/youtube/ytandchill:/app/downloads
       # Logs
       - /mnt/user/appdata/ytandchill/logs:/app/logs
-      # Cookies file for age-restricted content
+      # Cookies file for age-restricted content (manual export)
       - /mnt/user/appdata/ytandchill/cookies.txt:/app/cookies.txt
+      # Firefox profile for automatic cookie extraction (optional)
+      # Linux: ~/.mozilla/firefox | macOS: ~/Library/Application Support/Firefox/Profiles
+      # - /home/YOUR_USERNAME/.mozilla/firefox:/firefox_profile:ro
     restart: unless-stopped
     labels:
       # Unraid WebUI integration
