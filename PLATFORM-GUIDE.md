@@ -349,11 +349,38 @@ See [UNRAID-SETUP.md](UNRAID-SETUP.md) for detailed manual setup instructions in
 
 ### Unraid-Specific Notes
 
-- **User Permissions**: Container runs as `nobody:users` (99:100)
+- **User Permissions**: Container runs as `nobody:users` (99:100) - hardcoded in Dockerfile
 - **Network**: Uses bridge network (default: "bridge")
 - **Updates**: Run `git pull` then rebuild with docker-compose
 - **WebUI Integration**: Template includes WebUI link in Docker tab
 - **Auto-start**: Configured to restart unless stopped
+
+### Non-Unraid Docker Users
+
+If you're running Docker on generic Linux (not Unraid), you may need different user permissions. The container defaults to UID:GID `99:100` (Unraid's nobody:users).
+
+**To use your own UID/GID:**
+
+1. Find your user/group IDs:
+   ```bash
+   id -u  # Your UID (usually 1000)
+   id -g  # Your GID (usually 1000)
+   ```
+
+2. Edit the Dockerfile - change these two lines:
+   ```dockerfile
+   # Change 99:100 to your PUID:PGID
+   RUN chown -R 1000:1000 /app
+
+   # Change to your PUID:PGID
+   USER 1000:1000
+   ```
+
+3. Rebuild the image:
+   ```bash
+   docker-compose down
+   docker-compose up -d --build
+   ```
 
 ### Updating on Unraid
 
