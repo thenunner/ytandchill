@@ -226,7 +226,6 @@ export default function Queue() {
 
   const handleCancel = async () => {
     try {
-      showNotification('Cancelling current download...', 'info', { persistent: true });
       await cancelCurrent.mutateAsync();
       showNotification('Download cancelled', 'success');
     } catch (error) {

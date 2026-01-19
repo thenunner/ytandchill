@@ -180,7 +180,6 @@ export default function Player() {
 
   const handleDelete = async () => {
     try {
-      showNotification('Deleting video...', 'info', { persistent: true });
       await deleteVideo.mutateAsync(video.id);
       showNotification('Video deleted', 'success');
       setShowDeleteConfirm(false);
