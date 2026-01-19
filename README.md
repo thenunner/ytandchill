@@ -20,6 +20,7 @@ YT channel downloader and video library manager. Monitor channels, queue downloa
 - **10 Themes** - Kernel, Fatal, Subnet, Archive, Buffer, Gateway, Catppuccin, Online, Pixel, Debug
 - **Mobile Support** - Touch-optimized interface with gesture controls
 - **Cookie Auth** - cookies.txt or Firefox browser integration for authenticated downloads
+- **SponsorBlock** - Auto-remove sponsor segments, self-promos, and like/subscribe reminders
 
 ## Screenshots
 
@@ -101,6 +102,21 @@ Mount your Firefox profile directory to automatically extract cookies:
 
 3. Rebuild container: `docker-compose up -d --build`
 4. Select "Firefox" in Settings → Cookie Source
+
+### YouTube API Key (Optional)
+
+A YouTube API key enables fast upload date fetching when adding new channels. Without it, channels still work but upload dates may be missing for bulk imports.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project (or select existing)
+3. Enable the **YouTube Data API v3**
+4. Go to Credentials → Create Credentials → API Key
+5. Copy the API key
+6. In the app: Settings → Downloads → YouTube API Key → paste and Save
+
+**Usage:** The API is only used when adding new channels (batch date fetching). Regular auto-scans use yt-dlp directly and don't consume API quota.
+
+**Quota:** Default is 10,000 units/day. Adding a channel with 5,000 videos uses ~100 units.
 
 ## Importing Existing Videos
 
