@@ -680,10 +680,10 @@ export default function ChannelLibrary() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Sticky Header - Mobile: 2 rows, Desktop: 1 row */}
+      {/* Sticky Header - Desktop: single row, Mobile: 2 rows */}
       <StickyBar className="md:-mx-8 md:px-8 mb-4">
-        <div className="flex flex-col gap-3">
-          {/* Row 1: Back + Tabs + Filters + Edit */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+          {/* Left: Back + Tabs + Filters + Edit + CardSize */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Back Arrow */}
             <Link
@@ -789,8 +789,8 @@ export default function ChannelLibrary() {
             <CardSizeSlider tab={isLibraryMode ? 'library' : 'channels'} />
           </div>
 
-          {/* Row 2: Search + Pagination */}
-          <div className="flex items-center gap-2">
+          {/* Right: Search + Pagination */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <SearchInput
               value={searchInput}
               onChange={handleSearchChange}

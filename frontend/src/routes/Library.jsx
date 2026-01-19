@@ -515,10 +515,10 @@ export default function Library() {
       {/* Header */}
       <StickyBar className="mb-4">
         {activeTab === 'channels' ? (
-          /* Channels Tab: Mobile = 2 rows (Tabs+Sort+Pagination, Search), Desktop = single row */
-          <div className="flex flex-col gap-3">
-            {/* Row 1: Tabs + Sort + Pagination */}
-            <div className="flex items-center justify-between gap-2">
+          /* Channels Tab: Desktop = single row, Mobile = 2 rows */
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            {/* Left: Tabs + Sort + Pagination */}
+            <div className="flex items-center justify-between sm:justify-start gap-2">
               {/* Tabs */}
               <div className="flex items-center gap-2">
                 <button
@@ -667,8 +667,8 @@ export default function Library() {
               </div>
             </div>
 
-            {/* Row 2: Search (full width) */}
-            <div className="w-full">
+            {/* Right: Search */}
+            <div className="w-full sm:w-auto flex-shrink-0">
               <SearchInput
                 value={searchInput}
                 onChange={setSearchInput}
@@ -678,10 +678,10 @@ export default function Library() {
             </div>
           </div>
         ) : (
-          /* Playlists Tab: Mobile = 2 rows (Tabs+Category+Edit, Search+Sort), Desktop = single row */
-          <div className="flex flex-col gap-3">
-            {/* Row 1: Tabs + Category + Edit */}
-            <div className="flex items-center justify-between gap-2">
+          /* Playlists Tab: Desktop = single row, Mobile = 2 rows */
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            {/* Left: Tabs + Category + Edit */}
+            <div className="flex items-center justify-between sm:justify-start gap-2">
               {/* Tabs + Category */}
               <div className="flex items-center gap-2">
                 <button
@@ -750,8 +750,8 @@ export default function Library() {
               </div>
             </div>
 
-            {/* Row 2: Search + Sort */}
-            <div className="flex items-center gap-2">
+            {/* Right: Search + Sort */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               {/* Search */}
               <div className="flex-1">
                 <SearchInput
