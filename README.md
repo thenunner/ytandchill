@@ -1,6 +1,6 @@
 # YT and Chill
 
-YT channel downloader and video library manager. Monitor channels, queue downloads, and manage your local video library.
+YT channel downloader and video library manager. Monitor channels, queue downloads, and manage your local video library. Built with [Claude AI](https://claude.ai) through months of collaborative prompting.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
@@ -105,7 +105,7 @@ Have existing YouTube videos? Import them into your library:
 
 **Supported Formats:**
 - **Web-ready:** `.mp4`, `.webm`, `.m4v` - import directly
-- **Requires re-encoding:** `.mkv` - enable "Re-encode MKVs" in Settings first
+- **Requires re-encoding:** `.mkv` - select "Include MKVs" option on the Import page
 
 **Tips:**
 - Add a `channels.txt` file with channel URLs to improve matching accuracy
@@ -160,3 +160,8 @@ MIT License
 
 - [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 - [Dashboard Icons](https://github.com/walkxcode/dashboard-icons)
+- [Flask](https://github.com/pallets/flask)
+- [React](https://github.com/facebook/react)
+- [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
+- [Video.js](https://github.com/videojs/video.js)
+- [Vite](https://github.com/vitejs/vite)
