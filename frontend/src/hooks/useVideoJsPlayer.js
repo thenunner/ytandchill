@@ -329,6 +329,23 @@ export function useVideoJsPlayer({
             console.warn('[useVideoJsPlayer] Failed to restore progress:', err);
           }
         });
+
+        // Check for and add subtitle track (VTT format)
+        const subtitleUrl = videoSrc.replace(/\.[^.]+$/, '.en.vtt');
+        fetch(subtitleUrl, { method: 'HEAD' })
+          .then(res => {
+            if (res.ok && player && !player.isDisposed()) {
+              player.addRemoteTextTrack({
+                kind: 'subtitles',
+                srclang: 'en',
+                label: 'English',
+                src: subtitleUrl,
+                default: false
+              }, false);
+              console.log('[useVideoJsPlayer] Added subtitle track:', subtitleUrl);
+            }
+          })
+          .catch(() => {}); // Silently ignore if no subtitles
       } else {
         console.warn('[useVideoJsPlayer] No video source found for:', video.file_path);
       }

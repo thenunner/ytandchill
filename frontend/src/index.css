@@ -473,7 +473,7 @@
 }
 
 .autoscan-config.show {
-  max-height: 80px;
+  max-height: 150px;
   padding-top: 12px;
   padding-bottom: 12px;
   opacity: 1;
