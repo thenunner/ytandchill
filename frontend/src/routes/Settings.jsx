@@ -124,6 +124,7 @@ export default function Settings() {
 
   // YouTube API key state
   const [youtubeApiKey, setYoutubeApiKey] = useState('');
+  const [hasApiKey, setHasApiKey] = useState(false);
   const [apiKeyTesting, setApiKeyTesting] = useState(false);
   const [apiKeySaving, setApiKeySaving] = useState(false);
 
@@ -241,6 +242,7 @@ export default function Settings() {
       setCookieSource(settings.cookie_source || 'file');
       setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
       setYoutubeApiKey(settings.youtube_api_key || '');
+      setHasApiKey(!!settings.youtube_api_key);
     }
   }, [settings]);
 
@@ -548,6 +550,7 @@ export default function Settings() {
       await updateSettings.mutateAsync({
         youtube_api_key: youtubeApiKey.trim()
       });
+      setHasApiKey(!!youtubeApiKey.trim());
       showNotification(youtubeApiKey.trim() ? 'YouTube API key saved' : 'YouTube API key cleared', 'success');
     } catch (err) {
       showNotification('Failed to save API key', 'error');
@@ -576,6 +579,7 @@ export default function Settings() {
       const data = await response.json();
 
       if (data.valid) {
+        setHasApiKey(true);
         showNotification('API key is valid!', 'success');
       } else {
         showNotification(data.error || 'API key is invalid', 'error');
@@ -707,7 +711,7 @@ export default function Settings() {
           </div>
 
           <div className={`section-content ${collapsedSections.playback ? 'collapsed' : ''}`}>
-          <div className="setting-row">
+          <div className="setting-row mobile-hide-desc">
             <div className="setting-label">
               <div>
                 <div className="setting-name">Default Speed</div>
@@ -727,7 +731,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="setting-row">
+          <div className="setting-row mobile-hide-desc">
             <div className="setting-label">
               <div>
                 <div className="setting-name">Skip Segments</div>
@@ -773,7 +777,7 @@ export default function Settings() {
           </div>
 
           <div className={`section-content ${collapsedSections.display ? 'collapsed' : ''}`}>
-          <div className="setting-row">
+          <div className="setting-row mobile-hide-desc">
             <div className="setting-label">
               <div>
                 <div className="setting-name">Card Date</div>
@@ -838,7 +842,7 @@ export default function Settings() {
           </div>
 
           <div className={`section-content ${collapsedSections.downloads ? 'collapsed' : ''}`}>
-          <div className="setting-row">
+          <div className="setting-row mobile-hide-desc">
             <div className="setting-label">
               <span className={`autoscan-status ${
                 cookieSource === 'none' ? '' :
@@ -881,6 +885,7 @@ export default function Settings() {
           {/* YouTube API Key */}
           <div className="setting-row">
             <div className="setting-label">
+              <span className={`autoscan-status ${hasApiKey ? 'active' : ''}`}></span>
               <div>
                 <div className="setting-name">YouTube API Key</div>
                 <div className="setting-desc">
@@ -898,23 +903,23 @@ export default function Settings() {
             </div>
             <div className="flex items-center gap-2">
               <input
-                type="password"
+                type="text"
                 value={youtubeApiKey}
                 onChange={(e) => setYoutubeApiKey(e.target.value)}
-                placeholder="AIza..."
-                className="settings-input w-48"
+                placeholder="Paste API key"
+                className="input text-sm py-1.5 px-3 w-48"
               />
               <button
                 onClick={handleSaveApiKey}
-                disabled={apiKeySaving}
-                className="settings-btn"
+                disabled={apiKeySaving || !youtubeApiKey.trim()}
+                className="settings-action-btn"
               >
                 {apiKeySaving ? 'Saving...' : 'Save'}
               </button>
               <button
                 onClick={handleTestApiKey}
                 disabled={apiKeyTesting || !youtubeApiKey.trim()}
-                className="settings-btn"
+                className="settings-action-btn"
               >
                 {apiKeyTesting ? 'Testing...' : 'Test'}
               </button>
@@ -1153,7 +1158,7 @@ export default function Settings() {
           </div>
 
           <div className={`section-content ${collapsedSections.logging ? 'collapsed' : ''}`}>
-          <div className="setting-row flex-col !items-stretch gap-3">
+          <div className="setting-row flex-col !items-stretch gap-3 mobile-stack-log mobile-hide-desc">
             <div className="flex items-center justify-between">
               <div className="setting-label">
                 <div>
