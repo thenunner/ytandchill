@@ -11,6 +11,8 @@ services:
       - "${PORT:-4099}:4099"
     environment:
       - PORT=4099
+      - PUID=99   # Unraid default (change to your UID: run 'id -u')
+      - PGID=100  # Unraid default (change to your GID: run 'id -g')
     volumes:
       # Database and config
       - /mnt/user/appdata/ytandchill/data:/app/data
@@ -21,7 +23,6 @@ services:
       # Cookies file for age-restricted content
       - /mnt/user/appdata/ytandchill/cookies.txt:/app/cookies.txt
     restart: unless-stopped
-    user: "99:100"
     labels:
       # Unraid WebUI integration
       - "net.unraid.docker.managed=dockerman"

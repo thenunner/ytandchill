@@ -20,7 +20,7 @@ FROM python:3.12-slim
 
 # Install system dependencies (ffmpeg for video processing, curl/unzip for Deno)
 RUN apt-get update && \
-    apt-get install -y ffmpeg curl unzip && \
+    apt-get install -y ffmpeg curl unzip su-exec && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Deno from GitHub releases (required for yt-dlp YouTube support as of v2025.11.12)
@@ -50,9 +50,6 @@ COPY --from=frontend-builder /frontend/dist ./dist
 # Create required directories (data, downloads, and logs will be mounted as volumes)
 RUN mkdir -p data downloads logs
 
-# Set ownership of /app to nobody:users (99:100) so app can write lock files
-RUN chown -R 99:100 /app
-
 # Environment variables with defaults
 ENV PORT=4099
 ENV PYTHONUNBUFFERED=1
@@ -61,8 +58,9 @@ ENV HOME=/app
 # Expose port
 EXPOSE ${PORT}
 
-# Run as nobody user (99:100) for Unraid compatibility
-USER 99:100
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Start application
-CMD ["python", "app.py"]
+# Start application via entrypoint (handles PUID/PGID)
+ENTRYPOINT ["/entrypoint.sh"]
