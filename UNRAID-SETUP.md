@@ -70,13 +70,13 @@ chown -R 99:100 /mnt/user/data/media/youtube/ytandchill
 
 ## Non-Unraid Docker Users
 
-The container defaults to UID:GID `99:100` (Unraid's nobody:users). If you're on generic Linux, edit the Dockerfile to use your IDs:
+The container defaults to UID:GID `99:100` (Unraid's nobody:users). If you're on generic Linux, set your IDs via environment variables in docker-compose.yml:
 
-```dockerfile
-# Change 99:100 to your PUID:PGID (run 'id' to find yours)
-RUN chown -R 1000:1000 /app
-
-USER 1000:1000
+```yaml
+environment:
+  - PORT=4099
+  - PUID=1000  # Your UID (run 'id -u' to find)
+  - PGID=1000  # Your GID (run 'id -g' to find)
 ```
 
 Then rebuild: `docker-compose up -d --build`

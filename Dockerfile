@@ -18,9 +18,9 @@ RUN npm run build
 # Stage 2: Production Runtime
 FROM python:3.12-slim
 
-# Install system dependencies (ffmpeg for video processing, curl/unzip for Deno)
+# Install system dependencies (ffmpeg for video processing, curl/unzip for Deno, gosu for user switching)
 RUN apt-get update && \
-    apt-get install -y ffmpeg curl unzip && \
+    apt-get install -y ffmpeg curl unzip gosu && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Deno from GitHub releases (required for yt-dlp YouTube support as of v2025.11.12)
@@ -44,6 +44,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/*.py ./
 COPY backend/routes/ ./routes/
 
+# Copy entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Copy built frontend from Stage 1
 COPY --from=frontend-builder /frontend/dist ./dist
 
@@ -55,16 +59,8 @@ ENV PORT=4099
 ENV PYTHONUNBUFFERED=1
 ENV HOME=/app
 
-# Create required directories and set ownership
-# Non-Unraid users: Change 99:100 to your PUID:PGID (run 'id' to find yours)
-RUN chown -R 99:100 /app
-
 # Expose port
 EXPOSE ${PORT}
 
-# Run as nobody:users (99:100) for Unraid compatibility
-# Non-Unraid users: Change to your PUID:PGID
-USER 99:100
-
-# Start application
-CMD ["python", "app.py"]
+# Start application via entrypoint (handles PUID/PGID)
+ENTRYPOINT ["/entrypoint.sh"]
