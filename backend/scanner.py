@@ -14,8 +14,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Minimum video duration in seconds (filters out Shorts)
-MIN_DURATION_SECONDS = 120
+# Minimum video duration in seconds (0 = no filter)
+# Note: Shorts are on a separate /shorts tab and don't appear in main channel scans
+MIN_DURATION_SECONDS = 0
 
 
 def get_cookies_path():
@@ -180,17 +181,41 @@ def get_channel_info(channel_url):
     try:
         data = json.loads(stdout.strip().split('\n')[0])
 
-        channel_id = data.get('channel_id')
-        if not channel_id:
-            logger.warning(f'No channel_id in response for {channel_url}')
+        # Try multiple fields for channel ID (yt-dlp is inconsistent in flat-playlist mode)
+        # Valid channel IDs start with "UC" and are 24 characters
+        def is_valid_channel_id(cid):
+            return cid and cid.startswith('UC') and len(cid) == 24
+
+        # Try these fields in order of preference
+        channel_id = None
+        for field in ['channel_id', 'playlist_channel_id']:
+            value = data.get(field)
+            if is_valid_channel_id(value):
+                channel_id = value
+                break
+
+        # Fallback: extract from URL fields
+        if not is_valid_channel_id(channel_id):
+            for url_field in ['channel_url', 'uploader_url', 'playlist_channel_url']:
+                url_value = data.get(url_field, '')
+                match = re.search(r'/channel/(UC[a-zA-Z0-9_-]{22})', url_value)
+                if match:
+                    channel_id = match.group(1)
+                    break
+
+        if not is_valid_channel_id(channel_id):
+            logger.warning(f'No valid channel_id in response for {channel_url}. Available keys: {list(data.keys())}')
             return None
+
+        # Get channel title from available fields
+        channel_title = data.get('channel') or data.get('playlist_channel') or data.get('uploader') or data.get('playlist_uploader') or 'Unknown'
 
         video_id = data.get('id')
         thumbnail = f'https://img.youtube.com/vi/{video_id}/default.jpg' if video_id else None
 
         return {
             'id': channel_id,
-            'title': data.get('channel') or data.get('uploader') or 'Unknown',
+            'title': channel_title,
             'thumbnail': thumbnail,
             'url': f'https://youtube.com/channel/{channel_id}',
         }
