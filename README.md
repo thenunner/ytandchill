@@ -114,7 +114,7 @@ A YouTube API key enables fast upload date fetching when adding new channels. Wi
 5. Copy the API key
 6. In the app: Settings → Downloads → YouTube API Key → paste and Save
 
-**Usage:** The API is only used when adding new channels (batch date fetching). Regular auto-scans use yt-dlp directly and don't consume API quota.
+**Usage:** The API is used when adding new channels and running "Scan All" (batch date fetching). Regular auto-scans and "Scan New" use yt-dlp directly and don't consume API quota.
 
 **Quota:** Default is 10,000 units/day. Adding a channel with 5,000 videos uses ~100 units.
 
