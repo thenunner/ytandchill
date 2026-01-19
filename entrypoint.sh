@@ -9,4 +9,4 @@ echo "Starting with UID:GID = $PUID:$PGID"
 chown -R $PUID:$PGID /app/data /app/downloads /app/logs 2>/dev/null || true
 
 # Run as specified user
-exec su-exec $PUID:$PGID python app.py
+exec gosu $PUID:$PGID python app.py

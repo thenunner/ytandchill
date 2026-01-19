@@ -20,7 +20,7 @@ FROM python:3.12-slim
 
 # Install system dependencies (ffmpeg for video processing, curl/unzip for Deno)
 RUN apt-get update && \
-    apt-get install -y ffmpeg curl unzip su-exec && \
+    apt-get install -y ffmpeg curl unzip gosu && \
     rm -rf /var/lib/apt/lists/*
 
 # Install Deno from GitHub releases (required for yt-dlp YouTube support as of v2025.11.12)
