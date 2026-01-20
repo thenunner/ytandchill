@@ -10,7 +10,7 @@ from database import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem
 from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
 from routes import register_blueprints
-from scanner import scan_channel_videos, scan_channel_videos_full
+from scanner import scan_channel_videos, scan_channel_videos_full, scan_channel_shorts
 from youtube_api import fetch_video_dates, scan_channel_videos_api
 import logging
 import atexit
@@ -651,8 +651,13 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
 
     logger.debug(f"Found {len(videos)} total videos for channel: {channel.title}")
 
+    # Scan channel's /shorts tab to identify shorts
+    shorts_ids = scan_channel_shorts(channel.yt_id)
+    logger.debug(f"Found {len(shorts_ids)} shorts for channel: {channel.title}")
+
     new_count = 0
     ignored_count = 0
+    shorts_count = 0
     existing_count = 0
     auto_queued_count = 0
     latest_upload_date = None
@@ -672,9 +677,15 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         # Check if video already exists in database
         existing = session.query(Video).filter(Video.yt_id == video_data['id']).first()
         if existing:
-            # Video already in database, skip it
-            existing_count += 1
-            logger.debug(f"[{idx}/{total_videos}] Already tracked: '{video_data['title']}'")
+            # Check if this is a short that wasn't previously marked as such
+            if video_data['id'] in shorts_ids and existing.status != 'shorts':
+                old_status = existing.status
+                existing.status = 'shorts'
+                shorts_count += 1
+                logger.info(f"[{idx}/{total_videos}] Updated to shorts: '{video_data['title']}' (was: {old_status})")
+            else:
+                existing_count += 1
+                logger.debug(f"[{idx}/{total_videos}] Already tracked: '{video_data['title']}'")
             continue
 
         # Log new video found
@@ -682,9 +693,13 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
 
         duration_min = video_data['duration_sec'] / 60
 
-        # Determine status based on duration filters
+        # Determine status: check if it's a short first, then duration filters
         status = 'discovered'
-        if channel.min_minutes > 0 and duration_min < channel.min_minutes:
+        if video_data['id'] in shorts_ids:
+            status = 'shorts'
+            shorts_count += 1
+            logger.debug(f"[{idx}/{total_videos}] Short: '{video_data['title']}'")
+        elif channel.min_minutes > 0 and duration_min < channel.min_minutes:
             status = 'ignored'
             logger.info(f"[{idx}/{total_videos}] Ignored (too short): '{video_data['title']}' - {duration_min:.1f}m < {channel.min_minutes}m minimum")
         elif channel.max_minutes > 0 and duration_min > channel.max_minutes:
@@ -719,10 +734,10 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
 
         if status == 'ignored':
             ignored_count += 1
-        else:
+        elif status != 'shorts':  # shorts already counted above
             new_count += 1
 
-    logger.debug(f"Scan results for '{channel.title}': {new_count} new, {ignored_count} ignored, {existing_count} already in database")
+    logger.debug(f"Scan results for '{channel.title}': {new_count} new, {ignored_count} ignored, {shorts_count} shorts, {existing_count} already in database")
 
     # Fetch upload dates via YouTube API for videos missing them (only for full scans)
     # Always check for missing dates, even if no new videos found (existing videos may be missing dates)

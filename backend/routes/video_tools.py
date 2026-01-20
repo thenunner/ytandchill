@@ -88,25 +88,25 @@ def get_videos():
         if folder_name:
             query = query.filter(Video.folder_name == folder_name)
         # Handle ignored filter (includes 'ignored' and 'geoblocked' statuses only)
-        # Note: 'not_found' is never included in any filter - only accessible via repair tool
+        # Note: 'not_found' and 'shorts' are never included in any filter - only accessible via repair tool/DB
         if ignored is not None:
             has_ignored = ignored.lower() == 'true'
             if has_ignored:
-                # Include ignored and geoblocked videos in ignored filter
+                # Include ignored and geoblocked videos in ignored filter (NOT shorts)
                 query = query.filter(Video.status.in_(['ignored', 'geoblocked']))
             else:
-                # Exclude ignored/geoblocked/not_found videos, but still apply status filter if provided
-                query = query.filter(~Video.status.in_(['ignored', 'geoblocked', 'not_found']))
+                # Exclude ignored/geoblocked/not_found/shorts videos, but still apply status filter if provided
+                query = query.filter(~Video.status.in_(['ignored', 'geoblocked', 'not_found', 'shorts']))
                 if status:
                     query = query.filter(Video.status == status)
         elif status:
             # Apply status filter when ignored parameter is not present
             query = query.filter(Video.status == status)
-            # Always exclude 'not_found' from normal queries
-            query = query.filter(Video.status != 'not_found')
+            # Always exclude 'not_found' and 'shorts' from normal queries
+            query = query.filter(~Video.status.in_(['not_found', 'shorts']))
         else:
-            # No status or ignored filter - exclude 'not_found' from normal queries
-            query = query.filter(Video.status != 'not_found')
+            # No status or ignored filter - exclude 'not_found' and 'shorts' from normal queries
+            query = query.filter(~Video.status.in_(['not_found', 'shorts']))
         if watched is not None:
             query = query.filter(Video.watched == (watched.lower() == 'true'))
         if search:
