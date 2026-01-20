@@ -704,7 +704,8 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     logger.debug(f"Scan results for '{channel.title}': {new_count} new, {ignored_count} ignored, {existing_count} already in database")
 
     # Fetch upload dates via YouTube API for videos missing them (only for full scans)
-    if use_api_for_dates and (new_count > 0 or ignored_count > 0):
+    # Always check for missing dates, even if no new videos found (existing videos may be missing dates)
+    if use_api_for_dates:
         api_key = settings_manager.get('youtube_api_key')
         if api_key:
             # Find all videos for this channel that are missing upload_date

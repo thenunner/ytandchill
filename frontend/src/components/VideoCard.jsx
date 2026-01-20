@@ -278,81 +278,96 @@ export default function VideoCard({
 
       {/* Content */}
       <div className={`p-3 space-y-2 rounded-b-xl transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
-        {/* Title + 3-dot menu (library videos only) */}
-        <div className="flex items-start justify-between gap-2">
-          <h3 className={`${textSizes.title} font-medium text-text-primary ${textSizes.titleClamp || 'line-clamp-2'} leading-tight flex-1 min-w-0`} title={video.title}>
-            {video.title}
-          </h3>
+        {/* Title row - different layout for library vs channel view */}
+        {isLibraryView ? (
+          // Library view: title + 3-dot menu
+          <div className="flex items-start justify-between gap-2">
+            <h3 className={`${textSizes.title} font-medium text-text-primary ${textSizes.titleClamp || 'line-clamp-2'} leading-tight flex-1 min-w-0`} title={video.title}>
+              {video.title}
+            </h3>
 
-          {/* 3-dot menu - library videos only */}
-          {isDownloaded && !editMode && (
-            <div className="relative flex-shrink-0" ref={menuRef}>
-              <button
-                ref={threeDotButtonRef}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setShowMenu(!showMenu);
-                }}
-                title="Video options"
-                aria-label="Video options"
-                className="p-1 rounded hover:bg-dark-hover transition-colors text-text-secondary hover:text-text-primary"
-              >
-                <ThreeDotsIcon />
-              </button>
-
-              {/* Dropdown Menu */}
-              {showMenu && (
-                <div
-                  className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50"
-                  onMouseLeave={(e) => e.stopPropagation()}
+            {/* 3-dot menu - library videos only */}
+            {isDownloaded && !editMode && (
+              <div className="relative flex-shrink-0" ref={menuRef}>
+                <button
+                  ref={threeDotButtonRef}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowMenu(!showMenu);
+                  }}
+                  title="Video options"
+                  aria-label="Video options"
+                  className="p-1 rounded hover:bg-dark-hover transition-colors text-text-secondary hover:text-text-primary"
                 >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowMenu(false);
-                      setShowPlaylistMenu(true);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  <ThreeDotsIcon />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showMenu && (
+                  <div
+                    className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50"
+                    onMouseLeave={(e) => e.stopPropagation()}
                   >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="3" y="3" width="7" height="7"></rect>
-                      <rect x="14" y="3" width="7" height="7"></rect>
-                      <rect x="3" y="14" width="7" height="7"></rect>
-                      <rect x="14" y="14" width="7" height="7"></rect>
-                    </svg>
-                    Playlist Options
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowMenu(false);
-                      setShowVideoInfo(true);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"></circle>
-                      <line x1="12" y1="16" x2="12" y2="12"></line>
-                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    Video Info
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowMenu(false);
-                      setShowDeleteConfirm(true);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
-                  >
-                    <TrashIcon className="w-4 h-4" />
-                    Delete video
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowPlaylistMenu(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="7" height="7"></rect>
+                        <rect x="14" y="3" width="7" height="7"></rect>
+                        <rect x="3" y="14" width="7" height="7"></rect>
+                        <rect x="14" y="14" width="7" height="7"></rect>
+                      </svg>
+                      Playlist Options
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowVideoInfo(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      Video Info
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(false);
+                        setShowDeleteConfirm(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                      Delete video
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          // Channel view: title + duration in fixed 2-line container
+          <div className="min-h-[2.6em] leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <span className={`${textSizes.title} font-medium text-text-primary`} title={video.title}>
+              {video.title}
+            </span>
+            {video.duration_sec && (
+              <span className={`${textSizes.metadata} text-text-secondary font-medium ml-1.5`}>
+                • {formatDuration(video.duration_sec)}
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
@@ -369,12 +384,9 @@ export default function VideoCard({
             </span>
           </div>
         ) : (
-          // Channel view: upload date and duration
-          <div className={`${textSizes.metadata} text-text-secondary font-medium flex justify-between items-center`}>
+          // Channel view: just upload date (duration is now with title)
+          <div className={`${textSizes.metadata} text-text-secondary font-medium`}>
             <span>{formatDate(video.upload_date)}</span>
-            {video.duration_sec && (
-              <span>{formatDuration(video.duration_sec)}</span>
-            )}
           </div>
         )}
       </div>

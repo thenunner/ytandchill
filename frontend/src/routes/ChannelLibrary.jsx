@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel } from '../api/queries';
+import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
@@ -23,6 +23,7 @@ export default function ChannelLibrary() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: channels } = useChannels();
   const { data: queueData } = useQueue();
+  const { data: settings } = useSettings();
   const addToQueue = useAddToQueue();
   const addToQueueBulk = useAddToQueueBulk();
   const bulkUpdate = useBulkUpdateVideos();
@@ -612,6 +613,23 @@ export default function ChannelLibrary() {
   };
 
   const handleScanChannel = async (forceFull = false) => {
+    // Check API key status for full scans (needed for upload dates)
+    if (forceFull) {
+      if (!settings?.youtube_api_key) {
+        showNotification('No API key configured - upload dates will not be fetched', 'warning');
+      } else {
+        // Test if API key is valid
+        try {
+          const result = await api.testYoutubeApiKey();
+          if (!result.valid) {
+            showNotification('API key is invalid - upload dates will not be fetched', 'warning');
+          }
+        } catch (error) {
+          showNotification('API key is invalid - upload dates will not be fetched', 'warning');
+        }
+      }
+    }
+
     try {
       // Get channel info for batch label
       const channel = channels?.find(c => c.id === Number(channelId));

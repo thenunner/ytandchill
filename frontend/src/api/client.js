@@ -331,6 +331,12 @@ class APIClient {
     });
   }
 
+  testYoutubeApiKey() {
+    return this.request('/settings/test-youtube-api', {
+      method: 'POST',
+    });
+  }
+
   // Queue Database Repair
   checkOrphanedQueue() {
     return this.request('/queue/check-orphaned');
