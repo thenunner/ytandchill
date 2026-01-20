@@ -4,7 +4,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
-import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { formatDuration } from '../utils/videoPlayerUtils';
 import { formatDate } from '../utils/formatters';
@@ -322,8 +322,6 @@ export default function Videos() {
                   </span>
                 )}
               </div>
-              {/* Card Size Slider - hidden on mobile */}
-              <CardSizeSlider show={scanResults.videos.length > 0} tab="videos" />
             </div>
 
             {scanResults.videos.length > 0 && (

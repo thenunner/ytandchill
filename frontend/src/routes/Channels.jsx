@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
-import { StickyBar, SearchInput, CardSizeSlider, SortDropdown, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SortDropdown, SelectionBar } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
@@ -768,9 +768,6 @@ export default function Channels() {
             >
               <span>{editMode ? 'Done' : 'Edit'}</span>
             </button>
-
-            {/* Card Size Slider - hidden on mobile */}
-            <CardSizeSlider tab="channels" />
           </div>
 
           {/* Right: Search + Sort */}

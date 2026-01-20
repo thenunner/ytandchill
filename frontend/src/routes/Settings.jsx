@@ -144,6 +144,12 @@ export default function Settings() {
     return stored ? Number(stored) : 50;
   });
 
+  // Global card size setting (stored in localStorage)
+  const [globalCardSize, setGlobalCardSize] = useState(() => {
+    const stored = localStorage.getItem('global_card_size');
+    return stored || 'md';
+  });
+
   // Default playback speed
   const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState('1');
 
@@ -911,6 +917,34 @@ export default function Settings() {
                   className={`settings-toggle-btn ${globalItemsPerPage === option ? 'active' : ''}`}
                 >
                   {option}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="setting-row mobile-hide-desc">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">Card Size</div>
+                <div className="setting-desc">Card density in grid views (tablet/desktop only)</div>
+              </div>
+            </div>
+            <div className="settings-toggle-group">
+              {[
+                { value: 'sm', label: 'Small' },
+                { value: 'md', label: 'Medium' },
+                { value: 'lg', label: 'Large' }
+              ].map(option => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setGlobalCardSize(option.value);
+                    localStorage.setItem('global_card_size', option.value);
+                    showNotification(`Card size set to ${option.label}`, 'success');
+                  }}
+                  className={`settings-toggle-btn ${globalCardSize === option.value ? 'active' : ''}`}
+                >
+                  {option.label}
                 </button>
               ))}
             </div>
