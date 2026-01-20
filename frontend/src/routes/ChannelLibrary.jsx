@@ -507,10 +507,6 @@ export default function ChannelLibrary() {
     }
   }, [menuOpen]);
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
   return (
     <div className="space-y-4 animate-fade-in">
       {/* Sticky Header - Desktop: single row, Mobile: 2 rows */}

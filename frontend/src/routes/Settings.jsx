@@ -670,10 +670,6 @@ export default function Settings() {
     setAutoRefresh(enabled);
   };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
   // Theme colors for the theme picker
   const themeColors = {
     kernel: 'hsl(220, 10%, 70%)',

@@ -494,10 +494,6 @@ export default function Channels() {
     return filteredAndSortedChannels.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredAndSortedChannels, currentPage, itemsPerPage, loadedPages, isMobile]);
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
   return (
     <div className="space-y-6 animate-fade-in">
       <StickyBar>
