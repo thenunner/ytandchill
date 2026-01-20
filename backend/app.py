@@ -1077,8 +1077,8 @@ if __name__ == '__main__':
         app,
         host='0.0.0.0',
         port=port,
-        threads=6,                # Thread pool size (good for video streaming)
-        channel_timeout=300,      # 5 minute timeout for long requests (large videos)
+        threads=16,               # Increased for SSE connections + video streaming
+        channel_timeout=600,      # 10 minute timeout for SSE and large videos
         cleanup_interval=30,      # Clean up inactive threads every 30s
         asyncore_use_poll=True    # Better performance on Linux
     )

@@ -3,17 +3,21 @@ Queue Routes
 
 Handles:
 - GET/POST /api/queue
+- GET /api/queue/stream (SSE)
 - POST /api/queue/bulk
 - POST /api/queue/pause, /resume, /cancel-current
 - DELETE /api/queue/<id>
 - POST /api/queue/reorder, /move-to-top, /move-to-bottom, /clear
 """
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, Response
 from sqlalchemy import func
+from queue import Empty
+import json
 import logging
 
 from database import Video, QueueItem, get_session
+from events import queue_events
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +105,94 @@ def get_queue():
             'last_error_message': last_error_message,
             'cookie_warning_message': cookie_warning_message
         })
+
+
+def _get_queue_state():
+    """Helper to get current queue state for SSE events."""
+    with get_session(_session_factory) as session:
+        items = session.query(QueueItem).join(Video).filter(
+            Video.status.in_(['queued', 'downloading'])
+        ).order_by(QueueItem.queue_position).all()
+        queue_items = [_serialize_queue_item(item) for item in items]
+
+        current_download = None
+        for item in queue_items:
+            if item['video'] and item['video'].get('status') == 'downloading':
+                current_download = {
+                    'video': item['video'],
+                    'progress_pct': item['progress_pct'],
+                    'speed_bps': item['speed_bps'],
+                    'eta_seconds': item['eta_seconds'],
+                    'total_bytes': item.get('total_bytes', 0)
+                }
+                break
+
+        auto_refresh_enabled = _settings_manager.get_bool('auto_refresh_enabled')
+        is_auto_refreshing = _scheduler.is_running() if hasattr(_scheduler, 'is_running') else False
+        last_auto_refresh = _scheduler.last_run if hasattr(_scheduler, 'last_run') else None
+        delay_info = _download_worker.delay_info if hasattr(_download_worker, 'delay_info') else None
+        is_paused = _download_worker.paused if hasattr(_download_worker, 'paused') else False
+        rate_limit_message = _download_worker.rate_limit_message if hasattr(_download_worker, 'rate_limit_message') else None
+        last_error_message = _download_worker.last_error_message if hasattr(_download_worker, 'last_error_message') else None
+        cookie_warning_message = _download_worker.cookie_warning_message if hasattr(_download_worker, 'cookie_warning_message') else None
+
+        return {
+            'queue_items': queue_items,
+            'current_download': current_download,
+            'current_operation': _get_current_operation(),
+            'delay_info': delay_info,
+            'is_paused': is_paused,
+            'is_auto_refreshing': is_auto_refreshing,
+            'last_auto_refresh': last_auto_refresh.isoformat() if last_auto_refresh else None,
+            'auto_refresh_enabled': auto_refresh_enabled,
+            'rate_limit_message': rate_limit_message,
+            'last_error_message': last_error_message,
+            'cookie_warning_message': cookie_warning_message
+        }
+
+
+@queue_bp.route('/api/queue/stream')
+def queue_stream():
+    """SSE endpoint for real-time queue updates."""
+    client_ip = request.remote_addr
+    logger.debug(f"SSE client connecting from {client_ip}")
+
+    def generate():
+        subscriber = queue_events.subscribe()
+        logger.info(f"SSE client connected from {client_ip}")
+        try:
+            # Send initial state immediately
+            initial_state = _get_queue_state()
+            yield f"event: queue\ndata: {json.dumps(initial_state)}\n\n"
+
+            # Listen for events
+            while True:
+                try:
+                    event = subscriber.get(timeout=30)  # 30s heartbeat timeout
+                    if event['type'] == 'queue:changed':
+                        # Build fresh state when signaled
+                        state = _get_queue_state()
+                        yield f"event: queue\ndata: {json.dumps(state)}\n\n"
+                except Empty:
+                    # Send heartbeat comment to keep connection alive
+                    yield ": heartbeat\n\n"
+        except GeneratorExit:
+            logger.debug(f"SSE client disconnected gracefully from {client_ip}")
+        except Exception as e:
+            logger.warning(f"SSE error for client {client_ip}: {e}")
+        finally:
+            queue_events.unsubscribe(subscriber)
+            logger.info(f"SSE client cleanup complete for {client_ip}")
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'X-Accel-Buffering': 'no',
+            'Connection': 'keep-alive'
+        }
+    )
 
 
 @queue_bp.route('/api/queue', methods=['POST'])
