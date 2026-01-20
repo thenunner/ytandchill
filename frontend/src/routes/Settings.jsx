@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTheme, themes } from '../contexts/ThemeContext';
+import { useCardSize } from '../contexts/CardSizeContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import Tooltip from '../components/ui/Tooltip';
@@ -144,11 +145,12 @@ export default function Settings() {
     return stored ? Number(stored) : 50;
   });
 
-  // Global card size setting (stored in localStorage)
-  const [globalCardSize, setGlobalCardSize] = useState(() => {
-    const stored = localStorage.getItem('global_card_size');
-    return stored || 'md';
-  });
+  // Global card size setting (from CardSizeContext)
+  const { cardSize: globalCardSize, setCardSize: setGlobalCardSize } = useCardSize();
+
+  // Global hide settings
+  const [hideWatched, setHideWatched] = useState(() => localStorage.getItem('global_hide_watched') === 'true');
+  const [hidePlaylisted, setHidePlaylisted] = useState(() => localStorage.getItem('global_hide_playlisted') === 'true');
 
   // Default playback speed
   const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState('1');
@@ -939,7 +941,6 @@ export default function Settings() {
                   key={option.value}
                   onClick={() => {
                     setGlobalCardSize(option.value);
-                    localStorage.setItem('global_card_size', option.value);
                     showNotification(`Card size set to ${option.label}`, 'success');
                   }}
                   className={`settings-toggle-btn ${globalCardSize === option.value ? 'active' : ''}`}
@@ -967,6 +968,46 @@ export default function Settings() {
                 />
               ))}
             </div>
+          </div>
+
+          <div className="setting-row">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">Hide Watched Videos</div>
+                <div className="setting-desc">Hide videos you've already watched from all video lists</div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const newValue = !hideWatched;
+                setHideWatched(newValue);
+                localStorage.setItem('global_hide_watched', newValue.toString());
+                showNotification(newValue ? 'Watched videos will be hidden' : 'Watched videos will be shown', 'success');
+              }}
+              className={`settings-toggle ${hideWatched ? 'active' : ''}`}
+            >
+              <span className="toggle-slider" />
+            </button>
+          </div>
+
+          <div className="setting-row">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">Hide Videos in Playlists</div>
+                <div className="setting-desc">Hide videos that are already added to a playlist</div>
+              </div>
+            </div>
+            <button
+              onClick={() => {
+                const newValue = !hidePlaylisted;
+                setHidePlaylisted(newValue);
+                localStorage.setItem('global_hide_playlisted', newValue.toString());
+                showNotification(newValue ? 'Playlisted videos will be hidden' : 'Playlisted videos will be shown', 'success');
+              }}
+              className={`settings-toggle ${hidePlaylisted ? 'active' : ''}`}
+            >
+              <span className="toggle-slider" />
+            </button>
           </div>
           </div>
         </div>

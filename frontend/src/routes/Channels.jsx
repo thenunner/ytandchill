@@ -41,11 +41,9 @@ export default function Channels() {
   const [menuOpen, setMenuOpen] = useState(null); // Track which channel's menu is open (grid view only)
   const [showDurationSettings, setShowDurationSettings] = useState(null); // Track which channel shows duration settings
   const [searchInput, setSearchInput] = useState(''); // Search filter
-  const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'needs_review_then_scan'); // Sort option
-  const [showSortMenu, setShowSortMenu] = useState(false); // Sort menu visibility
+  const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'title-asc'); // Sort option
   const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
   const [editMode, setEditMode] = useState(false); // Edit mode for bulk selection
-  const sortMenuRef = useRef(null);
 
   // Category filter state
   const [selectedCategories, setSelectedCategories] = useState(() => {
@@ -333,11 +331,6 @@ export default function Channels() {
         setShowCategorySubmenu(null);
       }
 
-      // Close sort menu if clicking outside
-      if (sortMenuRef.current && !sortMenuRef.current.contains(event.target)) {
-        setShowSortMenu(false);
-      }
-
       // Close category filter if clicking outside
       if (categoryFilterRef.current && !categoryFilterRef.current.contains(event.target)) {
         setShowCategoryFilter(false);
@@ -453,36 +446,29 @@ export default function Channels() {
       });
     }
 
-    // Then sort based on selected option
+    // Sort: needs_review channels always float to top, then apply selected sort
     const sorted = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'needs_review_then_scan':
-          // Sort by channels with videos to review first (any > 0), then by newest video upload date
-          const aHasReview = (a.video_count || 0) > 0 ? 1 : 0;
-          const bHasReview = (b.video_count || 0) > 0 ? 1 : 0;
-          const reviewDiff = bHasReview - aHasReview;
-          if (reviewDiff !== 0) return reviewDiff;
+      // First: channels with videos to review float to top
+      const aHasReview = (a.video_count || 0) > 0 ? 1 : 0;
+      const bHasReview = (b.video_count || 0) > 0 ? 1 : 0;
+      if (aHasReview !== bHasReview) {
+        return bHasReview - aHasReview; // Channels needing review first
+      }
 
-          // Within same review status, sort by newest video upload date (YYYYMMDD format)
-          const aVideoDate = a.last_video_date || '';
-          const bVideoDate = b.last_video_date || '';
-          return bVideoDate.localeCompare(aVideoDate); // Newest video first
-        case 'a_z':
+      // Second: apply selected sort within each group
+      switch (sortBy) {
+        case 'title-asc':
           return (a.title || '').localeCompare(b.title || '');
-        case 'z_a':
+        case 'title-desc':
           return (b.title || '').localeCompare(a.title || '');
-        case 'most_downloaded':
-          return (b.downloaded_count || 0) - (a.downloaded_count || 0);
-        case 'least_downloaded':
-          return (a.downloaded_count || 0) - (b.downloaded_count || 0);
-        case 'most_to_review':
-          return (b.video_count || 0) - (a.video_count || 0);
-        case 'least_to_review':
-          return (a.video_count || 0) - (b.video_count || 0);
-        case 'newest_scanned':
+        case 'scan-desc':
           return new Date(b.last_scan_at || 0) - new Date(a.last_scan_at || 0);
-        case 'oldest_scanned':
+        case 'scan-asc':
           return new Date(a.last_scan_at || 0) - new Date(b.last_scan_at || 0);
+        case 'count-desc':
+          return (b.downloaded_count || 0) - (a.downloaded_count || 0);
+        case 'count-asc':
+          return (a.downloaded_count || 0) - (b.downloaded_count || 0);
         default:
           return 0;
       }
@@ -779,134 +765,24 @@ export default function Channels() {
               className="flex-1 sm:flex-none sm:w-[200px]"
             />
 
-          {/* Sort Button */}
-          <div className="relative" ref={sortMenuRef}>
-            <button
-              onClick={() => setShowSortMenu(!showSortMenu)}
-              className="filter-btn"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="4" y1="6" x2="16" y2="6"></line>
-                <line x1="4" y1="12" x2="13" y2="12"></line>
-                <line x1="4" y1="18" x2="10" y2="18"></line>
-              </svg>
-              <span className="hidden sm:inline">Sort</span>
-            </button>
-
-            {/* Sort Dropdown Menu */}
-            {showSortMenu && (
-              <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-56 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
-                <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
-
-                {/* A-Z / Z-A */}
-                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex gap-4">
-                      <button
-                        onClick={() => { setSortBy('a_z'); setShowSortMenu(false); }}
-                        className={`${sortBy === 'a_z' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
-                      >
-                        A-Z
-                      </button>
-                      <button
-                        onClick={() => { setSortBy('z_a'); setShowSortMenu(false); }}
-                        className={`${sortBy === 'z_a' ? 'text-accent' : 'text-text-primary hover:text-accent'}`}
-                      >
-                        Z-A
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Downloaded */}
-                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-primary">Downloaded</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => { setSortBy('most_downloaded'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Most Downloaded"
-                        aria-label="Sort by most downloaded"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 5v14M5 12l7-7 7 7"></path>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => { setSortBy('least_downloaded'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_downloaded' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Least Downloaded"
-                        aria-label="Sort by least downloaded"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 19V5M5 12l7 7 7-7"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Needs Review */}
-                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-primary">To Review</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => { setSortBy('most_to_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'most_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Most To Review"
-                        aria-label="Sort by most to review"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 5v14M5 12l7-7 7 7"></path>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => { setSortBy('least_to_review'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'least_to_review' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Least To Review"
-                        aria-label="Sort by least to review"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 19V5M5 12l7 7 7-7"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Last Scanned */}
-                <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-primary">Last Scanned</span>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => { setSortBy('newest_scanned'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'newest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Newest Scanned"
-                        aria-label="Sort by newest scanned"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 5v14M5 12l7-7 7 7"></path>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => { setSortBy('oldest_scanned'); setShowSortMenu(false); }}
-                        className={`p-1 rounded ${sortBy === 'oldest_scanned' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                        title="Oldest Scanned"
-                        aria-label="Sort by oldest scanned"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                          <path d="M12 19V5M5 12l7 7 7-7"></path>
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* Sort Dropdown */}
+          <SortDropdown
+            value={sortBy}
+            onChange={(value) => {
+              setSortBy(value);
+              localStorage.setItem('channels_sortBy', value);
+            }}
+            options={[
+              { value: 'title-asc', label: 'A → Z' },
+              { value: 'title-desc', label: 'Z → A' },
+              { divider: true },
+              { value: 'scan-desc', label: 'Last Scanned (Newest)' },
+              { value: 'scan-asc', label: 'Last Scanned (Oldest)' },
+              { divider: true },
+              { value: 'count-desc', label: 'Most Downloaded' },
+              { value: 'count-asc', label: 'Least Downloaded' },
+            ]}
+          />
 
             {/* Pagination - desktop only */}
             {!isMobile && (

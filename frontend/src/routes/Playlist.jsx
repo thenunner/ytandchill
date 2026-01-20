@@ -6,7 +6,7 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
-import FiltersModal from '../components/FiltersModal';
+import SortDropdown from '../components/stickybar/SortDropdown';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
@@ -27,9 +27,10 @@ export default function Playlist() {
   const gridColumns = useGridColumns(cardSize);
 
   const [searchInput, setSearchInput] = useState('');
-  const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [sort, setSort] = useState(localStorage.getItem('playlist_sort') || 'date-desc');
-  const [hideWatched, setHideWatched] = useState(localStorage.getItem('playlist_hideWatched') === 'true');
+  const [durationFilter, setDurationFilter] = useState(localStorage.getItem('playlist_duration') || 'all');
+  // Use global hide settings from Settings page
+  const hideWatched = localStorage.getItem('global_hide_watched') === 'true';
   const [editMode, setEditMode] = useState(false);
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [showBulkPlaylistOptions, setShowBulkPlaylistOptions] = useState(false);
@@ -45,14 +46,16 @@ export default function Playlist() {
   }, [sort]);
 
   useEffect(() => {
-    localStorage.setItem('playlist_hideWatched', hideWatched.toString());
-  }, [hideWatched]);
+    localStorage.setItem('playlist_duration', durationFilter);
+  }, [durationFilter]);
 
-  const handleFilterChange = (key, value) => {
-    if (key === 'sort') {
-      setSort(value);
-    } else if (key === 'hide_watched') {
-      setHideWatched(value === 'true');
+  // Convert duration filter to min/max for filtering
+  const getDurationRange = () => {
+    switch (durationFilter) {
+      case '0-30': return { min: 0, max: 30 * 60 };
+      case '30-60': return { min: 30 * 60, max: 60 * 60 };
+      case 'over60': return { min: 60 * 60, max: Infinity };
+      default: return null;
     }
   };
 
@@ -134,15 +137,23 @@ export default function Playlist() {
   // Filter and sort videos - must be before any early returns
   const sortedVideos = useMemo(() => {
     if (!playlist?.videos) return [];
+    const durationRange = getDurationRange();
     return playlist.videos
       .filter(video => {
         // Search filter
         if (!(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
           return false;
         }
-        // Hide watched filter
+        // Hide watched filter (global setting)
         if (hideWatched && video.watched) {
           return false;
+        }
+        // Duration filter
+        if (durationRange) {
+          const duration = video.duration_sec || 0;
+          if (duration < durationRange.min || duration >= durationRange.max) {
+            return false;
+          }
         }
         return true;
       })
@@ -164,13 +175,13 @@ export default function Playlist() {
             return 0;
         }
       });
-  }, [playlist?.videos, searchInput, hideWatched, sort]);
+  }, [playlist?.videos, searchInput, hideWatched, sort, durationFilter]);
 
   // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
     setLoadedPages(1); // Reset mobile infinite scroll
-  }, [searchInput, sort, hideWatched]);
+  }, [searchInput, sort, durationFilter]);
 
   // Paginate videos (mobile: infinite scroll, desktop: pagination)
   const paginatedVideos = useMemo(() => {
@@ -250,15 +261,28 @@ export default function Playlist() {
               />
             )}
 
-            <button
-              onClick={() => setShowFiltersModal(true)}
-              className="filter-btn"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
-              </svg>
-              <span>Filters</span>
-            </button>
+            <SortDropdown
+              value={sort}
+              onChange={setSort}
+              options={[
+                { value: 'date-desc', label: 'Newest' },
+                { value: 'date-asc', label: 'Oldest' },
+                { divider: true },
+                { value: 'title-asc', label: 'A → Z' },
+                { value: 'title-desc', label: 'Z → A' },
+                { divider: true },
+                { value: 'duration-desc', label: 'Longest' },
+                { value: 'duration-asc', label: 'Shortest' },
+              ]}
+              durationValue={durationFilter}
+              onDurationChange={setDurationFilter}
+              durationOptions={[
+                { value: 'all', label: 'All' },
+                { value: '0-30', label: '0-30 min' },
+                { value: '30-60', label: '30-60 min' },
+                { value: 'over60', label: 'Over 60 min' },
+              ]}
+            />
 
             <button
               onClick={() => {
@@ -353,21 +377,6 @@ export default function Playlist() {
           </div>
         )
       )}
-
-      {/* Filters Modal */}
-      <FiltersModal
-        isOpen={showFiltersModal}
-        onClose={() => setShowFiltersModal(false)}
-        filters={{
-          sort,
-          hideWatched
-        }}
-        onFilterChange={handleFilterChange}
-        hideVideosFilter={true}
-        isPlaylistMode={false}
-        isLibraryMode={true}
-        isPlaylistView={true}
-      />
 
       {/* Confirmation Modals */}
       <ConfirmModal
