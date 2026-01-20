@@ -577,14 +577,6 @@ export default function Channels() {
               >
                 All
               </button>
-
-              {/* Scan Progress */}
-              {isScanRunning && currentOperation?.message && (
-                <span className="text-xs text-text-secondary ml-1 hidden sm:inline truncate max-w-[200px]">
-                  {currentOperation.progress > 0 && `${currentOperation.progress}% `}
-                  {currentOperation.message}
-                </span>
-              )}
             </div>
 
           {/* Category Filter */}
