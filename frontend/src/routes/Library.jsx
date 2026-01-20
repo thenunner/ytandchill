@@ -11,7 +11,8 @@ import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridU
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
-import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, FilterIcon, PlusIcon, TrashIcon, UploadIcon } from '../components/icons';
+import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, UploadIcon } from '../components/icons';
+import SortDropdown from '../components/stickybar/SortDropdown';
 import { formatFileSize } from '../utils/formatters';
 
 export default function Library() {
@@ -31,23 +32,19 @@ export default function Library() {
 
   // Playlist filters with localStorage persistence
   const [playlistSortBy, setPlaylistSortBy] = useState(() => {
-    return localStorage.getItem('library_playlistSortBy') || 'a_z';
+    return localStorage.getItem('library_playlistSortBy') || 'title-asc';
   });
-  const [showPlaylistSortMenu, setShowPlaylistSortMenu] = useState(false);
 
   // Channel filters with localStorage persistence
   const [channelSortBy, setChannelSortBy] = useState(() => {
-    return localStorage.getItem('library_channelSortBy') || 'a_z';
+    return localStorage.getItem('library_channelSortBy') || 'title-asc';
   });
-  const [showChannelSortMenu, setShowChannelSortMenu] = useState(false);
 
   const deletePlaylist = useDeletePlaylist();
   const updatePlaylist = useUpdatePlaylist();
   const { showNotification } = useNotification();
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'deletePlaylist' | 'deletePlaylists' | 'deleteCategory', data: any }
   const menuRef = useRef(null);
-  const playlistSortMenuRef = useRef(null);
-  const channelSortMenuRef = useRef(null);
   const categoryMenuRef = useRef(null);
 
   // Category hooks and state
@@ -201,17 +198,17 @@ export default function Library() {
     // Then sort based on selected option
     const sorted = [...filtered].sort((a, b) => {
       switch (channelSortBy) {
-        case 'a_z':
+        case 'title-asc':
           return (a.title || '').localeCompare(b.title || '');
-        case 'z_a':
+        case 'title-desc':
           return (b.title || '').localeCompare(a.title || '');
-        case 'most_videos':
+        case 'count-desc':
           return b.videoCount - a.videoCount;
-        case 'least_videos':
+        case 'count-asc':
           return a.videoCount - b.videoCount;
-        case 'newest_added':
+        case 'date-desc':
           return new Date(b.lastAddedAt || 0) - new Date(a.lastAddedAt || 0);
-        case 'oldest_added':
+        case 'date-asc':
           return new Date(a.lastAddedAt || 0) - new Date(b.lastAddedAt || 0);
         default:
           return 0;
@@ -254,13 +251,13 @@ export default function Library() {
     // Then sort based on selected option
     const sorted = [...filtered].sort((a, b) => {
       switch (playlistSortBy) {
-        case 'a_z':
+        case 'title-asc':
           return ((a.title || a.name) || '').localeCompare((b.title || b.name) || '');
-        case 'z_a':
+        case 'title-desc':
           return ((b.title || b.name) || '').localeCompare((a.title || a.name) || '');
-        case 'most_videos':
+        case 'count-desc':
           return (b.video_count || 0) - (a.video_count || 0);
-        case 'least_videos':
+        case 'count-asc':
           return (a.video_count || 0) - (b.video_count || 0);
         default:
           return 0;
@@ -300,17 +297,15 @@ export default function Library() {
     const sortedCategorized = Object.entries(categorized)
       .sort(([, a], [, b]) => {
         switch (playlistSortBy) {
-          case 'a_z':
+          case 'title-asc':
             return a.category.name.localeCompare(b.category.name);
-          case 'z_a':
+          case 'title-desc':
             return b.category.name.localeCompare(a.category.name);
-          case 'most_videos':
-            // Count total videos across all playlists in each category
+          case 'count-desc':
             const aTotalVideos = a.playlists.reduce((sum, p) => sum + (p.video_count || 0), 0);
             const bTotalVideos = b.playlists.reduce((sum, p) => sum + (p.video_count || 0), 0);
             return bTotalVideos - aTotalVideos;
-          case 'least_videos':
-            // Count total videos across all playlists in each category
+          case 'count-asc':
             const aLeastVideos = a.playlists.reduce((sum, p) => sum + (p.video_count || 0), 0);
             const bLeastVideos = b.playlists.reduce((sum, p) => sum + (p.video_count || 0), 0);
             return aLeastVideos - bLeastVideos;
@@ -330,14 +325,6 @@ export default function Library() {
     const handleClickOutside = (event) => {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
         setActiveMenuId(null);
-      }
-      // Close playlist sort menu if clicking outside
-      if (playlistSortMenuRef.current && !playlistSortMenuRef.current.contains(event.target)) {
-        setShowPlaylistSortMenu(false);
-      }
-      // Close channel sort menu if clicking outside
-      if (channelSortMenuRef.current && !channelSortMenuRef.current.contains(event.target)) {
-        setShowChannelSortMenu(false);
       }
       // Close category menu if clicking outside
       if (categoryMenuRef.current && !categoryMenuRef.current.contains(event.target)) {
@@ -566,97 +553,24 @@ export default function Library() {
                 className="w-24 sm:w-[160px]"
               />
 
-              {/* Sort Button */}
-              <div className="relative" ref={channelSortMenuRef}>
-                <button
-                  onClick={() => setShowChannelSortMenu(!showChannelSortMenu)}
-                  className="filter-btn"
-                >
-                  <FilterIcon />
-                  <span className="hidden sm:inline">Sort</span>
-                </button>
-
-                {/* Sort Dropdown Menu */}
-                {showChannelSortMenu && (
-                  <div className="absolute right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
-                    <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
-
-                    {/* A-Z / Z-A */}
-                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() => { setChannelSortBy('a_z'); setShowChannelSortMenu(false); }}
-                            className={`${channelSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                          >
-                            A-Z
-                          </button>
-                          <button
-                            onClick={() => { setChannelSortBy('z_a'); setShowChannelSortMenu(false); }}
-                            className={`${channelSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                          >
-                            Z-A
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Videos */}
-                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="text-text-primary">Videos</span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => { setChannelSortBy('most_videos'); setShowChannelSortMenu(false); }}
-                            className={`p-1 rounded ${channelSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Most Videos"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 5v14M5 12l7-7 7 7"></path>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => { setChannelSortBy('least_videos'); setShowChannelSortMenu(false); }}
-                            className={`p-1 rounded ${channelSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Least Videos"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 19V5M5 12l7 7 7-7"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Added */}
-                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="text-text-primary">Added</span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => { setChannelSortBy('newest_added'); setShowChannelSortMenu(false); }}
-                            className={`p-1 rounded ${channelSortBy === 'newest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Newest Added"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 5v14M5 12l7-7 7 7"></path>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => { setChannelSortBy('oldest_added'); setShowChannelSortMenu(false); }}
-                            className={`p-1 rounded ${channelSortBy === 'oldest_added' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Oldest Added"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 19V5M5 12l7 7 7-7"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Sort Dropdown */}
+              <SortDropdown
+                value={channelSortBy}
+                onChange={(value) => {
+                  setChannelSortBy(value);
+                  localStorage.setItem('library_channelSortBy', value);
+                }}
+                options={[
+                  { value: 'title-asc', label: 'A → Z' },
+                  { value: 'title-desc', label: 'Z → A' },
+                  { divider: true },
+                  { value: 'count-desc', label: 'Most Videos' },
+                  { value: 'count-asc', label: 'Least Videos' },
+                  { divider: true },
+                  { value: 'date-desc', label: 'Newest' },
+                  { value: 'date-asc', label: 'Oldest' },
+                ]}
+              />
 
               {!isMobile && (
                 <Pagination
@@ -742,70 +656,21 @@ export default function Library() {
                 className="w-24 sm:w-[160px]"
               />
 
-              {/* Sort Button */}
-              <div className="relative" ref={playlistSortMenuRef}>
-                <button
-                  onClick={() => setShowPlaylistSortMenu(!showPlaylistSortMenu)}
-                  className="filter-btn"
-                >
-                  <FilterIcon />
-                  <span className="hidden sm:inline">Sort</span>
-                </button>
-
-                {/* Sort Dropdown Menu */}
-                {showPlaylistSortMenu && (
-                  <div className="absolute right-0 mt-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-50">
-                    <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">Sort By</div>
-
-                    {/* A-Z / Z-A */}
-                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex gap-4">
-                          <button
-                            onClick={() => { setPlaylistSortBy('a_z'); setShowPlaylistSortMenu(false); }}
-                            className={`${playlistSortBy === 'a_z' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                          >
-                            A-Z
-                          </button>
-                          <button
-                            onClick={() => { setPlaylistSortBy('z_a'); setShowPlaylistSortMenu(false); }}
-                            className={`${playlistSortBy === 'z_a' ? 'text-accent-text' : 'text-text-primary hover:text-accent'}`}
-                          >
-                            Z-A
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Videos */}
-                    <div className="px-4 py-2 hover:bg-dark-hover transition-colors">
-                      <div className="flex items-center gap-3 text-sm">
-                        <span className="text-text-primary">Videos</span>
-                        <div className="flex gap-1">
-                          <button
-                            onClick={() => { setPlaylistSortBy('most_videos'); setShowPlaylistSortMenu(false); }}
-                            className={`p-1 rounded ${playlistSortBy === 'most_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Most Videos"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 5v14M5 12l7-7 7 7"></path>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => { setPlaylistSortBy('least_videos'); setShowPlaylistSortMenu(false); }}
-                            className={`p-1 rounded ${playlistSortBy === 'least_videos' ? 'text-accent-text' : 'text-text-muted hover:text-text-primary'}`}
-                            title="Least Videos"
-                          >
-                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4">
-                              <path d="M12 19V5M5 12l7 7 7-7"></path>
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
+              {/* Sort Dropdown */}
+              <SortDropdown
+                value={playlistSortBy}
+                onChange={(value) => {
+                  setPlaylistSortBy(value);
+                  localStorage.setItem('library_playlistSortBy', value);
+                }}
+                options={[
+                  { value: 'title-asc', label: 'A → Z' },
+                  { value: 'title-desc', label: 'Z → A' },
+                  { divider: true },
+                  { value: 'count-desc', label: 'Most Videos' },
+                  { value: 'count-asc', label: 'Least Videos' },
+                ]}
+              />
             </div>
           </div>
         )}

@@ -6,7 +6,7 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
-import FiltersModal from '../components/FiltersModal';
+import SortDropdown from '../components/stickybar/SortDropdown';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
@@ -54,7 +54,6 @@ export default function ChannelLibrary() {
   const isScanRunning = currentOperation?.type === 'scanning';
 
   const [selectedVideos, setSelectedVideos] = useState([]);
-  const [showFiltersModal, setShowFiltersModal] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -94,71 +93,21 @@ export default function ChannelLibrary() {
     return stored || 'date-desc';
   })();
 
-  const minDuration = (() => {
-    const urlParam = searchParams.get('min_duration');
+  // Simplified duration filter: 'all', '0-30', '30-60', 'over60'
+  const durationFilter = (() => {
+    const urlParam = searchParams.get('duration');
     if (urlParam) return urlParam;
-    return localStorage.getItem(`${localStorageKey}_minDuration`) || null;
+    const stored = localStorage.getItem(`${localStorageKey}_duration`);
+    return stored || 'all';
   })();
 
-  const maxDuration = (() => {
-    const urlParam = searchParams.get('max_duration');
-    if (urlParam) return urlParam;
-    return localStorage.getItem(`${localStorageKey}_maxDuration`) || null;
-  })();
+  // Convert duration filter to min/max for API
+  const minDuration = durationFilter === '30-60' ? '30' : durationFilter === 'over60' ? '60' : null;
+  const maxDuration = durationFilter === '0-30' ? '30' : durationFilter === '30-60' ? '60' : null;
 
-  const uploadDateFrom = (() => {
-    const urlParam = searchParams.get('upload_from');
-    if (urlParam) return urlParam;
-    return localStorage.getItem(`${localStorageKey}_uploadFrom`) || null;
-  })();
-
-  const uploadDateTo = (() => {
-    const urlParam = searchParams.get('upload_to');
-    if (urlParam) return urlParam;
-    return localStorage.getItem(`${localStorageKey}_uploadTo`) || null;
-  })();
-
-  // For library mode, initialize from localStorage if URL param not present
-  const hideWatched = (() => {
-    const urlParam = searchParams.get('hide_watched');
-    if (urlParam !== null) return urlParam === 'true';
-    if (isLibraryMode) return localStorage.getItem('channelLibrary_hideWatched') === 'true';
-    return false;
-  })();
-
-  const hidePlaylisted = (() => {
-    const urlParam = searchParams.get('hide_playlisted');
-    if (urlParam !== null) return urlParam === 'true';
-    if (isLibraryMode) return localStorage.getItem('channelLibrary_hidePlaylisted') === 'true';
-    return false;
-  })();
-
-  // Derive current filter states for the modal
-  const getCurrentUploadDateFilter = () => {
-    if (!uploadDateFrom) return '';
-    const now = new Date();
-    const from = new Date(uploadDateFrom);
-    const daysDiff = Math.floor((now - from) / (24 * 60 * 60 * 1000));
-
-    if (daysDiff >= 0 && daysDiff <= 7) return 'week';
-    if (daysDiff >= 28 && daysDiff <= 31) return 'month';
-    if (daysDiff >= 360 && daysDiff <= 370) return 'year';
-    return '';
-  };
-
-  const getCurrentDurationFilter = () => {
-    const min = minDuration ? parseInt(minDuration) : null;
-    const max = maxDuration ? parseInt(maxDuration) : null;
-
-    if (max === 5 && !min) return 'under5';
-    if (min === 5 && max === 30) return '5-30';
-    if (min === 30 && max === 60) return '30-60';
-    if (min === 60 && !max) return 'over60';
-    return '';
-  };
-
-  const currentUploadDateFilter = getCurrentUploadDateFilter();
-  const currentDurationFilter = getCurrentDurationFilter();
+  // Use global hide settings from Settings page (library mode only)
+  const hideWatched = isLibraryMode && localStorage.getItem('global_hide_watched') === 'true';
+  const hidePlaylisted = isLibraryMode && localStorage.getItem('global_hide_playlisted') === 'true';
 
   // Determine status and ignored based on mode
   let status, ignored;
@@ -184,8 +133,6 @@ export default function ChannelLibrary() {
     search,
     min_duration: minDuration,
     max_duration: maxDuration,
-    upload_from: uploadDateFrom,
-    upload_to: uploadDateTo,
   });
 
 
@@ -211,60 +158,18 @@ export default function ChannelLibrary() {
       }
     }
 
-    if (!searchParams.has('min_duration')) {
-      const storedMinDuration = localStorage.getItem(`${localStorageKey}_minDuration`);
-      if (storedMinDuration) {
-        newParams.set('min_duration', storedMinDuration);
+    if (!searchParams.has('duration')) {
+      const storedDuration = localStorage.getItem(`${localStorageKey}_duration`);
+      if (storedDuration && storedDuration !== 'all') {
+        newParams.set('duration', storedDuration);
         changed = true;
-      }
-    }
-
-    if (!searchParams.has('max_duration')) {
-      const storedMaxDuration = localStorage.getItem(`${localStorageKey}_maxDuration`);
-      if (storedMaxDuration) {
-        newParams.set('max_duration', storedMaxDuration);
-        changed = true;
-      }
-    }
-
-    if (!searchParams.has('upload_from')) {
-      const storedUploadFrom = localStorage.getItem(`${localStorageKey}_uploadFrom`);
-      if (storedUploadFrom) {
-        newParams.set('upload_from', storedUploadFrom);
-        changed = true;
-      }
-    }
-
-    if (!searchParams.has('upload_to')) {
-      const storedUploadTo = localStorage.getItem(`${localStorageKey}_uploadTo`);
-      if (storedUploadTo) {
-        newParams.set('upload_to', storedUploadTo);
-        changed = true;
-      }
-    }
-
-    if (isLibraryMode) {
-      if (!searchParams.has('hide_watched')) {
-        const storedHideWatched = localStorage.getItem('channelLibrary_hideWatched');
-        if (storedHideWatched === 'true') {
-          newParams.set('hide_watched', 'true');
-          changed = true;
-        }
-      }
-
-      if (!searchParams.has('hide_playlisted')) {
-        const storedHidePlaylisted = localStorage.getItem('channelLibrary_hidePlaylisted');
-        if (storedHidePlaylisted === 'true') {
-          newParams.set('hide_playlisted', 'true');
-          changed = true;
-        }
       }
     }
 
     if (changed) {
       setSearchParams(newParams, { replace: true });
     }
-  }, [channelId]); // Run when channelId changes (navigating to a different channel or returning to same channel)
+  }, [channelId]); // Run when channelId changes
 
   // Note: searchInput is kept as pure local state to avoid losing focus on input
   // It persists naturally when toggling edit mode since it's component state
@@ -285,22 +190,16 @@ export default function ChannelLibrary() {
 
   const handleFilter = (key, value) => {
     const newParams = new URLSearchParams(searchParams);
-    if (value) {
+    if (value && value !== 'all') {
       newParams.set(key, value);
       // Save to localStorage for persistence
       if (key === 'filter') localStorage.setItem(`${localStorageKey}_filter`, value);
-      if (key === 'min_duration') localStorage.setItem(`${localStorageKey}_minDuration`, value);
-      if (key === 'max_duration') localStorage.setItem(`${localStorageKey}_maxDuration`, value);
-      if (key === 'upload_from') localStorage.setItem(`${localStorageKey}_uploadFrom`, value);
-      if (key === 'upload_to') localStorage.setItem(`${localStorageKey}_uploadTo`, value);
+      if (key === 'duration') localStorage.setItem(`${localStorageKey}_duration`, value);
     } else {
       newParams.delete(key);
       // Remove from localStorage when cleared
       if (key === 'filter') localStorage.removeItem(`${localStorageKey}_filter`);
-      if (key === 'min_duration') localStorage.removeItem(`${localStorageKey}_minDuration`);
-      if (key === 'max_duration') localStorage.removeItem(`${localStorageKey}_maxDuration`);
-      if (key === 'upload_from') localStorage.removeItem(`${localStorageKey}_uploadFrom`);
-      if (key === 'upload_to') localStorage.removeItem(`${localStorageKey}_uploadTo`);
+      if (key === 'duration') localStorage.removeItem(`${localStorageKey}_duration`);
     }
     setSearchParams(newParams);
   };
@@ -395,7 +294,7 @@ export default function ChannelLibrary() {
   useEffect(() => {
     setCurrentPage(1);
     setLoadedPages(1); // Reset mobile infinite scroll
-  }, [searchInput, hideWatched, hidePlaylisted, sort, contentFilter]);
+  }, [searchInput, sort, durationFilter, contentFilter]);
 
   // Adjust page if current page is now empty (after bulk delete/ignore)
   useEffect(() => {
@@ -416,112 +315,22 @@ export default function ChannelLibrary() {
     return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedVideos, currentPage, itemsPerPage, loadedPages, isMobile]);
 
-  const handleFilterChange = (key, value) => {
+  // Handle duration filter change from SortDropdown
+  const handleDurationChange = (value) => {
     const newParams = new URLSearchParams(searchParams);
-
-    if (key === 'view') {
-      setViewMode(value);
-      return;
-    }
-
-    // Handle hide_watched and hide_playlisted - update both URL and localStorage
-    if (key === 'hide_watched' || key === 'hide_playlisted') {
-      if (value) {
-        newParams.set(key, value);
-        if (isLibraryMode) {
-          const storageKey = key === 'hide_watched' ? 'channelLibrary_hideWatched' : 'channelLibrary_hidePlaylisted';
-          localStorage.setItem(storageKey, 'true');
-        }
-      } else {
-        newParams.delete(key);
-        if (isLibraryMode) {
-          const storageKey = key === 'hide_watched' ? 'channelLibrary_hideWatched' : 'channelLibrary_hidePlaylisted';
-          localStorage.setItem(storageKey, 'false');
-        }
-      }
-      setSearchParams(newParams);
-      return;
-    }
-
-    if (key === 'sort') {
-      newParams.set('sort', value);
-      // Save to localStorage for persistence
-      localStorage.setItem(`${localStorageKey}_sort`, value);
-    } else if (key === 'duration') {
-      // Convert duration filter to min/max minutes
-      newParams.delete('min_duration');
-      newParams.delete('max_duration');
-      // Clear localStorage for duration
-      localStorage.removeItem(`${localStorageKey}_minDuration`);
-      localStorage.removeItem(`${localStorageKey}_maxDuration`);
-
-      if (value === 'under5') {
-        newParams.set('max_duration', '5');
-        localStorage.setItem(`${localStorageKey}_maxDuration`, '5');
-      } else if (value === '5-30') {
-        newParams.set('min_duration', '5');
-        newParams.set('max_duration', '30');
-        localStorage.setItem(`${localStorageKey}_minDuration`, '5');
-        localStorage.setItem(`${localStorageKey}_maxDuration`, '30');
-      } else if (value === '30-60') {
-        newParams.set('min_duration', '30');
-        newParams.set('max_duration', '60');
-        localStorage.setItem(`${localStorageKey}_minDuration`, '30');
-        localStorage.setItem(`${localStorageKey}_maxDuration`, '60');
-      } else if (value === 'over60') {
-        newParams.set('min_duration', '60');
-        localStorage.setItem(`${localStorageKey}_minDuration`, '60');
-      }
-    } else if (key === 'uploadDate') {
-      // Convert upload date filter to from/to dates
-      newParams.delete('upload_from');
-      newParams.delete('upload_to');
-      // Clear localStorage for upload dates
-      localStorage.removeItem(`${localStorageKey}_uploadFrom`);
-      localStorage.removeItem(`${localStorageKey}_uploadTo`);
-
-      const now = new Date();
-      if (value === 'week') {
-        const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        const fromDate = weekAgo.toISOString().split('T')[0];
-        newParams.set('upload_from', fromDate);
-        localStorage.setItem(`${localStorageKey}_uploadFrom`, fromDate);
-      } else if (value === 'month') {
-        const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        const fromDate = monthAgo.toISOString().split('T')[0];
-        newParams.set('upload_from', fromDate);
-        localStorage.setItem(`${localStorageKey}_uploadFrom`, fromDate);
-      } else if (value === 'year') {
-        const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-        const fromDate = yearAgo.toISOString().split('T')[0];
-        newParams.set('upload_from', fromDate);
-        localStorage.setItem(`${localStorageKey}_uploadFrom`, fromDate);
-      }
-    } else if (value) {
-      newParams.set(key, value);
+    if (value && value !== 'all') {
+      newParams.set('duration', value);
+      localStorage.setItem(`${localStorageKey}_duration`, value);
     } else {
-      newParams.delete(key);
+      newParams.delete('duration');
+      localStorage.removeItem(`${localStorageKey}_duration`);
     }
-
     setSearchParams(newParams);
   };
 
   // Real-time search handler - just update local state (debounce will handle URL params)
   const handleSearchChange = (value) => {
     setSearchInput(value);
-  };
-
-  const toggleHideFilter = (filterKey) => {
-    const newParams = new URLSearchParams(searchParams);
-    const currentValue = newParams.get(filterKey) === 'true';
-
-    if (currentValue) {
-      newParams.delete(filterKey);
-    } else {
-      newParams.set(filterKey, 'true');
-    }
-
-    setSearchParams(newParams);
   };
 
   const handleAddToQueue = async (videoId) => {
@@ -779,17 +588,31 @@ export default function ChannelLibrary() {
               )}
             </div>
 
-            {/* Filters Button */}
-            <button
-              onClick={() => setShowFiltersModal(true)}
-              title="Filter and sort videos"
-              className="filter-btn"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"></path>
-              </svg>
-              <span className="hidden sm:inline">Filters</span>
-            </button>
+            {/* Sort Dropdown */}
+            <SortDropdown
+              value={sort}
+              onChange={(value) => {
+                handleSort(value);
+              }}
+              options={[
+                { value: 'date-desc', label: 'Newest' },
+                { value: 'date-asc', label: 'Oldest' },
+                { divider: true },
+                { value: 'title-asc', label: 'A → Z' },
+                { value: 'title-desc', label: 'Z → A' },
+                { divider: true },
+                { value: 'duration-desc', label: 'Longest' },
+                { value: 'duration-asc', label: 'Shortest' },
+              ]}
+              durationValue={durationFilter}
+              onDurationChange={handleDurationChange}
+              durationOptions={[
+                { value: 'all', label: 'All' },
+                { value: '0-30', label: '0-30 min' },
+                { value: '30-60', label: '30-60 min' },
+                { value: 'over60', label: 'Over 60 min' },
+              ]}
+            />
 
             {/* Edit Button - Only in library mode */}
             {isLibraryMode && contentFilter !== 'playlists' && (
@@ -1165,24 +988,6 @@ export default function ChannelLibrary() {
           </div>
         )
       )}
-
-      {/* Filters Modal */}
-      <FiltersModal
-        isOpen={showFiltersModal}
-        onClose={() => setShowFiltersModal(false)}
-        filters={{
-          uploadDate: currentUploadDateFilter,
-          duration: currentDurationFilter,
-          sort,
-          hideWatched,
-          hidePlaylisted
-        }}
-        onFilterChange={handleFilterChange}
-        hideVideosFilter={true}
-        isPlaylistMode={contentFilter === 'playlists'}
-        isLibraryMode={isLibraryMode}
-        isPlaylistView={contentFilter === 'playlists'}
-      />
 
       {/* Scroll to Top Button */}
       {showScrollTop && (
