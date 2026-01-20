@@ -313,12 +313,15 @@ export function useRemoveVideoFromPlaylist() {
 }
 
 // Queue
-export function useQueue() {
+export function useQueue(options = {}) {
+  const { sseConnected = false } = options;
   return useQuery({
     queryKey: ['queue'],
     queryFn: () => api.getQueue(),
-    refetchInterval: 500, // Refetch every 500ms for faster status updates
-    staleTime: 0, // Always consider stale for immediate polling
+    // SSE connected: disable polling (SSE pushes updates directly to cache)
+    // SSE disconnected: poll every 2 seconds as fallback
+    refetchInterval: sseConnected ? false : 2000,
+    staleTime: sseConnected ? 30000 : 0, // Trust SSE data for 30s, always refetch when polling
   });
 }
 
@@ -432,7 +435,29 @@ export function useUpdateSettings() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data) => api.updateSettings(data),
-    onSuccess: () => {
+    onMutate: async (newSettings) => {
+      // Cancel any outgoing refetches so they don't overwrite optimistic update
+      await queryClient.cancelQueries({ queryKey: ['settings'] });
+
+      // Snapshot previous value
+      const previousSettings = queryClient.getQueryData(['settings']);
+
+      // Optimistically update cache - immediately visible to all components
+      queryClient.setQueryData(['settings'], (old) => ({
+        ...old,
+        ...newSettings,
+      }));
+
+      return { previousSettings };
+    },
+    onError: (err, newSettings, context) => {
+      // Rollback on error
+      if (context?.previousSettings) {
+        queryClient.setQueryData(['settings'], context.previousSettings);
+      }
+    },
+    onSettled: () => {
+      // Always refetch after mutation to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['settings'] });
     },
   });

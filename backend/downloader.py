@@ -2,12 +2,14 @@ import threading
 import time
 import os
 import random
+import glob
 from datetime import datetime, timezone
 import logging
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
 from database import Video, QueueItem, Setting, get_session
 from utils import download_thumbnail, makedirs_777
+from events import queue_events
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +61,23 @@ class DownloadWorker:
 
         # Ensure download directory exists with proper permissions
         makedirs_777(download_dir)
+
+        # SSE event throttling
+        self._last_sse_emit = 0
+        self._sse_throttle_interval = 0.5  # Emit at most twice per second for smoother progress
+
+    def _emit_queue_update(self, force=False):
+        """Emit SSE signal to notify clients queue state changed."""
+        if not force:
+            # Throttle to avoid overwhelming clients
+            now = time.time()
+            if now - self._last_sse_emit < self._sse_throttle_interval:
+                return
+            self._last_sse_emit = now
+
+        # Just emit a signal - SSE endpoint will build the state
+        # This avoids circular imports (downloader -> routes.queue -> downloader)
+        queue_events.emit('queue:changed')
     
     def start(self):
         if not self.running:
@@ -76,6 +95,7 @@ class DownloadWorker:
     def pause(self):
         logger.info("Download worker paused")
         self.paused = True
+        self._emit_queue_update(force=True)
 
     def _reset_stuck_videos(self, session, target_status, exclude_video_id=None, reset_queue_progress=False):
         """
@@ -124,6 +144,8 @@ class DownloadWorker:
             self._reset_stuck_videos(session, target_status='queued', reset_queue_progress=True)
             # DON'T clear queue_item.log - keep rate limit warnings visible
             # They will be cleared automatically when a download actually succeeds
+
+        self._emit_queue_update(force=True)
     
     def cancel_current(self):
         with self._download_lock:
@@ -407,6 +429,9 @@ class DownloadWorker:
                             temp_queue_item.speed_bps = d.get('speed', 0) or 0
                             temp_queue_item.eta_seconds = d.get('eta', 0) or 0
                             temp_queue_item.total_bytes = total  # Store file size
+
+                    # Emit SSE event for progress update (throttled)
+                    self._emit_queue_update()
                 except Exception as progress_error:
                     logger.error(f'Failed to update download progress for {video.yt_id}: {progress_error}')
 
@@ -776,6 +801,8 @@ class DownloadWorker:
         try:
             session.commit()
             logger.debug(f'Download complete, current_download cleared, database committed')
+            # Emit SSE event for queue state change
+            self._emit_queue_update(force=True)
         except Exception as commit_error:
             logger.error(f'Failed to commit download completion for video {video.yt_id}: {commit_error}')
             session.rollback()

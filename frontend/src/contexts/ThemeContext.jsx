@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { useSettings, useUpdateSettings } from '../api/queries';
 
 const ThemeContext = createContext();
@@ -19,14 +19,14 @@ export function ThemeProvider({ children }) {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
-  // Local state for immediate feedback, localStorage for fast initial render
-  const [localTheme, setLocalTheme] = useState(() => {
+  // Get theme from settings, fallback to localStorage, then default
+  const getInitialTheme = () => {
     const savedTheme = localStorage.getItem('ytandchill-theme');
     return savedTheme && themes[savedTheme] ? savedTheme : 'kernel';
-  });
+  };
 
-  // Use backend theme when available, otherwise local
-  const theme = (settings?.theme && themes[settings.theme]) ? settings.theme : localTheme;
+  // Use backend theme when available, otherwise localStorage fallback
+  const theme = (settings?.theme && themes[settings.theme]) ? settings.theme : getInitialTheme();
 
   // Apply theme class to document
   useEffect(() => {
@@ -43,17 +43,8 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   const setTheme = (newTheme) => {
-    const oldTheme = localTheme;
-    setLocalTheme(newTheme); // Immediate feedback
-    updateSettings.mutate(
-      { theme: newTheme },
-      {
-        onError: () => {
-          // Revert on failure
-          setLocalTheme(oldTheme);
-        }
-      }
-    );
+    // Optimistic update happens in useUpdateSettings hook
+    updateSettings.mutate({ theme: newTheme });
   };
 
   const value = {
