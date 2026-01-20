@@ -270,7 +270,7 @@ def get_missing_metadata():
             'id': v.id,
             'yt_id': v.yt_id,
             'title': v.title,
-            'channel_title': v.channel_title
+            'channel_title': v.channel.title if v.channel else None
         } for v in videos[:100]]  # Limit to 100 for display
 
         return jsonify({
