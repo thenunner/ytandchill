@@ -179,23 +179,47 @@ function App() {
   // Download progress toast
   useEffect(() => {
     if (currentDownload && !isPaused) {
-      const speed = currentDownload.speed_bps > 0
-        ? `${(currentDownload.speed_bps / 1024 / 1024).toFixed(1)} MB/s`
-        : null;
-      const eta = currentDownload.eta_seconds > 0
-        ? `${Math.floor(currentDownload.eta_seconds / 60)}:${Math.floor(currentDownload.eta_seconds % 60).toString().padStart(2, '0')}`
-        : null;
-      const percent = Math.round(currentDownload.progress_pct || 0);
+      // Check if in postprocessing phase (SponsorBlock re-encoding)
+      const isPostprocessing = currentDownload.phase === 'postprocessing';
 
-      showNotification(
-        currentDownload.video?.title || 'Downloading...',
-        'progress',
-        {
-          id: 'download-progress',
-          persistent: true,
-          progress: { speed, eta, percent }
-        }
-      );
+      if (isPostprocessing) {
+        // Show elapsed time for postprocessing
+        const elapsed = currentDownload.postprocess_elapsed || 0;
+        const elapsedStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`;
+
+        showNotification(
+          currentDownload.video?.title || 'Processing...',
+          'progress',
+          {
+            id: 'download-progress',
+            persistent: true,
+            progress: {
+              isPostprocessing: true,
+              elapsed: elapsedStr,
+              postprocessor: currentDownload.postprocessor
+            }
+          }
+        );
+      } else {
+        // Normal download progress
+        const speed = currentDownload.speed_bps > 0
+          ? `${(currentDownload.speed_bps / 1024 / 1024).toFixed(1)} MB/s`
+          : null;
+        const eta = currentDownload.eta_seconds > 0
+          ? `${Math.floor(currentDownload.eta_seconds / 60)}:${Math.floor(currentDownload.eta_seconds % 60).toString().padStart(2, '0')}`
+          : null;
+        const percent = Math.round(currentDownload.progress_pct || 0);
+
+        showNotification(
+          currentDownload.video?.title || 'Downloading...',
+          'progress',
+          {
+            id: 'download-progress',
+            persistent: true,
+            progress: { speed, eta, percent }
+          }
+        );
+      }
     } else if (!currentDownload && prevDownloadRef.current) {
       removeToast('download-progress');
       // Show download complete notification with the previous download's title

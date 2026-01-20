@@ -5,6 +5,7 @@ import random
 import glob
 from datetime import datetime, timezone
 import logging
+import psutil
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
 from database import Video, QueueItem, Setting, get_session
@@ -152,6 +153,46 @@ class DownloadWorker:
             if self.current_download:
                 logger.info(f"Cancelling current download: {self.current_download}")
                 self.current_download['cancelled'] = True
+                # If in postprocessing phase, kill FFmpeg immediately
+                if self.current_download.get('phase') == 'postprocessing':
+                    self._kill_ffmpeg_processes()
+
+    def _kill_ffmpeg_processes(self):
+        """Kill any FFmpeg child processes (used when cancelling during postprocessing)."""
+        try:
+            current_process = psutil.Process()
+            for child in current_process.children(recursive=True):
+                if 'ffmpeg' in child.name().lower():
+                    logger.info(f"Killing FFmpeg process {child.pid}")
+                    child.kill()
+        except Exception as e:
+            logger.warning(f"Error killing FFmpeg processes: {e}")
+
+    def _postprocessor_hook(self, d):
+        """
+        Track postprocessor progress to prevent timeout during re-encoding.
+        Also checks for cancel flag since progress_hook isn't called during postprocessing.
+        """
+        with self._download_lock:
+            if self.current_download:
+                # Check for cancel during postprocessing
+                if self.current_download.get('cancelled'):
+                    self._kill_ffmpeg_processes()
+                    raise Exception('Download cancelled by user')
+
+                if self.current_download.get('timed_out'):
+                    self._kill_ffmpeg_processes()
+                    raise Exception('Download timed out')
+
+                # Update progress tracking to prevent timeout
+                self.current_download['last_progress_time'] = time.time()
+                self.current_download['phase'] = 'postprocessing'
+                self.current_download['postprocessor'] = d.get('postprocessor', 'unknown')
+
+                # Track when postprocessing started for elapsed time display
+                if 'postprocess_start_time' not in self.current_download:
+                    self.current_download['postprocess_start_time'] = time.time()
+                    logger.info(f"Postprocessing started: {d.get('postprocessor', 'unknown')}")
 
     def _set_discoveries_flag(self, session):
         """Set the new discoveries flag using the existing session to avoid database locks."""
@@ -372,7 +413,8 @@ class DownloadWorker:
                 'queue_item_id': queue_item.id,
                 'last_progress_time': time.time(),
                 'start_time': time.time(),
-                'timed_out': False
+                'timed_out': False,
+                'phase': 'downloading'  # Track phase: downloading or postprocessing
             }
 
         # Start watchdog timer thread
@@ -566,6 +608,9 @@ class DownloadWorker:
             ydl_opts['subtitleslangs'] = ['en.*', 'a.en']  # English variants + auto-English
             ydl_opts['subtitlesformat'] = 'srt/vtt/best'
             logger.info('Subtitle download enabled - will fetch English subtitles if available')
+
+        # Add postprocessor hook to track phase and prevent timeout during re-encoding
+        ydl_opts['postprocessor_hooks'] = [self._postprocessor_hook]
 
         return ydl_opts, cookies_path
 
