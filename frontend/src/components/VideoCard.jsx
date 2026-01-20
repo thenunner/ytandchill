@@ -198,6 +198,7 @@ export default function VideoCard({
             muted
             playsInline
             loop
+            preload="none"
           />
         )}
 
