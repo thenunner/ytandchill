@@ -10,11 +10,11 @@ export const getGridColumns = (cardSize) => {
       md: { portrait: 1, landscape: 3, tablet: 5 },
       lg: { portrait: 1, landscape: 2, tablet: 4 }
     },
-    // Desktop devices (mouse/trackpad) - more columns for large monitors
+    // Desktop devices (mouse/trackpad)
     desktop: {
-      sm: { up1440: 6, up1920: 8, up2560: 10, over2560: 12 },
-      md: { up1440: 5, up1920: 6, up2560: 8, over2560: 10 },
-      lg: { up1440: 4, up1920: 5, up2560: 6, over2560: 8 }
+      sm: { upTo1920: 8, over1920: 12 },
+      md: { upTo1920: 6, over1920: 10 },
+      lg: { upTo1920: 4, over1920: 6 }
     }
   };
 
@@ -25,13 +25,11 @@ export const getGridColumns = (cardSize) => {
     // Touch devices: phones and tablets
     if (width < 640) return config.portrait;  // Portrait phones
     if (width < 1024) return config.landscape;  // Landscape phones
-    return config.tablet;  // Tablets
+    return config.tablet;  // Tablets (>= 1024px)
   } else {
     // Desktop devices: laptops and monitors
-    if (width < 1440) return config.up1440;  // Up to 1440p: 6-5-4-4
-    if (width < 1920) return config.up1920;  // 1440p to 1920p: 8-6-5-5
-    if (width < 2560) return config.up2560;  // 1920p to 2560p: 10-8-6-6
-    return config.over2560;  // 2560p+: 12-10-8-8
+    if (width <= 1920) return config.upTo1920;  // Up to 1920: 4-6-8
+    return config.over1920;  // Over 1920: 6-10-12
   }
 };
 
@@ -56,9 +54,9 @@ export const getGridClass = (cols, itemCount = Infinity) => {
     9: 'grid-cols-9',
     10: 'grid-cols-10',
     11: 'grid-cols-11',
-    12: 'grid-cols-12'
+    12: 'grid-cols-12',
   };
-  return classMap[actualCols] || classMap[5];
+  return classMap[actualCols] || classMap[6];
 };
 
 // Helper to get effective card size based on actual columns shown
