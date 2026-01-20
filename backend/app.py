@@ -365,6 +365,11 @@ def _scan_worker():
                         scan_queue.task_done()
                         continue
 
+                    # Update status bar to show current channel being scanned
+                    if scan_total_channels > 0:
+                        progress_pct = int(((scan_current_channel - 1) / scan_total_channels) * 100)
+                        set_operation('scanning', f"{channel.title}", progress=progress_pct)
+
                     # Execute the scan logic with progress info
                     result = _execute_channel_scan(session, channel, force_full, scan_current_channel, scan_total_channels)
 
