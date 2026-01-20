@@ -123,6 +123,7 @@ export default function VideoCard({
       // Only set src if not already set
       if (video_el.src !== window.location.origin + videoSrc) {
         video_el.src = videoSrc;
+        video_el.load(); // Required when preload="none"
       }
 
       // Start at ~15% into the video
