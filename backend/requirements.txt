@@ -6,3 +6,4 @@ yt-dlp[default]
 APScheduler==3.10.4
 python-dotenv==1.0.0
 waitress==3.0.2
+psutil==5.9.8
