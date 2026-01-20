@@ -126,12 +126,9 @@ export default function VideoCard({
         video_el.load(); // Required when preload="none"
       }
 
-      // Start at ~15% into the video
-      const startTime = Math.min(video.duration_sec * 0.15, video.duration_sec - 15);
-
       // Wait for video to be ready before showing
       const playPreview = () => {
-        video_el.currentTime = Math.max(0, startTime);
+        video_el.currentTime = 0;
         setPreviewPlaying(true);
         video_el.play().catch(() => {
           setPreviewPlaying(false);
