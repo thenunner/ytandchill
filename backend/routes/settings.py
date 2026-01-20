@@ -570,17 +570,41 @@ def get_logs():
 
 @settings_bp.route('/api/logs', methods=['DELETE'])
 def clear_logs():
-    """Clear the log file"""
+    """Clear log files - 'current' clears today's log, 'all' deletes all log files"""
     try:
-        log_file = 'logs/app.log'
+        import glob
+        scope = request.args.get('scope', 'all')  # 'all' or 'current'
+        log_dir = 'logs'
+        log_file = os.path.join(log_dir, 'app.log')
 
-        if os.path.exists(log_file):
-            # Truncate the file instead of deleting (keeps file handle valid)
-            with open(log_file, 'w') as f:
-                f.write('')
-            logger.info('Log file cleared by user')
+        if scope == 'current':
+            # Clear only the current log file (today's log)
+            if os.path.exists(log_file):
+                with open(log_file, 'w') as f:
+                    f.write('')
+                logger.info('Current log file cleared by user')
+            return jsonify({'success': True, 'message': 'Current log cleared'})
+        else:
+            # Delete all log files (app.log and all app.log.* backups)
+            deleted_count = 0
 
-        return jsonify({'success': True, 'message': 'Logs cleared'})
+            # Delete main log file
+            if os.path.exists(log_file):
+                with open(log_file, 'w') as f:
+                    f.write('')
+                deleted_count += 1
+
+            # Delete all backup log files (app.log.YYYY-MM-DD)
+            backup_pattern = os.path.join(log_dir, 'app.log.*')
+            for backup_file in glob.glob(backup_pattern):
+                try:
+                    os.remove(backup_file)
+                    deleted_count += 1
+                except Exception as e:
+                    logger.warning(f'Failed to delete {backup_file}: {e}')
+
+            logger.info(f'All logs cleared by user ({deleted_count} files)')
+            return jsonify({'success': True, 'message': f'All logs cleared ({deleted_count} files)'})
     except Exception as e:
         logger.error(f'Error clearing logs: {str(e)}', exc_info=True)
         return jsonify({'error': 'An error occurred while clearing the logs'}), 500

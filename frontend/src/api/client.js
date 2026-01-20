@@ -367,8 +367,8 @@ class APIClient {
     return this.request(`/logs?lines=${lines}`);
   }
 
-  clearLogs() {
-    return this.request('/logs', { method: 'DELETE' });
+  clearLogs(scope = 'all') {
+    return this.request(`/logs?scope=${scope}`, { method: 'DELETE' });
   }
 
   // YouTube Playlist Import
