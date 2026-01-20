@@ -1,57 +1,68 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect } from 'react';
+import { useSettings, useUpdateSettings } from '../api/queries';
 
 // Create the context
 const CardSizeContext = createContext();
 
 // Provider component that wraps the app
 export function CardSizeProvider({ children }) {
-  const [cardSize, setCardSizeState] = useState(() => {
-    // Check for new global setting first
-    const globalSize = localStorage.getItem('global_card_size');
-    if (globalSize) {
-      return globalSize;
-    }
-    // Migrate from old per-tab setting if it exists
-    const oldStored = localStorage.getItem('cardSizes');
-    if (oldStored) {
-      const parsed = JSON.parse(oldStored);
-      // Use the first non-default value found, or 'md'
-      const size = parsed.library || parsed.channels || 'md';
-      // Convert old 'xl' to 'lg'
-      return size === 'xl' ? 'lg' : size;
-    }
-    return 'md';
-  });
+  const { data: settings } = useSettings();
+  const updateSettings = useUpdateSettings();
 
-  // Save to localStorage whenever cardSize changes
+  // One-time cleanup of old localStorage keys (migrated to database)
   useEffect(() => {
-    localStorage.setItem('global_card_size', cardSize);
-  }, [cardSize]);
-
-  // One-time cleanup of old per-tab settings
-  useEffect(() => {
+    localStorage.removeItem('global_card_size');
+    localStorage.removeItem('channels_card_size');
+    localStorage.removeItem('library_card_size');
     localStorage.removeItem('cardSizes');
     localStorage.removeItem('globalCardSize');
   }, []);
 
-  const setCardSize = (size) => {
-    setCardSizeState(size);
+  // Read card sizes from settings (with defaults)
+  const channelsCardSize = settings?.channels_card_size || 'md';
+  const libraryCardSize = settings?.library_card_size || 'md';
+
+  // Update functions that persist to backend
+  const setChannelsCardSize = (size) => {
+    updateSettings.mutate({ channels_card_size: size });
+  };
+
+  const setLibraryCardSize = (size) => {
+    updateSettings.mutate({ library_card_size: size });
   };
 
   return (
-    <CardSizeContext.Provider value={{ cardSize, setCardSize }}>
+    <CardSizeContext.Provider value={{
+      channelsCardSize,
+      setChannelsCardSize,
+      libraryCardSize,
+      setLibraryCardSize
+    }}>
       {children}
     </CardSizeContext.Provider>
   );
 }
 
 // Custom hook to use the card size context
-// The 'tab' parameter is kept for backwards compatibility but ignored
+// Tab determines which card size to use:
+// - 'channels', 'videos' -> channelsCardSize (Channels tab views)
+// - 'library' -> libraryCardSize (Library tab views)
 export function useCardSize(tab) {
   const context = useContext(CardSizeContext);
   if (!context) {
     throw new Error('useCardSize must be used within CardSizeProvider');
   }
 
-  return { cardSize: context.cardSize, setCardSize: context.setCardSize };
+  // Map tab to the appropriate card size
+  const isLibraryTab = tab === 'library';
+
+  return {
+    cardSize: isLibraryTab ? context.libraryCardSize : context.channelsCardSize,
+    setCardSize: isLibraryTab ? context.setLibraryCardSize : context.setChannelsCardSize,
+    // Expose both for Settings page
+    channelsCardSize: context.channelsCardSize,
+    setChannelsCardSize: context.setChannelsCardSize,
+    libraryCardSize: context.libraryCardSize,
+    setLibraryCardSize: context.setLibraryCardSize
+  };
 }

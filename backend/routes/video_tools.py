@@ -223,6 +223,8 @@ def delete_video(video_id):
             video.file_path = None
             video.file_size_bytes = None
             video.downloaded_at = None
+            # Reset thumb_url to YouTube URL so thumbnail shows in ignored list
+            video.thumb_url = f"https://img.youtube.com/vi/{video.yt_id}/hqdefault.jpg"
 
         session.commit()
 
@@ -294,6 +296,8 @@ def bulk_delete_videos():
             video.file_path = None
             video.file_size_bytes = None
             video.downloaded_at = None
+            # Reset thumb_url to YouTube URL so thumbnail shows in ignored list
+            video.thumb_url = f"https://img.youtube.com/vi/{video.yt_id}/hqdefault.jpg"
 
             deleted_count += 1
 

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDeleteVideo, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { useCardSize } from '../contexts/CardSizeContext';
 import { getTextSizes } from '../utils/gridUtils';
 import { formatDuration } from '../utils/videoPlayerUtils';
 import { formatDate, formatDateTime, formatFileSize } from '../utils/formatters';
@@ -18,11 +17,10 @@ export default function VideoCard({
   isQueued,
   editMode = false, // New prop for edit mode
   isLibraryView = false, // New prop for library view (shows 3-column layout with file size)
-  effectiveCardSize, // Optional: overrides cardSize for text sizing when grid is capped
+  effectiveCardSize, // Required: card size for text sizing
 }) {
-  const { cardSize } = useCardSize();
   const { data: settings } = useSettings();
-  const textSizes = getTextSizes(effectiveCardSize || cardSize);
+  const textSizes = getTextSizes(effectiveCardSize);
   const navigate = useNavigate();
   const location = useLocation();
   const deleteVideo = useDeleteVideo();
