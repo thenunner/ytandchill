@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useDeleteVideo } from '../api/queries';
+import { useDeleteVideo, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getTextSizes } from '../utils/gridUtils';
@@ -20,6 +20,7 @@ export default function VideoCard({
   effectiveCardSize, // Optional: overrides cardSize for text sizing when grid is capped
 }) {
   const { cardSize } = useCardSize();
+  const { data: settings } = useSettings();
   const textSizes = getTextSizes(effectiveCardSize || cardSize);
   const navigate = useNavigate();
   const location = useLocation();
@@ -368,7 +369,7 @@ export default function VideoCard({
           <div className={`${textSizes.metadata} text-text-secondary font-medium`}>
             <span>
               {(() => {
-                const dateDisplay = localStorage.getItem('library_date_display') || 'downloaded';
+                const dateDisplay = settings?.library_date_display || 'downloaded';
                 if (dateDisplay === 'uploaded' && video.upload_date) {
                   return formatDate(video.upload_date);
                 }

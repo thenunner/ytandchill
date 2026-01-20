@@ -68,7 +68,7 @@ export default function Channels() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
-  const itemsPerPage = Number(localStorage.getItem('global_items_per_page')) || 50;
+  const itemsPerPage = Number(settings?.items_per_page) || 50;
   const isMobile = window.innerWidth < 640;
 
   // Watch for scan completion and refetch channels
