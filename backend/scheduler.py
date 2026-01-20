@@ -87,6 +87,7 @@ class AutoRefreshScheduler:
 
         if config['mode'] == 'times':
             # Schedule cron jobs for specific times
+            scheduled_times = []
             for idx, time_str in enumerate(config.get('times', ['03:00'])):
                 hour, minute = self._parse_time(time_str)
                 self.scheduler.add_job(
@@ -96,7 +97,8 @@ class AutoRefreshScheduler:
                     minute=minute,
                     id=f'auto_refresh_{idx}'
                 )
-                logger.info(f"Auto-refresh scheduled at {hour:02d}:{minute:02d} (job: auto_refresh_{idx})")
+                scheduled_times.append(f"{hour:02d}:{minute:02d}")
+            logger.info(f"Auto-refresh scheduled at: {', '.join(scheduled_times)}")
 
         elif config['mode'] == 'interval':
             # Schedule interval job with custom start time
