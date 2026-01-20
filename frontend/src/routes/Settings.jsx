@@ -1459,10 +1459,8 @@ export default function Settings() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-text-primary">Review Videos Not Found</div>
-                    <div className="text-xs text-text-secondary mt-1">
-                      {repairData.not_found_videos?.length || 0} video{repairData.not_found_videos?.length !== 1 ? 's' : ''} removed from YouTube
-                    </div>
+                    <div className="font-medium text-text-primary">Unavailable Videos <span className="text-text-muted font-normal">({repairData.not_found_videos?.length || 0} found)</span></div>
+                    <div className="text-xs text-text-secondary mt-1">Remove videos no longer playable on YouTube</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
@@ -1474,10 +1472,8 @@ export default function Settings() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-text-primary">Shrink Database</div>
-                    <div className="text-xs text-text-secondary mt-1">
-                      {repairData.deletable_channels?.length || 0} deleted channel{repairData.deletable_channels?.length !== 1 ? 's' : ''} can be purged
-                    </div>
+                    <div className="font-medium text-text-primary">Purge Channels <span className="text-text-muted font-normal">({repairData.deletable_channels?.length || 0} found)</span></div>
+                    <div className="text-xs text-text-secondary mt-1">Delete removed channels and their videos from DB</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
@@ -1489,10 +1485,8 @@ export default function Settings() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-text-primary">Fix Video Metadata</div>
-                    <div className="text-xs text-text-secondary mt-1">
-                      {missingMetadataData?.count || 0} library video{missingMetadataData?.count !== 1 ? 's' : ''} missing upload date
-                    </div>
+                    <div className="font-medium text-text-primary">Repair Metadata <span className="text-text-muted font-normal">({missingMetadataData?.count || 0} found)</span></div>
+                    <div className="text-xs text-text-secondary mt-1">Fetch missing upload dates for videos</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
