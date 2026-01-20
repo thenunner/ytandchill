@@ -142,8 +142,8 @@ export default function Settings() {
   // Global items per page setting (synced to backend)
   const [globalItemsPerPage, setGlobalItemsPerPage] = useState(50);
 
-  // Global card size setting (from CardSizeContext)
-  const { cardSize: globalCardSize, setCardSize: setGlobalCardSize } = useCardSize();
+  // Card size settings (from CardSizeContext)
+  const { channelsCardSize, setChannelsCardSize, libraryCardSize, setLibraryCardSize } = useCardSize();
 
   // Global hide settings (synced to backend)
   const [hideWatched, setHideWatched] = useState(false);
@@ -514,11 +514,18 @@ export default function Settings() {
         return;
       }
 
-      const method = data.method === 'api' ? 'YouTube API' : 'yt-dlp';
-      showNotification(
-        `Fixed ${data.updated} of ${data.total} videos using ${method}${data.failed > 0 ? ` (${data.failed} failed)` : ''}`,
-        data.failed > 0 ? 'warning' : 'success'
-      );
+      const parts = [];
+      if (data.updated > 0) {
+        const method = data.method === 'api' ? 'YouTube API' : 'yt-dlp';
+        parts.push(`${data.updated} upload date${data.updated !== 1 ? 's' : ''} via ${method}`);
+      }
+      if (data.thumbnails_fixed > 0) {
+        parts.push(`${data.thumbnails_fixed} thumbnail${data.thumbnails_fixed !== 1 ? 's' : ''}`);
+      }
+      const message = parts.length > 0
+        ? `Fixed ${parts.join(', ')}${data.failed > 0 ? ` (${data.failed} failed)` : ''}`
+        : 'No issues found to fix';
+      showNotification(message, data.failed > 0 ? 'warning' : 'success');
 
       setShowMetadataFixModal(false);
       setShowRepairModal(false);
@@ -940,8 +947,7 @@ export default function Settings() {
           <div className="setting-row mobile-hide-desc">
             <div className="setting-label">
               <div>
-                <div className="setting-name">Card Size</div>
-                <div className="setting-desc">Card density in grid views (tablet/desktop only)</div>
+                <div className="setting-name">Card Size - Channels</div>
               </div>
             </div>
             <div className="settings-toggle-group">
@@ -953,10 +959,36 @@ export default function Settings() {
                 <button
                   key={option.value}
                   onClick={() => {
-                    setGlobalCardSize(option.value);
-                    showNotification(`Card size set to ${option.label}`, 'success');
+                    setChannelsCardSize(option.value);
+                    showNotification(`Channels card size set to ${option.label}`, 'success');
                   }}
-                  className={`settings-toggle-btn ${globalCardSize === option.value ? 'active' : ''}`}
+                  className={`settings-toggle-btn ${channelsCardSize === option.value ? 'active' : ''}`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="setting-row mobile-hide-desc">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">Card Size - Library</div>
+              </div>
+            </div>
+            <div className="settings-toggle-group">
+              {[
+                { value: 'sm', label: 'Small' },
+                { value: 'md', label: 'Medium' },
+                { value: 'lg', label: 'Large' }
+              ].map(option => (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setLibraryCardSize(option.value);
+                    showNotification(`Library card size set to ${option.label}`, 'success');
+                  }}
+                  className={`settings-toggle-btn ${libraryCardSize === option.value ? 'active' : ''}`}
                 >
                   {option.label}
                 </button>
@@ -1552,8 +1584,8 @@ export default function Settings() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-text-primary">Repair Metadata <span className="text-text-muted font-normal">({missingMetadataData?.count || 0} found)</span></div>
-                    <div className="text-xs text-text-secondary mt-1">Fetch missing upload dates for videos</div>
+                    <div className="font-medium text-text-primary">Repair Metadata <span className="text-text-muted font-normal">({(missingMetadataData?.count || 0) + (missingMetadataData?.broken_thumbnails || 0)} found)</span></div>
+                    <div className="text-xs text-text-secondary mt-1">Fix missing upload dates and broken thumbnails</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
@@ -1704,18 +1736,27 @@ export default function Settings() {
               <h3 className="text-lg font-semibold text-text-primary">Fix Video Metadata</h3>
             </div>
             <div className="px-6 py-4">
-              {missingMetadataData.count === 0 ? (
-                <p className="text-sm text-text-secondary">✓ All library videos have upload dates</p>
+              {missingMetadataData.count === 0 && (missingMetadataData.broken_thumbnails || 0) === 0 ? (
+                <p className="text-sm text-text-secondary">✓ No metadata issues found</p>
               ) : (
                 <>
-                  <p className="text-sm text-text-secondary mb-3">
-                    Found <span className="font-semibold text-text-primary">{missingMetadataData.count}</span> library video{missingMetadataData.count !== 1 ? 's' : ''} missing upload date.
-                  </p>
-                  <p className="text-sm text-text-secondary mb-4">
-                    {hasApiKey
-                      ? 'Will use YouTube API for fast batch fetching.'
-                      : 'Will use yt-dlp (slower). Add a YouTube API key in settings for faster processing.'}
-                  </p>
+                  {missingMetadataData.count > 0 && (
+                    <p className="text-sm text-text-secondary mb-3">
+                      Found <span className="font-semibold text-text-primary">{missingMetadataData.count}</span> library video{missingMetadataData.count !== 1 ? 's' : ''} missing upload date.
+                    </p>
+                  )}
+                  {(missingMetadataData.broken_thumbnails || 0) > 0 && (
+                    <p className="text-sm text-text-secondary mb-3">
+                      Found <span className="font-semibold text-text-primary">{missingMetadataData.broken_thumbnails}</span> video{missingMetadataData.broken_thumbnails !== 1 ? 's' : ''} with broken thumbnail{missingMetadataData.broken_thumbnails !== 1 ? 's' : ''}.
+                    </p>
+                  )}
+                  {missingMetadataData.count > 0 && (
+                    <p className="text-sm text-text-secondary mb-4">
+                      {hasApiKey
+                        ? 'Will use YouTube API for fast batch fetching.'
+                        : 'Will use yt-dlp (slower). Add a YouTube API key in settings for faster processing.'}
+                    </p>
+                  )}
                   {missingMetadataData.videos?.length > 0 && (
                     <div className="max-h-64 overflow-y-auto space-y-2 mb-4">
                       {missingMetadataData.videos.slice(0, 20).map((video) => (
@@ -1738,13 +1779,13 @@ export default function Settings() {
               <button onClick={() => setShowMetadataFixModal(false)} className="btn btn-secondary flex-1">
                 Cancel
               </button>
-              {missingMetadataData.count > 0 && (
+              {(missingMetadataData.count > 0 || (missingMetadataData.broken_thumbnails || 0) > 0) && (
                 <button
                   onClick={handleFixMetadata}
                   disabled={isFixingMetadata}
                   className="btn btn-primary flex-1 disabled:opacity-50"
                 >
-                  {isFixingMetadata ? 'Fixing...' : `Fix ${missingMetadataData.count} Video${missingMetadataData.count !== 1 ? 's' : ''}`}
+                  {isFixingMetadata ? 'Fixing...' : `Fix ${missingMetadataData.count + (missingMetadataData.broken_thumbnails || 0)} Issue${(missingMetadataData.count + (missingMetadataData.broken_thumbnails || 0)) !== 1 ? 's' : ''}`}
                 </button>
               )}
             </div>

@@ -260,10 +260,12 @@ def _embed_date_metadata(file_path, upload_date):
 
 @settings_bp.route('/api/settings/missing-metadata', methods=['GET'])
 def get_missing_metadata():
-    """Get count of library videos missing upload_date."""
+    """Get count of library videos missing upload_date and non-library videos with broken thumbnails."""
     global _session_factory
+    from sqlalchemy import or_
 
     with get_session(_session_factory) as session:
+        # Library videos missing upload_date
         videos = session.query(Video).filter(
             Video.status == 'library',
             (Video.upload_date == None) | (Video.upload_date == '')
@@ -277,9 +279,19 @@ def get_missing_metadata():
             'channel_title': v.channel.title if v.channel else None
         } for v in videos[:100]]  # Limit to 100 for display
 
+        # Non-library videos with broken thumbnail URLs (null or local paths)
+        broken_thumb_videos = session.query(Video).filter(
+            Video.status != 'library',
+            or_(
+                Video.thumb_url.is_(None),
+                ~Video.thumb_url.like('http%')  # Local paths don't start with http
+            )
+        ).all()
+
         return jsonify({
             'count': len(videos),
-            'videos': missing_videos
+            'videos': missing_videos,
+            'broken_thumbnails': len(broken_thumb_videos)
         })
 
 
@@ -302,17 +314,9 @@ def fix_upload_dates():
         ).all()
 
         total = len(videos)
-        if total == 0:
-            return jsonify({
-                'success': True,
-                'updated': 0,
-                'skipped': 0,
-                'failed': 0,
-                'total': 0,
-                'method': 'none'
-            })
 
-        logger.info(f"Fixing upload dates for {total} library videos")
+        if total > 0:
+            logger.info(f"Fixing upload dates for {total} library videos")
 
         # Build list of video IDs that have yt_id
         videos_with_yt_id = [(v, v.yt_id) for v in videos if v.yt_id]
@@ -387,13 +391,33 @@ def fix_upload_dates():
                     logger.warning(f"yt-dlp failed for {yt_id}: {e}")
                     failed_count += 1
 
+        # Fix broken thumbnail URLs for non-library videos
+        from sqlalchemy import or_
+        broken_thumb_videos = session.query(Video).filter(
+            Video.status != 'library',
+            or_(
+                Video.thumb_url.is_(None),
+                ~Video.thumb_url.like('http%')  # Local paths don't start with http
+            )
+        ).all()
+
+        thumbnails_fixed = 0
+        for video in broken_thumb_videos:
+            video.thumb_url = f"https://img.youtube.com/vi/{video.yt_id}/hqdefault.jpg"
+            thumbnails_fixed += 1
+
+        if thumbnails_fixed > 0:
+            session.commit()
+            logger.info(f"Fixed {thumbnails_fixed} broken thumbnail URLs")
+
     return jsonify({
         'success': True,
         'updated': updated_count,
         'skipped': skipped_count,
         'failed': failed_count,
         'total': total,
-        'method': 'api' if api_used else 'yt-dlp'
+        'method': 'api' if api_used else ('yt-dlp' if total > 0 else 'none'),
+        'thumbnails_fixed': thumbnails_fixed
     })
 
 
