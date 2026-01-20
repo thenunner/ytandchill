@@ -103,6 +103,13 @@ export default function VideoCard({
     };
   }, []);
 
+  // Sync muted state to video element (must use ref, not attribute, for autoplay to work)
+  useEffect(() => {
+    if (videoPreviewRef.current && previewPlaying) {
+      videoPreviewRef.current.muted = previewMuted;
+    }
+  }, [previewMuted, previewPlaying]);
+
   const handlePreviewStart = () => {
     if (!isDownloaded || !video.file_path) return;
 
@@ -197,7 +204,7 @@ export default function VideoCard({
             <video
               ref={videoPreviewRef}
               className={`absolute inset-0 w-full h-full object-cover ${previewPlaying ? 'block' : 'hidden'}`}
-              muted={previewMuted}
+              muted
               playsInline
               loop
               preload="none"
