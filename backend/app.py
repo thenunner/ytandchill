@@ -11,7 +11,7 @@ from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
 from routes import register_blueprints
 from scanner import scan_channel_videos, scan_channel_videos_full
-from youtube_api import fetch_video_dates
+from youtube_api import fetch_video_dates, scan_channel_videos_api
 import logging
 import atexit
 from sqlalchemy.orm import joinedload
@@ -614,12 +614,33 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         channel_info, videos, all_video_ids = scan_channel_videos(channel_url, max_results=max_results)
         use_api_for_dates = True
     else:
-        # Incremental scan: Use full extraction (slower but includes upload_date)
+        # Incremental scan: Try YouTube API first (fast), fall back to yt-dlp
         auto_scan_enabled = settings_manager.get_bool('auto_refresh_enabled')
         max_results = 50 if auto_scan_enabled else 250
-        logger.debug(f"Incremental scan using full extraction for {channel.title} (max: {max_results})")
-        channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results)
-        use_api_for_dates = False
+
+        api_key = settings_manager.get('youtube_api_key')
+        if api_key:
+            # Try YouTube API (much faster - ~1 second vs minutes)
+            logger.debug(f"Incremental scan using YouTube API for {channel.title} (max: {max_results})")
+            api_videos, api_error = scan_channel_videos_api(channel.yt_id, api_key, max_results=max_results)
+
+            if api_videos and not api_error:
+                # API success - use API results
+                videos = api_videos
+                all_video_ids = set(v['id'] for v in videos)
+                channel_info = {'id': channel.yt_id, 'title': channel.title, 'thumbnail': None}
+                use_api_for_dates = False  # API already has dates
+                logger.info(f"YouTube API scan complete: {len(videos)} videos for {channel.title}")
+            else:
+                # API failed - fall back to yt-dlp
+                logger.warning(f"YouTube API failed for {channel.title}: {api_error}, falling back to yt-dlp")
+                channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results)
+                use_api_for_dates = False
+        else:
+            # No API key - use yt-dlp (slower)
+            logger.debug(f"Incremental scan using yt-dlp for {channel.title} (no API key)")
+            channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results)
+            use_api_for_dates = False
 
     logger.debug(f"Fetched up to {max_results} videos for channel: {channel.title}")
 

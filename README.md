@@ -103,21 +103,25 @@ Mount your Firefox profile directory to automatically extract cookies:
 3. Rebuild container: `docker-compose up -d --build`
 4. Select "Firefox" in Settings → Cookie Source
 
-### YouTube API Key (Optional)
+### YouTube API Key (Recommended)
 
-A YouTube API key enables fast upload date fetching when adding new channels. Without it, channels still work but upload dates may be missing for bulk imports.
+A YouTube API key makes channel scanning **significantly faster**. Without it, scanning falls back to yt-dlp which is slower.
 
+| Operation | With API Key | Without API Key |
+|-----------|-------------|-----------------|
+| Scan New (50 videos) | ~2 seconds | ~2 minutes |
+| Scan All (full channel) | Uses fast mode + API dates | Uses fast mode, dates may be missing |
+| Auto-scan | ~2 seconds per channel | ~2 minutes per channel |
+
+**Setup:**
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project (or select existing)
 3. Enable the **YouTube Data API v3**
 4. Go to Credentials → Create Credentials → API Key
-5. (Recommended) Click the API key → Under "API restrictions", select "Restrict key" → Choose **YouTube Data API v3** only
-6. Copy the API key
-7. In the app: Settings → Downloads → YouTube API Key → paste and Save
+5. (Recommended) Restrict the key to **YouTube Data API v3** only
+6. In the app: Settings → Downloads → YouTube API Key → paste and Save
 
-**Usage:** The API is used when adding new channels and running "Scan All" (batch date fetching). Regular auto-scans and "Scan New" use yt-dlp directly and don't consume API quota.
-
-**Quota:** Default is 10,000 units/day. Adding a channel with 5,000 videos uses ~100 units.
+**Quota:** Default is 10,000 units/day. Scanning 100 channels uses ~200 units. Adding a channel with 5,000 videos uses ~100 units.
 
 ## Importing Existing Videos
 
