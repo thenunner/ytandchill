@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos } from '../api/queries';
+import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
@@ -19,6 +19,7 @@ export default function Playlist() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: playlist, isLoading } = usePlaylist(id);
+  const { data: settings } = useSettings();
   const removeVideo = useRemoveVideoFromPlaylist();
   const deleteVideo = useDeleteVideo();
   const bulkUpdateVideos = useBulkUpdateVideos();
@@ -29,14 +30,14 @@ export default function Playlist() {
   const [searchInput, setSearchInput] = useState('');
   const [sort, setSort] = useState(localStorage.getItem('playlist_sort') || 'date-desc');
   const [durationFilter, setDurationFilter] = useState(localStorage.getItem('playlist_duration') || 'all');
-  // Use global hide settings from Settings page
-  const hideWatched = localStorage.getItem('global_hide_watched') === 'true';
+  // Use global hide settings from Settings page (synced via backend)
+  const hideWatched = settings?.hide_watched === 'true';
   const [editMode, setEditMode] = useState(false);
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [showBulkPlaylistOptions, setShowBulkPlaylistOptions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
-  const itemsPerPage = Number(localStorage.getItem('global_items_per_page')) || 50;
+  const itemsPerPage = Number(settings?.items_per_page) || 50;
   const isMobile = window.innerWidth < 640;
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete', count: number }
 

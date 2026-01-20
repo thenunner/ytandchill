@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory } from '../api/queries';
+import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
@@ -20,6 +20,7 @@ export default function Library() {
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize('library');
   const gridColumns = useGridColumns(cardSize);
+  const { data: settings } = useSettings();
 
   const [searchInput, setSearchInput] = useState('');
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'channels');
@@ -74,7 +75,7 @@ export default function Library() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
-  const itemsPerPage = Number(localStorage.getItem('global_items_per_page')) || 50;
+  const itemsPerPage = Number(settings?.items_per_page) || 50;
   const isMobile = window.innerWidth < 640;
 
   // Sync activeTab with URL parameter

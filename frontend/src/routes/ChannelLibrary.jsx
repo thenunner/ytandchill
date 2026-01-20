@@ -64,7 +64,7 @@ export default function ChannelLibrary() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
-  const itemsPerPage = Number(localStorage.getItem('global_items_per_page')) || 50;
+  const itemsPerPage = Number(settings?.items_per_page) || 50;
   const isMobile = window.innerWidth < 640;
   const [deleteVideosConfirm, setDeleteVideosConfirm] = useState(null); // { count: number }
   const menuRef = useRef(null);
@@ -106,8 +106,8 @@ export default function ChannelLibrary() {
   const maxDuration = durationFilter === '0-30' ? '30' : durationFilter === '30-60' ? '60' : null;
 
   // Use global hide settings from Settings page (library mode only)
-  const hideWatched = isLibraryMode && localStorage.getItem('global_hide_watched') === 'true';
-  const hidePlaylisted = isLibraryMode && localStorage.getItem('global_hide_playlisted') === 'true';
+  const hideWatched = isLibraryMode && settings?.hide_watched === 'true';
+  const hidePlaylisted = isLibraryMode && settings?.hide_playlisted === 'true';
 
   // Determine status and ignored based on mode
   let status, ignored;
@@ -216,7 +216,7 @@ export default function ChannelLibrary() {
   const parseVideoDate = (video) => {
     // Library mode: respect the date display setting (uploaded vs downloaded)
     if (isLibraryMode) {
-      const dateDisplay = localStorage.getItem('library_date_display') || 'downloaded';
+      const dateDisplay = settings?.library_date_display || 'downloaded';
       if (dateDisplay === 'uploaded' && video.upload_date) {
         const year = video.upload_date.slice(0, 4);
         const month = video.upload_date.slice(4, 6);

@@ -134,23 +134,18 @@ export default function Settings() {
   const [removeSelfpromo, setRemoveSelfpromo] = useState(false);
   const [removeInteraction, setRemoveInteraction] = useState(false);
 
-  // Library date display preference (stored in localStorage)
-  const [libraryDateDisplay, setLibraryDateDisplay] = useState(() => {
-    return localStorage.getItem('library_date_display') || 'downloaded';
-  });
+  // Library date display preference (synced to backend)
+  const [libraryDateDisplay, setLibraryDateDisplay] = useState('downloaded');
 
-  // Global items per page setting (stored in localStorage)
-  const [globalItemsPerPage, setGlobalItemsPerPage] = useState(() => {
-    const stored = localStorage.getItem('global_items_per_page');
-    return stored ? Number(stored) : 50;
-  });
+  // Global items per page setting (synced to backend)
+  const [globalItemsPerPage, setGlobalItemsPerPage] = useState(50);
 
   // Global card size setting (from CardSizeContext)
   const { cardSize: globalCardSize, setCardSize: setGlobalCardSize } = useCardSize();
 
-  // Global hide settings
-  const [hideWatched, setHideWatched] = useState(() => localStorage.getItem('global_hide_watched') === 'true');
-  const [hidePlaylisted, setHidePlaylisted] = useState(() => localStorage.getItem('global_hide_playlisted') === 'true');
+  // Global hide settings (synced to backend)
+  const [hideWatched, setHideWatched] = useState(false);
+  const [hidePlaylisted, setHidePlaylisted] = useState(false);
 
   // Default playback speed
   const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState('1');
@@ -264,6 +259,11 @@ export default function Settings() {
       setDownloadSubtitles(settings.download_subtitles === 'true');
       setYoutubeApiKey(settings.youtube_api_key || '');
       setHasApiKey(!!settings.youtube_api_key);
+      // Synced user preferences
+      setHideWatched(settings.hide_watched === 'true');
+      setHidePlaylisted(settings.hide_playlisted === 'true');
+      setLibraryDateDisplay(settings.library_date_display || 'downloaded');
+      setGlobalItemsPerPage(Number(settings.items_per_page) || 50);
     }
   }, [settings]);
 
@@ -688,11 +688,12 @@ export default function Settings() {
     <div className="animate-fade-in pt-4">
       <div className="flex flex-col gap-4 w-full max-w-3xl mx-auto">
 
-        {/* Stats Bar */}
-        <div className="stats-bar">
+        {/* Stats Bar - Row 1: App info, Row 2: Counts (mobile) */}
+        <div className="stats-bar flex-wrap">
+          {/* Row 1 on mobile */}
           <div className="stat-item">
-            <div className="stat-label">YT and Chill</div>
-            <div className="stat-value">v{APP_VERSION}</div>
+            <div className="stat-label">YTandchill</div>
+            <div className="stat-value">{APP_VERSION}</div>
           </div>
           <div className="stat-item">
             <div className="stat-label">YT-DLP</div>
@@ -710,19 +711,20 @@ export default function Settings() {
               <GearIcon />
             </button>
           </div>
-          <div className="stat-item">
+          {/* Row 2 on mobile */}
+          <div className="stat-item order-last sm:order-none">
             <div className="stat-label">Storage</div>
             <div className="stat-value">{health?.total_storage || '0B'}</div>
           </div>
-          <div className="stat-item">
+          <div className="stat-item order-last sm:order-none">
             <div className="stat-label">Library</div>
             <div className="stat-value">{stats.library}</div>
           </div>
-          <div className="stat-item">
+          <div className="stat-item order-last sm:order-none">
             <div className="stat-label">To Review</div>
             <div className="stat-value text-accent">{stats.discovered}</div>
           </div>
-          <div className="stat-item">
+          <div className="stat-item order-last sm:order-none">
             <div className="stat-label">Channels</div>
             <div className="stat-value">{channels?.length || 0}</div>
           </div>
@@ -871,10 +873,14 @@ export default function Settings() {
             <div className="settings-toggle-group">
               <Tooltip text="When the video was originally published on YouTube">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setLibraryDateDisplay('uploaded');
-                    localStorage.setItem('library_date_display', 'uploaded');
-                    showNotification('Library cards will show upload date', 'success');
+                    try {
+                      await api.updateSettings({ library_date_display: 'uploaded' });
+                      showNotification('Library cards will show upload date', 'success');
+                    } catch {
+                      setLibraryDateDisplay('downloaded');
+                    }
                   }}
                   className={`settings-toggle-btn ${libraryDateDisplay === 'uploaded' ? 'active' : ''}`}
                 >
@@ -883,10 +889,14 @@ export default function Settings() {
               </Tooltip>
               <Tooltip text="When the video was added to your library">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setLibraryDateDisplay('downloaded');
-                    localStorage.setItem('library_date_display', 'downloaded');
-                    showNotification('Library cards will show download date', 'success');
+                    try {
+                      await api.updateSettings({ library_date_display: 'downloaded' });
+                      showNotification('Library cards will show download date', 'success');
+                    } catch {
+                      setLibraryDateDisplay('uploaded');
+                    }
                   }}
                   className={`settings-toggle-btn ${libraryDateDisplay === 'downloaded' ? 'active' : ''}`}
                 >
@@ -907,10 +917,15 @@ export default function Settings() {
               {[25, 50, 100, 250].map(option => (
                 <button
                   key={option}
-                  onClick={() => {
+                  onClick={async () => {
+                    const oldValue = globalItemsPerPage;
                     setGlobalItemsPerPage(option);
-                    localStorage.setItem('global_items_per_page', option);
-                    showNotification(`Items per page set to ${option}`, 'success');
+                    try {
+                      await api.updateSettings({ items_per_page: String(option) });
+                      showNotification(`Items per page set to ${option}`, 'success');
+                    } catch {
+                      setGlobalItemsPerPage(oldValue);
+                    }
                   }}
                   className={`settings-toggle-btn ${globalItemsPerPage === option ? 'active' : ''}`}
                 >
@@ -977,11 +992,16 @@ export default function Settings() {
               <input
                 type="checkbox"
                 checked={hideWatched}
-                onChange={(e) => {
+                onChange={async (e) => {
                   const newValue = e.target.checked;
                   setHideWatched(newValue);
-                  localStorage.setItem('global_hide_watched', newValue.toString());
-                  showNotification(newValue ? 'Watched videos will be hidden' : 'Watched videos will be shown', 'success');
+                  try {
+                    await api.updateSettings({ hide_watched: newValue ? 'true' : 'false' });
+                    showNotification(newValue ? 'Watched videos will be hidden' : 'Watched videos will be shown', 'success');
+                  } catch {
+                    setHideWatched(!newValue);
+                    showNotification('Failed to save setting', 'error');
+                  }
                 }}
               />
               <span className="toggle-slider" />
@@ -999,11 +1019,16 @@ export default function Settings() {
               <input
                 type="checkbox"
                 checked={hidePlaylisted}
-                onChange={(e) => {
+                onChange={async (e) => {
                   const newValue = e.target.checked;
                   setHidePlaylisted(newValue);
-                  localStorage.setItem('global_hide_playlisted', newValue.toString());
-                  showNotification(newValue ? 'Playlisted videos will be hidden' : 'Playlisted videos will be shown', 'success');
+                  try {
+                    await api.updateSettings({ hide_playlisted: newValue ? 'true' : 'false' });
+                    showNotification(newValue ? 'Playlisted videos will be hidden' : 'Playlisted videos will be shown', 'success');
+                  } catch {
+                    setHidePlaylisted(!newValue);
+                    showNotification('Failed to save setting', 'error');
+                  }
                 }}
               />
               <span className="toggle-slider" />
