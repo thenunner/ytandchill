@@ -1148,7 +1148,7 @@ export default function Channels() {
                     <img
                       src={channel.thumbnail}
                       alt={channel.title}
-                      className="w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
