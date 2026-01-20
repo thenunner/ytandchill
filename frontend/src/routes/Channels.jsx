@@ -1103,7 +1103,7 @@ export default function Channels() {
             )}
 
             <div
-              className={`overflow-hidden cursor-pointer transition-all rounded-xl group ${
+              className={`relative overflow-hidden cursor-pointer transition-all rounded-xl group ${
                 (channel.video_count || 0) > 0 ? 'border-2 border-accent' : ''
               }`}
               onClick={() => {
@@ -1116,6 +1116,13 @@ export default function Channels() {
                 }
               }}
             >
+              {/* Upper Left: To Review Badge (only if > 0) - on outer card for border alignment */}
+              {(channel.video_count || 0) > 0 && (
+                <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-[10px] rounded-br-lg leading-none z-20">
+                  {channel.video_count}
+                </div>
+              )}
+
               {/* Checkmark overlay when selected in edit mode */}
               {editMode && selectedChannels.includes(channel.id) && (
                 <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-20">
@@ -1151,13 +1158,6 @@ export default function Channels() {
                       <svg className="w-10 h-10 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                       </svg>
-                    </div>
-                  )}
-
-                  {/* Upper Left: To Review Badge (only if > 0) */}
-                  {(channel.video_count || 0) > 0 && (
-                    <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-xl rounded-br-lg leading-none z-10">
-                      {channel.video_count}
                     </div>
                   )}
 
