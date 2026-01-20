@@ -299,10 +299,6 @@ export default function Queue() {
     }
   };
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
   // Handle queue data structure
   const queueItems = queue?.queue_items || [];
   const currentDownload = queue?.current_download || queueItems.find(item => item.video?.status === 'downloading');
