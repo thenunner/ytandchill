@@ -367,6 +367,10 @@ class APIClient {
     return this.request(`/logs?lines=${lines}`);
   }
 
+  clearLogs() {
+    return this.request('/logs', { method: 'DELETE' });
+  }
+
   // YouTube Playlist Import
   scanYouTubePlaylist(url, filter = 'new') {
     return this.request('/youtube-playlists/scan', {

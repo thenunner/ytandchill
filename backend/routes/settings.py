@@ -568,6 +568,24 @@ def get_logs():
         return jsonify({'error': 'An error occurred while reading the logs'}), 500
 
 
+@settings_bp.route('/api/logs', methods=['DELETE'])
+def clear_logs():
+    """Clear the log file"""
+    try:
+        log_file = 'logs/app.log'
+
+        if os.path.exists(log_file):
+            # Truncate the file instead of deleting (keeps file handle valid)
+            with open(log_file, 'w') as f:
+                f.write('')
+            logger.info('Log file cleared by user')
+
+        return jsonify({'success': True, 'message': 'Logs cleared'})
+    except Exception as e:
+        logger.error(f'Error clearing logs: {str(e)}', exc_info=True)
+        return jsonify({'error': 'An error occurred while clearing the logs'}), 500
+
+
 # =============================================================================
 # Authentication Endpoints
 # =============================================================================

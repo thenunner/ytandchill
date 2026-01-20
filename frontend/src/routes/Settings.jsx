@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels } from '../api/queries';
+import api from '../api/client';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useCardSize } from '../contexts/CardSizeContext';
@@ -79,6 +81,7 @@ const ChevronIcon = ({ collapsed }) => (
 );
 
 export default function Settings() {
+  const queryClient = useQueryClient();
   const { data: settings, isLoading } = useSettings();
   const { data: health } = useHealth();
   const { data: channels } = useChannels();
@@ -1419,12 +1422,26 @@ export default function Settings() {
 
             {/* Expandable Log Viewer */}
             <div className={`log-viewer ${showLogs ? 'expanded' : ''}`}>
-              <div className="log-header">
+              <div className="log-header flex items-center justify-between">
                 {logsData?.total_lines && (
                   <span className="text-xs text-text-muted">
                     Showing last 500 of {logsData.total_lines} lines
                   </span>
                 )}
+                <button
+                  onClick={async () => {
+                    try {
+                      await api.clearLogs();
+                      showNotification('Logs cleared', 'success');
+                      queryClient.invalidateQueries({ queryKey: ['logs'] });
+                    } catch (error) {
+                      showNotification('Failed to clear logs', 'error');
+                    }
+                  }}
+                  className="text-xs px-2 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded transition-colors"
+                >
+                  Clear Logs
+                </button>
               </div>
               <div className="log-content">
                 {logsData?.logs && logsData.logs.length > 0 ? (
