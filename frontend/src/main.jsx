@@ -26,15 +26,15 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <NotificationProvider>
-            <CardSizeProvider>
-              <BrowserRouter>
+        <NotificationProvider>
+          <CardSizeProvider>
+            <BrowserRouter>
+              <ThemeProvider>
                 <App />
-              </BrowserRouter>
-            </CardSizeProvider>
-          </NotificationProvider>
-        </ThemeProvider>
+              </ThemeProvider>
+            </BrowserRouter>
+          </CardSizeProvider>
+        </NotificationProvider>
       </QueryClientProvider>
     </ErrorBoundary>
   </React.StrictMode>

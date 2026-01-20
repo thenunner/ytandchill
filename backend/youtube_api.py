@@ -5,10 +5,21 @@ Provides batch fetching of video metadata (upload dates) via YouTube API.
 Used to supplement yt-dlp flat-playlist scans which don't return upload_date.
 """
 
+import json
 import requests
 import logging
+from utils import parse_iso8601_duration
 
 logger = logging.getLogger(__name__)
+
+
+def _safe_json(response):
+    """Safely parse JSON response, return None on error."""
+    try:
+        return response.json()
+    except json.JSONDecodeError:
+        logger.warning(f"Invalid JSON response: {response.text[:200]}")
+        return None
 
 # YouTube API endpoint
 YOUTUBE_API_BASE = 'https://www.googleapis.com/youtube/v3'
@@ -53,7 +64,9 @@ def fetch_video_dates(video_ids: list, api_key: str) -> dict:
             )
 
             if response.status_code == 200:
-                data = response.json()
+                data = _safe_json(response)
+                if not data:
+                    continue
                 for item in data.get('items', []):
                     video_id = item.get('id')
                     snippet = item.get('snippet', {})
@@ -69,7 +82,8 @@ def fetch_video_dates(video_ids: list, api_key: str) -> dict:
                 logger.debug(f"Batch {batch_num}/{total_batches}: fetched {len(batch)} videos")
 
             elif response.status_code == 403:
-                error_msg = response.json().get('error', {}).get('message', 'Unknown error')
+                data = _safe_json(response)
+                error_msg = data.get('error', {}).get('message', 'Unknown error') if data else 'Unknown error'
                 if 'quota' in error_msg.lower():
                     logger.error(f"YouTube API quota exceeded: {error_msg}")
                 else:
@@ -77,7 +91,8 @@ def fetch_video_dates(video_ids: list, api_key: str) -> dict:
                 break  # Stop processing on quota/auth errors
 
             elif response.status_code == 400:
-                error_msg = response.json().get('error', {}).get('message', 'Unknown error')
+                data = _safe_json(response)
+                error_msg = data.get('error', {}).get('message', 'Unknown error') if data else 'Unknown error'
                 logger.error(f"YouTube API bad request: {error_msg}")
                 # Continue with next batch - might be invalid video IDs
 
@@ -195,7 +210,8 @@ def scan_channel_videos_api(channel_id: str, api_key: str, max_results: int = 50
             )
 
             if response.status_code == 403:
-                error = response.json().get('error', {}).get('message', 'Forbidden')
+                data = _safe_json(response)
+                error = data.get('error', {}).get('message', 'Forbidden') if data else 'Forbidden'
                 if 'quota' in error.lower():
                     return [], "API quota exceeded"
                 return [], f"API error: {error}"
@@ -203,7 +219,9 @@ def scan_channel_videos_api(channel_id: str, api_key: str, max_results: int = 50
             if response.status_code != 200:
                 return [], f"API error: {response.status_code}"
 
-            data = response.json()
+            data = _safe_json(response)
+            if not data:
+                return [], "Invalid API response"
 
             for item in data.get('items', []):
                 snippet = item.get('snippet', {})
@@ -240,7 +258,9 @@ def scan_channel_videos_api(channel_id: str, api_key: str, max_results: int = 50
             )
 
             if response.status_code == 200:
-                data = response.json()
+                data = _safe_json(response)
+                if not data:
+                    continue
                 duration_map = {}
 
                 for item in data.get('items', []):
@@ -268,38 +288,3 @@ def scan_channel_videos_api(channel_id: str, api_key: str, max_results: int = 50
         return [], f"API request failed: {str(e)}"
 
 
-def parse_iso8601_duration(duration: str) -> int:
-    """
-    Parse ISO 8601 duration (PT1H2M3S) to seconds.
-
-    Args:
-        duration: ISO 8601 duration string (e.g., "PT1H2M3S", "PT5M", "PT30S")
-
-    Returns:
-        Duration in seconds
-    """
-    import re
-
-    if not duration or not duration.startswith('PT'):
-        return 0
-
-    hours = 0
-    minutes = 0
-    seconds = 0
-
-    # Extract hours
-    h_match = re.search(r'(\d+)H', duration)
-    if h_match:
-        hours = int(h_match.group(1))
-
-    # Extract minutes
-    m_match = re.search(r'(\d+)M', duration)
-    if m_match:
-        minutes = int(m_match.group(1))
-
-    # Extract seconds
-    s_match = re.search(r'(\d+)S', duration)
-    if s_match:
-        seconds = int(s_match.group(1))
-
-    return hours * 3600 + minutes * 60 + seconds

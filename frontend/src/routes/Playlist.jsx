@@ -5,6 +5,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
+import { getBooleanSetting, getNumericSetting } from '../utils/settingsUtils';
 import VideoCard from '../components/VideoCard';
 import SortDropdown from '../components/stickybar/SortDropdown';
 import Pagination from '../components/Pagination';
@@ -31,13 +32,13 @@ export default function Playlist() {
   const [sort, setSort] = useState(localStorage.getItem('playlist_sort') || 'date-desc');
   const [durationFilter, setDurationFilter] = useState(localStorage.getItem('playlist_duration') || 'all');
   // Use global hide settings from Settings page (synced via backend)
-  const hideWatched = settings?.hide_watched === 'true';
+  const hideWatched = getBooleanSetting(settings, 'hide_watched');
   const [editMode, setEditMode] = useState(false);
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [showBulkPlaylistOptions, setShowBulkPlaylistOptions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
-  const itemsPerPage = Number(settings?.items_per_page) || 50;
+  const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete', count: number }
 

@@ -13,6 +13,7 @@ import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
+import { getNumericSetting } from '../utils/settingsUtils';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -68,7 +69,7 @@ export default function Channels() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
-  const itemsPerPage = Number(settings?.items_per_page) || 50;
+  const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
 
   // Watch for scan completion and refetch channels
@@ -1155,7 +1156,7 @@ export default function Channels() {
 
                   {/* Upper Left: To Review Badge (only if > 0) - Bigger, no spacing */}
                   {(channel.video_count || 0) > 0 && (
-                    <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-xl rounded-br-lg leading-none z-10">
+                    <div className="absolute -top-px -left-px bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-xl rounded-br-lg leading-none z-10">
                       {channel.video_count}
                     </div>
                   )}

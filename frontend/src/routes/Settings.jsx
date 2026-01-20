@@ -873,7 +873,7 @@ export default function Settings() {
                   onClick={async () => {
                     setLibraryDateDisplay('uploaded');
                     try {
-                      await api.updateSettings({ library_date_display: 'uploaded' });
+                      await updateSettings.mutateAsync({ library_date_display: 'uploaded' });
                       showNotification('Library cards will show upload date', 'success');
                     } catch {
                       setLibraryDateDisplay('downloaded');
@@ -889,7 +889,7 @@ export default function Settings() {
                   onClick={async () => {
                     setLibraryDateDisplay('downloaded');
                     try {
-                      await api.updateSettings({ library_date_display: 'downloaded' });
+                      await updateSettings.mutateAsync({ library_date_display: 'downloaded' });
                       showNotification('Library cards will show download date', 'success');
                     } catch {
                       setLibraryDateDisplay('uploaded');
@@ -918,7 +918,7 @@ export default function Settings() {
                     const oldValue = globalItemsPerPage;
                     setGlobalItemsPerPage(option);
                     try {
-                      await api.updateSettings({ items_per_page: String(option) });
+                      await updateSettings.mutateAsync({ items_per_page: String(option) });
                       showNotification(`Items per page set to ${option}`, 'success');
                     } catch {
                       setGlobalItemsPerPage(oldValue);
@@ -993,7 +993,7 @@ export default function Settings() {
                   const newValue = e.target.checked;
                   setHideWatched(newValue);
                   try {
-                    await api.updateSettings({ hide_watched: newValue ? 'true' : 'false' });
+                    await updateSettings.mutateAsync({ hide_watched: newValue ? 'true' : 'false' });
                     showNotification(newValue ? 'Watched videos will be hidden' : 'Watched videos will be shown', 'success');
                   } catch {
                     setHideWatched(!newValue);
@@ -1020,7 +1020,7 @@ export default function Settings() {
                   const newValue = e.target.checked;
                   setHidePlaylisted(newValue);
                   try {
-                    await api.updateSettings({ hide_playlisted: newValue ? 'true' : 'false' });
+                    await updateSettings.mutateAsync({ hide_playlisted: newValue ? 'true' : 'false' });
                     showNotification(newValue ? 'Playlisted videos will be hidden' : 'Playlisted videos will be shown', 'success');
                   } catch {
                     setHidePlaylisted(!newValue);

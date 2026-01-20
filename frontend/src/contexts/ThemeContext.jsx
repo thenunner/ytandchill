@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState, useRef } from 'react';
-import api from '../api/client';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useSettings, useUpdateSettings } from '../api/queries';
 
 const ThemeContext = createContext();
 
@@ -16,44 +16,44 @@ export const themes = {
 };
 
 export function ThemeProvider({ children }) {
-  const [theme, setThemeState] = useState(() => {
-    // Load theme from localStorage initially (fast)
+  const { data: settings } = useSettings();
+  const updateSettings = useUpdateSettings();
+
+  // Local state for immediate feedback, localStorage for fast initial render
+  const [localTheme, setLocalTheme] = useState(() => {
     const savedTheme = localStorage.getItem('ytandchill-theme');
     return savedTheme && themes[savedTheme] ? savedTheme : 'kernel';
   });
-  const isInitialMount = useRef(true);
 
-  // Load theme from backend on mount
-  useEffect(() => {
-    api.getSettings().then(settings => {
-      if (settings?.theme && themes[settings.theme]) {
-        setThemeState(settings.theme);
-      }
-    }).catch(() => {});
-  }, []);
+  // Use backend theme when available, otherwise local
+  const theme = (settings?.theme && themes[settings.theme]) ? settings.theme : localTheme;
 
-  // Apply theme class and save
+  // Apply theme class to document
   useEffect(() => {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-kernel', 'theme-fatal', 'theme-subnet', 'theme-archive', 'theme-buffer', 'theme-gateway', 'theme-catppuccin', 'theme-pixel', 'theme-debug');
+    Object.keys(themes).forEach(t => root.classList.remove(`theme-${t}`));
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);
 
-    // Save to localStorage (fallback/cache)
+    // Cache in localStorage for fast initial render
     localStorage.setItem('ytandchill-theme', theme);
-
-    // Save to backend (skip initial mount to avoid unnecessary API call)
-    if (!isInitialMount.current) {
-      api.updateSettings({ theme }).catch(() => {});
-    }
-    isInitialMount.current = false;
   }, [theme]);
 
   const setTheme = (newTheme) => {
-    setThemeState(newTheme);
+    const oldTheme = localTheme;
+    setLocalTheme(newTheme); // Immediate feedback
+    updateSettings.mutate(
+      { theme: newTheme },
+      {
+        onError: () => {
+          // Revert on failure
+          setLocalTheme(oldTheme);
+        }
+      }
+    );
   };
 
   const value = {

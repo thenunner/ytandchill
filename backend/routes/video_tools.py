@@ -87,26 +87,21 @@ def get_videos():
             query = query.filter(Video.channel_id == channel_id)
         if folder_name:
             query = query.filter(Video.folder_name == folder_name)
-        # Handle ignored filter (includes 'ignored' and 'geoblocked' statuses only)
-        # Note: 'not_found' and 'shorts' are never included in any filter - only accessible via repair tool/DB
-        if ignored is not None:
-            has_ignored = ignored.lower() == 'true'
-            if has_ignored:
-                # Include ignored and geoblocked videos in ignored filter (NOT shorts)
-                query = query.filter(Video.status.in_(['ignored', 'geoblocked']))
-            else:
-                # Exclude ignored/geoblocked/not_found/shorts videos, but still apply status filter if provided
-                query = query.filter(~Video.status.in_(['ignored', 'geoblocked', 'not_found', 'shorts']))
-                if status:
-                    query = query.filter(Video.status == status)
-        elif status:
-            # Apply status filter when ignored parameter is not present
-            query = query.filter(Video.status == status)
-            # Always exclude 'not_found' and 'shorts' from normal queries
-            query = query.filter(~Video.status.in_(['not_found', 'shorts']))
+        # Status exclusion rules:
+        # - HIDDEN_STATUSES: never shown in normal queries (only via DB/repair)
+        # - IGNORED_STATUSES: only shown when ignored=true filter is applied
+        HIDDEN_STATUSES = ['not_found', 'shorts']
+        IGNORED_STATUSES = ['ignored', 'geoblocked']
+
+        if ignored is not None and ignored.lower() == 'true':
+            # Show only ignored/geoblocked videos
+            query = query.filter(Video.status.in_(IGNORED_STATUSES))
         else:
-            # No status or ignored filter - exclude 'not_found' and 'shorts' from normal queries
-            query = query.filter(~Video.status.in_(['not_found', 'shorts']))
+            # Normal query - exclude hidden and ignored statuses
+            query = query.filter(~Video.status.in_(HIDDEN_STATUSES + IGNORED_STATUSES))
+            # Apply additional status filter if provided
+            if status:
+                query = query.filter(Video.status == status)
         if watched is not None:
             query = query.filter(Video.watched == (watched.lower() == 'true'))
         if search:
