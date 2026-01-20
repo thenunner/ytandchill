@@ -248,7 +248,6 @@ class DownloadWorker:
         logger.debug("Worker loop started")
         while self.running:
             if self.paused:
-                logger.debug("Worker paused, sleeping...")
                 time.sleep(1)
                 continue
 
