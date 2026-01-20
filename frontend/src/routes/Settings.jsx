@@ -1366,6 +1366,46 @@ export default function Settings() {
               Wipe Credentials
             </button>
           </div>
+
+          {/* Clear Logs */}
+          <div className="setting-row">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">Clear Logs</div>
+                <div className="setting-desc">Delete log entries</div>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const result = await api.clearLogs('current');
+                    showNotification(result.message || 'Current log cleared', 'success');
+                    queryClient.invalidateQueries({ queryKey: ['logs'] });
+                  } catch (error) {
+                    showNotification('Failed to clear logs', 'error');
+                  }
+                }}
+                className="settings-action-btn"
+              >
+                Current
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const result = await api.clearLogs('all');
+                    showNotification(result.message || 'All logs cleared', 'success');
+                    queryClient.invalidateQueries({ queryKey: ['logs'] });
+                  } catch (error) {
+                    showNotification('Failed to clear logs', 'error');
+                  }
+                }}
+                className="settings-action-btn text-red-400 hover:text-red-300"
+              >
+                All
+              </button>
+            </div>
+          </div>
           </div>
         </div>
 
@@ -1422,26 +1462,12 @@ export default function Settings() {
 
             {/* Expandable Log Viewer */}
             <div className={`log-viewer ${showLogs ? 'expanded' : ''}`}>
-              <div className="log-header flex items-center justify-between">
+              <div className="log-header">
                 {logsData?.total_lines && (
                   <span className="text-xs text-text-muted">
                     Showing last 500 of {logsData.total_lines} lines
                   </span>
                 )}
-                <button
-                  onClick={async () => {
-                    try {
-                      await api.clearLogs();
-                      showNotification('Logs cleared', 'success');
-                      queryClient.invalidateQueries({ queryKey: ['logs'] });
-                    } catch (error) {
-                      showNotification('Failed to clear logs', 'error');
-                    }
-                  }}
-                  className="text-xs px-2 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded transition-colors"
-                >
-                  Clear Logs
-                </button>
               </div>
               <div className="log-content">
                 {logsData?.logs && logsData.logs.length > 0 ? (
