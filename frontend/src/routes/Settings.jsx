@@ -1329,14 +1329,14 @@ export default function Settings() {
             <div className="setting-label">
               <div>
                 <div className="setting-name">Forgot Password?</div>
-                <div className="setting-desc">Reset to setup if you've forgotten your password</div>
+                <div className="setting-desc">Wipe credentials and return to initial setup</div>
               </div>
             </div>
             <button
               onClick={() => setShowResetAuthModal(true)}
               className="settings-action-btn text-red-400 hover:text-red-300"
             >
-              Reset to Setup
+              Wipe Credentials
             </button>
           </div>
           </div>
@@ -1689,11 +1689,11 @@ export default function Settings() {
       {showResetAuthModal && (
         <ConfirmModal
           isOpen={showResetAuthModal}
-          onClose={() => setShowResetAuthModal(false)}
+          onCancel={() => setShowResetAuthModal(false)}
           onConfirm={handleResetAuth}
-          title="Reset Authentication?"
-          message="This will clear your password and redirect you to the setup page to create new credentials. You'll need to log in again after setup."
-          confirmText="Reset to Setup"
+          title="Wipe Credentials?"
+          message="This will delete your credentials and return to initial setup."
+          confirmText="Wipe Credentials"
           confirmStyle="danger"
         />
       )}
