@@ -33,7 +33,7 @@ jobs:
           tag: ${{ github.ref_name }}
           release_name: ${{ github.ref_name }}
           body: |
-            ## 🚀 New Features
+            ## Changes
 
             ${{ steps.commits.outputs.commits }}
           draft: false

@@ -78,29 +78,3 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag -a "v${{ steps.version.outputs.VERSION }}" -m "Release v${{ steps.version.outputs.VERSION }}"
           git push origin "v${{ steps.version.outputs.VERSION }}"
-
-      - name: Create GitHub Release
-        if: steps.check_tag.outputs.exists == 'false'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: v${{ steps.version.outputs.VERSION }}
-          name: YT and Chill v${{ steps.version.outputs.VERSION }}
-          body: |
-            ## YT and Chill v${{ steps.version.outputs.VERSION }}
-
-            ### Docker Images
-            - `ghcr.io/thenunner/ytandchill:latest`
-            - `ghcr.io/thenunner/ytandchill:v${{ steps.version.outputs.VERSION }}`
-
-            ### Installation
-            For Unraid users: Force Update your container to get this version.
-
-            For native installations: Pull the latest code and re-run setup scripts.
-
-            ### Changes
-            See commits for details.
-          generate_release_notes: true
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
