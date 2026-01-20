@@ -181,6 +181,7 @@ app.config['ENV'] = 'production'
 
 # Disable werkzeug's default request logging - we'll handle it ourselves
 logging.getLogger('werkzeug').setLevel(logging.ERROR)  # Only log errors from werkzeug
+logging.getLogger('apscheduler').setLevel(logging.WARNING)  # Quiet APScheduler's verbose job logging
 
 # Initialize rate limiter
 limiter = Limiter(
