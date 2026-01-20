@@ -6,6 +6,7 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import { getTextSizes } from '../utils/gridUtils';
 import { formatDuration } from '../utils/videoPlayerUtils';
 import { formatDate, formatDateTime, formatFileSize } from '../utils/formatters';
+import { getStringSetting } from '../utils/settingsUtils';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import ConfirmDialog from './ConfirmDialog';
 import { ThreeDotsIcon, CheckmarkIcon, TrashIcon, PlusIcon } from './icons';
@@ -369,7 +370,7 @@ export default function VideoCard({
           <div className={`${textSizes.metadata} text-text-secondary font-medium`}>
             <span>
               {(() => {
-                const dateDisplay = settings?.library_date_display || 'downloaded';
+                const dateDisplay = getStringSetting(settings, 'library_date_display', 'downloaded');
                 if (dateDisplay === 'uploaded' && video.upload_date) {
                   return formatDate(video.upload_date);
                 }

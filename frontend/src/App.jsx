@@ -358,7 +358,7 @@ function App() {
         <header className="bg-dark-primary/95 backdrop-blur-lg sticky top-0 z-50 border-b border-dark-border">
           <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
             {/* Main Nav Row */}
-            <div className="flex items-center justify-center gap-1 md:gap-2 h-[60px]">
+            <div className="flex items-end justify-center gap-1 md:gap-2 h-[60px]">
               {/* Nav Tabs */}
               <nav role="navigation" aria-label="Main navigation" className="flex gap-1 md:gap-2">
                 {navLinks.map(link => (

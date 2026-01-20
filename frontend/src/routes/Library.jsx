@@ -14,6 +14,7 @@ import EmptyState from '../components/EmptyState';
 import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, UploadIcon } from '../components/icons';
 import SortDropdown from '../components/stickybar/SortDropdown';
 import { formatFileSize } from '../utils/formatters';
+import { getNumericSetting } from '../utils/settingsUtils';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
@@ -75,7 +76,7 @@ export default function Library() {
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
-  const itemsPerPage = Number(settings?.items_per_page) || 50;
+  const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
 
   // Sync activeTab with URL parameter
