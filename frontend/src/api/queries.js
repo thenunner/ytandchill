@@ -472,9 +472,9 @@ export function useHealth() {
   return useQuery({
     queryKey: ['health'],
     queryFn: () => api.getHealth(),
-    staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
+    staleTime: 30000, // Consider fresh for 30 seconds
     refetchOnMount: true, // Check on mount
-    refetchInterval: false, // No polling - data rarely changes
+    refetchInterval: 60000, // Poll every 60s for worker thread monitoring
   });
 }
 
