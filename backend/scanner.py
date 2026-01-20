@@ -498,3 +498,48 @@ def get_video_info(video_id):
     except json.JSONDecodeError as e:
         logger.error(f'Error parsing video info for {video_id}: {e}')
         return None
+
+
+def scan_channel_shorts(channel_id):
+    """
+    Scan a channel's /shorts tab to get all shorts video IDs.
+
+    Args:
+        channel_id: YouTube channel ID (starts with UC)
+
+    Returns:
+        set: Set of video IDs that are shorts
+    """
+    shorts_url = f'https://youtube.com/channel/{channel_id}/shorts'
+    logger.info(f'Scanning shorts for channel: {channel_id}')
+
+    args = [
+        '--flat-playlist',
+        '--dump-json',
+        '--playlist-end', '500',  # Get up to 500 shorts
+        shorts_url
+    ]
+
+    success, stdout, stderr = _run_ytdlp(args, timeout=120)
+
+    if not success:
+        # Channel may not have shorts - this is not an error
+        logger.debug(f'No shorts found for channel {channel_id}: {stderr}')
+        return set()
+
+    shorts_ids = set()
+
+    for line in stdout.strip().split('\n'):
+        if not line:
+            continue
+
+        try:
+            data = json.loads(line)
+            video_id = data.get('id')
+            if video_id:
+                shorts_ids.add(video_id)
+        except json.JSONDecodeError:
+            continue
+
+    logger.info(f'Found {len(shorts_ids)} shorts for channel {channel_id}')
+    return shorts_ids
