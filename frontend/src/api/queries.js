@@ -429,9 +429,8 @@ export function useSettings() {
   return useQuery({
     queryKey: ['settings'],
     queryFn: () => api.getSettings(),
-    staleTime: 10000,           // Consider stale after 10 seconds
-    refetchOnMount: 'always',   // Always refetch when component mounts
-    refetchOnWindowFocus: true, // Refetch when switching tabs/windows
+    staleTime: 30000,            // 30 seconds - settings rarely change
+    refetchOnWindowFocus: false, // SSE handles real-time updates
   });
 }
 
