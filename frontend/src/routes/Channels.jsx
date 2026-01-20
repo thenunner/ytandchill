@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory } from '../api/queries';
+import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -18,6 +18,7 @@ export default function Channels() {
   const { data: channels, isLoading } = useChannels();
   const { data: queueData } = useQueue();
   const { data: categories } = useChannelCategories();
+  const { data: settings } = useSettings();
   const createChannel = useCreateChannel();
   const deleteChannel = useDeleteChannel();
   const scanChannel = useScanChannel();
@@ -224,6 +225,23 @@ export default function Channels() {
     if (!channels || channels.length === 0) {
       showNotification('No channels to scan', 'info');
       return;
+    }
+
+    // Check API key status for full scans (needed for upload dates)
+    if (forceFull) {
+      if (!settings?.youtube_api_key) {
+        showNotification('No API key configured - upload dates will not be fetched', 'warning');
+      } else {
+        // Test if API key is valid
+        try {
+          const result = await api.testYoutubeApiKey();
+          if (!result.valid) {
+            showNotification('API key is invalid - upload dates will not be fetched', 'warning');
+          }
+        } catch (error) {
+          showNotification('API key is invalid - upload dates will not be fetched', 'warning');
+        }
+      }
     }
 
     // Track which scan type was initiated

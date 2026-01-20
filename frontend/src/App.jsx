@@ -185,7 +185,7 @@ function App() {
       const percent = Math.round(currentDownload.progress_pct || 0);
 
       showNotification(
-        currentDownload.title || 'Downloading...',
+        currentDownload.video?.title || 'Downloading...',
         'progress',
         {
           id: 'download-progress',
@@ -196,7 +196,7 @@ function App() {
     } else if (!currentDownload && prevDownloadRef.current) {
       removeToast('download-progress');
       // Show download complete notification with the previous download's title
-      const completedTitle = prevDownloadRef.current.title || 'Video';
+      const completedTitle = prevDownloadRef.current.video?.title || 'Video';
       showNotification(`Downloaded: ${completedTitle}`, 'success');
     }
     prevDownloadRef.current = currentDownload;

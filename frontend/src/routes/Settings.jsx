@@ -126,6 +126,7 @@ export default function Settings() {
   const [youtubeApiKey, setYoutubeApiKey] = useState('');
   const [hasApiKey, setHasApiKey] = useState(false);
   const [apiKeySaving, setApiKeySaving] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   // SponsorBlock state
   const [removeSponsor, setRemoveSponsor] = useState(false);
@@ -905,6 +906,7 @@ export default function Settings() {
                   onClick={() => {
                     setGlobalItemsPerPage(option);
                     localStorage.setItem('global_items_per_page', option);
+                    showNotification(`Items per page set to ${option}`, 'success');
                   }}
                   className={`settings-toggle-btn ${globalItemsPerPage === option ? 'active' : ''}`}
                 >
@@ -984,12 +986,12 @@ export default function Settings() {
             </div>
           </div>
 
-          {/* YouTube API Key */}
+          {/* API Key */}
           <div className="setting-row mobile-hide-desc">
             <div className="setting-label">
               <span className={`autoscan-status ${hasApiKey ? 'active' : ''}`}></span>
               <div>
-                <div className="setting-name">YouTube API Key</div>
+                <div className="setting-name">API Key</div>
                 <div className="setting-desc">
                   Fetches upload dates quickly for new channels.{' '}
                   <a
@@ -1004,13 +1006,33 @@ export default function Settings() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={youtubeApiKey}
-                onChange={(e) => setYoutubeApiKey(e.target.value)}
-                placeholder="API key"
-                className="input text-sm py-1.5 px-2 w-28 sm:w-40"
-              />
+              <div className="relative">
+                <input
+                  type={showApiKey ? 'text' : 'password'}
+                  value={youtubeApiKey}
+                  onChange={(e) => setYoutubeApiKey(e.target.value)}
+                  placeholder="API key"
+                  className="input text-sm py-1.5 px-2 pr-8 w-28 sm:w-40"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowApiKey(!showApiKey)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                  title={showApiKey ? 'Hide API key' : 'Show API key'}
+                >
+                  {showApiKey ? (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  )}
+                </button>
+              </div>
               <button
                 onClick={handleSaveApiKey}
                 disabled={apiKeySaving}
