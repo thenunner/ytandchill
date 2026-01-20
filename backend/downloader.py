@@ -549,9 +549,11 @@ class DownloadWorker:
                     'api': 'https://sponsor.ajay.app',
                 })
                 # Add ModifyChapters postprocessor to remove the segments
+                # force_keyframes ensures re-encoding at cut points for proper A/V sync
                 ydl_opts['postprocessors'].append({
                     'key': 'ModifyChapters',
                     'remove_sponsor_segments': sponsorblock_categories,
+                    'force_keyframes': True,
                 })
                 logger.info(f'SponsorBlock enabled - removing categories: {", ".join(sponsorblock_categories)}')
         except Exception as sb_error:
