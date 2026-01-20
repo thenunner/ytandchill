@@ -76,8 +76,10 @@ export function useQueueSSE() {
 
       // Listen for video status changes (download complete, etc.)
       eventSource.addEventListener('videos', (event) => {
-        // Invalidate videos cache to trigger refetch
+        // Invalidate videos and channels cache to trigger refetch
+        // Channels need refresh too since they include video counts (needs_review, pending, etc.)
         queryClient.invalidateQueries({ queryKey: ['videos'] });
+        queryClient.invalidateQueries({ queryKey: ['channels'] });
       });
 
       eventSource.onerror = () => {
