@@ -973,17 +973,19 @@ export default function Settings() {
                 <div className="setting-desc">Hide videos you've already watched from all video lists</div>
               </div>
             </div>
-            <button
-              onClick={() => {
-                const newValue = !hideWatched;
-                setHideWatched(newValue);
-                localStorage.setItem('global_hide_watched', newValue.toString());
-                showNotification(newValue ? 'Watched videos will be hidden' : 'Watched videos will be shown', 'success');
-              }}
-              className={`settings-toggle ${hideWatched ? 'active' : ''}`}
-            >
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={hideWatched}
+                onChange={(e) => {
+                  const newValue = e.target.checked;
+                  setHideWatched(newValue);
+                  localStorage.setItem('global_hide_watched', newValue.toString());
+                  showNotification(newValue ? 'Watched videos will be hidden' : 'Watched videos will be shown', 'success');
+                }}
+              />
               <span className="toggle-slider" />
-            </button>
+            </label>
           </div>
 
           <div className="setting-row">
@@ -993,17 +995,19 @@ export default function Settings() {
                 <div className="setting-desc">Hide videos that are already added to a playlist</div>
               </div>
             </div>
-            <button
-              onClick={() => {
-                const newValue = !hidePlaylisted;
-                setHidePlaylisted(newValue);
-                localStorage.setItem('global_hide_playlisted', newValue.toString());
-                showNotification(newValue ? 'Playlisted videos will be hidden' : 'Playlisted videos will be shown', 'success');
-              }}
-              className={`settings-toggle ${hidePlaylisted ? 'active' : ''}`}
-            >
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={hidePlaylisted}
+                onChange={(e) => {
+                  const newValue = e.target.checked;
+                  setHidePlaylisted(newValue);
+                  localStorage.setItem('global_hide_playlisted', newValue.toString());
+                  showNotification(newValue ? 'Playlisted videos will be hidden' : 'Playlisted videos will be shown', 'success');
+                }}
+              />
               <span className="toggle-slider" />
-            </button>
+            </label>
           </div>
           </div>
         </div>
