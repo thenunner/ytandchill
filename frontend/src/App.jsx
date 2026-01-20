@@ -94,27 +94,17 @@ function App() {
 
   // === TOAST NOTIFICATIONS ===
 
-  // Scan completion toast
+  // Scan completion toast (15 second duration)
   useEffect(() => {
     if (currentOperation?.type === 'scan_complete' && currentOperation?.message) {
       if (prevOperationRef.current?.type !== 'scan_complete') {
-        showNotification(currentOperation.message, 'success');
+        showNotification(currentOperation.message, 'success', { duration: 15000 });
         // Clear the operation after showing toast
         api.clearOperation().catch(() => {});
       }
     }
     prevOperationRef.current = currentOperation;
   }, [currentOperation, showNotification]);
-
-  // Active scanning toast
-  useEffect(() => {
-    if (currentOperation?.type === 'scanning' && currentOperation?.message) {
-      showNotification(currentOperation.message, 'scanning', { id: 'scanning', persistent: true });
-    } else {
-      // Always remove scanning toast when not actively scanning
-      removeToast('scanning');
-    }
-  }, [currentOperation, showNotification, removeToast]);
 
   // Error message toast
   useEffect(() => {
