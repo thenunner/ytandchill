@@ -312,16 +312,20 @@ export function useRemoveVideoFromPlaylist() {
   });
 }
 
-// Queue
+// Queue - SSE in App.jsx keeps cache updated, polling is fallback only
 export function useQueue(options = {}) {
-  const { sseConnected = false } = options;
+  const { sseConnected } = options;
+  // Only App.jsx passes sseConnected - it controls the SSE connection
+  // Other components just read from cache (no polling needed)
+  const isMainConsumer = sseConnected !== undefined;
+
   return useQuery({
     queryKey: ['queue'],
     queryFn: () => api.getQueue(),
-    // SSE connected: disable polling (SSE pushes updates directly to cache)
-    // SSE disconnected: poll every 2 seconds as fallback
-    refetchInterval: sseConnected ? false : 2000,
-    staleTime: sseConnected ? 30000 : 0, // Trust SSE data for 30s, always refetch when polling
+    // Main consumer (App.jsx): poll as fallback when SSE disconnected
+    // Other consumers: no polling, just read from shared cache
+    refetchInterval: isMainConsumer ? (sseConnected ? false : 3000) : false,
+    staleTime: 30000, // Trust cache for 30 seconds
   });
 }
 
@@ -468,15 +472,20 @@ export function useHealth() {
   return useQuery({
     queryKey: ['health'],
     queryFn: () => api.getHealth(),
-    refetchInterval: 10000, // Check health every 10 seconds
+    staleTime: 5 * 60 * 1000, // Consider fresh for 5 minutes
+    refetchOnMount: true, // Check on mount
+    refetchInterval: false, // No polling - data rarely changes
   });
 }
 
-export function useLogs(lines = 500) {
+export function useLogs(lines = 500, options = {}) {
+  const { enabled = true } = options;
   return useQuery({
     queryKey: ['logs', lines],
     queryFn: () => api.getLogs(lines),
-    refetchInterval: 5000, // Refresh logs every 5 seconds
+    staleTime: 10000,
+    refetchInterval: enabled ? 10000 : false, // Only poll when logs visible
+    enabled, // Don't fetch at all when disabled
   });
 }
 

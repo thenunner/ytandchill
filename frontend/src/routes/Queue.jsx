@@ -1,6 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
-import { useQueueSSE } from '../api/useQueueSSE';
 import { useNotification } from '../contexts/NotificationContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -133,9 +132,8 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
 }
 
 export default function Queue() {
-  // SSE provides real-time updates, polling is backup when SSE disconnects
-  const { isConnected: sseConnected } = useQueueSSE();
-  const { data: queue, isLoading } = useQueue({ sseConnected });
+  // Queue data is kept fresh by SSE in App.jsx, reads from shared cache
+  const { data: queue, isLoading } = useQueue();
   const resumeQueue = useResumeQueue();
   const cancelCurrent = useCancelCurrent();
   const removeFromQueue = useRemoveFromQueue();

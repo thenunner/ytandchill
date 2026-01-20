@@ -81,7 +81,6 @@ const ChevronIcon = ({ collapsed }) => (
 export default function Settings() {
   const { data: settings, isLoading } = useSettings();
   const { data: health } = useHealth();
-  const { data: logsData } = useLogs(500);
   const { data: channels } = useChannels();
   const updateSettings = useUpdateSettings();
   const { showNotification } = useNotification();
@@ -158,6 +157,9 @@ export default function Settings() {
     const saved = localStorage.getItem('logsVisible');
     return saved !== null ? saved === 'true' : false;
   });
+
+  // Only fetch logs when the logs section is visible
+  const { data: logsData } = useLogs(500, { enabled: showLogs });
 
 
   // Queue/DB Repair state

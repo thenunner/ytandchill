@@ -1,5 +1,6 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useQueue, useHealth, useAuthCheck, useFirstRunCheck } from './api/queries';
+import { useQueueSSE } from './api/useQueueSSE';
 import { useNotification } from './contexts/NotificationContext';
 import { useTheme } from './contexts/ThemeContext';
 import { useEffect, useState, useMemo, useRef } from 'react';
@@ -26,7 +27,9 @@ import { version as APP_VERSION } from '../package.json';
 function App() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { data: queueData } = useQueue();
+  // SSE keeps queue data updated in real-time across all components
+  const { isConnected: sseConnected } = useQueueSSE();
+  const { data: queueData } = useQueue({ sseConnected });
   const { data: health } = useHealth();
   const { showNotification, removeToast } = useNotification();
   const { theme } = useTheme();

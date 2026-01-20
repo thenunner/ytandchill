@@ -1154,9 +1154,9 @@ export default function Channels() {
                     </div>
                   )}
 
-                  {/* Upper Left: To Review Badge (only if > 0) - Bigger, no spacing */}
+                  {/* Upper Left: To Review Badge (only if > 0) */}
                   {(channel.video_count || 0) > 0 && (
-                    <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-br-lg leading-none z-10">
+                    <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-xl rounded-br-lg leading-none z-10">
                       {channel.video_count}
                     </div>
                   )}
