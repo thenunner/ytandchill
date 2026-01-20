@@ -202,6 +202,8 @@ class DownloadWorker:
         session.commit()
         self.current_download = None
         logger.info(f'Successfully moved video to removed: {video.yt_id}')
+        # Broadcast state change for error toast
+        self._emit_queue_update(force=True)
 
     def _handle_rate_limit(self, session, video, queue_item, cookies_path=None, error_code=None):
         """
@@ -238,6 +240,9 @@ class DownloadWorker:
         # Reset any other stuck 'downloading' videos back to 'discovered'
         with get_session(self.session_factory) as temp_session:
             self._reset_stuck_videos(temp_session, target_status='discovered', exclude_video_id=video.id)
+
+        # Broadcast state change for rate limit toast
+        self._emit_queue_update(force=True)
 
     def _worker_loop(self):
         logger.debug("Worker loop started")
@@ -618,6 +623,7 @@ class DownloadWorker:
                 session.delete(queue_item)
                 session.commit()
                 self.current_download = None
+                self._emit_queue_update(force=True)
                 return False, False, False, False, True, None  # already_handled=True
 
             except Exception as download_error:

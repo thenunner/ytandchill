@@ -9,6 +9,7 @@ import requests as http_requests
 from database import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, ChannelCategory, get_session
 from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
+from events import queue_events
 from routes import register_blueprints
 from scanner import scan_channel_videos, scan_channel_videos_full, scan_channel_shorts
 from youtube_api import fetch_video_dates, scan_channel_videos_api
@@ -368,7 +369,7 @@ def _scan_worker():
                     # Update status bar to show current channel being scanned
                     if scan_total_channels > 0:
                         progress_pct = int(((scan_current_channel - 1) / scan_total_channels) * 100)
-                        set_operation('scanning', f"{channel.title}", progress=progress_pct)
+                        set_operation('scanning', f"Scanning: {channel.title}", progress=progress_pct)
 
                     # Execute the scan logic with progress info
                     result = _execute_channel_scan(session, channel, force_full, scan_current_channel, scan_total_channels)
@@ -457,7 +458,7 @@ current_operation = {
 }
 
 def set_operation(op_type, message, channel_id=None, progress=0):
-    """Update current operation status"""
+    """Update current operation status and broadcast via SSE"""
     global current_operation
     current_operation = {
         'type': op_type,
@@ -466,9 +467,11 @@ def set_operation(op_type, message, channel_id=None, progress=0):
         'progress': progress,
         'timestamp': datetime.utcnow().isoformat()
     }
+    # Broadcast update to SSE clients immediately
+    queue_events.emit('queue:changed')
 
 def clear_operation():
-    """Clear current operation status"""
+    """Clear current operation status and broadcast via SSE"""
     global current_operation
     logger.debug(f"[STATUS BAR] Clearing operation (was: {current_operation.get('type')} - {current_operation.get('message')})")
     current_operation = {
@@ -478,6 +481,8 @@ def clear_operation():
         'progress': 0,
         'timestamp': None
     }
+    # Broadcast update to SSE clients immediately
+    queue_events.emit('queue:changed')
 
 def get_current_operation():
     """Get the current operation status (for use by blueprints)"""
