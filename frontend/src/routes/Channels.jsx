@@ -1137,7 +1137,7 @@ export default function Channels() {
                   editMode && selectedChannels.includes(channel.id)
                     ? 'rounded-t-xl'
                     : 'rounded-t-xl rounded-b-xl group-hover:rounded-b-none'
-                } ${(channel.video_count || 0) > 0 ? 'border-2 border-accent' : ''}`}>
+                } ${(channel.video_count || 0) > 0 ? 'border-4 border-accent' : ''}`}>
                   {/* Upper Left: To Review Badge (only if > 0) */}
                   {(channel.video_count || 0) > 0 && (
                     <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-[10px] rounded-br-lg leading-none z-10">
