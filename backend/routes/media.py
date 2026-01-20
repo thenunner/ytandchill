@@ -70,6 +70,16 @@ def serve_media(filename):
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Content-Length'] = str(file_size)
         response.headers['Access-Control-Allow-Origin'] = '*'
+
+        # Add cache headers for images (thumbnails)
+        if mime_type and mime_type.startswith('image/'):
+            if filename.startswith('thumbnails/'):
+                # Channel thumbnails rarely change - cache for 1 week
+                response.headers['Cache-Control'] = 'public, max-age=604800'
+            else:
+                # Video thumbnails - cache for 1 day
+                response.headers['Cache-Control'] = 'public, max-age=86400'
+
         return response
 
     # Parse range header (e.g., "bytes=0-1023")
