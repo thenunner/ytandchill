@@ -65,6 +65,7 @@ from werkzeug.utils import secure_filename
 
 from database import Video, Channel, get_session
 from utils import makedirs_777, ensure_channel_thumbnail, sanitize_folder_name
+from events import queue_events
 
 logger = logging.getLogger(__name__)
 
@@ -191,6 +192,9 @@ def _encode_worker():
                         'reason_code': 'encode_failed',
                     })
 
+            # Emit SSE after each item completes
+            queue_events.emit('import:state')
+
         except Exception as e:
             logger.error(f"Encode worker error for {item.get('filename', 'unknown')}: {e}")
             with _encode_lock:
@@ -201,8 +205,12 @@ def _encode_worker():
                     'reason': str(e),
                     'reason_code': 'encode_error',
                 })
+            # Emit SSE on error
+            queue_events.emit('import:state')
 
     logger.info("Encode worker thread finished")
+    # Emit final state when worker completes
+    queue_events.emit('import:state')
 
 
 def _start_encode_worker():
@@ -910,6 +918,7 @@ def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
         stderr_thread.start()
 
         last_log_time = 0
+        last_sse_time = 0
         for line in process.stdout:
             if line.startswith('out_time_ms='):
                 try:
@@ -920,8 +929,17 @@ def reencode_mkv_to_mp4(input_path, output_path, total_duration=None):
                         _import_state['message'] = f"Encoding: {filename} ({percent}%)"
                         _import_state['encode_progress'] = percent
 
-                        # Log progress every 60 seconds
                         now = time.time()
+                        # Emit SSE every 2 seconds for real-time progress
+                        if now - last_sse_time > 2:
+                            queue_events.emit('import:encode', {
+                                'filename': filename,
+                                'progress': percent,
+                                'encoding': True
+                            })
+                            last_sse_time = now
+
+                        # Log progress every 60 seconds
                         if now - last_log_time > 60:
                             logger.info(f"Encoding progress: {filename} - {percent}% ({current_sec:.0f}s / {total_duration}s)")
                             last_log_time = now

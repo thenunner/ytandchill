@@ -53,6 +53,33 @@ export function useQueueSSE() {
         queryClient.invalidateQueries({ queryKey: ['settings'] });
       });
 
+      // Listen for import events (state changes and encode progress)
+      eventSource.addEventListener('import', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'state') {
+            // Invalidate import state cache to trigger refetch
+            queryClient.invalidateQueries({ queryKey: ['import-state'] });
+          } else if (data.type === 'encode') {
+            // Update encode status cache directly for real-time progress
+            queryClient.setQueryData(['encode-status'], (old) => ({
+              ...old,
+              encoding: data.data?.encoding ?? true,
+              progress: data.data?.progress ?? 0,
+              current: data.data?.filename ? { filename: data.data.filename } : old?.current,
+            }));
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse import SSE data:', parseError);
+        }
+      });
+
+      // Listen for video status changes (download complete, etc.)
+      eventSource.addEventListener('videos', (event) => {
+        // Invalidate videos cache to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['videos'] });
+      });
+
       eventSource.onerror = () => {
         setIsConnected(false);
         eventSource.close();

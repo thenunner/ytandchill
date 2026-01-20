@@ -809,6 +809,8 @@ class DownloadWorker:
             logger.debug(f'Download complete, current_download cleared, database committed')
             # Emit SSE event for queue state change
             self._emit_queue_update(force=True)
+            # Emit video status change for real-time library updates
+            queue_events.emit('video:changed')
         except Exception as commit_error:
             logger.error(f'Failed to commit download completion for video {video.yt_id}: {commit_error}')
             session.rollback()
