@@ -47,6 +47,12 @@ export function useQueueSSE() {
         }
       });
 
+      // Listen for settings change events (theme, preferences, etc.)
+      eventSource.addEventListener('settings', (event) => {
+        // Invalidate settings cache to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['settings'] });
+      });
+
       eventSource.onerror = () => {
         setIsConnected(false);
         eventSource.close();

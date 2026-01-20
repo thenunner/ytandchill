@@ -173,6 +173,9 @@ def queue_stream():
                         # Build fresh state when signaled
                         state = _get_queue_state()
                         yield f"event: queue\ndata: {json.dumps(state)}\n\n"
+                    elif event['type'] == 'settings:changed':
+                        # Notify clients to refetch settings
+                        yield f"event: settings\ndata: {json.dumps({'changed': True})}\n\n"
                 except Empty:
                     # Send heartbeat comment to keep connection alive
                     yield ": heartbeat\n\n"
