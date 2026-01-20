@@ -491,9 +491,15 @@ class DownloadWorker:
         else:
             logger.warning(f'Failed to download thumbnail for {video.yt_id}')
 
-    def _configure_download_options(self, channel_dir, video_yt_id, progress_hook):
+    def _configure_download_options(self, channel_dir, video_yt_id, progress_hook, video_duration_sec=None):
         """
         Build yt-dlp options dictionary with all settings.
+
+        Args:
+            channel_dir: Directory to save the video
+            video_yt_id: YouTube video ID
+            progress_hook: Progress callback function
+            video_duration_sec: Video duration in seconds (for SponsorBlock skip check)
 
         Returns:
             tuple: (ydl_opts dict, cookies_path)
@@ -583,7 +589,13 @@ class DownloadWorker:
         try:
             sponsorblock_categories = self.settings_manager.get_sponsorblock_categories()
 
-            if sponsorblock_categories:
+            # Check if we should skip SponsorBlock for long videos (60+ minutes)
+            skip_long = self.settings_manager.get('sponsorblock_skip_long', 'false') == 'true'
+            is_long_video = video_duration_sec and video_duration_sec >= 3600  # 60 minutes
+
+            if sponsorblock_categories and skip_long and is_long_video:
+                logger.info(f'SponsorBlock disabled for this video ({video_duration_sec // 60}min) - skip_long setting enabled')
+            elif sponsorblock_categories:
                 # Add SponsorBlock postprocessor to fetch segment data from API
                 ydl_opts['postprocessors'].append({
                     'key': 'SponsorBlock',
@@ -914,8 +926,8 @@ class DownloadWorker:
         # 3. Download thumbnail
         self._download_thumbnail(video, channel_dir)
 
-        # 4. Configure yt-dlp options
-        ydl_opts, cookies_path = self._configure_download_options(channel_dir, video.yt_id, progress_hook)
+        # 4. Configure yt-dlp options (pass duration for SponsorBlock skip check)
+        ydl_opts, cookies_path = self._configure_download_options(channel_dir, video.yt_id, progress_hook, video.duration_sec)
 
         # 5. Execute download with retries
         success, cancelled, _rate_limited, timed_out, already_handled, ext = self._execute_download(
