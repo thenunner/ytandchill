@@ -69,7 +69,7 @@ function App() {
         if (!updateToastShownRef.current && toastShownVersion !== latest) {
           updateToastShownRef.current = true;
           localStorage.setItem('updateToastShownVersion', latest);
-          showNotification(`Update available: v${latest}`, 'info', { duration: 8000 });
+          showNotification(`Update available: v${latest}`, 'info', { persistent: true });
         }
       }
     }
@@ -214,7 +214,7 @@ function App() {
       removeToast('download-progress');
       // Show download complete notification with the previous download's title
       const completedTitle = prevDownloadRef.current.video?.title || 'Video';
-      showNotification(`Downloaded: ${completedTitle}`, 'success');
+      showNotification(`Downloaded: ${completedTitle}`, 'success', { duration: 15000 });
     }
     prevDownloadRef.current = currentDownload;
   }, [currentDownload, isPaused, showNotification, removeToast]);
