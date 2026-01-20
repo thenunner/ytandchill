@@ -413,18 +413,34 @@ export default function Queue() {
 
                   {/* Line 2: Progress Bar */}
                   <div className="w-full bg-dark-tertiary rounded-full h-1.5 overflow-hidden">
-                    <div
-                      className="bg-accent h-full transition-all duration-300"
-                      style={{ width: `${currentDownload.progress_pct || 0}%` }}
-                    ></div>
+                    {currentDownload.phase === 'postprocessing' ? (
+                      <div className="bg-accent h-full w-1/3 animate-pulse" style={{ animation: 'indeterminate 1.5s infinite linear' }} />
+                    ) : (
+                      <div
+                        className="bg-accent h-full transition-all duration-300"
+                        style={{ width: `${currentDownload.progress_pct || 0}%` }}
+                      />
+                    )}
                   </div>
 
                   {/* Line 3: Progress Stats */}
                   <div className="flex items-center gap-4 text-xs text-text-secondary">
-                    <span>{(currentDownload.progress_pct || 0).toFixed(1)}%</span>
-                    <span>{formatBytes(currentDownload.speed_bps)}</span>
-                    <span>Size: {formatFileSize(currentDownload.total_bytes)}</span>
-                    <span>ETA: {formatTime(currentDownload.eta_seconds)}</span>
+                    {currentDownload.phase === 'postprocessing' ? (
+                      <>
+                        <span className="text-accent font-medium flex items-center gap-2">
+                          <span className="w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+                          Processing ({Math.floor((currentDownload.postprocess_elapsed || 0) / 60)}:{((currentDownload.postprocess_elapsed || 0) % 60).toString().padStart(2, '0')})
+                        </span>
+                        <span className="text-text-muted">SponsorBlock re-encoding</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>{(currentDownload.progress_pct || 0).toFixed(1)}%</span>
+                        <span>{formatBytes(currentDownload.speed_bps)}</span>
+                        <span>Size: {formatFileSize(currentDownload.total_bytes)}</span>
+                        <span>ETA: {formatTime(currentDownload.eta_seconds)}</span>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

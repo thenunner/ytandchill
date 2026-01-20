@@ -80,6 +80,32 @@ function ToastItem({ toast, onDismiss }) {
 
   // Progress toast has a special layout
   if (type === 'progress' && progress) {
+    // Postprocessing mode (SponsorBlock re-encoding)
+    if (progress.isPostprocessing) {
+      return (
+        <div
+          onClick={onDismiss}
+          className="animate-slide-up bg-dark-secondary border border-dark-border rounded-lg shadow-lg text-white overflow-hidden cursor-pointer hover:bg-dark-secondary/80 transition-colors"
+        >
+          <div className="flex items-center gap-3 px-4 py-3">
+            {/* Spinner icon for processing */}
+            <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-text-primary truncate">{message}</div>
+              <div className="flex items-center gap-3 text-xs text-text-secondary mt-1">
+                <span className="text-accent font-medium">Processing ({progress.elapsed})</span>
+              </div>
+            </div>
+          </div>
+          {/* Indeterminate progress bar */}
+          <div className="h-1 bg-dark-border overflow-hidden">
+            <div className="h-full w-1/3 bg-accent animate-pulse" style={{ animation: 'indeterminate 1.5s infinite linear' }} />
+          </div>
+        </div>
+      );
+    }
+
+    // Normal download progress
     return (
       <div
         onClick={onDismiss}

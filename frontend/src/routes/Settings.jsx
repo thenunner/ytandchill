@@ -944,7 +944,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="setting-row mobile-hide-desc">
+          <div className="setting-row mobile-stack">
             <div className="setting-label">
               <div>
                 <div className="setting-name">Card Size - Channels</div>
@@ -970,7 +970,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="setting-row mobile-hide-desc">
+          <div className="setting-row mobile-stack">
             <div className="setting-label">
               <div>
                 <div className="setting-name">Card Size - Library</div>

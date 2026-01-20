@@ -70,6 +70,15 @@ def get_queue():
                     'eta_seconds': item['eta_seconds'],
                     'total_bytes': item.get('total_bytes', 0)
                 }
+                # Add phase and elapsed time from download worker
+                worker_download = _download_worker.current_download if hasattr(_download_worker, 'current_download') else None
+                if worker_download:
+                    current_download['phase'] = worker_download.get('phase', 'downloading')
+                    current_download['postprocessor'] = worker_download.get('postprocessor')
+                    # Calculate elapsed time if in postprocessing
+                    if worker_download.get('postprocess_start_time'):
+                        import time
+                        current_download['postprocess_elapsed'] = int(time.time() - worker_download['postprocess_start_time'])
                 break
 
         # Get auto-refresh status
@@ -125,6 +134,15 @@ def _get_queue_state():
                     'eta_seconds': item['eta_seconds'],
                     'total_bytes': item.get('total_bytes', 0)
                 }
+                # Add phase and elapsed time from download worker
+                worker_download = _download_worker.current_download if hasattr(_download_worker, 'current_download') else None
+                if worker_download:
+                    current_download['phase'] = worker_download.get('phase', 'downloading')
+                    current_download['postprocessor'] = worker_download.get('postprocessor')
+                    # Calculate elapsed time if in postprocessing
+                    if worker_download.get('postprocess_start_time'):
+                        import time
+                        current_download['postprocess_elapsed'] = int(time.time() - worker_download['postprocess_start_time'])
                 break
 
         auto_refresh_enabled = _settings_manager.get_bool('auto_refresh_enabled')
