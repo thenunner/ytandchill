@@ -249,14 +249,14 @@ export default function VideoCard({
           </div>
         )}
         {statusBadge && statusBadge.position === 'bottom' && (
-          <div className={`absolute bottom-0 left-0 right-0 ${statusBadge.bg} text-white px-3 py-1.5 text-center ${textSizes.badge} font-bold tracking-wide backdrop-blur-sm z-10`}>
+          <div className={`absolute bottom-0 left-0 right-14 ${statusBadge.bg} text-white px-3 py-1.5 text-center ${textSizes.badge} font-bold tracking-wide backdrop-blur-sm z-10`}>
             {statusBadge.text}
           </div>
         )}
 
         {/* Duration overlay - bottom right (YouTube style) */}
         {video.duration_sec && (
-          <div className={`absolute bottom-1 right-1 bg-black/80 text-white ${textSizes.badge} font-semibold px-1.5 py-0.5 rounded`}>
+          <div className={`absolute bottom-1 right-1 bg-black/80 text-white ${textSizes.badge} font-semibold px-1.5 py-0.5 rounded z-20`}>
             {formatDuration(video.duration_sec)}
           </div>
         )}
@@ -356,17 +356,10 @@ export default function VideoCard({
             )}
           </div>
         ) : (
-          // Channel view: title + duration in fixed 2-line container
-          <div className="min-h-[2.6em] leading-tight" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-            <span className={`${textSizes.title} font-medium text-text-primary`} title={video.title}>
-              {video.title}
-            </span>
-            {video.duration_sec && (
-              <span className={`${textSizes.metadata} text-text-secondary font-medium ml-1.5`}>
-                • {formatDuration(video.duration_sec)}
-              </span>
-            )}
-          </div>
+          // Channel view: just title (duration is now on thumbnail)
+          <h3 className={`${textSizes.title} font-medium text-text-primary line-clamp-2 leading-tight`} title={video.title}>
+            {video.title}
+          </h3>
         )}
 
         {/* Metadata */}
