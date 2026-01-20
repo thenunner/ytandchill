@@ -1114,6 +1114,13 @@ export default function Channels() {
                 }
               }}
             >
+              {/* Upper Left: To Review Badge (only if > 0) */}
+              {(channel.video_count || 0) > 0 && (
+                <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-xl rounded-br-lg leading-none z-20">
+                  {channel.video_count}
+                </div>
+              )}
+
               {/* Checkmark overlay when selected in edit mode */}
               {editMode && selectedChannels.includes(channel.id) && (
                 <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-20">
@@ -1133,17 +1140,9 @@ export default function Channels() {
                 }}
               >
                 {/* Channel Thumbnail - YouTube style */}
-                <div className={`relative w-full aspect-video bg-dark-tertiary overflow-hidden transition-all ${
-                  editMode && selectedChannels.includes(channel.id)
-                    ? 'rounded-t-xl'
-                    : 'rounded-t-xl rounded-b-xl group-hover:rounded-b-none'
-                } ${(channel.video_count || 0) > 0 ? 'border-4 border-accent' : ''}`}>
-                  {/* Upper Left: To Review Badge (only if > 0) */}
-                  {(channel.video_count || 0) > 0 && (
-                    <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-[10px] rounded-br-lg leading-none z-10">
-                      {channel.video_count}
-                    </div>
-                  )}
+                <div className={`relative w-full aspect-video bg-dark-tertiary overflow-hidden transition-all rounded-xl ${
+                  (channel.video_count || 0) > 0 ? 'border-4 border-accent' : ''
+                }`}>
                   {channel.thumbnail ? (
                     <img
                       src={channel.thumbnail}
