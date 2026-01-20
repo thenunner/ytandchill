@@ -27,6 +27,7 @@ export function useChannels() {
   return useQuery({
     queryKey: ['channels'],
     queryFn: () => api.getChannels(),
+    staleTime: 60000, // 60 seconds - channels rarely change, SSE invalidates on updates
   });
 }
 
@@ -78,7 +79,8 @@ export function useVideos(params) {
   return useQuery({
     queryKey: ['videos', params],
     queryFn: () => api.getVideos(params),
-    refetchInterval: 5000, // Refetch every 5 seconds for status updates
+    refetchInterval: 30000, // SSE handles real-time updates, polling is fallback
+    staleTime: 10000,
   });
 }
 
@@ -197,6 +199,7 @@ export function useChannelCategories() {
   return useQuery({
     queryKey: ['channel-categories'],
     queryFn: () => api.getChannelCategories(),
+    staleTime: 60000, // 60 seconds - categories rarely change
   });
 }
 
@@ -236,6 +239,7 @@ export function usePlaylists(channelId) {
   return useQuery({
     queryKey: ['playlists', channelId],
     queryFn: () => api.getPlaylists(channelId),
+    staleTime: 60000, // 60 seconds - playlists rarely change
   });
 }
 
@@ -523,10 +527,10 @@ export function useScanImportFolder(includeMkv = false) {
 
 export function useImportState() {
   return useQuery({
-    queryKey: ['import', 'state'],
+    queryKey: ['import-state'],
     queryFn: () => api.getImportState(),
-    refetchInterval: 1000, // Poll every second during import
-    staleTime: 0,
+    refetchInterval: 5000, // SSE handles real-time updates, polling is fallback
+    staleTime: 2000,
   });
 }
 
@@ -638,10 +642,10 @@ export function useExecuteSmartImport() {
 
 export function useEncodeStatus(enabled = true) {
   return useQuery({
-    queryKey: ['import', 'encode-status'],
+    queryKey: ['encode-status'],
     queryFn: () => api.getEncodeStatus(),
-    refetchInterval: enabled ? 500 : false, // Poll every 500ms when enabled
-    staleTime: 0,
+    refetchInterval: enabled ? 5000 : false, // SSE handles real-time updates, polling is fallback
+    staleTime: 2000,
     enabled,
   });
 }

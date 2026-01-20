@@ -176,6 +176,15 @@ def queue_stream():
                     elif event['type'] == 'settings:changed':
                         # Notify clients to refetch settings
                         yield f"event: settings\ndata: {json.dumps({'changed': True})}\n\n"
+                    elif event['type'] == 'import:state':
+                        # Notify clients to refetch import state
+                        yield f"event: import\ndata: {json.dumps({'type': 'state'})}\n\n"
+                    elif event['type'] == 'import:encode':
+                        # Send encode progress directly (high frequency during encoding)
+                        yield f"event: import\ndata: {json.dumps({'type': 'encode', 'data': event.get('data', {})})}\n\n"
+                    elif event['type'] == 'video:changed':
+                        # Notify clients to refetch videos (status changed)
+                        yield f"event: videos\ndata: {json.dumps({'changed': True})}\n\n"
                 except Empty:
                     # Send heartbeat comment to keep connection alive
                     yield ": heartbeat\n\n"
