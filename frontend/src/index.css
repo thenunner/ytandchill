@@ -668,7 +668,7 @@
     display: none !important;
   }
 
-  /* Settings Stats Bar - 4+3 Grid Layout */
+  /* Settings Stats Bar - 3+4 Grid Layout on mobile */
   .stats-bar {
     display: grid !important;
     grid-template-columns: repeat(4, 1fr);
@@ -680,14 +680,21 @@
     padding: 4px 0;
   }
 
-  .stats-bar .stat-item:nth-child(n+5) {
-    grid-column: span 1;
+  /* First 3 items span row 1, centered */
+  .stats-bar .stat-item:nth-child(1) {
+    grid-column: 1;
+  }
+  .stats-bar .stat-item:nth-child(2) {
+    grid-column: 2;
+  }
+  .stats-bar .stat-item:nth-child(3) {
+    grid-column: 3 / 5;
+    justify-self: center;
   }
 
-  /* Center last row (3 items) */
-  .stats-bar-mobile-center {
-    grid-column: 2 / 4;
-    justify-self: center;
+  /* Items 4-7 span row 2 (4 items) */
+  .stats-bar .stat-item:nth-child(n+4) {
+    grid-row: 2;
   }
 
   /* Settings Toggle Groups - Stacked Layout */

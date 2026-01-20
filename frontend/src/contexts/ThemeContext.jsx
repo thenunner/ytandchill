@@ -11,7 +11,6 @@ export const themes = {
   buffer: 'Buffer',
   gateway: 'Gateway',
   catppuccin: 'Catppuccin',
-  online: 'Online',
   pixel: 'Pixel',
   debug: 'Debug',
 };
@@ -38,7 +37,7 @@ export function ThemeProvider({ children }) {
     const root = document.documentElement;
 
     // Remove all theme classes
-    root.classList.remove('theme-kernel', 'theme-fatal', 'theme-subnet', 'theme-archive', 'theme-buffer', 'theme-gateway', 'theme-catppuccin', 'theme-online', 'theme-pixel', 'theme-debug');
+    root.classList.remove('theme-kernel', 'theme-fatal', 'theme-subnet', 'theme-archive', 'theme-buffer', 'theme-gateway', 'theme-catppuccin', 'theme-pixel', 'theme-debug');
 
     // Add current theme class
     root.classList.add(`theme-${theme}`);

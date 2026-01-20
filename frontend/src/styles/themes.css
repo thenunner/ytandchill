@@ -187,37 +187,6 @@
   --scrollbar-thumb-hover: 235 16% 30%; /* Surface1 #45475a */
 }
 
-/* ONLINE THEME - Light sage green theme (light mode)
- * Soft light theme - Gentle on eyes with natural green tones
- * Inspired by online status indicators and fresh starts */
-.theme-online {
-  /* Backgrounds */
-  --bg-primary: 105 35% 90%;       /* Light sage green background */
-  --bg-secondary: 105 30% 85%;     /* Soft green (cards) */
-  --bg-tertiary: 105 25% 78%;      /* Deeper sage (inputs/elevated) */
-  --bg-hover: 105 30% 72%;         /* Sage hover */
-
-  /* Borders */
-  --border: 105 28% 55%;           /* Darker for visibility on light bg */
-  --border-light: 105 30% 65%;     /* Distinct from bg-tertiary */
-
-  /* Text - Dark for light theme */
-  --text-primary: 130 15% 20%;     /* Dark desaturated green */
-  --text-secondary: 130 12% 32%;   /* Darker for better contrast */
-  --text-muted: 130 12% 38%;       /* Much darker for readability on light bg */
-
-  /* Accent */
-  --accent: 115 45% 32%;           /* Dark green for buttons/backgrounds */
-  --accent-hover: 115 50% 40%;     /* Slightly brighter on hover */
-  --accent-text: 115 50% 25%;      /* Darker green for text on light bg */
-  --btn-primary-text: 0 0% 100%;   /* White text for primary buttons */
-
-  /* Scrollbar */
-  --scrollbar-track: 105 30% 85%;
-  --scrollbar-thumb: 105 30% 55%;
-  --scrollbar-thumb-hover: 105 32% 45%;
-}
-
 /* PIXEL THEME - Light pink/cream theme with magenta accents (light mode)
  * Soft, playful light theme - Warm pinks and creamy backgrounds
  * Inspired by retro pixel art and pastel aesthetics */

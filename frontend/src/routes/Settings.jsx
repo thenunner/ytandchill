@@ -678,7 +678,6 @@ export default function Settings() {
     archive: 'hsl(95, 20%, 45%)',
     buffer: 'hsl(35, 45%, 58%)',
     catppuccin: '#89b4fa',
-    online: 'hsl(115, 25%, 50%)',
     pixel: 'hsl(315, 80%, 75%)',
     debug: 'hsl(210, 30%, 55%)'
   };
@@ -688,9 +687,8 @@ export default function Settings() {
     <div className="animate-fade-in pt-4">
       <div className="flex flex-col gap-4 w-full max-w-3xl mx-auto">
 
-        {/* Stats Bar - Row 1: App info, Row 2: Counts (mobile) */}
-        <div className="stats-bar flex-wrap">
-          {/* Row 1 on mobile */}
+        {/* Stats Bar - Row 1: App info (3), Row 2: Counts (4) on mobile */}
+        <div className="stats-bar">
           <div className="stat-item">
             <div className="stat-label">YTandchill</div>
             <div className="stat-value">{APP_VERSION}</div>
@@ -711,20 +709,19 @@ export default function Settings() {
               <GearIcon />
             </button>
           </div>
-          {/* Row 2 on mobile */}
-          <div className="stat-item order-last sm:order-none">
+          <div className="stat-item">
             <div className="stat-label">Storage</div>
             <div className="stat-value">{health?.total_storage || '0B'}</div>
           </div>
-          <div className="stat-item order-last sm:order-none">
+          <div className="stat-item">
             <div className="stat-label">Library</div>
             <div className="stat-value">{stats.library}</div>
           </div>
-          <div className="stat-item order-last sm:order-none">
+          <div className="stat-item">
             <div className="stat-label">To Review</div>
             <div className="stat-value text-accent">{stats.discovered}</div>
           </div>
-          <div className="stat-item order-last sm:order-none">
+          <div className="stat-item">
             <div className="stat-label">Channels</div>
             <div className="stat-value">{channels?.length || 0}</div>
           </div>
