@@ -11,7 +11,7 @@ import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 
 export default function Playlist() {
@@ -241,8 +241,6 @@ export default function Playlist() {
 
           {/* RIGHT: Controls */}
           <div className="flex items-center gap-2 flex-wrap justify-end">
-            <CardSizeSlider tab="library" />
-
             {!isMobile && (
               <Pagination
                 currentPage={currentPage}

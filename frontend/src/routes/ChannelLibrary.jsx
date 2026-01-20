@@ -13,7 +13,7 @@ import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import api from '../api/client';
-import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 
 export default function ChannelLibrary() {
@@ -804,9 +804,6 @@ export default function ChannelLibrary() {
                 <span>{editMode ? 'Done' : 'Edit'}</span>
               </button>
             )}
-
-            {/* Card Size Slider - hidden on mobile */}
-            <CardSizeSlider tab={isLibraryMode ? 'library' : 'channels'} />
           </div>
 
           {/* Right: Search + Pagination */}

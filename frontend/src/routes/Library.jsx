@@ -6,7 +6,7 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { StickyBar, SearchInput, CardSizeSlider, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
@@ -555,9 +555,6 @@ export default function Library() {
                   <span>Import</span>
                 </Link>
               </div>
-
-              {/* Card Size Slider - hidden on mobile */}
-              <CardSizeSlider tab="library" />
             </div>
 
             {/* Right: Search + Sort + Pagination */}
@@ -717,7 +714,7 @@ export default function Library() {
                 </button>
               </div>
 
-              {/* Edit + CardSize (desktop only) */}
+              {/* Edit (desktop only) */}
               <div className="flex items-center gap-2">
                 {/* Divider - hidden on mobile */}
                 <div className="toolbar-divider hidden sm:block" />
@@ -732,9 +729,6 @@ export default function Library() {
                 >
                   <span>{editMode ? 'Done' : 'Edit'}</span>
                 </button>
-
-                {/* Card Size Slider - hidden on mobile */}
-                <CardSizeSlider tab="library" />
               </div>
             </div>
 
