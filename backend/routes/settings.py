@@ -20,6 +20,7 @@ import yt_dlp
 from database import Setting, Video, get_session
 from utils import update_log_level, get_stored_credentials, check_auth_credentials
 from youtube_api import test_api_key
+from events import queue_events
 
 logger = logging.getLogger(__name__)
 
@@ -143,6 +144,9 @@ def update_settings():
     # Only reschedule if time changed but we didn't just enable (enable already uses new time)
     if needs_reschedule and not needs_enable:
         _scheduler.reschedule()
+
+    # Broadcast settings change to all SSE clients for instant sync
+    queue_events.emit('settings:changed')
 
     return jsonify({'success': True})
 
