@@ -226,11 +226,7 @@
     overflow-y: auto;
     overscroll-behavior-y: contain;  /* Prevent bounce but allow scroll */
     -webkit-overflow-scrolling: touch;
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  body::-webkit-scrollbar {
-    display: none;
+    /* Let iOS show native overlay scrollbar when scrolling */
   }
 }
 
