@@ -106,12 +106,15 @@
     @apply transform scale-x-0 transition-transform duration-300 ease-out;
   }
 
-  .nav-tab:hover {
-    @apply bg-dark-tertiary border-dark-border-light -translate-y-0.5;
-  }
+  /* Only apply hover effects on devices with mouse/trackpad */
+  @media (hover: hover) {
+    .nav-tab:hover {
+      @apply bg-dark-tertiary border-dark-border-light -translate-y-0.5;
+    }
 
-  .nav-tab:hover::before {
-    @apply scale-x-50;
+    .nav-tab:hover::before {
+      @apply scale-x-50;
+    }
   }
 
   .nav-tab.active {
