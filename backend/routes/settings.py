@@ -89,11 +89,14 @@ def is_authenticated():
 # Settings Endpoints
 # =============================================================================
 
+# Keys that should never be exposed to the frontend
+SENSITIVE_KEYS = {'auth_username', 'auth_password_hash'}
+
 @settings_bp.route('/api/settings', methods=['GET'])
 def get_settings():
     with get_session(_session_factory) as db_session:
         settings = db_session.query(Setting).all()
-        result = {s.key: s.value for s in settings}
+        result = {s.key: s.value for s in settings if s.key not in SENSITIVE_KEYS}
         return jsonify(result)
 
 
