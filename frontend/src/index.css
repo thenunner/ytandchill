@@ -4,16 +4,24 @@
 
 
 @layer base {
+  /* Base html/body reset - critical for iOS */
+  html, body {
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    @apply scroll-smooth;
+    /* Prevent horizontal overflow at root level */
+    overflow-x: hidden;
+  }
+
   body {
     @apply bg-dark-primary text-text-primary;
   }
 
   * {
     @apply touch-manipulation;
-  }
-
-  html {
-    @apply scroll-smooth;
   }
 }
 
@@ -211,13 +219,42 @@
   display: none;
 }
 
-/* Mobile: prevent horizontal bounce and overscroll */
+/* ===== MOBILE-SPECIFIC FIXES (iOS) ===== */
 @media (max-width: 767px) {
   html, body {
-    margin: 0;
-    padding: 0;
-    overflow-x: hidden;  /* Prevent horizontal scroll/bounce */
-    overscroll-behavior: contain;  /* Prevent pull-to-refresh and bounce */
+    /* Prevent ANY horizontal overflow on mobile */
+    overflow-x: hidden;
+    max-width: 100%;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+  }
+
+  body {
+    /* Use dynamic viewport height - accounts for iOS browser chrome */
+    min-height: 100dvh;
+    /* Prevent overscroll bounce */
+    overscroll-behavior-y: contain;
+    /* Bottom safe area padding for home indicator */
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Fix flex containers that can cause overflow */
+  .flex-1 {
+    min-height: 0;  /* Prevents flex children from forcing overflow */
+  }
+
+  /* iOS-safe full-height utility */
+  .h-screen {
+    height: 100dvh !important;
+  }
+
+  .min-h-screen {
+    min-height: 100dvh !important;
+  }
+
+  /* Fixed bottom elements need safe-area inset on iOS */
+  .fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom, 0);
   }
 }
 
