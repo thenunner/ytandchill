@@ -120,11 +120,13 @@ export function useVideoJsPlayer({
       // Playback speed options (unified across all devices)
       playbackRates: [1, 1.5, 2, 2.5],
       // Control bar configuration - only show remaining time (not current/duration)
+      // On mobile: also hide chapters button
       controlBar: {
         currentTimeDisplay: false,
         timeDivider: false,
         durationDisplay: false,
         remainingTimeDisplay: true,
+        chaptersButton: !isMobile,
       },
       html5: {
         vhs: {
