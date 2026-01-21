@@ -211,6 +211,25 @@
   display: none;
 }
 
+/* Mobile: hide scrollbar and prevent overscroll bounce */
+@media (max-width: 767px) {
+  html {
+    overflow: hidden;
+    height: 100%;
+  }
+  body {
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: none;  /* Prevent iOS bounce */
+    -webkit-overflow-scrolling: touch;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  body::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* ===== SETTINGS PAGE STYLES ===== */
 
 /* Stats Bar */

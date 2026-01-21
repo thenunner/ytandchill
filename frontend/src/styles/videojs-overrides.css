@@ -159,7 +159,8 @@
   width: 100vw;
   max-width: 100vw;
   aspect-ratio: 16 / 9;
-  max-height: calc(100vh - 180px);  /* Nav 60px + controls + buffer */
+  /* Reserve space for: nav(60) + padding(16) + title(48) + meta(24) + buttons(44) + margins(40) ≈ 232px */
+  max-height: calc(100vh - 240px);
   background: black;
   /* Full bleed positioning - works regardless of parent padding */
   margin-left: calc(-50vw + 50%);
