@@ -160,11 +160,15 @@
   aspect-ratio: 16 / 9;
   max-height: calc(100dvh - 240px);
   background: black;
+  /* CRITICAL: Prevent any 1px overflow that causes scroll */
+  overflow: hidden;
   /* Negative margins to counter parent padding (px-6 = 24px) */
   margin-left: -24px;
   margin-right: -24px;
   /* Expand width to compensate for negative margins */
   width: calc(100% + 48px);
+  /* Contain the video element to prevent overflow */
+  contain: layout paint;
 }
 
 /* Video.js fills mobile wrapper */
@@ -174,12 +178,16 @@
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
+  /* Prevent video.js from overflowing */
+  overflow: hidden !important;
 }
 
 .player-wrapper-mobile .video-js video {
   width: 100% !important;
   height: 100% !important;
   object-fit: contain;
+  /* Explicit height to prevent auto sizing issues */
+  max-height: 100%;
 }
 
 /* Video.js player - absolutely positioned to fill wrapper */
@@ -199,6 +207,9 @@
 /* Video element letterboxes non-16:9 content */
 .video-js video {
   object-fit: contain;
+  /* Prevent video from exceeding container bounds */
+  max-width: 100%;
+  max-height: 100%;
 }
 
 /* Fullscreen mode - remove constraints */
