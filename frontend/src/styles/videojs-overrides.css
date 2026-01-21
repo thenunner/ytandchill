@@ -145,10 +145,10 @@
 .player-wrapper {
   position: relative;
   width: 100%;
-  max-width: 1920px;                        /* Hard upper limit */
+  /* max-width must account for max-height at 16:9 ratio */
+  max-width: min(1920px, calc((100vh - 120px) * 16 / 9));
   aspect-ratio: 16 / 9;
   max-height: calc(100vh - 120px);
-  margin: 0 auto;                           /* Center when constrained */
   background: black;
   overflow: hidden;
   border-radius: 0.75rem;
