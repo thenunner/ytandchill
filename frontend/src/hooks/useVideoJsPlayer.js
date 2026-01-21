@@ -104,10 +104,11 @@ export function useVideoJsPlayer({
     }
 
     // Initialize player
+    // NOTE: Do NOT use fluid: true - it calculates height from video aspect ratio
+    // Our .player-wrapper CSS controls sizing with aspect-ratio: 16/9
     const player = videojs(videoRef.current, {
       controls: true,
-      fluid: true,
-      responsive: true,
+      fill: true,  // Fill the container (respects our CSS sizing)
       preload: 'metadata', // Load metadata for seeking optimization
       poster: isMobile ? (video.thumb_url || '') : '', // Only show poster on mobile devices
       // Device-specific inactivity timeout for auto-hiding controls
