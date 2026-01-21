@@ -384,7 +384,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-[100dvh] md:min-h-screen flex flex-col bg-dark-primary">
+    <div className="md:min-h-screen flex flex-col bg-dark-primary">
       {/* Update Banner - above nav */}
       {updateAvailable && !bannerDismissed && !isAuthPage && (
         <UpdateBanner
