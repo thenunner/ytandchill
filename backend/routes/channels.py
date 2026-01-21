@@ -308,31 +308,18 @@ def refresh_channel_thumbnail(channel_id):
 
         # Try to get thumbnail from YouTube API first
         thumbnail_url = None
-        source = None
         if _settings_manager:
             api_key = _settings_manager.get('youtube_api_key')
             if api_key:
-                logger.info(f"Fetching channel thumbnail from YouTube API for {channel.yt_id}")
                 api_thumbnail = fetch_channel_thumbnail(channel.yt_id, api_key)
                 if api_thumbnail:
                     thumbnail_url = api_thumbnail
-                    source = 'youtube_api'
-                    logger.info(f"Got channel avatar from YouTube API: {thumbnail_url[:80]}...")
-                else:
-                    logger.warning(f"YouTube API returned no thumbnail for {channel.yt_id}")
-            else:
-                logger.warning("No YouTube API key configured, cannot fetch channel avatar")
-        else:
-            logger.warning("Settings manager not available")
 
-        # Only fall back to yt-dlp if API failed (yt-dlp gives video thumbnails, not channel avatars)
+        # Fall back to yt-dlp if API didn't provide one
         if not thumbnail_url:
-            logger.info(f"Falling back to yt-dlp for {channel.yt_id}")
             channel_info = get_channel_info(f'https://youtube.com/channel/{channel.yt_id}')
             if channel_info and channel_info.get('thumbnail'):
                 thumbnail_url = channel_info['thumbnail']
-                source = 'ytdlp'
-                logger.info(f"Using yt-dlp thumbnail: {thumbnail_url[:80]}...")
 
         # Download new thumbnail
         if thumbnail_url:
@@ -341,14 +328,9 @@ def refresh_channel_thumbnail(channel_id):
             if download_thumbnail(thumbnail_url, local_file_path):
                 channel.thumbnail = os.path.join('thumbnails', thumbnail_filename)
                 session.commit()
-                logger.info(f"Refreshed thumbnail for channel: {channel.title} (source: {source})")
-                return jsonify({
-                    'success': True,
-                    'thumbnail': channel.thumbnail,
-                    'source': source
-                }), 200
+                return jsonify({'success': True, 'thumbnail': channel.thumbnail}), 200
 
-        return jsonify({'error': 'Could not fetch new thumbnail', 'source': source}), 500
+        return jsonify({'error': 'Could not fetch new thumbnail'}), 500
 
 
 @channels_bp.route('/api/channels/<int:channel_id>/scan', methods=['POST'])

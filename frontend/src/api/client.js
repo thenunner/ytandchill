@@ -81,12 +81,6 @@ class APIClient {
     });
   }
 
-  refreshChannelThumbnail(id) {
-    return this.request(`/channels/${id}/refresh-thumbnail`, {
-      method: 'POST',
-    });
-  }
-
   // Videos
   getVideos(params = {}) {
     // Filter out null/undefined values before creating query string
