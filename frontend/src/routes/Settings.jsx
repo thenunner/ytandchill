@@ -654,7 +654,7 @@ export default function Settings() {
 
       if (data.valid) {
         setHasApiKey(true);
-        showNotification('API key saved and verified!', 'success');
+        showNotification('API key tested and saved!', 'success');
       } else {
         setHasApiKey(false);
         showNotification(data.error || 'API key saved but invalid', 'warning');
