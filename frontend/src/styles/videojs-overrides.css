@@ -191,16 +191,24 @@
 .video-js .vjs-theater-button svg {
   width: 20px;
   height: 20px;
+}
+
+/* Show expand icon by default, hide contract icon */
+.video-js .vjs-theater-button .theater-icon-expand {
   display: block;
 }
 
-/* Theater mode active: Flip brackets inward [ >< ] */
-.video-js .vjs-theater-button.vjs-theater-mode-active .bracket-left {
-  transform: scaleX(-1);
+.video-js .vjs-theater-button .theater-icon-contract {
+  display: none;
 }
 
-.video-js .vjs-theater-button.vjs-theater-mode-active .bracket-right {
-  transform: scaleX(-1);
+/* When active: hide expand icon, show contract icon */
+.video-js .vjs-theater-button.vjs-theater-mode-active .theater-icon-expand {
+  display: none;
+}
+
+.video-js .vjs-theater-button.vjs-theater-mode-active .theater-icon-contract {
+  display: block;
 }
 
 /* ===== UNIFIED CONTROL BAR SIZING ===== */

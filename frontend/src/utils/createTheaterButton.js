@@ -53,19 +53,31 @@ export function registerTheaterButton() {
         className: this.buildCSSClass(),
       });
 
-      // Rectangle with angle brackets [ <> ] or [ >< ]
-      const iconPlaceholder = videojs.dom.createEl('span', {
-        className: 'vjs-icon-placeholder',
-        innerHTML: `
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="6" width="18" height="12" rx="1"></rect>
-            <polyline points="9,9 7,12 9,15" class="bracket-left"></polyline>
-            <polyline points="15,9 17,12 15,15" class="bracket-right"></polyline>
+      // Find the existing vjs-icon-placeholder created by parent Button
+      const iconPlaceholder = el.querySelector('.vjs-icon-placeholder');
+      if (iconPlaceholder) {
+        // Set our SVG icon inside the existing placeholder
+        // Expand icon: | ←  → | (bars on outside, arrows pointing out)
+        iconPlaceholder.innerHTML = `
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theater-icon-expand">
+            <line x1="2" y1="5" x2="2" y2="19"></line>
+            <line x1="11" y1="12" x2="4" y2="12"></line>
+            <polyline points="7,9 4,12 7,15"></polyline>
+            <line x1="13" y1="12" x2="20" y2="12"></line>
+            <polyline points="17,9 20,12 17,15"></polyline>
+            <line x1="22" y1="5" x2="22" y2="19"></line>
           </svg>
-        `,
-      });
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="theater-icon-contract">
+            <line x1="1" y1="12" x2="6" y2="12"></line>
+            <polyline points="3,9 6,12 3,15"></polyline>
+            <line x1="9" y1="5" x2="9" y2="19"></line>
+            <line x1="15" y1="5" x2="15" y2="19"></line>
+            <line x1="23" y1="12" x2="18" y2="12"></line>
+            <polyline points="21,9 18,12 21,15"></polyline>
+          </svg>
+        `;
+      }
 
-      el.appendChild(iconPlaceholder);
       return el;
     }
   }
