@@ -75,7 +75,8 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
     # Initialize and register channels blueprint
     if serialize_channel and queue_channel_scan:
         init_channels_routes(session_factory, limiter, serialize_channel,
-                            set_operation, clear_operation, queue_channel_scan)
+                            set_operation, clear_operation, queue_channel_scan,
+                            settings_manager)
         app.register_blueprint(channels_bp)
 
     # Initialize and register import blueprint

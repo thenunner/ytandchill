@@ -18,6 +18,7 @@ import os
 from database import Channel, Video, Playlist, ChannelCategory, get_session
 from utils import download_thumbnail, sanitize_folder_name
 from scanner import resolve_channel_from_url, get_channel_info
+from youtube_api import fetch_channel_thumbnail
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +32,22 @@ _serialize_channel = None
 _set_operation = None
 _clear_operation = None
 _queue_channel_scan = None
+_settings_manager = None
 
 
 def init_channels_routes(session_factory, limiter, serialize_channel,
-                         set_operation, clear_operation, queue_channel_scan):
+                         set_operation, clear_operation, queue_channel_scan,
+                         settings_manager=None):
     """Initialize the channels routes with required dependencies."""
     global _session_factory, _limiter, _serialize_channel
-    global _set_operation, _clear_operation, _queue_channel_scan
+    global _set_operation, _clear_operation, _queue_channel_scan, _settings_manager
     _session_factory = session_factory
     _limiter = limiter
     _serialize_channel = serialize_channel
     _set_operation = set_operation
     _clear_operation = clear_operation
     _queue_channel_scan = queue_channel_scan
+    _settings_manager = settings_manager
 
 
 # =============================================================================
@@ -94,12 +98,26 @@ def create_channel():
                         restored_info = get_channel_info(f'https://youtube.com/channel/{existing.yt_id}')
                         if restored_info:
                             existing.title = restored_info['title']
+
+                            # Try to get thumbnail from YouTube API first
+                            thumbnail_url = None
+                            if _settings_manager:
+                                api_key = _settings_manager.get('youtube_api_key')
+                                if api_key:
+                                    api_thumbnail = fetch_channel_thumbnail(existing.yt_id, api_key)
+                                    if api_thumbnail:
+                                        thumbnail_url = api_thumbnail
+
+                            # Fall back to yt-dlp thumbnail
+                            if not thumbnail_url and restored_info.get('thumbnail'):
+                                thumbnail_url = restored_info['thumbnail']
+
                             # Re-download thumbnail
-                            if restored_info['thumbnail']:
+                            if thumbnail_url:
                                 thumbnail_filename = f"{existing.yt_id}.jpg"
                                 downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
                                 local_file_path = os.path.join(downloads_dir, 'thumbnails', thumbnail_filename)
-                                if download_thumbnail(restored_info['thumbnail'], local_file_path):
+                                if download_thumbnail(thumbnail_url, local_file_path):
                                     existing.thumbnail = os.path.join('thumbnails', thumbnail_filename)
                                     logger.info(f"Re-downloaded thumbnail for restored channel: {existing.title}")
                     except Exception as e:
@@ -128,13 +146,28 @@ def create_channel():
             # Create folder name (Windows-safe)
             folder_name = sanitize_folder_name(channel_info['title'])
 
+            # Try to get channel avatar from YouTube API first (higher quality)
+            thumbnail_url = None
+            if _settings_manager:
+                api_key = _settings_manager.get('youtube_api_key')
+                if api_key:
+                    api_thumbnail = fetch_channel_thumbnail(channel_id, api_key)
+                    if api_thumbnail:
+                        thumbnail_url = api_thumbnail
+                        logger.debug(f'Got channel thumbnail from YouTube API for {channel_id}')
+
+            # Fall back to yt-dlp thumbnail if API didn't provide one
+            if not thumbnail_url and channel_info.get('thumbnail'):
+                thumbnail_url = channel_info['thumbnail']
+                logger.debug(f'Using yt-dlp thumbnail for {channel_id}')
+
             # Download channel thumbnail locally
             thumbnail_path = None
-            if channel_info['thumbnail']:
+            if thumbnail_url:
                 thumbnail_filename = f"{channel_id}.jpg"
                 downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
                 local_file_path = os.path.join(downloads_dir, 'thumbnails', thumbnail_filename)
-                if download_thumbnail(channel_info['thumbnail'], local_file_path):
+                if download_thumbnail(thumbnail_url, local_file_path):
                     # Store relative path (without 'downloads/' prefix) since media endpoint serves from downloads/
                     thumbnail_path = os.path.join('thumbnails', thumbnail_filename)
                     logger.debug(f'Downloaded channel thumbnail for {channel_id}')
