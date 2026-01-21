@@ -384,11 +384,6 @@ def _scan_worker():
 
                     logger.debug(f"Scan worker: Completed scan for channel '{channel.title}'")
 
-                    # Update status bar with current progress after each channel completes
-                    if scan_total_channels > 0:
-                        progress_pct = int((scan_current_channel / scan_total_channels) * 100)
-                        set_operation('scanning', f"Scanning: {scan_batch_label} ({progress_pct}%)", progress=progress_pct)
-
                     # Check if this was the last channel - set completion message immediately
                     if scan_queue.empty() and scan_batch_in_progress:
                         logger.debug(f"Last channel completed, setting completion message immediately")
