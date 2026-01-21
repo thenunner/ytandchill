@@ -159,15 +159,18 @@
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
+}
+
+/* Both container and video element fill 100% */
+.video-js,
+.video-js video {
   width: 100% !important;
   height: 100% !important;
 }
 
-/* The actual video element fits within, letterboxing if needed */
-.video-js .vjs-tech {
-  object-fit: contain !important;
-  width: 100% !important;
-  height: 100% !important;
+/* Video element letterboxes non-16:9 content */
+.video-js video {
+  object-fit: contain;
 }
 
 /* Fullscreen mode - remove constraints */
