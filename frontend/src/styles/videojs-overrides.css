@@ -154,6 +154,17 @@
   border-radius: 0.75rem;
 }
 
+/* Mobile: full-bleed player (edge-to-edge) */
+@media (max-width: 767px) {
+  .player-wrapper {
+    border-radius: 0;
+    margin-left: -1.5rem;  /* Counter px-6 padding from App.jsx */
+    margin-right: -1.5rem;
+    width: calc(100% + 3rem);  /* Extend to fill viewport width */
+    max-width: none;  /* Remove max-width constraint on mobile */
+  }
+}
+
 /* Video.js player - absolutely positioned to fill wrapper */
 .video-js {
   position: absolute !important;
