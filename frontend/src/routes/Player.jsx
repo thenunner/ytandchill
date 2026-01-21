@@ -257,15 +257,19 @@ export default function Player() {
         {/* Player Container */}
         <div className={`transition-all duration-300 ease-in-out ${
           isTheaterMode
-            ? 'w-full max-w-none'
+            ? 'w-full'
             : 'md:w-[60%] md:max-w-[83.333%]'
         }`} style={{ willChange: 'width' }}>
-          <div className={`bg-black rounded-xl shadow-card-hover relative overflow-hidden ${
-            isTheaterMode ? 'max-h-[calc(100vh-12rem)]' : 'max-h-[600px]'
-          }`}>
+          {/* Video Wrapper - aspect-ratio controls height, max-height is safety net */}
+          <div
+            className={`bg-black rounded-xl shadow-card-hover relative ${
+              isTheaterMode ? 'mx-6' : ''
+            }`}
+            style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 120px)' }}
+          >
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered w-full"
+              className="video-js vjs-big-play-centered w-full h-full"
               playsInline
               preload="auto"
             />

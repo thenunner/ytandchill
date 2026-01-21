@@ -13,6 +13,7 @@ import {
   getVideoSource,
 } from '../utils/videoPlayerUtils';
 import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/icons';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const DEBUG = false; // Set to true to enable console logging
 
@@ -76,6 +77,9 @@ export default function PlaylistPlayer() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+
+  // Media query for mobile vs desktop (ensures only one video element exists at a time)
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   // Refs
   const videoRef = useRef(null);
@@ -608,8 +612,8 @@ export default function PlaylistPlayer() {
   return (
     <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
       {/* ========== NORMAL MODE LAYOUT (Desktop) ========== */}
-      {!isTheaterMode && (
-        <div className="hidden md:block">
+      {!isMobile && !isTheaterMode && (
+        <div>
           <div className="flex gap-4 items-start">
             {/* LEFT: Control Buttons */}
             <div className="flex flex-col gap-3 flex-shrink-0">
@@ -650,11 +654,14 @@ export default function PlaylistPlayer() {
 
             {/* CENTER: Player + Info (55%) */}
             <div className="w-[55%]">
-              <div className="bg-black rounded-xl shadow-card-hover relative w-full max-h-[500px]" style={{ aspectRatio: '16/9' }}>
+              {/* Video Wrapper - aspect-ratio controls height, max-height is safety net */}
+              <div
+                className="bg-black rounded-xl shadow-card-hover relative"
+                style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 120px)' }}
+              >
                 <video
                   ref={videoRef}
                   className="video-js vjs-big-play-centered w-full h-full"
-                  style={{ objectFit: 'contain' }}
                   playsInline
                   preload="auto"
                 />
@@ -812,14 +819,16 @@ export default function PlaylistPlayer() {
       )}
 
       {/* ========== THEATER MODE LAYOUT (Desktop) ========== */}
-      {isTheaterMode && (
-        <div className="hidden md:block">
-          {/* Full-Width Video */}
-          <div className="bg-black rounded-xl shadow-card-hover relative w-full" style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 16rem)' }}>
+      {!isMobile && isTheaterMode && (
+        <div>
+          {/* Full-Width Video - wrapper controls width, aspect-ratio controls height */}
+          <div
+            className="bg-black rounded-xl shadow-card-hover relative mx-6"
+            style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 120px)' }}
+          >
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered w-full h-full"
-              style={{ objectFit: 'contain' }}
               playsInline
               preload="auto"
             />
@@ -1054,7 +1063,8 @@ export default function PlaylistPlayer() {
       )}
 
       {/* ========== MOBILE LAYOUT (Same for both modes) ========== */}
-      <div className="md:hidden">
+      {isMobile && (
+      <div>
         {/* Video Player */}
         <div className="bg-black rounded-xl shadow-card-hover relative w-full" style={{ aspectRatio: '16/9' }}>
           <video
@@ -1228,6 +1238,7 @@ export default function PlaylistPlayer() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Hidden Preload Video */}
       <video
