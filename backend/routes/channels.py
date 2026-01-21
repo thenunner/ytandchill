@@ -99,6 +99,17 @@ def create_channel():
                         if restored_info:
                             existing.title = restored_info['title']
 
+                            # Delete old thumbnail file first to ensure fresh download
+                            if existing.thumbnail:
+                                downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
+                                old_thumb_path = os.path.join(downloads_dir, existing.thumbnail)
+                                if os.path.exists(old_thumb_path):
+                                    try:
+                                        os.remove(old_thumb_path)
+                                        logger.debug(f"Deleted old thumbnail: {old_thumb_path}")
+                                    except Exception as e:
+                                        logger.warning(f"Could not delete old thumbnail: {e}")
+
                             # Try to get thumbnail from YouTube API first
                             thumbnail_url = None
                             if _settings_manager:
@@ -107,10 +118,12 @@ def create_channel():
                                     api_thumbnail = fetch_channel_thumbnail(existing.yt_id, api_key)
                                     if api_thumbnail:
                                         thumbnail_url = api_thumbnail
+                                        logger.info(f"Got channel avatar from YouTube API for {existing.yt_id}")
 
                             # Fall back to yt-dlp thumbnail
                             if not thumbnail_url and restored_info.get('thumbnail'):
                                 thumbnail_url = restored_info['thumbnail']
+                                logger.debug(f"Using yt-dlp thumbnail for {existing.yt_id}")
 
                             # Re-download thumbnail
                             if thumbnail_url:
@@ -268,6 +281,59 @@ def delete_channel(channel_id):
         session.commit()
 
         return '', 204
+
+
+@channels_bp.route('/api/channels/<int:channel_id>/refresh-thumbnail', methods=['POST'])
+def refresh_channel_thumbnail(channel_id):
+    """Refresh a channel's thumbnail from YouTube API"""
+    with get_session(_session_factory) as session:
+        channel = session.query(Channel).filter(Channel.id == channel_id).first()
+
+        if not channel:
+            return jsonify({'error': 'Channel not found'}), 404
+
+        if channel.deleted_at is not None:
+            return jsonify({'error': 'Cannot refresh deleted channel'}), 400
+
+        # Delete old thumbnail file
+        downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
+        if channel.thumbnail:
+            old_thumb_path = os.path.join(downloads_dir, channel.thumbnail)
+            if os.path.exists(old_thumb_path):
+                try:
+                    os.remove(old_thumb_path)
+                    logger.debug(f"Deleted old thumbnail: {old_thumb_path}")
+                except Exception as e:
+                    logger.warning(f"Could not delete old thumbnail: {e}")
+
+        # Try to get thumbnail from YouTube API first
+        thumbnail_url = None
+        if _settings_manager:
+            api_key = _settings_manager.get('youtube_api_key')
+            if api_key:
+                api_thumbnail = fetch_channel_thumbnail(channel.yt_id, api_key)
+                if api_thumbnail:
+                    thumbnail_url = api_thumbnail
+                    logger.info(f"Got channel avatar from YouTube API for {channel.yt_id}")
+
+        # Fall back to yt-dlp thumbnail
+        if not thumbnail_url:
+            channel_info = get_channel_info(f'https://youtube.com/channel/{channel.yt_id}')
+            if channel_info and channel_info.get('thumbnail'):
+                thumbnail_url = channel_info['thumbnail']
+                logger.debug(f"Using yt-dlp thumbnail for {channel.yt_id}")
+
+        # Download new thumbnail
+        if thumbnail_url:
+            thumbnail_filename = f"{channel.yt_id}.jpg"
+            local_file_path = os.path.join(downloads_dir, 'thumbnails', thumbnail_filename)
+            if download_thumbnail(thumbnail_url, local_file_path):
+                channel.thumbnail = os.path.join('thumbnails', thumbnail_filename)
+                session.commit()
+                logger.info(f"Refreshed thumbnail for channel: {channel.title}")
+                return jsonify({'success': True, 'thumbnail': channel.thumbnail}), 200
+
+        return jsonify({'error': 'Could not fetch new thumbnail'}), 500
 
 
 @channels_bp.route('/api/channels/<int:channel_id>/scan', methods=['POST'])
