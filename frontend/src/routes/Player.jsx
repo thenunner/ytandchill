@@ -8,6 +8,7 @@ import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDuration, getVideoSource } from '../utils/videoPlayerUtils';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon } from '../components/icons';
 
 const DEBUG = false; // Set to true to enable console logging
@@ -36,6 +37,9 @@ export default function Player() {
     const saved = localStorage.getItem('theaterMode');
     return saved === 'true';
   });
+
+  // Media query for mobile detection
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   // Keep refs updated with latest values
   useEffect(() => {
@@ -260,8 +264,8 @@ export default function Player() {
             ? 'w-full'
             : 'md:w-[60%] md:max-w-[83.333%]'
         }`} style={{ willChange: 'width' }}>
-          {/* Video Wrapper - .player-wrapper class controls sizing via CSS */}
-          <div className={`player-wrapper shadow-card-hover ${isTheaterMode ? 'mx-6' : ''}`}>
+          {/* Video Wrapper - use dedicated mobile class or desktop class */}
+          <div className={isMobile ? 'player-wrapper-mobile' : `player-wrapper shadow-card-hover ${isTheaterMode ? 'mx-6' : ''}`}>
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered"

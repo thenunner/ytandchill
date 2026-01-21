@@ -1015,8 +1015,8 @@ export default function PlaylistPlayer() {
       {/* ========== MOBILE LAYOUT (Same for both modes) ========== */}
       {isMobile && (
       <div>
-        {/* Video Player - .player-wrapper class controls sizing via CSS (mobile: full-bleed) */}
-        <div className="player-wrapper shadow-card-hover">
+        {/* Video Player - dedicated mobile class for clean full-bleed sizing */}
+        <div className="player-wrapper-mobile">
           <video
             ref={videoRef}
             className="video-js vjs-big-play-centered"
