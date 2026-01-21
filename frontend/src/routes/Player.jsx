@@ -255,11 +255,13 @@ export default function Player() {
         </div>
 
         {/* Player Container */}
-        <div className={`md:max-w-[83.333%] transition-all duration-300 ease-in-out ${
-          isTheaterMode ? 'md:w-[83.333%]' : 'md:w-[60%]'
+        <div className={`transition-all duration-300 ease-in-out ${
+          isTheaterMode
+            ? 'w-full max-w-none'
+            : 'md:w-[60%] md:max-w-[83.333%]'
         }`} style={{ willChange: 'width' }}>
           <div className={`bg-black rounded-xl shadow-card-hover relative overflow-hidden ${
-            isTheaterMode ? '' : 'max-h-[600px]'
+            isTheaterMode ? 'max-h-[calc(100vh-12rem)]' : 'max-h-[600px]'
           }`}>
             <video
               ref={videoRef}
