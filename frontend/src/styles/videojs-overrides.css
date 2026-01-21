@@ -144,8 +144,10 @@
 /* Player wrapper - the container that controls layout */
 .player-wrapper {
   position: relative;
-  aspect-ratio: 16 / 9;
-  max-height: calc(100vh - 120px);
+  width: 100%;                              /* Take parent's width */
+  aspect-ratio: 16 / 9;                     /* Maintain 16:9 ratio */
+  max-height: calc(100vh - 120px);          /* Prevent exceeding viewport */
+  max-width: calc((100vh - 120px) * 16 / 9); /* Corresponding max-width for 16:9 */
   background: black;
   overflow: hidden;
   border-radius: 0.75rem;
