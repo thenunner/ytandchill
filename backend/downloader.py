@@ -903,6 +903,9 @@ class DownloadWorker:
         remaining_int = int(remaining)
         self.delay_info = f"Delayed {remaining_int} sec"
 
+        # Emit SSE update so frontend countdown updates in real-time
+        self._emit_queue_update()
+
         # Log occasionally
         if remaining_int % 30 == 0:
             logger.debug(f"Delay countdown: {remaining_int} seconds remaining")
