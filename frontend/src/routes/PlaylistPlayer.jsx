@@ -74,6 +74,8 @@ export default function PlaylistPlayer() {
   });
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
 
   // Refs
   const videoRef = useRef(null);
@@ -81,6 +83,7 @@ export default function PlaylistPlayer() {
   const mobileQueueRef = useRef(null);
   const preloadVideoRef = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
+  const horizontalQueueRef = useRef(null);
 
   // Refs to hold latest values for event handlers (avoid stale closures)
   const goToNextRef = useRef(null);
@@ -331,6 +334,38 @@ export default function PlaylistPlayer() {
     });
   }, []);
 
+  // Update scroll overlay visibility based on scroll position
+  const updateScrollState = useCallback(() => {
+    if (!horizontalQueueRef.current) return;
+    const { scrollLeft, scrollWidth, clientWidth } = horizontalQueueRef.current;
+    setCanScrollLeft(scrollLeft > 10);
+    setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+  }, []);
+
+  // Scroll horizontal queue left/right
+  const scrollQueue = useCallback((direction) => {
+    if (horizontalQueueRef.current) {
+      const scrollAmount = 400; // Scroll by roughly 2 cards worth
+      horizontalQueueRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+
+  // Set up scroll listener for horizontal queue
+  useEffect(() => {
+    const el = horizontalQueueRef.current;
+    if (el && isTheaterMode) {
+      el.addEventListener('scroll', updateScrollState);
+      // Use requestAnimationFrame to ensure DOM is ready
+      requestAnimationFrame(() => {
+        updateScrollState();
+      });
+      return () => el.removeEventListener('scroll', updateScrollState);
+    }
+  }, [isTheaterMode, updateScrollState, displayOrder.length]);
+
   // CRITICAL: Memoized callback for watched handler
   const handleWatched = useCallback(() => {
     if (!currentVideo?.id || currentVideo?.watched) return;
@@ -572,15 +607,215 @@ export default function PlaylistPlayer() {
 
   return (
     <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
-      {/* Player and Queue Layout */}
-      <div className="md:max-w-[83.333%]">
-        <div className="flex flex-col md:flex-row gap-2 items-start transition-all duration-300 ease-in-out">
-          {/* Player Container - 3/5 in normal mode, full width minus queue button in theater mode */}
-          <div className={`w-full transition-all duration-300 ease-in-out ${
-            isTheaterMode ? 'md:w-[calc(100%-3rem)]' : 'md:w-[60%]'
-          }`} style={{ willChange: 'width' }}>
-            {/* Video container with 16:9 aspect ratio (like 1920x1080) */}
-            <div className="bg-black rounded-xl shadow-card-hover relative w-full" style={{ aspectRatio: '16/9' }}>
+      {/* ========== NORMAL MODE LAYOUT (Desktop) ========== */}
+      {!isTheaterMode && (
+        <div className="hidden md:block">
+          <div className="flex gap-4 items-start">
+            {/* LEFT: Control Buttons */}
+            <div className="flex flex-col gap-3 flex-shrink-0">
+              <button
+                onClick={handleBack}
+                className="icon-btn hover:bg-accent hover:border-accent"
+                title="Back"
+                aria-label="Go back to previous page"
+              >
+                <ArrowLeftIcon className="w-5 h-5" />
+              </button>
+              <button
+                ref={addToPlaylistButtonRef}
+                onClick={() => setShowPlaylistMenu(true)}
+                className="icon-btn hover:bg-accent hover:border-accent"
+                title="Add to playlist"
+                aria-label="Add video to playlist"
+              >
+                <PlusIcon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={toggleWatched}
+                className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
+                title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
+                aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
+              >
+                <EyeIcon className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="icon-btn hover:bg-red-600 hover:border-red-700"
+                title="Delete video"
+                aria-label="Delete video permanently"
+              >
+                <TrashIcon className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* CENTER: Player + Info (55%) */}
+            <div className="w-[55%]">
+              <div className="bg-black rounded-xl shadow-card-hover relative w-full max-h-[500px]" style={{ aspectRatio: '16/9' }}>
+                <video
+                  ref={videoRef}
+                  className="video-js vjs-big-play-centered w-full h-full"
+                  style={{ objectFit: 'contain' }}
+                  playsInline
+                  preload="auto"
+                />
+              </div>
+
+              <div className="mt-4 space-y-3">
+                <h1 className="text-xl font-bold text-text-primary leading-tight">
+                  {currentVideo.title}
+                </h1>
+                <div className="flex flex-wrap items-center gap-3 text-sm text-text-secondary">
+                  <Link
+                    to={`/channel/${currentVideo.channel_id}/library`}
+                    className="hover:text-text-primary transition-colors font-medium"
+                  >
+                    {currentVideo.channel_title}
+                  </Link>
+                  <span>•</span>
+                  <span>{formatDuration(currentVideo.duration_sec)}</span>
+                  <span>•</span>
+                  <span>
+                    {currentVideo.upload_date
+                      ? new Date(
+                          currentVideo.upload_date.slice(0, 4),
+                          currentVideo.upload_date.slice(4, 6) - 1,
+                          currentVideo.upload_date.slice(6, 8)
+                        ).toLocaleDateString()
+                      : 'Unknown date'}
+                  </span>
+                  {currentVideo.watched && (
+                    <>
+                      <span>•</span>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold text-xs">
+                        <CheckmarkIcon className="w-3.5 h-3.5" />
+                        Watched
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: Queue Sidebar (40%) */}
+            <div
+              ref={sidebarRef}
+              className="bg-surface rounded-xl shadow-card overflow-hidden flex flex-col w-[40%] flex-shrink-0"
+              style={{ maxHeight: '500px' }}
+            >
+              <div className="p-4 border-b border-accent/30 flex-shrink-0">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h2 className="font-semibold text-text-primary">{sourceTitle}</h2>
+                    <p className="text-sm text-text-secondary">{currentIndex + 1} of {videos.length} videos</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={goToPrevious}
+                    disabled={currentIndex === 0 && !isLooping}
+                    className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Previous video (P)"
+                    aria-label="Go to previous video"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={shufflePlaylist}
+                    className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
+                    title="Shuffle playlist (S)"
+                    aria-label="Shuffle playlist"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="16 3 21 3 21 8"></polyline>
+                      <line x1="4" y1="20" x2="21" y2="3"></line>
+                      <polyline points="21 16 21 21 16 21"></polyline>
+                      <line x1="15" y1="15" x2="21" y2="21"></line>
+                      <line x1="4" y1="4" x2="9" y2="9"></line>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={toggleLoop}
+                    className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
+                    title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
+                    aria-label={isLooping ? 'Disable loop' : 'Enable loop'}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 1l4 4-4 4"></path>
+                      <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                      <path d="M7 23l-4-4 4-4"></path>
+                      <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={goToNext}
+                    disabled={currentIndex === displayOrder.length - 1 && !isLooping}
+                    className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Next video (N)"
+                    aria-label="Go to next video"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-y-auto flex-1">
+                {displayOrder.map((actualIndex, displayIndex) => {
+                  const video = videos[actualIndex];
+                  if (!video) return null;
+                  const isCurrent = displayIndex === currentIndex;
+
+                  return (
+                    <button
+                      key={video.id}
+                      onClick={() => goToVideo(displayIndex)}
+                      className={`w-full p-2 flex gap-2 hover:bg-surface-hover transition-colors ${
+                        isCurrent ? 'bg-accent/20 border-l-2 border-accent' : ''
+                      }`}
+                    >
+                      <div className="relative flex-shrink-0 w-20 h-12 bg-black rounded overflow-hidden">
+                        {video.thumb_url ? (
+                          <img src={video.thumb_url} alt={video.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-surface-hover">
+                            <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
+                          {formatDuration(video.duration_sec)}
+                        </div>
+                        {video.watched && (
+                          <div className="absolute top-1 left-1 bg-accent/90 text-accent-text text-xs px-1 py-0.5 rounded">
+                            <CheckmarkIcon className="w-3 h-3" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 text-left min-w-0">
+                        <h3 className={`text-xs font-medium line-clamp-2 leading-tight ${isCurrent ? 'text-accent-text' : 'text-text-primary'}`}>
+                          {video.title}
+                        </h3>
+                        <p className="text-xs text-text-secondary mt-0.5">{video.channel_title}</p>
+                      </div>
+                      {isCurrent && <PlayIcon className="w-4 h-4 text-accent flex-shrink-0 self-center" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== THEATER MODE LAYOUT (Desktop) ========== */}
+      {isTheaterMode && (
+        <div className="hidden md:block">
+          {/* Full-Width Video */}
+          <div className="bg-black rounded-xl shadow-card-hover relative w-full" style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 16rem)' }}>
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered w-full h-full"
@@ -590,25 +825,12 @@ export default function PlaylistPlayer() {
             />
           </div>
 
-          {/* Video Info Below Player */}
+          {/* Video Info */}
           <div className="mt-4 space-y-3">
-            <div className="flex items-center gap-3">
-              {/* Back button on desktop only */}
-              <button
-                onClick={handleBack}
-                className="hidden md:flex icon-btn hover:bg-accent hover:border-accent flex-shrink-0"
-                title="Back"
-                aria-label="Go back to previous page"
-              >
-                <ArrowLeftIcon className="w-5 h-5" />
-              </button>
-
-              <h1 className="text-2xl font-bold text-text-primary leading-tight">
-                {currentVideo.title}
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-3 text-sm text-text-secondary">
+            <h1 className="text-2xl font-bold text-text-primary leading-tight">
+              {currentVideo.title}
+            </h1>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-text-secondary">
               <Link
                 to={`/channel/${currentVideo.channel_id}/library`}
                 className="hover:text-text-primary transition-colors font-medium"
@@ -630,397 +852,382 @@ export default function PlaylistPlayer() {
               {currentVideo.watched && (
                 <>
                   <span>•</span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold text-xs">
                     <CheckmarkIcon className="w-3.5 h-3.5" />
                     Watched
                   </span>
                 </>
               )}
             </div>
+          </div>
 
-            {/* Control Buttons - Mobile: horizontal row below info */}
-            <div className="flex md:hidden gap-3 mt-4">
+          {/* Queue Under Video (horizontal scroll) */}
+          <div className="bg-surface rounded-xl shadow-card mt-4 overflow-hidden">
+            {/* Combined Header: Back | Playlist Info | Controls | Action Buttons */}
+            <div className="p-4 border-b border-accent/30 flex items-center gap-4">
+              {/* Back Button */}
               <button
                 onClick={handleBack}
-                className="icon-btn hover:bg-accent hover:border-accent"
+                className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent flex-shrink-0"
                 title="Back"
                 aria-label="Go back to previous page"
               >
-                <ArrowLeftIcon className="w-5 h-5" />
+                <ArrowLeftIcon className="w-4 h-4" />
               </button>
 
-              <button
-                ref={addToPlaylistButtonRef}
-                onClick={() => setShowPlaylistMenu(true)}
-                className="icon-btn hover:bg-accent hover:border-accent"
-                title="Add to playlist"
-                aria-label="Add video to playlist"
-              >
-                <PlusIcon className="w-5 h-5" />
-              </button>
+              {/* Playlist Info */}
+              <div className="flex-shrink-0">
+                <h2 className="font-semibold text-text-primary">{sourceTitle}</h2>
+                <p className="text-sm text-text-secondary">{currentIndex + 1} of {videos.length} videos</p>
+              </div>
 
-              <button
-                onClick={toggleWatched}
-                className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
-                title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
-                aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
-              >
-                <EyeIcon className="w-5 h-5" />
-              </button>
-
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                className="icon-btn hover:bg-red-600 hover:border-red-700"
-                title="Delete video"
-                aria-label="Delete video permanently"
-              >
-                <TrashIcon className="w-5 h-5" />
-              </button>
-
-              {/* Mobile Queue Button */}
-              <button
-                onClick={() => setShowMobileQueue(true)}
-                className="icon-btn hover:bg-accent hover:border-accent md:hidden"
-                title="Show queue"
-                aria-label="Show video queue"
-              >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="8" y1="6" x2="21" y2="6"></line>
-                  <line x1="8" y1="12" x2="21" y2="12"></line>
-                  <line x1="8" y1="18" x2="21" y2="18"></line>
-                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
-                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
-                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Queue Sidebar (Desktop Only) - 2/5 of container when expanded */}
-        <div
-          ref={sidebarRef}
-          className={`hidden md:block transition-all duration-300 ease-in-out ${
-            isQueueCollapsed ? 'w-12' : 'md:w-[40%]'
-          }`}
-          style={{ willChange: 'width' }}
-        >
-          {isQueueCollapsed ? (
-              // Collapsed state - vertical button stack
-              <div className="sticky top-4 flex-shrink-0 flex flex-col gap-3">
+              {/* Playlist Controls + Action Buttons (grouped together) */}
+              <div className="flex items-center gap-2">
                 <button
-                  onClick={toggleQueueCollapse}
-                  className="icon-btn"
-                  title="Show queue"
-                  aria-label="Show video queue"
+                  onClick={goToPrevious}
+                  disabled={currentIndex === 0 && !isLooping}
+                  className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Previous video (P)"
                 >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <polyline points="9 18 15 12 9 6"></polyline>
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+                  </svg>
+                </button>
+                <button
+                  onClick={shufflePlaylist}
+                  className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
+                  title="Shuffle playlist (S)"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="16 3 21 3 21 8"></polyline>
+                    <line x1="4" y1="20" x2="21" y2="3"></line>
+                    <polyline points="21 16 21 21 16 21"></polyline>
+                    <line x1="15" y1="15" x2="21" y2="21"></line>
+                    <line x1="4" y1="4" x2="9" y2="9"></line>
+                  </svg>
+                </button>
+                <button
+                  onClick={toggleLoop}
+                  className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
+                  title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 1l4 4-4 4"></path>
+                    <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                    <path d="M7 23l-4-4 4-4"></path>
+                    <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                  </svg>
+                </button>
+                <button
+                  onClick={goToNext}
+                  disabled={currentIndex === displayOrder.length - 1 && !isLooping}
+                  className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="Next video (N)"
+                >
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
                   </svg>
                 </button>
 
-                {/* Add to Playlist */}
-                <button
-                  onClick={() => setShowPlaylistMenu(true)}
-                  className="icon-btn hover:bg-accent hover:border-accent"
-                  title="Add to playlist"
-                  aria-label="Add video to playlist"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                </button>
+                {/* Divider */}
+                <div className="w-px h-6 mx-1 bg-border-light"></div>
 
-                {/* Watched */}
+                {/* Action Buttons (Add, Watch, Delete) - immediately after Next */}
+                <button
+                  ref={addToPlaylistButtonRef}
+                  onClick={() => setShowPlaylistMenu(true)}
+                  className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
+                  title="Add to playlist"
+                >
+                  <PlusIcon className="w-4 h-4" />
+                </button>
                 <button
                   onClick={toggleWatched}
-                  className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
+                  className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
                   title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
-                  aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
                 >
-                  <EyeIcon className="w-5 h-5" />
+                  <EyeIcon className="w-4 h-4" />
                 </button>
-
-                {/* Delete */}
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="icon-btn hover:bg-red-600 hover:border-red-700"
+                  className="icon-btn icon-btn-sm hover:bg-red-600 hover:border-red-700"
                   title="Delete video"
-                  aria-label="Delete video permanently"
                 >
-                  <TrashIcon className="w-5 h-5" />
+                  <TrashIcon className="w-4 h-4" />
                 </button>
               </div>
-            ) : (
-            // Expanded state - full queue (limited to video player height)
-            <div className="bg-surface rounded-xl shadow-card overflow-hidden flex flex-col self-start max-h-[600px]">
-              <div className="p-4 border-b border-accent/30">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h2 className="text-lg font-semibold text-text-primary">
-                      {sourceTitle}
-                    </h2>
-                    <p className="text-sm text-text-secondary mt-1">
-                      {currentIndex + 1} / {videos.length} videos
-                    </p>
-                  </div>
+
+            </div>
+
+            {/* Horizontal Queue with Overlay Scroll Buttons */}
+            <div className="relative group">
+              {/* Left Scroll Overlay */}
+              {canScrollLeft && (
+                <div
+                  onClick={() => scrollQueue('left')}
+                  className="absolute left-0 top-0 bottom-0 w-16 z-10 flex items-center justify-center cursor-pointer transition-all duration-300 opacity-70 hover:opacity-100"
+                  style={{
+                    background: 'linear-gradient(to right, hsl(var(--bg-surface) / 0.95) 0%, hsl(var(--bg-surface) / 0.7) 50%, transparent 100%)',
+                    borderRadius: '0 0 0 0.75rem'
+                  }}
+                >
                   <button
-                    onClick={toggleQueueCollapse}
-                    className="icon-btn"
-                    title="Hide queue"
-                    aria-label="Hide video queue"
+                    className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-hover/90 backdrop-blur-sm text-text-primary transition-all hover:scale-110 hover:bg-surface-hover hover:shadow-lg"
+                    aria-label="Scroll left"
                   >
-                    <ArrowLeftIcon className="w-5 h-5" />
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
                   </button>
                 </div>
+              )}
 
-                {/* Playlist Controls - Previous, Shuffle, Loop, Next */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={goToPrevious}
-                    disabled={currentIndex === 0 && !isLooping}
-                    className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Previous video (P)"
-                    aria-label="Go to previous video"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={shufflePlaylist}
-                    className="icon-btn hover:bg-accent hover:border-accent"
-                    title="Shuffle playlist (S)"
-                    aria-label="Shuffle playlist"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="16 3 21 3 21 8"></polyline>
-                      <line x1="4" y1="20" x2="21" y2="3"></line>
-                      <polyline points="21 16 21 21 16 21"></polyline>
-                      <line x1="15" y1="15" x2="21" y2="21"></line>
-                      <line x1="4" y1="4" x2="9" y2="9"></line>
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={toggleLoop}
-                    className={`icon-btn hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
-                    title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
-                    aria-label={isLooping ? 'Disable loop' : 'Enable loop'}
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17 1l4 4-4 4"></path>
-                      <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                      <path d="M7 23l-4-4 4-4"></path>
-                      <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                    </svg>
-                  </button>
-
-                  <button
-                    onClick={goToNext}
-                    disabled={currentIndex === displayOrder.length - 1 && !isLooping}
-                    className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Next video (N)"
-                    aria-label="Go to next video"
-                  >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
-                    </svg>
-                  </button>
-
-                  {/* Add to Playlist */}
-                  <button
-                    ref={addToPlaylistButtonRef}
-                    onClick={() => setShowPlaylistMenu(true)}
-                    className="icon-btn hover:bg-accent hover:border-accent"
-                    title="Add to playlist"
-                    aria-label="Add video to playlist"
-                  >
-                    <PlusIcon className="w-5 h-5" />
-                  </button>
-
-                  {/* Watched */}
-                  <button
-                    onClick={toggleWatched}
-                    className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
-                    title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
-                    aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
-                  >
-                    <EyeIcon className="w-5 h-5" />
-                  </button>
-
-                  {/* Delete */}
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="icon-btn hover:bg-red-600 hover:border-red-700"
-                    title="Delete video"
-                    aria-label="Delete video permanently"
-                  >
-                    <TrashIcon className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-
-            <div className="overflow-y-auto flex-1">
-              {displayOrder.map((actualIndex, displayIndex) => {
-                const video = videos[actualIndex];
-                if (!video) return null;
-
-                const isCurrent = displayIndex === currentIndex;
-
-                return (
-                  <button
-                    key={video.id}
-                    onClick={() => goToVideo(displayIndex)}
-                    className={`w-full p-2 flex gap-2 hover:bg-surface-hover transition-colors ${
-                      isCurrent ? 'bg-accent/20' : ''
-                    }`}
-                  >
-                    <div className="relative flex-shrink-0 w-20 h-12 bg-black rounded overflow-hidden">
-                      {video.thumb_url ? (
-                        <img
-                          src={video.thumb_url}
-                          alt={video.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-surface-hover">
-                          <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                          </svg>
-                        </div>
-                      )}
-                      <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
-                        {formatDuration(video.duration_sec)}
-                      </div>
-                      {video.watched && (
-                        <div className="absolute top-1 left-1 bg-accent/90 text-accent-text text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-                          <CheckmarkIcon className="w-3 h-3" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 text-left min-w-0">
-                      <h3 className={`text-xs font-medium line-clamp-2 leading-tight ${
-                        isCurrent ? 'text-accent-text' : 'text-text-primary'
-                      }`}>
-                        {video.title}
-                      </h3>
-                      <p className="text-xs text-text-secondary mt-0.5">
-                        {video.channel_title}
-                      </p>
-                    </div>
-
-                    {isCurrent && (
-                      <div className="flex-shrink-0 flex items-center">
-                        <PlayIcon className="w-5 h-5 text-accent" />
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-            </div>
-          )}
-        </div>
-        </div>
-      </div>
-
-      {/* Mobile Queue Drawer */}
-      {showMobileQueue && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/50 z-[200] animate-fade-in"
-          onClick={() => setShowMobileQueue(false)}
-        >
-          <div
-            ref={mobileQueueRef}
-            className="absolute bottom-0 left-0 right-0 bg-dark-secondary rounded-t-2xl max-h-[80vh] flex flex-col animate-slide-up"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-4 border-b border-accent/30 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold text-text-primary">
-                  {sourceTitle}
-                </h2>
-                <p className="text-sm text-text-secondary mt-1">
-                  {currentIndex + 1} / {videos.length} videos
-                </p>
-              </div>
-              <button
-                onClick={() => setShowMobileQueue(false)}
-                className="icon-btn"
-                aria-label="Close queue"
+              {/* Queue Track */}
+              <div
+                ref={horizontalQueueRef}
+                className="flex overflow-x-auto gap-3 p-4 scrollbar-hide"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 6L6 18M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
+                {displayOrder.map((actualIndex, displayIndex) => {
+                  const video = videos[actualIndex];
+                  if (!video) return null;
+                  const isCurrent = displayIndex === currentIndex;
 
-            <div className="overflow-y-auto flex-1">
-              {displayOrder.map((actualIndex, displayIndex) => {
-                const video = videos[actualIndex];
-                if (!video) return null;
-
-                const isCurrent = displayIndex === currentIndex;
-
-                return (
-                  <button
-                    key={video.id}
-                    onClick={() => {
-                      goToVideo(displayIndex);
-                      setShowMobileQueue(false);
-                    }}
-                    className={`w-full p-3 flex gap-3 hover:bg-dark-hover transition-colors ${
-                      isCurrent ? 'bg-accent/20' : 'bg-dark-secondary'
-                    }`}
-                  >
-                    <div className="relative flex-shrink-0 w-32 h-18 bg-black rounded overflow-hidden">
-                      {video.thumb_url ? (
-                        <img
-                          src={video.thumb_url}
-                          alt={video.title}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-surface-hover">
-                          <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                          </svg>
+                  return (
+                    <button
+                      key={video.id}
+                      onClick={() => goToVideo(displayIndex)}
+                      className={`flex-shrink-0 w-44 p-2 rounded-lg hover:bg-surface-hover transition-colors ${
+                        isCurrent ? 'bg-accent/15 border border-accent/40' : 'bg-surface'
+                      }`}
+                    >
+                      <div className="relative w-full bg-black rounded overflow-hidden" style={{ aspectRatio: '16/9' }}>
+                        {video.thumb_url ? (
+                          <img src={video.thumb_url} alt={video.title} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-surface-hover">
+                            <svg className="w-8 h-8 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1 py-0.5 rounded">
+                          {formatDuration(video.duration_sec)}
                         </div>
-                      )}
-                      <div className="absolute bottom-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
-                        {formatDuration(video.duration_sec)}
+                        {video.watched && (
+                          <div className="absolute top-1 left-1 bg-accent/90 text-accent-text text-xs px-1 py-0.5 rounded">
+                            <CheckmarkIcon className="w-3 h-3" />
+                          </div>
+                        )}
                       </div>
-                      {video.watched && (
-                        <div className="absolute top-1 left-1 bg-accent/90 text-accent-text text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-                          <CheckmarkIcon className="w-3 h-3" />
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 text-left min-w-0">
-                      <h3 className={`text-xs font-medium line-clamp-2 leading-tight ${
-                        isCurrent ? 'text-accent-text' : 'text-text-primary'
-                      }`}>
+                      <p className={`text-sm font-medium mt-2 line-clamp-2 text-left ${isCurrent ? 'text-accent-text' : 'text-text-primary'}`}>
                         {video.title}
-                      </h3>
-                      <p className="text-xs text-text-secondary mt-0.5">
-                        {video.channel_title}
                       </p>
-                    </div>
+                      <p className="text-xs text-text-secondary mt-0.5 text-left">{video.channel_title}</p>
+                    </button>
+                  );
+                })}
+              </div>
 
-                    {isCurrent && (
-                      <div className="flex-shrink-0 flex items-center">
-                        <PlayIcon className="w-5 h-5 text-accent" />
-                      </div>
-                    )}
+              {/* Right Scroll Overlay */}
+              {canScrollRight && (
+                <div
+                  onClick={() => scrollQueue('right')}
+                  className="absolute right-0 top-0 bottom-0 w-16 z-10 flex items-center justify-center cursor-pointer transition-all duration-300 opacity-70 hover:opacity-100"
+                  style={{
+                    background: 'linear-gradient(to left, hsl(var(--bg-surface) / 0.95) 0%, hsl(var(--bg-surface) / 0.7) 50%, transparent 100%)',
+                    borderRadius: '0 0 0.75rem 0'
+                  }}
+                >
+                  <button
+                    className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-hover/90 backdrop-blur-sm text-text-primary transition-all hover:scale-110 hover:bg-surface-hover hover:shadow-lg"
+                    aria-label="Scroll right"
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
                   </button>
-                );
-              })}
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
+
+      {/* ========== MOBILE LAYOUT (Same for both modes) ========== */}
+      <div className="md:hidden">
+        {/* Video Player */}
+        <div className="bg-black rounded-xl shadow-card-hover relative w-full" style={{ aspectRatio: '16/9' }}>
+          <video
+            ref={videoRef}
+            className="video-js vjs-big-play-centered w-full h-full"
+            style={{ objectFit: 'contain' }}
+            playsInline
+            preload="auto"
+          />
+        </div>
+
+        {/* Video Info */}
+        <div className="mt-4 space-y-3">
+          <h1 className="text-lg font-bold text-text-primary leading-tight">
+            {currentVideo.title}
+          </h1>
+          <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
+            <Link
+              to={`/channel/${currentVideo.channel_id}/library`}
+              className="hover:text-text-primary transition-colors font-medium"
+            >
+              {currentVideo.channel_title}
+            </Link>
+            <span>•</span>
+            <span>{formatDuration(currentVideo.duration_sec)}</span>
+            <span>•</span>
+            <span>
+              {currentVideo.upload_date
+                ? new Date(
+                    currentVideo.upload_date.slice(0, 4),
+                    currentVideo.upload_date.slice(4, 6) - 1,
+                    currentVideo.upload_date.slice(6, 8)
+                  ).toLocaleDateString()
+                : 'Unknown date'}
+            </span>
+            {currentVideo.watched && (
+              <>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold text-xs">
+                  <CheckmarkIcon className="w-3 h-3" />
+                  Watched
+                </span>
+              </>
+            )}
+          </div>
+
+          {/* Control Buttons - Mobile horizontal row (Back, Delete, then playlist controls) */}
+          <div className="flex flex-wrap gap-2 mt-3">
+            <button
+              onClick={handleBack}
+              className="icon-btn hover:bg-accent hover:border-accent"
+              title="Back"
+            >
+              <ArrowLeftIcon className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="icon-btn hover:bg-red-600 hover:border-red-700"
+              title="Delete video"
+            >
+              <TrashIcon className="w-5 h-5" />
+            </button>
+
+            {/* Divider */}
+            <div className="w-px h-10 bg-border-light self-center"></div>
+
+            {/* Playlist controls */}
+            <button
+              onClick={goToPrevious}
+              disabled={currentIndex === 0 && !isLooping}
+              className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30"
+              title="Previous"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+              </svg>
+            </button>
+            <button
+              onClick={shufflePlaylist}
+              className="icon-btn hover:bg-accent hover:border-accent"
+              title="Shuffle"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+            </button>
+            <button
+              onClick={toggleLoop}
+              className={`icon-btn hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
+              title={isLooping ? 'Disable loop' : 'Enable loop'}
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M17 1l4 4-4 4"></path>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <path d="M7 23l-4-4 4-4"></path>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+              </svg>
+            </button>
+            <button
+              onClick={goToNext}
+              disabled={currentIndex === displayOrder.length - 1 && !isLooping}
+              className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30"
+              title="Next"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile Queue Section */}
+        <div className="bg-surface rounded-xl shadow-card mt-4 overflow-hidden">
+          <div className="p-3 border-b border-accent/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-sm text-text-primary">{sourceTitle}</h3>
+                <p className="text-xs text-text-secondary">{currentIndex + 1} of {videos.length} videos</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Vertical Queue List */}
+          <div className="max-h-[300px] overflow-y-auto">
+            {displayOrder.map((actualIndex, displayIndex) => {
+              const video = videos[actualIndex];
+              if (!video) return null;
+              const isCurrent = displayIndex === currentIndex;
+
+              return (
+                <button
+                  key={video.id}
+                  onClick={() => goToVideo(displayIndex)}
+                  className={`w-full p-2 flex gap-2 hover:bg-surface-hover transition-colors ${
+                    isCurrent ? 'bg-accent/20 border-l-2 border-accent' : ''
+                  }`}
+                >
+                  <div className="relative flex-shrink-0 w-20 h-12 bg-black rounded overflow-hidden">
+                    {video.thumb_url ? (
+                      <img src={video.thumb_url} alt={video.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-surface-hover">
+                        <svg className="w-6 h-6 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-xs px-1 rounded">
+                      {formatDuration(video.duration_sec)}
+                    </div>
+                    {video.watched && (
+                      <div className="absolute top-0.5 left-0.5 bg-accent/90 text-accent-text px-1 rounded">
+                        <CheckmarkIcon className="w-2.5 h-2.5" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <h3 className={`text-xs font-medium line-clamp-2 leading-tight ${isCurrent ? 'text-accent-text' : 'text-text-primary'}`}>
+                      {video.title}
+                    </h3>
+                    <p className="text-xs text-text-secondary mt-0.5">{video.channel_title}</p>
+                  </div>
+                  {isCurrent && <PlayIcon className="w-4 h-4 text-accent flex-shrink-0 self-center" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       {/* Hidden Preload Video */}
       <video

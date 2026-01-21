@@ -201,6 +201,16 @@
   background: hsl(var(--scrollbar-thumb-hover));
 }
 
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ===== SETTINGS PAGE STYLES ===== */
 
 /* Stats Bar */
