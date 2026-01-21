@@ -74,16 +74,6 @@ export function useScanChannel() {
   });
 }
 
-export function useRefreshChannelThumbnail() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id) => api.refreshChannelThumbnail(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['channels'] });
-    },
-  });
-}
-
 // Videos
 export function useVideos(params) {
   return useQuery({
