@@ -384,7 +384,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen md:min-h-screen h-screen md:h-auto flex flex-col bg-dark-primary overflow-hidden md:overflow-visible">
+    <div className="min-h-screen flex flex-col bg-dark-primary">
       {/* Update Banner - above nav */}
       {updateAvailable && !bannerDismissed && !isAuthPage && (
         <UpdateBanner
@@ -489,8 +489,8 @@ function App() {
         </header>
       )}
 
-      {/* Main Content */}
-      <main className={`flex-1 w-full overflow-y-auto md:overflow-visible ${isAuthPage ? '' : isTheaterMode ? 'px-2 pb-2' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
+      {/* Main Content - no flex-1 on mobile to prevent expansion beyond content */}
+      <main className={`md:flex-1 w-full overflow-y-auto md:overflow-visible ${isAuthPage ? '' : isTheaterMode ? 'px-2 pb-2' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
         <ErrorBoundary>
           <Routes>
             <Route path="/setup" element={<Setup />} />
