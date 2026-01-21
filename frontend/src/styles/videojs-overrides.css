@@ -153,20 +153,15 @@
 }
 
 /* ===== MOBILE PLAYER WRAPPER ===== */
-/* Dedicated mobile class - full width without complex calculations */
+/* Dedicated mobile class - simple full width within parent */
 .player-wrapper-mobile {
   position: relative;
   width: 100%;
   aspect-ratio: 16 / 9;
-  max-height: calc(100dvh - 240px);
+  max-height: calc(100dvh - 200px);
   background: black;
-  /* CRITICAL: Prevent any 1px overflow that causes scroll */
+  /* CRITICAL: Prevent any overflow */
   overflow: hidden;
-  /* Negative margins to counter parent padding (px-6 = 24px) */
-  margin-left: -24px;
-  margin-right: -24px;
-  /* Expand width to compensate for negative margins */
-  width: calc(100% + 48px);
   /* Contain the video element to prevent overflow */
   contain: layout paint;
 }
