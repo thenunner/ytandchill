@@ -211,22 +211,13 @@
   display: none;
 }
 
-/* Mobile: use dynamic viewport height and prevent overscroll */
+/* Mobile: prevent horizontal bounce and overscroll */
 @media (max-width: 767px) {
-  html {
+  html, body {
     margin: 0;
     padding: 0;
-    height: 100dvh;
-    overflow: hidden;
-  }
-  body {
-    margin: 0;
-    padding: 0;
-    height: 100dvh;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;  /* Prevent bounce but allow scroll */
-    -webkit-overflow-scrolling: touch;
-    /* Let iOS show native overlay scrollbar when scrolling */
+    overflow-x: hidden;  /* Prevent horizontal scroll/bounce */
+    overscroll-behavior: contain;  /* Prevent pull-to-refresh and bounce */
   }
 }
 
