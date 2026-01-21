@@ -74,7 +74,9 @@ export function useVideoJsPlayer({
     if (videoElementChanged && playerRef.current) {
       console.log('[useVideoJsPlayer] Video element changed, disposing old player');
       try {
-        playerRef.current.dispose();
+        if (!playerRef.current.isDisposed()) {
+          playerRef.current.dispose();
+        }
       } catch (e) {
         console.warn('[useVideoJsPlayer] Error disposing player:', e);
       }
