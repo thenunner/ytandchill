@@ -275,12 +275,12 @@ export default function Player() {
           </div>
 
           {/* Video Info Below Player */}
-          <div className="mt-4 space-y-3">
-            <h1 className="text-2xl font-bold text-text-primary leading-tight">
+          <div className="mt-2 md:mt-4 space-y-2 md:space-y-3">
+            <h1 className="text-lg md:text-2xl font-bold text-text-primary leading-tight line-clamp-2">
               {video.title}
             </h1>
 
-            <div className="flex items-center gap-3 text-sm text-text-secondary">
+            <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-text-secondary">
               <Link
                 to={`/channel/${video.channel_id}/library`}
                 className="hover:text-text-primary transition-colors font-medium"
@@ -311,7 +311,7 @@ export default function Player() {
             </div>
 
             {/* Control Buttons - Mobile: horizontal row below info */}
-            <div className="flex md:hidden gap-3 mt-4">
+            <div className="flex md:hidden gap-2 mt-2">
               <button
                 onClick={handleBack}
                 className="icon-btn hover:bg-accent hover:border-accent"
