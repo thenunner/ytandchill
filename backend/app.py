@@ -825,6 +825,10 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         # Don't commit here - the outer context manager will handle it
         logger.debug(f"Set new_discoveries_flag due to {new_count} discovered videos")
 
+    # Emit SSE event to refresh videos/channels in real-time
+    if new_count > 0 or ignored_count > 0:
+        queue_events.emit('video:changed')
+
     # Auto-resume the download worker if videos were auto-queued
     if auto_queued_count > 0 and download_worker.paused:
         download_worker.resume()
