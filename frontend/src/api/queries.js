@@ -110,6 +110,7 @@ export function useDeleteVideo() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] }); // Update channel video counts
     },
   });
 }
@@ -120,6 +121,7 @@ export function useBulkUpdateVideos() {
     mutationFn: ({ videoIds, updates }) => api.bulkUpdateVideos(videoIds, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] }); // Update channel video counts
     },
   });
 }
@@ -131,6 +133,7 @@ export function useBulkDeleteVideos() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] }); // Update channel video counts
     },
   });
 }
@@ -340,6 +343,7 @@ export function useAddToQueue() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queue'] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] }); // Update channel video counts
     },
   });
 }
@@ -351,6 +355,7 @@ export function useAddToQueueBulk() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queue'] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      queryClient.invalidateQueries({ queryKey: ['channels'] }); // Update channel video counts
     },
   });
 }
