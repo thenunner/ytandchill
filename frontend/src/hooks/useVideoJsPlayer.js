@@ -119,6 +119,13 @@ export function useVideoJsPlayer({
       nativeControlsForTouch: false,
       // Playback speed options (unified across all devices)
       playbackRates: [1, 1.5, 2, 2.5],
+      // Control bar configuration - only show remaining time (not current/duration)
+      controlBar: {
+        currentTimeDisplay: false,
+        timeDivider: false,
+        durationDisplay: false,
+        remainingTimeDisplay: true,
+      },
       html5: {
         vhs: {
           overrideNative: false,
@@ -222,7 +229,9 @@ export function useVideoJsPlayer({
     } else {
       // Desktop/Tablet: Auto-hide controls even when paused
       // Video.js default keeps controls visible when paused, we override this
+      // EXCEPTION: Keep controls visible when mouse is hovering over control bar
       let desktopHideTimeout = null;
+      let isHoveringControlBar = false;
       const DESKTOP_HIDE_DELAY = 2000;
 
       const hideControlsAfterDelay = () => {
@@ -230,13 +239,38 @@ export function useVideoJsPlayer({
           clearTimeout(desktopHideTimeout);
         }
         desktopHideTimeout = setTimeout(() => {
-          player.userActive(false);
+          // Don't hide if mouse is hovering over control bar
+          if (!isHoveringControlBar) {
+            player.userActive(false);
+          }
         }, DESKTOP_HIDE_DELAY);
       };
 
+      // Track mouse hover over control bar
+      const controlBarEl = player.controlBar.el();
+      const handleControlBarMouseEnter = () => {
+        isHoveringControlBar = true;
+        // Clear any pending hide timeout
+        if (desktopHideTimeout) {
+          clearTimeout(desktopHideTimeout);
+          desktopHideTimeout = null;
+        }
+        // Keep controls visible
+        player.userActive(true);
+      };
+      const handleControlBarMouseLeave = () => {
+        isHoveringControlBar = false;
+        // Start hide timer when mouse leaves control bar
+        hideControlsAfterDelay();
+      };
+      controlBarEl.addEventListener('mouseenter', handleControlBarMouseEnter);
+      controlBarEl.addEventListener('mouseleave', handleControlBarMouseLeave);
+
       // When paused, start timer to hide controls
       player.on('pause', () => {
-        hideControlsAfterDelay();
+        if (!isHoveringControlBar) {
+          hideControlsAfterDelay();
+        }
       });
 
       // When playing, let Video.js handle via inactivityTimeout
@@ -249,7 +283,7 @@ export function useVideoJsPlayer({
 
       // When user becomes active (mouse move), reset timer if paused
       player.on('useractive', () => {
-        if (player.paused()) {
+        if (player.paused() && !isHoveringControlBar) {
           hideControlsAfterDelay();
         }
       });
@@ -259,9 +293,11 @@ export function useVideoJsPlayer({
         if (desktopHideTimeout) {
           clearTimeout(desktopHideTimeout);
         }
+        controlBarEl.removeEventListener('mouseenter', handleControlBarMouseEnter);
+        controlBarEl.removeEventListener('mouseleave', handleControlBarMouseLeave);
       });
 
-      console.log('[useVideoJsPlayer] Desktop/Tablet: auto-hide controls after 2s (including when paused)');
+      console.log('[useVideoJsPlayer] Desktop/Tablet: auto-hide controls after 2s (stays visible on control bar hover)');
     }
 
     // Add custom seek buttons to control bar (desktop/tablet)
