@@ -42,6 +42,11 @@ function App() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
+  // Theater mode state (for reducing padding when expanded)
+  const [isTheaterMode, setIsTheaterMode] = useState(() =>
+    localStorage.getItem('theaterMode') === 'true'
+  );
+
   // Track if update toast has been shown (one-time notification)
   const updateToastShownRef = useRef(false);
 
@@ -74,6 +79,15 @@ function App() {
       }
     }
   }, [health?.latest_version, showNotification]);
+
+  // Listen for theater mode changes (from player toggle)
+  useEffect(() => {
+    const handleStorage = () => {
+      setIsTheaterMode(localStorage.getItem('theaterMode') === 'true');
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   // Handle update banner dismiss
   const handleBannerDismiss = () => {
@@ -476,7 +490,7 @@ function App() {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 w-full ${isAuthPage ? '' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
+      <main className={`flex-1 w-full ${isAuthPage ? '' : isTheaterMode ? 'px-2 pb-2' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
         <ErrorBoundary>
           <Routes>
             <Route path="/setup" element={<Setup />} />

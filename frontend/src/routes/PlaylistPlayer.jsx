@@ -365,7 +365,7 @@ export default function PlaylistPlayer() {
     video: currentVideo,
     videoRef: videoRef,
     saveProgress: false,
-    onEnded: goToNextRef.current,
+    onEnded: () => goToNextRef.current?.(),
     onWatched: handleWatched,
     updateVideoMutation: updateVideo,
     isTheaterMode: isTheaterMode,

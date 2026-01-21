@@ -14,7 +14,6 @@ export function registerTheaterButton() {
   class TheaterButton extends Button {
     constructor(player, options) {
       super(player, options);
-      this.controlText('Theater mode');
       this.addClass('vjs-theater-button');
 
       // Store callback from options
@@ -24,6 +23,9 @@ export function registerTheaterButton() {
       const isTheaterMode = localStorage.getItem('theaterMode') === 'true';
       if (isTheaterMode) {
         this.addClass('vjs-theater-mode-active');
+        this.controlText('Default view');
+      } else {
+        this.controlText('Theater mode');
       }
     }
 
@@ -36,11 +38,16 @@ export function registerTheaterButton() {
       const newMode = !currentMode;
       localStorage.setItem('theaterMode', String(newMode));
 
-      // Toggle CSS class
+      // Notify other components of theater mode change
+      window.dispatchEvent(new Event('storage'));
+
+      // Toggle CSS class and tooltip
       if (newMode) {
         this.addClass('vjs-theater-mode-active');
+        this.controlText('Default view');
       } else {
         this.removeClass('vjs-theater-mode-active');
+        this.controlText('Theater mode');
       }
 
       if (this.onToggleCallback) {
@@ -103,10 +110,12 @@ export function updateTheaterButtonState(player, isTheaterMode) {
   const theaterButton = player.controlBar.getChild('TheaterButton');
   if (!theaterButton) return;
 
-  // Update button class based on mode
+  // Update button class and tooltip based on mode
   if (isTheaterMode) {
     theaterButton.addClass('vjs-theater-mode-active');
+    theaterButton.controlText('Default view');
   } else {
     theaterButton.removeClass('vjs-theater-mode-active');
+    theaterButton.controlText('Theater mode');
   }
 }
