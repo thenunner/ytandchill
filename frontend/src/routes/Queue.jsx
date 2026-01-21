@@ -132,8 +132,8 @@ function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom 
 }
 
 export default function Queue() {
-  // Queue data is kept fresh by SSE in App.jsx, reads from shared cache
-  const { data: queue, isLoading } = useQueue();
+  // Queue data - fetch directly with polling fallback (don't rely solely on SSE)
+  const { data: queue, isLoading, refetch } = useQueue({ enablePolling: true });
   const resumeQueue = useResumeQueue();
   const cancelCurrent = useCancelCurrent();
   const removeFromQueue = useRemoveFromQueue();

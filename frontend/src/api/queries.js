@@ -321,18 +321,19 @@ export function useRemoveVideoFromPlaylist() {
 
 // Queue - SSE in App.jsx keeps cache updated, polling is fallback only
 export function useQueue(options = {}) {
-  const { sseConnected } = options;
+  const { sseConnected, enablePolling } = options;
   // Only App.jsx passes sseConnected - it controls the SSE connection
-  // Other components just read from cache (no polling needed)
+  // Other components can enable polling explicitly or just read from shared cache
   const isMainConsumer = sseConnected !== undefined;
 
   return useQuery({
     queryKey: ['queue'],
     queryFn: () => api.getQueue(),
     // Main consumer (App.jsx): poll as fallback when SSE disconnected
+    // enablePolling: force polling for components that need guaranteed fresh data
     // Other consumers: no polling, just read from shared cache
-    refetchInterval: isMainConsumer ? (sseConnected ? false : 3000) : false,
-    staleTime: 30000, // Trust cache for 30 seconds
+    refetchInterval: enablePolling ? 2000 : (isMainConsumer ? (sseConnected ? false : 3000) : false),
+    staleTime: enablePolling ? 1000 : 30000, // Shorter stale time when polling enabled
   });
 }
 
