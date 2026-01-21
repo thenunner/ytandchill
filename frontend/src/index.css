@@ -213,14 +213,18 @@
 
 /* Mobile: use dynamic viewport height and prevent overscroll */
 @media (max-width: 767px) {
-  html, body {
+  html {
     margin: 0;
     padding: 0;
-    /* Use dvh (dynamic viewport height) which excludes iOS browser chrome */
     height: 100dvh;
-    max-height: 100dvh;
     overflow: hidden;
-    overscroll-behavior: none;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    height: 100dvh;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;  /* Prevent bounce but allow scroll */
     -webkit-overflow-scrolling: touch;
     -ms-overflow-style: none;
     scrollbar-width: none;
