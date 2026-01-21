@@ -490,7 +490,7 @@ function App() {
       )}
 
       {/* Main Content - no flex-1 on mobile to prevent expansion beyond content */}
-      <main className={`md:flex-1 w-full overflow-y-auto md:overflow-visible ${isAuthPage ? '' : isTheaterMode ? 'px-2 pb-2' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
+      <main className={`md:flex-1 w-full ${isAuthPage ? '' : isTheaterMode ? 'px-2 pb-2' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
         <ErrorBoundary>
           <Routes>
             <Route path="/setup" element={<Setup />} />
