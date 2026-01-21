@@ -134,36 +134,34 @@
   color: hsl(var(--accent));
 }
 
-/* Responsive sizing */
-.video-js.vjs-fluid {
-  padding-top: 56.25%; /* 16:9 */
+/* ===== VIDEO SIZING - CONTAINER CONTROLS LAYOUT ===== */
+/*
+ * The wrapper div has aspect-ratio: 16/9 and max-height constraint.
+ * Video.js must fill that container 100%, and the video fits inside with letterboxing.
+ * This prevents non-16:9 videos from breaking the layout.
+ */
+
+/* Video.js player fills its container completely */
+.video-js {
+  width: 100% !important;
+  height: 100% !important;
 }
 
-/* iOS fixes */
+/* The actual video element fits within, letterboxing if needed */
 .video-js .vjs-tech {
-  object-fit: contain;
+  object-fit: contain !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
-/* Fullscreen mode - remove size constraints from player container and video element */
+/* Fullscreen mode - same rules apply, fill the screen */
 .video-js.vjs-fullscreen {
   max-width: none !important;
   max-height: none !important;
-  width: 100% !important;
-  height: 100% !important;
 }
 
-/* Fullscreen: Make the actual video element fill the screen */
 .video-js.vjs-fullscreen .vjs-tech {
-  max-width: 100% !important;
-  max-height: 100% !important;
-  width: 100% !important;
-  height: 100% !important;
   object-fit: contain !important;
-}
-
-/* Non-fullscreen: constrain video size to fit on screen */
-.video-js:not(.vjs-fullscreen) {
-  max-height: 60vh;
 }
 
 /* Theater mode button styling */
