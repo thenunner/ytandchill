@@ -136,13 +136,26 @@
 
 /* ===== VIDEO SIZING - CONTAINER CONTROLS LAYOUT ===== */
 /*
- * The wrapper div has aspect-ratio: 16/9 and max-height constraint.
- * Video.js must fill that container 100%, and the video fits inside with letterboxing.
- * This prevents non-16:9 videos from breaking the layout.
+ * The wrapper div (.player-wrapper) has aspect-ratio: 16/9 and max-height constraint.
+ * Video.js is absolutely positioned to fill the wrapper exactly.
+ * The actual video uses object-fit: contain for letterboxing non-16:9 content.
  */
 
-/* Video.js player fills its container completely */
+/* Player wrapper - the container that controls layout */
+.player-wrapper {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-height: calc(100vh - 120px);
+  background: black;
+  overflow: hidden;
+  border-radius: 0.75rem;
+}
+
+/* Video.js player - absolutely positioned to fill wrapper */
 .video-js {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
   width: 100% !important;
   height: 100% !important;
 }
@@ -154,8 +167,11 @@
   height: 100% !important;
 }
 
-/* Fullscreen mode - same rules apply, fill the screen */
+/* Fullscreen mode - remove constraints */
 .video-js.vjs-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
   max-width: none !important;
   max-height: none !important;
 }

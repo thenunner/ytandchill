@@ -260,16 +260,11 @@ export default function Player() {
             ? 'w-full'
             : 'md:w-[60%] md:max-w-[83.333%]'
         }`} style={{ willChange: 'width' }}>
-          {/* Video Wrapper - aspect-ratio controls height, max-height is safety net */}
-          <div
-            className={`bg-black rounded-xl shadow-card-hover relative ${
-              isTheaterMode ? 'mx-6' : ''
-            }`}
-            style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 120px)' }}
-          >
+          {/* Video Wrapper - .player-wrapper class controls sizing via CSS */}
+          <div className={`player-wrapper shadow-card-hover ${isTheaterMode ? 'mx-6' : ''}`}>
             <video
               ref={videoRef}
-              className="video-js vjs-big-play-centered w-full h-full"
+              className="video-js vjs-big-play-centered"
               playsInline
               preload="auto"
             />
