@@ -656,14 +656,11 @@ export default function PlaylistPlayer() {
 
             {/* CENTER: Player + Info - width changes based on theater mode */}
             <div className={isTheaterMode ? 'w-full' : 'w-[55%]'}>
-              {/* Video Wrapper - ONE video element, CSS changes based on mode */}
-              <div
-                className={`bg-black rounded-xl shadow-card-hover relative ${isTheaterMode ? 'mx-6' : ''}`}
-                style={{ aspectRatio: '16/9', maxHeight: 'calc(100vh - 120px)' }}
-              >
+              {/* Video Wrapper - .player-wrapper class controls sizing via CSS */}
+              <div className={`player-wrapper shadow-card-hover ${isTheaterMode ? 'mx-6' : ''}`}>
                 <video
                   ref={videoRef}
-                  className="video-js vjs-big-play-centered w-full h-full"
+                  className="video-js vjs-big-play-centered"
                   playsInline
                   preload="auto"
                 />
@@ -1018,12 +1015,11 @@ export default function PlaylistPlayer() {
       {/* ========== MOBILE LAYOUT (Same for both modes) ========== */}
       {isMobile && (
       <div>
-        {/* Video Player */}
-        <div className="bg-black rounded-xl shadow-card-hover relative w-full" style={{ aspectRatio: '16/9' }}>
+        {/* Video Player - .player-wrapper class controls sizing via CSS */}
+        <div className="player-wrapper shadow-card-hover w-full">
           <video
             ref={videoRef}
-            className="video-js vjs-big-play-centered w-full h-full"
-            style={{ objectFit: 'contain' }}
+            className="video-js vjs-big-play-centered"
             playsInline
             preload="auto"
           />
