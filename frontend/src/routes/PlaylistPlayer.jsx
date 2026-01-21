@@ -610,7 +610,7 @@ export default function PlaylistPlayer() {
   }
 
   return (
-    <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
+    <div className="space-y-4 animate-fade-in pt-4">
       {/* ========== DESKTOP LAYOUT (Normal + Theater use same video element) ========== */}
       {!isMobile && (
         <div>

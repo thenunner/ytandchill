@@ -211,7 +211,7 @@ export default function Player() {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in pt-6 md:pt-8">
+    <div className="space-y-4 animate-fade-in pt-4">
       {/* Flex Container: Buttons left, Player+Info right */}
       <div className="flex flex-col md:flex-row md:gap-4 md:items-start">
         {/* Control Buttons - Desktop: vertical column on left */}
