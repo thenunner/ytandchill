@@ -153,10 +153,13 @@
 }
 
 /* ===== MOBILE PLAYER WRAPPER ===== */
-/* Dedicated mobile class - simple full width within parent */
+/* Dedicated mobile class - breaks out of parent px-6 padding for full width */
 .player-wrapper-mobile {
   position: relative;
-  width: 100%;
+  /* Break out of parent's px-6 (24px) padding */
+  width: calc(100% + 48px);
+  margin-left: -24px;
+  margin-right: -24px;
   aspect-ratio: 16 / 9;
   max-height: calc(100dvh - 200px);
   background: black;
