@@ -288,3 +288,52 @@ def scan_channel_videos_api(channel_id: str, api_key: str, max_results: int = 50
         return [], f"API request failed: {str(e)}"
 
 
+def fetch_channel_thumbnail(channel_id: str, api_key: str) -> str:
+    """
+    Fetch channel thumbnail/avatar from YouTube Data API.
+
+    Args:
+        channel_id: YouTube channel ID (starts with UC)
+        api_key: YouTube Data API key
+
+    Returns:
+        URL of channel thumbnail (highest quality available), or None if not found
+    """
+    if not channel_id or not api_key:
+        return None
+
+    try:
+        response = requests.get(
+            f'{YOUTUBE_API_BASE}/channels',
+            params={
+                'part': 'snippet',
+                'id': channel_id,
+                'key': api_key
+            },
+            timeout=10
+        )
+
+        if response.status_code == 200:
+            data = _safe_json(response)
+            if data and data.get('items'):
+                snippet = data['items'][0].get('snippet', {})
+                thumbnails = snippet.get('thumbnails', {})
+
+                # Try to get highest quality thumbnail (high > medium > default)
+                for quality in ['high', 'medium', 'default']:
+                    thumb = thumbnails.get(quality, {})
+                    if thumb.get('url'):
+                        logger.debug(f"Found {quality} quality thumbnail for channel {channel_id}")
+                        return thumb['url']
+
+        elif response.status_code == 403:
+            logger.warning(f"API quota or permission error fetching channel thumbnail")
+        else:
+            logger.warning(f"Failed to fetch channel thumbnail: {response.status_code}")
+
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"Error fetching channel thumbnail: {e}")
+
+    return None
+
+
