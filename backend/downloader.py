@@ -394,6 +394,9 @@ class DownloadWorker:
         session.commit()
         logger.info(f"Video {video.yt_id} status updated to 'downloading'")
 
+        # Emit SSE immediately so UI shows downloading card right away
+        self._emit_queue_update(force=True)
+
         # Prepare download path with proper permissions
         makedirs_777(video_dir)
 
