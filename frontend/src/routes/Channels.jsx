@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory, useSettings } from '../api/queries';
+import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useRefreshChannelThumbnail, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -24,6 +24,7 @@ export default function Channels() {
   const deleteChannel = useDeleteChannel();
   const scanChannel = useScanChannel();
   const updateChannel = useUpdateChannel();
+  const refreshThumbnail = useRefreshChannelThumbnail();
   const createCategory = useCreateChannelCategory();
   const updateCategoryMutation = useUpdateChannelCategory();
   const deleteCategoryMutation = useDeleteChannelCategory();
@@ -199,6 +200,15 @@ export default function Channels() {
       await deleteChannel.mutateAsync(channelId);
       showNotification('Channel deleted', 'success');
       setDeleteConfirm(null);
+    } catch (error) {
+      showNotification(getUserFriendlyError(error.message), 'error');
+    }
+  };
+
+  const handleRefreshThumbnail = async (channel) => {
+    try {
+      await refreshThumbnail.mutateAsync(channel.id);
+      showNotification(`Thumbnail refreshed for ${channel.title}`, 'success');
     } catch (error) {
       showNotification(getUserFriendlyError(error.message), 'error');
     }
@@ -1085,6 +1095,23 @@ export default function Channels() {
                       )}
                     </div>
                   )}
+
+                  {/* Refresh Thumbnail */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRefreshThumbnail(channel);
+                      setMenuOpen(null);
+                    }}
+                    disabled={refreshThumbnail.isPending}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="font-medium">{refreshThumbnail.isPending ? 'Refreshing...' : 'Refresh Thumbnail'}</span>
+                  </button>
 
                   {/* Delete Channel */}
                   <button
