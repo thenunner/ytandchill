@@ -47,6 +47,7 @@ export function useVideoJsPlayer({
   const hasMarkedWatchedRef = useRef(false);
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
+  const lastVideoElementRef = useRef(null); // Track the actual DOM element
 
   // Keep refs up to date
   useEffect(() => {
@@ -67,7 +68,24 @@ export function useVideoJsPlayer({
       return;
     }
 
+    // Check if video element has changed (e.g., theater mode toggle)
+    const videoElementChanged = lastVideoElementRef.current && lastVideoElementRef.current !== elem;
+
+    if (videoElementChanged && playerRef.current) {
+      console.log('[useVideoJsPlayer] Video element changed, disposing old player');
+      try {
+        playerRef.current.dispose();
+      } catch (e) {
+        console.warn('[useVideoJsPlayer] Error disposing player:', e);
+      }
+      playerRef.current = null;
+    }
+
+    // Track the current video element
+    lastVideoElementRef.current = elem;
+
     // For persistent players (playlists), don't reinitialize if player already exists
+    // UNLESS the video element changed (handled above)
     if (persistPlayer && playerRef.current) {
       console.log('[useVideoJsPlayer] Persistent player exists, skipping reinitialization');
       return;
@@ -266,26 +284,27 @@ export function useVideoJsPlayer({
       }
     }
 
-    // Add theater button to control bar manually with options
-    try {
-      const theaterButton = player.controlBar.addChild('TheaterButton', {
-        onToggle: (newMode) => {
-          if (setIsTheaterMode) {
-            setIsTheaterMode(newMode);
+    // Add theater button to control bar (desktop/tablet only - no effect on mobile)
+    if (!isMobile) {
+      try {
+        const theaterButton = player.controlBar.addChild('TheaterButton', {
+          onToggle: (newMode) => {
+            if (setIsTheaterMode) {
+              setIsTheaterMode(newMode);
+            }
           }
-        }
-      });
+        });
 
-      // Position it before fullscreen button
-      const fullscreenToggle = player.controlBar.getChild('fullscreenToggle');
-      if (fullscreenToggle) {
-        const controlBarEl = player.controlBar.el();
-        const fullscreenIndex = Array.from(controlBarEl.children).indexOf(fullscreenToggle.el());
-        controlBarEl.insertBefore(theaterButton.el(), fullscreenToggle.el());
-        console.log('[useVideoJsPlayer] Theater button positioned before fullscreen');
+        // Position it before fullscreen button
+        const fullscreenToggle = player.controlBar.getChild('fullscreenToggle');
+        if (fullscreenToggle) {
+          const controlBarEl = player.controlBar.el();
+          controlBarEl.insertBefore(theaterButton.el(), fullscreenToggle.el());
+          console.log('[useVideoJsPlayer] Theater button positioned before fullscreen');
+        }
+      } catch (error) {
+        console.error('[useVideoJsPlayer] Error adding theater button:', error);
       }
-    } catch (error) {
-      console.error('[useVideoJsPlayer] Error adding theater button:', error);
     }
 
     // Set initial video source
@@ -582,7 +601,7 @@ export function useVideoJsPlayer({
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, persistPlayer
-    ? [video?.id] // Persistent: run when video first available, guard prevents reinit
+    ? [video?.id, isTheaterMode] // Persistent: reinit on video change OR theater mode change (element changes)
     : [video?.id]); // Non-persistent: reinit on video change
 
   // Save progress before page unload (refresh/close)
