@@ -94,10 +94,8 @@
   width: 8em;
 }
 
-/* Time display */
-.video-js .vjs-current-time,
-.video-js .vjs-time-divider,
-.video-js .vjs-duration {
+/* Time display (remaining time only) */
+.video-js .vjs-remaining-time {
   color: hsl(var(--text-primary));
   font-size: 1em;
   line-height: 3em;
@@ -377,12 +375,10 @@
 }
 
 /* ---------------------------------------------
- * TIME DISPLAYS
- * Current time, duration, and divider
+ * TIME DISPLAY (Remaining time only)
+ * Shows -x:xx:xx format
  * --------------------------------------------- */
-.video-js .vjs-current-time,
-.video-js .vjs-time-divider,
-.video-js .vjs-duration {
+.video-js .vjs-remaining-time {
   height: 44px;              /* Match control bar height */
   display: flex;
   align-items: center;       /* Vertically center text */
@@ -448,10 +444,8 @@
     top: -4px;
   }
 
-  /* Time displays - smaller */
-  .video-js .vjs-current-time,
-  .video-js .vjs-time-divider,
-  .video-js .vjs-duration {
+  /* Time display - smaller on mobile */
+  .video-js .vjs-remaining-time {
     height: 40px;
     font-size: 12px;
     padding: 0 3px;
