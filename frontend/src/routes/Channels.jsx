@@ -1140,7 +1140,7 @@ export default function Channels() {
                 }}
               >
                 {/* Channel Thumbnail - YouTube style */}
-                <div className={`relative w-full aspect-video bg-dark-tertiary overflow-hidden transition-all rounded-xl ${
+                <div className={`relative w-full aspect-video bg-dark-tertiary overflow-hidden transition-all rounded-t-xl rounded-b-xl group-hover:rounded-b-none ${
                   (channel.video_count || 0) > 0 ? 'border-4 border-accent' : ''
                 }`}>
                   {channel.thumbnail ? (
