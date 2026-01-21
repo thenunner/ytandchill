@@ -259,6 +259,9 @@ def add_to_queue():
             _download_worker.resume()
             logger.info("Auto-resumed download worker after adding video to queue")
 
+        # Emit SSE event for real-time UI updates
+        queue_events.emit('video:changed')
+
         return jsonify(result), 201
 
 
@@ -316,6 +319,10 @@ def add_to_queue_bulk():
             _download_worker.resume()
             logger.info("Auto-resumed download worker after bulk add to queue")
 
+        # Emit SSE event for real-time UI updates
+        if added_count > 0:
+            queue_events.emit('video:changed')
+
         response = {
             'added_count': added_count,
             'skipped_count': skipped_count,
@@ -367,6 +374,9 @@ def remove_from_queue(item_id):
 
         session.delete(item)
         session.commit()
+
+        # Emit SSE event for real-time UI updates
+        queue_events.emit('video:changed')
 
         return '', 204
 

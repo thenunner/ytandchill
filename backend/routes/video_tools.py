@@ -17,6 +17,7 @@ import logging
 import os
 
 from database import Video, QueueItem, PlaylistVideo, Channel, get_session
+from events import queue_events
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +170,11 @@ def update_video(video_id):
             logger.debug(f"Updated video '{video.title}' (ID: {video_id}): {', '.join(changes)}")
 
         session.commit()
+
+        # Emit SSE event if status changed for real-time UI updates
+        if 'status' in data:
+            queue_events.emit('video:changed')
+
         result = _serialize_video(video)
 
         return jsonify(result)
@@ -228,6 +234,9 @@ def delete_video(video_id):
 
         session.commit()
 
+        # Emit SSE event for real-time UI updates
+        queue_events.emit('video:changed')
+
         return '', 204
 
 
@@ -247,6 +256,10 @@ def bulk_update_videos():
                 video.status = updates['status']
 
         session.commit()
+
+        # Emit SSE event if status changed for real-time UI updates
+        if 'status' in updates:
+            queue_events.emit('video:changed')
 
         return jsonify({'updated': len(videos)})
 
@@ -303,5 +316,8 @@ def bulk_delete_videos():
 
         session.commit()
         logger.info(f"Bulk deleted {deleted_count} videos")
+
+        # Emit SSE event for real-time UI updates
+        queue_events.emit('video:changed')
 
         return jsonify({'deleted': deleted_count}), 200
