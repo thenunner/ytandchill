@@ -106,6 +106,16 @@ function App() {
     prevOperationRef.current = currentOperation;
   }, [currentOperation, showNotification]);
 
+  // Active scanning toast
+  useEffect(() => {
+    if (currentOperation?.type === 'scanning' && currentOperation?.message) {
+      showNotification(currentOperation.message, 'scanning', { id: 'scanning', persistent: true });
+    } else {
+      // Always remove scanning toast when not actively scanning
+      removeToast('scanning');
+    }
+  }, [currentOperation, showNotification, removeToast]);
+
   // Error message toast
   useEffect(() => {
     if (lastErrorMessage && lastErrorMessage !== prevErrorRef.current) {
