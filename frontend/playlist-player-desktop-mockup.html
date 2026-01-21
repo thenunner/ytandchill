@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlaylistPlayer Desktop Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-primary: 220 20% 10%;
+      --bg-secondary: 220 18% 14%;
+      --bg-tertiary: 220 16% 18%;
+      --border: 220 15% 20%;
+      --border-light: 220 12% 28%;
+      --text-primary: 220 10% 93%;
+      --text-secondary: 220 10% 65%;
+      --accent: 200 80% 55%;
+      --accent-text: 200 80% 60%;
+    }
+
+    body {
+      background-color: hsl(var(--bg-primary));
+      color: hsl(var(--text-primary));
+      font-family: system-ui, -apple-system, sans-serif;
+      transition: padding 0.3s ease;
+    }
+
+    .icon-btn {
+      width: 2.75rem;
+      height: 2.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: hsl(var(--bg-secondary));
+      border: 1px solid hsl(var(--border));
+      border-radius: 0.5rem;
+      color: hsl(var(--text-primary));
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .icon-btn:hover {
+      background: hsl(var(--bg-tertiary));
+      border-color: hsl(var(--border-light));
+    }
+
+    .icon-btn.active {
+      background: hsl(var(--accent));
+      border-color: hsl(var(--accent));
+    }
+
+    .icon-btn-sm {
+      width: 2.25rem;
+      height: 2.25rem;
+    }
+
+    .card {
+      background: hsl(var(--bg-secondary));
+      border: 1px solid hsl(var(--border));
+      border-radius: 0.75rem;
+    }
+
+    .video-placeholder {
+      background: #000;
+      aspect-ratio: 16/9;
+      border-radius: 0.75rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .queue-item {
+      display: flex;
+      gap: 0.75rem;
+      padding: 0.5rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .queue-item:hover {
+      background: hsl(var(--bg-tertiary));
+    }
+
+    .queue-item.active {
+      background: hsl(var(--accent) / 0.15);
+      border-left: 3px solid hsl(var(--accent));
+    }
+
+    .queue-thumbnail {
+      width: 120px;
+      height: 68px;
+      background: hsl(var(--bg-tertiary));
+      border-radius: 0.375rem;
+      flex-shrink: 0;
+    }
+
+    /* Theater mode horizontal queue item */
+    .queue-item-horizontal {
+      flex-direction: column;
+      min-width: 180px;
+      padding: 0.5rem;
+      border-left: none !important;
+      flex-shrink: 0;
+    }
+
+    .queue-item-horizontal.active {
+      border: 1px solid hsl(var(--accent) / 0.4);
+      border-left: 1px solid hsl(var(--accent) / 0.4) !important;
+      background: hsl(var(--accent) / 0.15);
+      border-radius: 0.5rem;
+    }
+
+    .queue-item-horizontal .queue-thumbnail {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16/9;
+      margin-bottom: 0.5rem;
+    }
+
+    /* Horizontal queue wrapper with overlay buttons */
+    .horizontal-queue-wrapper {
+      position: relative;
+    }
+
+    .horizontal-queue {
+      display: flex;
+      overflow-x: auto;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      scroll-behavior: smooth;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .horizontal-queue::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Overlay scroll buttons */
+    .scroll-overlay {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 4rem;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 1; /* Always visible in mockup for demonstration */
+      transition: opacity 0.3s ease;
+      user-select: none;
+    }
+
+    /* In real app, use opacity: 0 by default and show on hover:
+    .horizontal-queue-wrapper:hover .scroll-overlay:not(.hidden) {
+      opacity: 1;
+    }
+    */
+
+    .scroll-overlay.left {
+      left: 0;
+      background: linear-gradient(
+        to right,
+        hsl(var(--bg-secondary) / 0.95) 0%,
+        hsl(var(--bg-secondary) / 0.7) 50%,
+        transparent 100%
+      );
+      padding-left: 0.25rem;
+      border-radius: 0 0 0 0.75rem;
+    }
+
+    .scroll-overlay.right {
+      right: 0;
+      background: linear-gradient(
+        to left,
+        hsl(var(--bg-secondary) / 0.95) 0%,
+        hsl(var(--bg-secondary) / 0.7) 50%,
+        transparent 100%
+      );
+      padding-right: 0.25rem;
+      border-radius: 0 0 0.75rem 0;
+    }
+
+    .scroll-btn {
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 50%;
+      border: none;
+      background: hsl(var(--bg-tertiary) / 0.9);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      color: hsl(var(--text-primary));
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      transform: scale(0.9);
+    }
+
+    .scroll-overlay:hover .scroll-btn {
+      background: hsl(var(--bg-tertiary));
+      transform: scale(1);
+      box-shadow:
+        0 4px 12px hsl(0 0% 0% / 0.4),
+        0 0 0 1px hsl(var(--border-light) / 0.5);
+    }
+
+    .scroll-overlay:active .scroll-btn {
+      transform: scale(0.95);
+      background: hsl(var(--accent));
+    }
+
+    .scroll-btn svg {
+      width: 1.25rem;
+      height: 1.25rem;
+      stroke-width: 2.5;
+    }
+
+    .scroll-overlay.hidden {
+      opacity: 0 !important;
+      pointer-events: none;
+    }
+
+    .vertical-queue {
+      max-height: 400px;
+      overflow-y: auto;
+      padding: 0.5rem;
+    }
+
+    .vertical-queue::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .vertical-queue::-webkit-scrollbar-track {
+      background: hsl(var(--bg-tertiary));
+      border-radius: 3px;
+    }
+
+    .vertical-queue::-webkit-scrollbar-thumb {
+      background: hsl(var(--border-light));
+      border-radius: 3px;
+    }
+
+    .mode-toggle {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 100;
+      padding: 0.75rem 1.25rem;
+      background: hsl(var(--accent));
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.875rem;
+      transition: background 0.2s;
+    }
+
+    .mode-toggle:hover {
+      background: hsl(var(--accent-hover));
+    }
+
+    .mode-badge {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 100;
+      padding: 0.5rem 1rem;
+      background: hsl(var(--bg-secondary));
+      border: 1px solid hsl(var(--border));
+      color: hsl(var(--text-secondary));
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+    }
+
+    /* Transitions */
+    .fade-transition {
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+
+    .hidden-element {
+      opacity: 0;
+      pointer-events: none;
+      position: absolute;
+    }
+  </style>
+</head>
+<body class="min-h-screen p-6 lg:p-8" id="app">
+
+  <!-- Mode Badge -->
+  <div class="mode-badge">
+    <span id="mode-badge-text">NORMAL MODE</span>
+  </div>
+
+  <!-- Theater Mode Toggle -->
+  <button class="mode-toggle" onclick="toggleTheaterMode()">
+    <span id="toggle-label">Theater Mode</span>
+  </button>
+
+  <div class="max-w-screen-2xl mx-auto space-y-4 transition-all duration-300" id="container">
+
+    <!-- NORMAL MODE LAYOUT -->
+    <div id="normal-layout" class="fade-transition">
+      <div class="flex gap-4 items-start">
+
+        <!-- LEFT: Control Buttons -->
+        <div class="flex flex-col gap-3 flex-shrink-0">
+          <button class="icon-btn" title="Back">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+          <button class="icon-btn" title="Add to playlist">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14m-7-7h14"></path>
+            </svg>
+          </button>
+          <button class="icon-btn" title="Mark as watched">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+          </button>
+          <button class="icon-btn" title="Delete" style="color: #ef4444;">
+            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+          </button>
+        </div>
+
+        <!-- CENTER: Player + Info (55%) -->
+        <div class="w-[55%]">
+          <div class="video-placeholder max-h-[500px]">
+            <div class="text-gray-500 text-center">
+              <svg class="w-16 h-16 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <p>Video Player (55% width)</p>
+            </div>
+            <div class="absolute bottom-3 right-3 bg-black/70 px-2 py-1 rounded text-xs text-gray-300 flex items-center gap-2">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="2" y1="5" x2="2" y2="19"></line>
+                <line x1="11" y1="12" x2="4" y2="12"></line>
+                <polyline points="7,9 4,12 7,15"></polyline>
+                <line x1="13" y1="12" x2="20" y2="12"></line>
+                <polyline points="17,9 20,12 17,15"></polyline>
+                <line x1="22" y1="5" x2="22" y2="19"></line>
+              </svg>
+              Theater Mode
+            </div>
+          </div>
+
+          <div class="mt-4 space-y-3">
+            <h1 class="text-xl font-bold" style="color: hsl(var(--text-primary))">
+              Example Video Title - Currently Playing
+            </h1>
+            <div class="flex flex-wrap items-center gap-3 text-sm" style="color: hsl(var(--text-secondary))">
+              <a href="#" class="hover:text-white transition-colors font-medium">Channel Name</a>
+              <span>•</span>
+              <span>12:34</span>
+              <span>•</span>
+              <span>Jan 15, 2026</span>
+              <span>•</span>
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                    style="background: hsl(var(--accent) / 0.2); border: 1px solid hsl(var(--accent) / 0.4); color: hsl(var(--accent-text))">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Watched
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Queue Sidebar (40%) -->
+        <div class="card w-[40%] flex-shrink-0 flex flex-col" style="max-height: 500px;">
+          <div class="p-4 border-b flex-shrink-0" style="border-color: hsl(var(--border))">
+            <div class="flex items-center justify-between mb-3">
+              <div>
+                <h2 class="font-semibold" style="color: hsl(var(--text-primary))">My Playlist</h2>
+                <p class="text-sm" style="color: hsl(var(--text-secondary))">3 of 8 videos</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button class="icon-btn icon-btn-sm" title="Previous">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                  <line x1="5" y1="19" x2="5" y2="5"></line>
+                </svg>
+              </button>
+              <button class="icon-btn icon-btn-sm" title="Shuffle">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 3 21 3 21 8"></polyline>
+                  <line x1="4" y1="20" x2="21" y2="3"></line>
+                  <polyline points="21 16 21 21 16 21"></polyline>
+                  <line x1="15" y1="15" x2="21" y2="21"></line>
+                  <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+              </button>
+              <button class="icon-btn icon-btn-sm active" title="Loop">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="17 1 21 5 17 9"></polyline>
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                  <polyline points="7 23 3 19 7 15"></polyline>
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+              </button>
+              <button class="icon-btn icon-btn-sm" title="Next">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                  <line x1="19" y1="5" x2="19" y2="19"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="vertical-queue flex-1 overflow-y-auto">
+            <div class="queue-item"><div class="queue-thumbnail"></div><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">First Video in Playlist</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Channel • 5:32</p></div></div>
+            <div class="queue-item"><div class="queue-thumbnail"></div><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">Second Video Title</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Channel • 8:15</p></div></div>
+            <div class="queue-item active"><div class="queue-thumbnail" style="background: hsl(var(--accent) / 0.3);"></div><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" style="color: hsl(var(--accent-text))">Currently Playing Video</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Channel Name • 12:34</p></div></div>
+            <div class="queue-item"><div class="queue-thumbnail"></div><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">Fourth Video</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Channel • 3:45</p></div></div>
+            <div class="queue-item"><div class="queue-thumbnail"></div><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">Fifth Video</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Channel • 10:22</p></div></div>
+            <div class="queue-item"><div class="queue-thumbnail"></div><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">Sixth Video</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Channel • 7:18</p></div></div>
+            <div class="queue-item"><div class="queue-thumbnail"></div><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">Seventh Video</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Channel • 15:00</p></div></div>
+            <div class="queue-item"><div class="queue-thumbnail"></div><div class="flex-1 min-w-0"><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">Eighth Video</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Channel • 4:56</p></div></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- THEATER MODE LAYOUT -->
+    <div id="theater-layout" class="fade-transition hidden-element">
+
+      <!-- Full-Width Video -->
+      <div class="video-placeholder max-h-[calc(100vh-16rem)]">
+        <div class="text-gray-500 text-center">
+          <svg class="w-20 h-20 mx-auto mb-2 opacity-50" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M8 5v14l11-7z"/>
+          </svg>
+          <p class="text-lg">Full-Width Video Player</p>
+          <p class="text-sm mt-1 opacity-70">Theater Mode Active</p>
+        </div>
+        <div class="absolute bottom-3 right-3 bg-black/70 px-2 py-1 rounded text-xs text-gray-300 flex items-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="1" y1="12" x2="6" y2="12"></line>
+            <polyline points="3,9 6,12 3,15"></polyline>
+            <line x1="9" y1="5" x2="9" y2="19"></line>
+            <line x1="15" y1="5" x2="15" y2="19"></line>
+            <line x1="23" y1="12" x2="18" y2="12"></line>
+            <polyline points="21,9 18,12 21,15"></polyline>
+          </svg>
+          Default View
+        </div>
+      </div>
+
+      <!-- Video Info -->
+      <div class="mt-4 space-y-3">
+        <h1 class="text-2xl font-bold" style="color: hsl(var(--text-primary))">
+          Example Video Title - Now in Theater Mode
+        </h1>
+        <div class="flex flex-wrap items-center gap-3 text-sm" style="color: hsl(var(--text-secondary))">
+          <a href="#" class="hover:text-white transition-colors font-medium">Channel Name</a>
+          <span>•</span>
+          <span>12:34</span>
+          <span>•</span>
+          <span>Jan 15, 2026</span>
+          <span>•</span>
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold"
+                style="background: hsl(var(--accent) / 0.2); border: 1px solid hsl(var(--accent) / 0.4); color: hsl(var(--accent-text))">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            Watched
+          </span>
+        </div>
+      </div>
+
+      <!-- Queue Under Video (horizontal scroll) -->
+      <div class="card mt-4">
+        <!-- Combined Header: Back | Playlist Info | Playlist Controls | Action Buttons -->
+        <div class="p-4 border-b flex items-center gap-4" style="border-color: hsl(var(--border))">
+
+          <!-- Back Button -->
+          <button class="icon-btn icon-btn-sm flex-shrink-0" title="Back">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+          </button>
+
+          <!-- Playlist Info -->
+          <div class="flex-shrink-0">
+            <h2 class="font-semibold" style="color: hsl(var(--text-primary))">My Playlist</h2>
+            <p class="text-sm" style="color: hsl(var(--text-secondary))">3 of 8 videos</p>
+          </div>
+
+          <!-- Playlist Controls + Action Buttons (grouped together) -->
+          <div class="flex items-center gap-2">
+            <button class="icon-btn icon-btn-sm" title="Previous">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                <line x1="5" y1="19" x2="5" y2="5"></line>
+              </svg>
+            </button>
+            <button class="icon-btn icon-btn-sm" title="Shuffle">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="16 3 21 3 21 8"></polyline>
+                <line x1="4" y1="20" x2="21" y2="3"></line>
+                <polyline points="21 16 21 21 16 21"></polyline>
+                <line x1="15" y1="15" x2="21" y2="21"></line>
+                <line x1="4" y1="4" x2="9" y2="9"></line>
+              </svg>
+            </button>
+            <button class="icon-btn icon-btn-sm active" title="Loop">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="17 1 21 5 17 9"></polyline>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <polyline points="7 23 3 19 7 15"></polyline>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+              </svg>
+            </button>
+            <button class="icon-btn icon-btn-sm" title="Next">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                <line x1="19" y1="5" x2="19" y2="19"></line>
+              </svg>
+            </button>
+
+            <!-- Divider -->
+            <div class="w-px h-6 mx-1" style="background: hsl(var(--border-light))"></div>
+
+            <!-- Action Buttons (Add, Watch, Delete) - immediately after Next -->
+            <button class="icon-btn icon-btn-sm" title="Add to playlist">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14m-7-7h14"></path>
+              </svg>
+            </button>
+            <button class="icon-btn icon-btn-sm" title="Mark as watched">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+            </button>
+            <button class="icon-btn icon-btn-sm" title="Delete" style="color: #ef4444;">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Horizontal Queue with Overlay Scroll Buttons -->
+        <div class="horizontal-queue-wrapper">
+          <!-- Left Scroll Overlay -->
+          <div class="scroll-overlay left" id="scroll-left" onclick="scrollQueueLeft()">
+            <button class="scroll-btn" aria-label="Scroll left">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Queue Track -->
+          <div class="horizontal-queue" id="horizontal-queue">
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">1. Introduction to React</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Tech Academy • 5:32</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">2. State Management</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Code School • 8:15</p></div>
+            <div class="queue-item queue-item-horizontal active"><div class="queue-thumbnail" style="background: hsl(var(--accent) / 0.3);"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--accent-text))">3. Currently Playing</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Dev Channel • 12:34</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">4. React Hooks Deep Dive</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Frontend Pro • 3:45</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">5. useEffect Explained</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">React Masters • 10:22</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">6. Context API Tutorial</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">JS Weekly • 7:18</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">7. Redux Fundamentals</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">State Mgmt • 15:00</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">8. React Router v6</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Routing Pro • 4:56</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">9. Testing with Jest</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Test Masters • 11:20</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">10. TypeScript Basics</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">TS Academy • 9:45</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">11. Advanced Patterns</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Pro Dev • 14:30</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">12. Performance Tips</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Perf Guru • 8:55</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">13. Server Components</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Next.js Team • 16:40</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">14. Data Fetching</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">API Masters • 7:22</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">15. Error Boundaries</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Error Pro • 5:15</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">16. Suspense Guide</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Async Dev • 12:08</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">17. Code Splitting</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Bundle Pro • 6:33</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">18. Memoization</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Optimize It • 9:17</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">19. Custom Hooks</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Hook Master • 11:45</p></div>
+            <div class="queue-item queue-item-horizontal"><div class="queue-thumbnail"></div><p class="text-sm font-medium truncate" style="color: hsl(var(--text-primary))">20. Final Project</p><p class="text-xs truncate" style="color: hsl(var(--text-secondary))">Build It • 25:00</p></div>
+          </div>
+
+          <!-- Right Scroll Overlay -->
+          <div class="scroll-overlay right" id="scroll-right" onclick="scrollQueueRight()">
+            <button class="scroll-btn" aria-label="Scroll right">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    let isTheaterMode = false;
+
+    const queue = document.getElementById('horizontal-queue');
+    const scrollLeftBtn = document.getElementById('scroll-left');
+    const scrollRightBtn = document.getElementById('scroll-right');
+
+    function scrollQueueLeft() {
+      if (queue) {
+        queue.scrollBy({ left: -400, behavior: 'smooth' });
+      }
+    }
+
+    function scrollQueueRight() {
+      if (queue) {
+        queue.scrollBy({ left: 400, behavior: 'smooth' });
+      }
+    }
+
+    function updateScrollOverlays() {
+      if (!queue || !scrollLeftBtn || !scrollRightBtn) return;
+      const { scrollLeft, scrollWidth, clientWidth } = queue;
+      const atStart = scrollLeft <= 10;
+      const atEnd = scrollLeft >= scrollWidth - clientWidth - 10;
+
+      scrollLeftBtn.classList.toggle('hidden', atStart);
+      scrollRightBtn.classList.toggle('hidden', atEnd);
+    }
+
+    // Initialize scroll overlay visibility
+    if (queue) {
+      queue.addEventListener('scroll', updateScrollOverlays);
+      updateScrollOverlays();
+    }
+
+    function toggleTheaterMode() {
+      isTheaterMode = !isTheaterMode;
+
+      const normalLayout = document.getElementById('normal-layout');
+      const theaterLayout = document.getElementById('theater-layout');
+      const toggleLabel = document.getElementById('toggle-label');
+      const modeBadge = document.getElementById('mode-badge-text');
+      const app = document.getElementById('app');
+      const container = document.getElementById('container');
+
+      if (isTheaterMode) {
+        normalLayout.classList.add('hidden-element');
+        theaterLayout.classList.remove('hidden-element');
+        toggleLabel.textContent = 'Default View';
+        modeBadge.textContent = 'THEATER MODE';
+        app.style.padding = '0.5rem';
+        container.classList.remove('max-w-screen-2xl');
+        // Update scroll overlays after theater layout is visible
+        setTimeout(updateScrollOverlays, 50);
+      } else {
+        normalLayout.classList.remove('hidden-element');
+        theaterLayout.classList.add('hidden-element');
+        toggleLabel.textContent = 'Theater Mode';
+        modeBadge.textContent = 'NORMAL MODE';
+        app.style.padding = '';
+        container.classList.add('max-w-screen-2xl');
+      }
+    }
+  </script>
+
+</body>
+</html>
