@@ -667,7 +667,7 @@ export default function PlaylistPlayer() {
               </div>
 
               {/* Video Info */}
-              <div className="mt-4 space-y-3">
+              <div className={`mt-4 space-y-3 ${isTheaterMode ? 'mx-6' : ''}`}>
                 <h1 className={`font-bold text-text-primary leading-tight ${isTheaterMode ? 'text-2xl' : 'text-xl'}`}>
                   {currentVideo.title}
                 </h1>
