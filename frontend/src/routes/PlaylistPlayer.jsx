@@ -803,24 +803,39 @@ export default function PlaylistPlayer() {
 
                   {/* Horizontal Queue with Overlay Scroll Buttons */}
                   <div className="relative group">
-                    {/* Left Scroll Overlay */}
+                    {/* Left Scroll Overlay - Frosted Glass Panel */}
                     {canScrollLeft && (
                       <div
                         onClick={() => scrollQueue('left')}
-                        className="absolute left-0 top-0 bottom-0 w-16 z-10 flex items-center justify-center cursor-pointer transition-all duration-300 opacity-70 hover:opacity-100"
-                        style={{
-                          background: 'linear-gradient(to right, hsl(var(--bg-surface) / 0.95) 0%, hsl(var(--bg-surface) / 0.7) 50%, transparent 100%)',
-                          borderRadius: '0 0 0 0.75rem'
-                        }}
+                        className="absolute left-0 top-0 bottom-0 w-20 z-10 flex items-center justify-center cursor-pointer group/nav"
+                        aria-label="Scroll left"
                       >
-                        <button
-                          className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-hover/90 backdrop-blur-sm text-text-primary transition-all hover:scale-110 hover:bg-surface-hover hover:shadow-lg"
-                          aria-label="Scroll left"
+                        {/* Frosted glass background */}
+                        <div
+                          className="absolute inset-0 backdrop-blur-md transition-all duration-300 opacity-80 group-hover/nav:opacity-95"
+                          style={{
+                            background: 'linear-gradient(to right, hsl(var(--bg-surface) / 0.85) 0%, hsl(var(--bg-surface) / 0.6) 60%, transparent 100%)',
+                            borderRadius: '0 0 0 0.75rem'
+                          }}
+                        />
+                        {/* Inner edge accent line */}
+                        <div
+                          className="absolute right-0 top-4 bottom-4 w-px opacity-0 group-hover/nav:opacity-60 transition-opacity duration-300"
+                          style={{ background: 'linear-gradient(to bottom, transparent, hsl(var(--accent) / 0.5), transparent)' }}
+                        />
+                        {/* Arrow button - illuminated glass disc */}
+                        <div
+                          className="relative z-10 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-xl transition-all duration-300 group-hover/nav:scale-110"
+                          style={{
+                            background: 'radial-gradient(circle at 30% 30%, hsl(var(--bg-surface-hover) / 0.95) 0%, hsl(var(--bg-surface) / 0.9) 100%)',
+                            border: '1px solid hsl(0 0% 100% / 0.2)',
+                            boxShadow: 'inset 0 2px 4px hsl(0 0% 100% / 0.12), inset 0 -2px 4px hsl(0 0% 0% / 0.2), 0 0 0 1px hsl(0 0% 0% / 0.1), 0 8px 24px hsl(0 0% 0% / 0.4)'
+                          }}
                         >
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <svg className="w-6 h-6 text-text-primary/90 group-hover/nav:text-text-primary transition-colors drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <polyline points="15 18 9 12 15 6"></polyline>
                           </svg>
-                        </button>
+                        </div>
                       </div>
                     )}
 
@@ -870,24 +885,39 @@ export default function PlaylistPlayer() {
                       })}
                     </div>
 
-                    {/* Right Scroll Overlay */}
+                    {/* Right Scroll Overlay - Frosted Glass Panel */}
                     {canScrollRight && (
                       <div
                         onClick={() => scrollQueue('right')}
-                        className="absolute right-0 top-0 bottom-0 w-16 z-10 flex items-center justify-center cursor-pointer transition-all duration-300 opacity-70 hover:opacity-100"
-                        style={{
-                          background: 'linear-gradient(to left, hsl(var(--bg-surface) / 0.95) 0%, hsl(var(--bg-surface) / 0.7) 50%, transparent 100%)',
-                          borderRadius: '0 0 0.75rem 0'
-                        }}
+                        className="absolute right-0 top-0 bottom-0 w-20 z-10 flex items-center justify-center cursor-pointer group/nav"
+                        aria-label="Scroll right"
                       >
-                        <button
-                          className="w-10 h-10 rounded-full flex items-center justify-center bg-surface-hover/90 backdrop-blur-sm text-text-primary transition-all hover:scale-110 hover:bg-surface-hover hover:shadow-lg"
-                          aria-label="Scroll right"
+                        {/* Frosted glass background */}
+                        <div
+                          className="absolute inset-0 backdrop-blur-md transition-all duration-300 opacity-80 group-hover/nav:opacity-95"
+                          style={{
+                            background: 'linear-gradient(to left, hsl(var(--bg-surface) / 0.85) 0%, hsl(var(--bg-surface) / 0.6) 60%, transparent 100%)',
+                            borderRadius: '0 0 0.75rem 0'
+                          }}
+                        />
+                        {/* Inner edge accent line */}
+                        <div
+                          className="absolute left-0 top-4 bottom-4 w-px opacity-0 group-hover/nav:opacity-60 transition-opacity duration-300"
+                          style={{ background: 'linear-gradient(to bottom, transparent, hsl(var(--accent) / 0.5), transparent)' }}
+                        />
+                        {/* Arrow button - illuminated glass disc */}
+                        <div
+                          className="relative z-10 w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-xl transition-all duration-300 group-hover/nav:scale-110"
+                          style={{
+                            background: 'radial-gradient(circle at 30% 30%, hsl(var(--bg-surface-hover) / 0.95) 0%, hsl(var(--bg-surface) / 0.9) 100%)',
+                            border: '1px solid hsl(0 0% 100% / 0.2)',
+                            boxShadow: 'inset 0 2px 4px hsl(0 0% 100% / 0.12), inset 0 -2px 4px hsl(0 0% 0% / 0.2), 0 0 0 1px hsl(0 0% 0% / 0.1), 0 8px 24px hsl(0 0% 0% / 0.4)'
+                          }}
                         >
-                          <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                          <svg className="w-6 h-6 text-text-primary/90 group-hover/nav:text-text-primary transition-colors drop-shadow-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                             <polyline points="9 18 15 12 9 6"></polyline>
                           </svg>
-                        </button>
+                        </div>
                       </div>
                     )}
                   </div>
