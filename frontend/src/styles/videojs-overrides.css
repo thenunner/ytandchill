@@ -189,6 +189,12 @@
   max-height: 100%;
 }
 
+/* Mobile poster/thumbnail fills the player area */
+.player-wrapper-mobile .video-js .vjs-poster {
+  background-size: cover !important;
+  background-position: center !important;
+}
+
 /* Video.js player - absolutely positioned to fill wrapper */
 .video-js {
   position: absolute !important;
