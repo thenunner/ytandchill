@@ -194,10 +194,23 @@
   position: absolute !important;
   top: 0 !important;
   left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
   width: 100% !important;
   height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: #000 !important;
   background-size: cover !important;
   background-position: center !important;
+}
+
+/* Video.js v8+ uses an img element inside the poster */
+.player-wrapper-mobile .video-js .vjs-poster img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  object-position: center !important;
 }
 
 /* Video.js player - absolutely positioned to fill wrapper */
