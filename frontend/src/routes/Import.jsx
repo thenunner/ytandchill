@@ -429,34 +429,80 @@ export default function Import() {
                 )}
               </div>
 
-              <div className="text-sm text-text-secondary mb-2">Select the correct match:</div>
-              <div className="space-y-2 max-h-40 overflow-y-auto mb-3">
-                {currentPending.matches?.map(video => (
-                  <button
-                    key={video.id}
-                    onClick={() => setSelectedVideoId(video.id)}
-                    className={`w-full text-left p-2 rounded-lg border transition-colors ${
-                      selectedVideoId === video.id
-                        ? 'border-accent bg-accent/10'
-                        : 'border-dark-border bg-dark-tertiary hover:border-dark-border-light'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className={`w-3 h-3 rounded-full border-2 ${
-                        selectedVideoId === video.id ? 'border-accent bg-accent' : 'border-text-muted'
-                      }`} />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-text-primary text-sm truncate">{video.title}</div>
-                        <div className="text-text-muted text-xs">
-                          {formatDuration(video.duration)} - {video.channel_title}
-                          {video.duration_match && (
-                            <span className="ml-2 text-green-400">duration match</span>
-                          )}
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-sm text-text-secondary">Select the correct match:</div>
+                <div className="text-xs text-text-muted">
+                  {currentPending.matches?.length} option{currentPending.matches?.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+              <div className="space-y-2 max-h-64 overflow-y-auto mb-3">
+                {currentPending.matches?.map((video, idx) => {
+                  // Calculate confidence percentage from title_similarity (0.0 to 1.0)
+                  const confidence = Math.round((video.title_similarity || 0) * 100);
+                  const isSelected = selectedVideoId === video.id;
+                  const isBestMatch = idx === 0;
+
+                  // Color bands: green 90%+, amber 70-89%, slate <70%
+                  const getConfidenceColor = (conf) => {
+                    if (conf >= 90) return { badge: 'bg-green-500/20 text-green-400', bar: 'bg-green-500/60', border: 'border-green-500/30' };
+                    if (conf >= 70) return { badge: 'bg-amber-500/20 text-amber-400', bar: 'bg-amber-500/60', border: 'border-amber-500/30' };
+                    return { badge: 'bg-slate-500/20 text-slate-400', bar: 'bg-slate-500/60', border: 'border-slate-500/30' };
+                  };
+                  const colors = getConfidenceColor(confidence);
+
+                  return (
+                    <button
+                      key={video.id}
+                      onClick={() => setSelectedVideoId(video.id)}
+                      className={`relative w-full text-left p-3 rounded-lg border transition-all ${
+                        isSelected
+                          ? `${colors.border} bg-dark-tertiary ring-1 ring-accent/50`
+                          : 'border-dark-border bg-dark-tertiary hover:border-dark-border-light'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Radio indicator */}
+                        <div className={`mt-0.5 w-4 h-4 rounded-full border-2 flex-shrink-0 ${
+                          isSelected ? 'border-accent bg-accent' : 'border-text-muted'
+                        }`} />
+
+                        {/* Confidence badge */}
+                        <div className={`px-2 py-0.5 rounded font-mono text-sm font-bold flex-shrink-0 ${colors.badge}`}>
+                          {confidence}%
+                        </div>
+
+                        {/* Video info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-text-primary text-sm truncate">{video.title}</div>
+                          <div className="flex items-center gap-2 text-text-muted text-xs mt-0.5">
+                            <span>{formatDuration(video.duration)}</span>
+                            <span className="text-text-muted/50">•</span>
+                            <span className="truncate">{video.channel_title}</span>
+                          </div>
+
+                          {/* Badges row */}
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            {video.duration_match && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 font-medium">
+                                ✓ duration match
+                              </span>
+                            )}
+                            {isBestMatch && (
+                              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/20 text-accent-text font-medium">
+                                ★ BEST MATCH
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+
+                      {/* Confidence bar at bottom */}
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-dark-border/50 rounded-b-lg overflow-hidden">
+                        <div className={`h-full transition-all ${colors.bar}`} style={{ width: `${confidence}%` }} />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="flex gap-2">
