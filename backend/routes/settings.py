@@ -263,9 +263,13 @@ def _embed_date_metadata(file_path, upload_date):
 
 @settings_bp.route('/api/settings/missing-metadata', methods=['GET'])
 def get_missing_metadata():
-    """Get count of library videos missing upload_date and non-library videos with broken thumbnails."""
+    """Get count of library videos missing upload_date, non-library videos with broken thumbnails,
+    channels with missing thumbnail files, and library videos with missing thumbnail files."""
     global _session_factory
     from sqlalchemy import or_
+    from database import Channel
+
+    downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
 
     with get_session(_session_factory) as session:
         # Library videos missing upload_date
@@ -291,10 +295,34 @@ def get_missing_metadata():
             )
         ).all()
 
+        # Channels with missing thumbnail file on disk (active channels only)
+        channels = session.query(Channel).filter(Channel.deleted_at.is_(None)).all()
+        missing_channel_thumbs = 0
+        for channel in channels:
+            thumb_path = os.path.join(downloads_folder, 'thumbnails', f'{channel.yt_id}.jpg')
+            if not os.path.exists(thumb_path):
+                missing_channel_thumbs += 1
+
+        # Library videos with missing thumbnail file on disk
+        library_videos = session.query(Video).filter(Video.status == 'library').all()
+        missing_video_thumbs = 0
+        for video in library_videos:
+            if video.thumb_url and not video.thumb_url.startswith('http'):
+                thumb_path = os.path.join(downloads_folder, video.thumb_url)
+                if not os.path.exists(thumb_path):
+                    missing_video_thumbs += 1
+            elif video.channel and video.yt_id:
+                # Construct expected path if thumb_url not set
+                thumb_path = os.path.join(downloads_folder, video.channel.folder_name, f'{video.yt_id}.jpg')
+                if not os.path.exists(thumb_path):
+                    missing_video_thumbs += 1
+
         return jsonify({
             'count': len(videos),
             'videos': missing_videos,
-            'broken_thumbnails': len(broken_thumb_videos)
+            'broken_thumbnails': len(broken_thumb_videos),
+            'missing_channel_thumbnails': missing_channel_thumbs,
+            'missing_video_thumbnails': missing_video_thumbs
         })
 
 
@@ -413,6 +441,51 @@ def fix_upload_dates():
             session.commit()
             logger.info(f"Fixed {thumbnails_fixed} broken thumbnail URLs")
 
+        # Fix missing channel thumbnail files
+        from database import Channel
+        from utils import ensure_channel_thumbnail, download_thumbnail
+
+        downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
+        channels = session.query(Channel).filter(Channel.deleted_at.is_(None)).all()
+        channel_thumbs_fixed = 0
+
+        for channel in channels:
+            thumb_path = os.path.join(downloads_folder, 'thumbnails', f'{channel.yt_id}.jpg')
+            if not os.path.exists(thumb_path):
+                result = ensure_channel_thumbnail(channel.yt_id, downloads_folder)
+                if result:
+                    channel_thumbs_fixed += 1
+                    logger.info(f"Downloaded channel thumbnail for {channel.title}")
+
+        # Fix missing library video thumbnail files
+        library_videos = session.query(Video).filter(Video.status == 'library').all()
+        video_thumbs_fixed = 0
+
+        for video in library_videos:
+            # Determine expected thumbnail path
+            if video.thumb_url and not video.thumb_url.startswith('http'):
+                thumb_path = os.path.join(downloads_folder, video.thumb_url)
+            elif video.channel and video.yt_id:
+                thumb_path = os.path.join(downloads_folder, video.channel.folder_name, f'{video.yt_id}.jpg')
+            else:
+                continue
+
+            if not os.path.exists(thumb_path):
+                # Download thumbnail from YouTube
+                thumb_url = f"https://img.youtube.com/vi/{video.yt_id}/maxresdefault.jpg"
+                if download_thumbnail(thumb_url, thumb_path):
+                    video_thumbs_fixed += 1
+                    logger.info(f"Downloaded video thumbnail for {video.title}")
+                else:
+                    # Fallback to hqdefault if maxresdefault fails
+                    thumb_url = f"https://img.youtube.com/vi/{video.yt_id}/hqdefault.jpg"
+                    if download_thumbnail(thumb_url, thumb_path):
+                        video_thumbs_fixed += 1
+                        logger.info(f"Downloaded video thumbnail (fallback) for {video.title}")
+
+        if channel_thumbs_fixed > 0 or video_thumbs_fixed > 0:
+            logger.info(f"Fixed {channel_thumbs_fixed} channel thumbnails, {video_thumbs_fixed} video thumbnails")
+
     return jsonify({
         'success': True,
         'updated': updated_count,
@@ -420,7 +493,9 @@ def fix_upload_dates():
         'failed': failed_count,
         'total': total,
         'method': 'api' if api_used else ('yt-dlp' if total > 0 else 'none'),
-        'thumbnails_fixed': thumbnails_fixed
+        'thumbnails_fixed': thumbnails_fixed,
+        'channel_thumbnails_fixed': channel_thumbs_fixed,
+        'video_thumbnails_fixed': video_thumbs_fixed
     })
 
 
@@ -1018,14 +1093,20 @@ def purge_deleted_channels():
 
                 # Delete channel folder if it exists (no library videos = safe to delete)
                 folder_deleted = False
+                downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
                 if channel.folder_name:
                     import shutil
-                    downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
                     channel_folder = os.path.join(downloads_dir, channel.folder_name)
                     if os.path.exists(channel_folder) and os.path.isdir(channel_folder):
                         shutil.rmtree(channel_folder)
                         folder_deleted = True
                         logger.info(f"Deleted channel folder: {channel_folder}")
+
+                # Delete channel thumbnail if it exists
+                thumb_path = os.path.join(downloads_dir, 'thumbnails', f'{channel.yt_id}.jpg')
+                if os.path.exists(thumb_path):
+                    os.remove(thumb_path)
+                    logger.info(f"Deleted channel thumbnail: {thumb_path}")
 
                 # Delete the channel
                 session.delete(channel)
