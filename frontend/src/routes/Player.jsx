@@ -275,7 +275,7 @@ export default function Player() {
           </div>
 
           {/* Video Info Below Player */}
-          <div className="mt-2 md:mt-4 space-y-2 md:space-y-3">
+          <div className={`mt-2 md:mt-4 space-y-2 md:space-y-3 ${isTheaterMode ? 'mx-6' : ''}`}>
             <h1 className="text-lg md:text-2xl font-bold text-text-primary leading-tight line-clamp-2">
               {video.title}
             </h1>
