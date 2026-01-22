@@ -153,13 +153,14 @@
 }
 
 /* ===== MOBILE PLAYER WRAPPER ===== */
-/* Dedicated mobile class - breaks out of parent px-6 padding for full width */
+/* Dedicated mobile class - uses viewport width for reliable edge-to-edge sizing */
 .player-wrapper-mobile {
   position: relative;
-  /* Break out of parent's px-6 (24px) padding */
-  width: calc(100% + 48px);
-  margin-left: -24px;
-  margin-right: -24px;
+  /* Use viewport width for reliable full-bleed regardless of parent padding */
+  width: 100vw;
+  /* Center the element by offsetting half the overflow */
+  margin-left: calc(-50vw + 50%);
+  margin-right: calc(-50vw + 50%);
   aspect-ratio: 16 / 9;
   max-height: calc(100dvh - 200px);
   background: black;
