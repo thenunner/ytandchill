@@ -1605,7 +1605,7 @@ export default function Settings() {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-text-primary">Repair Metadata <span className="text-text-muted font-normal">({(missingMetadataData?.count || 0) + (missingMetadataData?.broken_thumbnails || 0)} found)</span></div>
+                    <div className="font-medium text-text-primary">Repair Metadata <span className="text-text-muted font-normal">({(missingMetadataData?.count || 0) + (missingMetadataData?.broken_thumbnails || 0) + (missingMetadataData?.missing_channel_thumbnails || 0) + (missingMetadataData?.missing_video_thumbnails || 0)} found)</span></div>
                     <div className="text-xs text-text-secondary mt-1">Fix missing upload dates and missing channel/video thumbnails</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
@@ -1757,7 +1757,7 @@ export default function Settings() {
               <h3 className="text-lg font-semibold text-text-primary">Fix Video Metadata</h3>
             </div>
             <div className="px-6 py-4">
-              {missingMetadataData.count === 0 && (missingMetadataData.broken_thumbnails || 0) === 0 ? (
+              {missingMetadataData.count === 0 && (missingMetadataData.broken_thumbnails || 0) === 0 && (missingMetadataData.missing_channel_thumbnails || 0) === 0 && (missingMetadataData.missing_video_thumbnails || 0) === 0 ? (
                 <p className="text-sm text-text-secondary">✓ No metadata issues found</p>
               ) : (
                 <>
@@ -1768,7 +1768,17 @@ export default function Settings() {
                   )}
                   {(missingMetadataData.broken_thumbnails || 0) > 0 && (
                     <p className="text-sm text-text-secondary mb-3">
-                      Found <span className="font-semibold text-text-primary">{missingMetadataData.broken_thumbnails}</span> video{missingMetadataData.broken_thumbnails !== 1 ? 's' : ''} with broken thumbnail{missingMetadataData.broken_thumbnails !== 1 ? 's' : ''}.
+                      Found <span className="font-semibold text-text-primary">{missingMetadataData.broken_thumbnails}</span> video{missingMetadataData.broken_thumbnails !== 1 ? 's' : ''} with broken thumbnail URL{missingMetadataData.broken_thumbnails !== 1 ? 's' : ''}.
+                    </p>
+                  )}
+                  {(missingMetadataData.missing_channel_thumbnails || 0) > 0 && (
+                    <p className="text-sm text-text-secondary mb-3">
+                      Found <span className="font-semibold text-text-primary">{missingMetadataData.missing_channel_thumbnails}</span> channel{missingMetadataData.missing_channel_thumbnails !== 1 ? 's' : ''} missing thumbnail file.
+                    </p>
+                  )}
+                  {(missingMetadataData.missing_video_thumbnails || 0) > 0 && (
+                    <p className="text-sm text-text-secondary mb-3">
+                      Found <span className="font-semibold text-text-primary">{missingMetadataData.missing_video_thumbnails}</span> library video{missingMetadataData.missing_video_thumbnails !== 1 ? 's' : ''} missing thumbnail file.
                     </p>
                   )}
                   {missingMetadataData.count > 0 && (
@@ -1800,13 +1810,13 @@ export default function Settings() {
               <button onClick={() => setShowMetadataFixModal(false)} className="btn btn-secondary flex-1">
                 Cancel
               </button>
-              {(missingMetadataData.count > 0 || (missingMetadataData.broken_thumbnails || 0) > 0) && (
+              {(missingMetadataData.count > 0 || (missingMetadataData.broken_thumbnails || 0) > 0 || (missingMetadataData.missing_channel_thumbnails || 0) > 0 || (missingMetadataData.missing_video_thumbnails || 0) > 0) && (
                 <button
                   onClick={handleFixMetadata}
                   disabled={isFixingMetadata}
                   className="btn btn-primary flex-1 disabled:opacity-50"
                 >
-                  {isFixingMetadata ? 'Fixing...' : `Fix ${missingMetadataData.count + (missingMetadataData.broken_thumbnails || 0)} Issue${(missingMetadataData.count + (missingMetadataData.broken_thumbnails || 0)) !== 1 ? 's' : ''}`}
+                  {isFixingMetadata ? 'Fixing...' : `Fix ${missingMetadataData.count + (missingMetadataData.broken_thumbnails || 0) + (missingMetadataData.missing_channel_thumbnails || 0) + (missingMetadataData.missing_video_thumbnails || 0)} Issue${(missingMetadataData.count + (missingMetadataData.broken_thumbnails || 0) + (missingMetadataData.missing_channel_thumbnails || 0) + (missingMetadataData.missing_video_thumbnails || 0)) !== 1 ? 's' : ''}`}
                 </button>
               )}
             </div>
