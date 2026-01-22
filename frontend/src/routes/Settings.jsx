@@ -1580,7 +1580,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-text-primary">Unavailable Videos <span className="text-text-muted font-normal">({repairData.not_found_videos?.length || 0} found)</span></div>
-                    <div className="text-xs text-text-secondary mt-1">Remove videos no longer playable on YouTube</div>
+                    <div className="text-xs text-text-secondary mt-1">Remove videos from DB no longer playable on YouTube</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
@@ -1593,7 +1593,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-text-primary">Purge Channels <span className="text-text-muted font-normal">({repairData.deletable_channels?.length || 0} found)</span></div>
-                    <div className="text-xs text-text-secondary mt-1">Delete removed channels and their videos from DB</div>
+                    <div className="text-xs text-text-secondary mt-1">Delete removed channels fully from DB and locally</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
@@ -1606,7 +1606,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-text-primary">Repair Metadata <span className="text-text-muted font-normal">({(missingMetadataData?.count || 0) + (missingMetadataData?.broken_thumbnails || 0)} found)</span></div>
-                    <div className="text-xs text-text-secondary mt-1">Fix missing upload dates and broken thumbnails</div>
+                    <div className="text-xs text-text-secondary mt-1">Fix missing upload dates and missing channel/video thumbnails</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
