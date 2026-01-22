@@ -45,6 +45,7 @@ export default function Channels() {
   const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'title-asc'); // Sort option
   const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
   const [editMode, setEditMode] = useState(false); // Edit mode for bulk selection
+  const [showChannelInfo, setShowChannelInfo] = useState(null); // Track which channel shows info modal
 
   // Category filter state
   const [selectedCategories, setSelectedCategories] = useState(() => {
@@ -425,6 +426,20 @@ export default function Channels() {
     } else {
       return `Scan: ${scanStr} | Video: None`;
     }
+  };
+
+  // Helper function to format datetime for Channel Info modal
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   };
 
   // Filter and sort channels (memoized for performance)
@@ -1086,6 +1101,19 @@ export default function Channels() {
                     </div>
                   )}
 
+                  {/* Channel Info */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowChannelInfo(channel);
+                      setMenuOpen(null);
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
+                  >
+                    <span className="font-medium">Channel Info</span>
+                  </button>
+
                   {/* Delete Channel */}
                   <button
                     onClick={(e) => {
@@ -1276,6 +1304,67 @@ export default function Channels() {
               >
                 {deleteChannel.isPending ? 'Deleting...' : 'Delete'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Channel Info Modal */}
+      {showChannelInfo && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowChannelInfo(null)}
+        >
+          <div
+            className="bg-dark-secondary rounded-lg max-w-lg w-full shadow-2xl border border-dark-border"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between p-4 border-b border-dark-border">
+              <h3 className="text-lg font-semibold text-text-primary">Channel Info</h3>
+              <button
+                onClick={() => setShowChannelInfo(null)}
+                className="text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="p-4 space-y-1 text-sm font-mono">
+              <div className="flex">
+                <span className="text-text-secondary w-24 flex-shrink-0">ID:</span>
+                <span className="text-text-primary">{showChannelInfo.id}</span>
+              </div>
+              <div className="flex">
+                <span className="text-text-secondary w-24 flex-shrink-0">YT ID:</span>
+                <span className="text-text-primary">{showChannelInfo.yt_id}</span>
+              </div>
+              <div className="flex">
+                <span className="text-text-secondary w-24 flex-shrink-0">Title:</span>
+                <span className="text-text-primary">{showChannelInfo.title}</span>
+              </div>
+              <div className="flex">
+                <span className="text-text-secondary w-24 flex-shrink-0">Thumbnail:</span>
+                <span className="text-text-primary truncate" title={showChannelInfo.thumbnail || '-'}>
+                  {showChannelInfo.thumbnail || '-'}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="text-text-secondary w-24 flex-shrink-0">Folder:</span>
+                <span className="text-text-primary">{showChannelInfo.folder_name}</span>
+              </div>
+              <div className="flex">
+                <span className="text-text-secondary w-24 flex-shrink-0">Last Scan:</span>
+                <span className="text-text-primary">
+                  {showChannelInfo.last_scan_at ? formatDateTime(showChannelInfo.last_scan_at) : '-'}
+                </span>
+              </div>
+              <div className="flex">
+                <span className="text-text-secondary w-24 flex-shrink-0">Created:</span>
+                <span className="text-text-primary">
+                  {showChannelInfo.created_at ? formatDateTime(showChannelInfo.created_at) : '-'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
