@@ -294,16 +294,6 @@ function App() {
     }
   }, [isAuthenticated, location.pathname, navigate]);
 
-  // Auto-navigate to queue tab on initial app load if there are queue items
-  useEffect(() => {
-    const hasAutoNavigated = sessionStorage.getItem('queue-auto-nav');
-
-    if (!hasAutoNavigated && location.pathname === '/' && (pending > 0 || downloading > 0)) {
-      navigate('/queue');
-      sessionStorage.setItem('queue-auto-nav', 'true');
-    }
-  }, [location.pathname, pending, downloading, navigate]);
-
   // Memoize navLinks
   const navLinks = useMemo(() => [
     {
