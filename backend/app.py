@@ -223,6 +223,11 @@ def require_authentication():
     if request.path.startswith('/assets/'):
         return None
 
+    # Allow media files without auth (video/thumbnail serving)
+    # Video elements don't handle 401 responses gracefully - they trigger browser auth prompts
+    if request.path.startswith('/api/media/'):
+        return None
+
     # Allow root path for React app
     if request.path == '/' or not request.path.startswith('/api/'):
         return None

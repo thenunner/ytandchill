@@ -151,7 +151,7 @@ export function useVideoJsPlayer({
     console.log('[useVideoJsPlayer] Seek coordinator plugin enabled');
 
     // Apply default playback speed from settings
-    fetch('/api/settings')
+    fetch('/api/settings', { credentials: 'include' })
       .then(res => res.json())
       .then(settings => {
         const defaultSpeed = parseFloat(settings.default_playback_speed) || 1;
@@ -392,7 +392,7 @@ export function useVideoJsPlayer({
 
         // Check for and add subtitle track (VTT format)
         const subtitleUrl = videoSrc.replace(/\.[^.]+$/, '.en.vtt');
-        fetch(subtitleUrl, { method: 'HEAD' })
+        fetch(subtitleUrl, { method: 'HEAD', credentials: 'include' })
           .then(res => {
             if (res.ok && player && !player.isDisposed()) {
               player.addRemoteTextTrack({
