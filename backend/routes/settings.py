@@ -474,9 +474,19 @@ def fix_upload_dates():
             if not channel.yt_id or channel.yt_id.startswith('__') or channel.yt_id == 'singles':
                 continue
             thumb_path = os.path.join(downloads_folder, 'thumbnails', f'{channel.yt_id}.jpg')
-            if not os.path.exists(thumb_path):
+            expected_db_path = os.path.join('thumbnails', f'{channel.yt_id}.jpg')
+
+            if os.path.exists(thumb_path):
+                # File exists - ensure DB has correct local path
+                if channel.thumbnail != expected_db_path:
+                    channel.thumbnail = expected_db_path
+                    channel_thumbs_fixed += 1
+                    logger.info(f"Fixed channel thumbnail path in DB for {channel.title}")
+            else:
+                # File missing - download it
                 result = ensure_channel_thumbnail(channel.yt_id, downloads_folder, api_key=channel_api_key)
                 if result:
+                    channel.thumbnail = result  # Update database with local path
                     channel_thumbs_fixed += 1
                     logger.info(f"Downloaded channel thumbnail for {channel.title}")
                 else:
