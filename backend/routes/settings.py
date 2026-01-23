@@ -456,12 +456,12 @@ def fix_upload_dates():
             session.commit()
             logger.info(f"Fixed {thumbnails_fixed} broken thumbnail URLs")
 
-        # Fix missing channel thumbnail files
+        # Fix missing channel thumbnail files (all channels in DB, not just active)
         from database import Channel
         from utils import ensure_channel_thumbnail, download_thumbnail
 
         downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
-        channels = session.query(Channel).filter(Channel.deleted_at.is_(None)).all()
+        channels = session.query(Channel).all()
         channel_thumbs_fixed = 0
 
         for channel in channels:
@@ -471,6 +471,8 @@ def fix_upload_dates():
                 if result:
                     channel_thumbs_fixed += 1
                     logger.info(f"Downloaded channel thumbnail for {channel.title}")
+                else:
+                    logger.warning(f"Failed to download channel thumbnail for {channel.title} ({channel.yt_id})")
 
         # Fix missing library video thumbnail files
         library_videos = session.query(Video).filter(Video.status == 'library').all()

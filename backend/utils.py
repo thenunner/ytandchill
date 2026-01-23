@@ -129,10 +129,17 @@ def ensure_channel_thumbnail(channel_id, downloads_folder):
         channel_url = f"https://youtube.com/channel/{channel_id}"
         channel_info = get_channel_info(channel_url)
         if channel_info and channel_info.get('thumbnail'):
-            if download_thumbnail(channel_info['thumbnail'], thumb_path):
+            thumb_url = channel_info['thumbnail']
+            logger.info(f"Found channel thumbnail URL for {channel_id}: {thumb_url}")
+            if download_thumbnail(thumb_url, thumb_path):
+                logger.info(f"Downloaded channel thumbnail to {thumb_path}")
                 return relative_path
+            else:
+                logger.warning(f"Failed to download channel thumbnail from {thumb_url}")
+        else:
+            logger.warning(f"No thumbnail found in channel info for {channel_id}")
     except Exception as e:
-        logger.debug(f"Failed to fetch channel thumbnail for {channel_id}: {e}")
+        logger.warning(f"Failed to fetch channel thumbnail for {channel_id}: {e}")
 
     return None
 
