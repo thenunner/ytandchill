@@ -464,10 +464,13 @@ def fix_upload_dates():
         channels = session.query(Channel).all()
         channel_thumbs_fixed = 0
 
+        # Get API key for faster thumbnail fetching
+        channel_api_key = _settings_manager.get('youtube_api_key') if _settings_manager else None
+
         for channel in channels:
             thumb_path = os.path.join(downloads_folder, 'thumbnails', f'{channel.yt_id}.jpg')
             if not os.path.exists(thumb_path):
-                result = ensure_channel_thumbnail(channel.yt_id, downloads_folder)
+                result = ensure_channel_thumbnail(channel.yt_id, downloads_folder, api_key=channel_api_key)
                 if result:
                     channel_thumbs_fixed += 1
                     logger.info(f"Downloaded channel thumbnail for {channel.title}")
