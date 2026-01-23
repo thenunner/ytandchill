@@ -133,9 +133,9 @@ export default function Library() {
   // Fetch all playlists
   const { data: playlists, isLoading: playlistsLoading } = usePlaylists();
 
-  // Group videos by channel OR folder_name (for playlist videos) - memoized to prevent thumbnail flickering
+  // Group videos by channel OR folder_name (for playlist videos)
   // This creates a flat list of all folders: channel folders + playlist folders
-  const allChannelsList = useMemo(() => {
+  const channelFolders = useMemo(() => {
     if (!videos) return [];
 
     return Object.values(videos.reduce((acc, video) => {
@@ -173,16 +173,25 @@ export default function Library() {
         }
       }
       return acc;
-    }, {})).map(folder => {
-      // Use first video's thumbnail for consistent display (avoid flickering from random selection)
-      const firstVideo = folder.videos[0];
+    }, {}));
+  }, [videos]);
+
+  // Store random seed per mount - changes only on navigation, not on data refetch
+  const randomSeedRef = useRef(Math.random());
+
+  // Apply random thumbnail selection using stable seed
+  const allChannelsList = useMemo(() => {
+    return channelFolders.map((folder, index) => {
+      // Combine seed with folder index for unique random per folder
+      const randomIndex = Math.floor((randomSeedRef.current * (index + 1) * 9999) % folder.videos.length);
+      const randomVideo = folder.videos[randomIndex];
       return {
         ...folder,
-        thumbnail: firstVideo?.thumb_url,
+        thumbnail: randomVideo?.thumb_url,
         allWatched: folder.watchedCount === folder.videoCount,
       };
     });
-  }, [videos]);
+  }, [channelFolders]);
 
   // Filter and sort channels based on search input (only actual channel folders, not singles)
   const channelsList = useMemo(() => {
