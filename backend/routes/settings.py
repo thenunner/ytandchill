@@ -296,9 +296,13 @@ def get_missing_metadata():
         ).all()
 
         # Channels with missing thumbnail file on disk (all channels in DB)
+        # Skip placeholder channels like __singles__ that aren't real YouTube channels
         channels = session.query(Channel).all()
         missing_channel_thumbs = []
         for channel in channels:
+            # Skip placeholder/special channel IDs
+            if not channel.yt_id or channel.yt_id.startswith('__') or channel.yt_id == 'singles':
+                continue
             thumb_path = os.path.join(downloads_folder, 'thumbnails', f'{channel.yt_id}.jpg')
             if not os.path.exists(thumb_path):
                 missing_channel_thumbs.append({
@@ -466,6 +470,9 @@ def fix_upload_dates():
         channel_api_key = _settings_manager.get('youtube_api_key') if _settings_manager else None
 
         for channel in channels:
+            # Skip placeholder/special channel IDs
+            if not channel.yt_id or channel.yt_id.startswith('__') or channel.yt_id == 'singles':
+                continue
             thumb_path = os.path.join(downloads_folder, 'thumbnails', f'{channel.yt_id}.jpg')
             if not os.path.exists(thumb_path):
                 result = ensure_channel_thumbnail(channel.yt_id, downloads_folder, api_key=channel_api_key)

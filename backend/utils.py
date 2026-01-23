@@ -118,6 +118,10 @@ def ensure_channel_thumbnail(channel_id, downloads_folder, api_key=None):
     Returns:
         str or None: Relative thumbnail path (e.g., 'thumbnails/UC...jpg') if exists/downloaded, None otherwise
     """
+    # Skip placeholder/special channel IDs that aren't real YouTube channels
+    if not channel_id or channel_id.startswith('__') or channel_id == 'singles':
+        return None
+
     thumb_filename = f"{channel_id}.jpg"
     thumb_path = os.path.join(downloads_folder, 'thumbnails', thumb_filename)
     relative_path = os.path.join('thumbnails', thumb_filename)
