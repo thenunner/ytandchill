@@ -153,9 +153,6 @@ export default function Player() {
     }
   }, [playerRef, video?.file_path, video?.id]);
 
-  // For compatibility with existing code
-  const playerInstanceRef = playerRef;
-
   if (isLoading) {
     return <LoadingSpinner />;
   }

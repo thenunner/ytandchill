@@ -21,6 +21,7 @@ export default function Videos() {
   // State
   const [playlistUrl, setPlaylistUrl] = useState('');
   const [scanResults, setScanResults] = useState(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   // URL history state
   const [showUrlHistory, setShowUrlHistory] = useState(false);
@@ -73,7 +74,6 @@ export default function Videos() {
   const [filterMode, setFilterMode] = useState('new'); // 'new' or 'all'
   const [statusFilter, setStatusFilter] = useState('available'); // 'all', 'available', 'ignored', 'error'
   const [searchInput, setSearchInput] = useState(''); // Search filter for video titles
-  const [showScrollTop, setShowScrollTop] = useState(false);
 
   const handleScan = async (e, filter = filterMode) => {
     if (e) e.preventDefault();

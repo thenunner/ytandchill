@@ -17,9 +17,11 @@ import os
 import logging
 import requests
 import yt_dlp
-from database import Setting, Video, get_session
+from database import Setting, Video, Channel, get_session
+from sqlalchemy import or_
 from utils import update_log_level, get_stored_credentials, check_auth_credentials
 from youtube_api import test_api_key
+import glob
 from events import queue_events
 
 logger = logging.getLogger(__name__)
@@ -266,8 +268,6 @@ def get_missing_metadata():
     """Get count of library videos missing upload_date, non-library videos with broken thumbnails,
     channels with missing thumbnail files, and library videos with missing thumbnail files."""
     global _session_factory
-    from sqlalchemy import or_
-    from database import Channel
 
     downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
 
@@ -438,7 +438,6 @@ def fix_upload_dates():
                     failed_count += 1
 
         # Fix broken thumbnail URLs for non-library videos
-        from sqlalchemy import or_
         broken_thumb_videos = session.query(Video).filter(
             Video.status != 'library',
             or_(
@@ -457,7 +456,6 @@ def fix_upload_dates():
             logger.info(f"Fixed {thumbnails_fixed} broken thumbnail URLs")
 
         # Fix missing channel thumbnail files (all channels in DB, not just active)
-        from database import Channel
         from utils import ensure_channel_thumbnail, download_thumbnail
 
         downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
@@ -698,7 +696,6 @@ def get_logs():
 def clear_logs():
     """Clear log files - 'current' clears today's log, 'all' deletes all log files"""
     try:
-        import glob
         scope = request.args.get('scope', 'all')  # 'all' or 'current'
         log_dir = 'logs'
         log_file = os.path.join(log_dir, 'app.log')
@@ -1074,7 +1071,7 @@ def remove_not_found_videos():
 @settings_bp.route('/api/queue/purge-channels', methods=['POST'])
 def purge_deleted_channels():
     """Permanently delete selected soft-deleted channels and all their videos"""
-    from database import Channel, Video, Playlist, PlaylistVideo
+    from database import Playlist, PlaylistVideo
 
     data = request.json
     channel_ids = data.get('channel_ids', [])
@@ -1115,7 +1112,6 @@ def purge_deleted_channels():
                 folder_deleted = False
                 downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
                 if channel.folder_name:
-                    import shutil
                     channel_folder = os.path.join(downloads_dir, channel.folder_name)
                     if os.path.exists(channel_folder) and os.path.isdir(channel_folder):
                         shutil.rmtree(channel_folder)
