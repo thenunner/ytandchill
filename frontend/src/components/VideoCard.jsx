@@ -530,7 +530,6 @@ export default function VideoCard({
               </button>
             </div>
             <div className="p-4 space-y-1 text-sm font-mono">
-              <InfoRow label="ID" value={video.id} />
               <InfoRow label="YT ID" value={video.yt_id} />
               <InfoRow label="Title" value={video.title} />
               <InfoRow label="Status" value={video.status} />

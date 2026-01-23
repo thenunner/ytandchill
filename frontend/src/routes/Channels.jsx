@@ -1332,10 +1332,6 @@ export default function Channels() {
             </div>
             <div className="p-4 space-y-1 text-sm font-mono">
               <div className="flex">
-                <span className="text-text-secondary w-24 flex-shrink-0">ID:</span>
-                <span className="text-text-primary">{showChannelInfo.id}</span>
-              </div>
-              <div className="flex">
                 <span className="text-text-secondary w-24 flex-shrink-0">YT ID:</span>
                 <span className="text-text-primary">{showChannelInfo.yt_id}</span>
               </div>
