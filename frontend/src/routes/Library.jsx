@@ -174,11 +174,11 @@ export default function Library() {
       }
       return acc;
     }, {})).map(folder => {
-      // Pick a random video thumbnail for this folder (only once per video list)
-      const randomVideo = folder.videos[Math.floor(Math.random() * folder.videos.length)];
+      // Use first video's thumbnail for consistent display (avoid flickering from random selection)
+      const firstVideo = folder.videos[0];
       return {
         ...folder,
-        thumbnail: randomVideo.thumb_url,
+        thumbnail: firstVideo?.thumb_url,
         allWatched: folder.watchedCount === folder.videoCount,
       };
     });
@@ -1251,7 +1251,7 @@ export default function Library() {
                                       className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
                                     >
                                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 3h9a2 2 0 0 1 2 2z"></path>
+                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
                                       </svg>
                                       Category Options
                                     </button>

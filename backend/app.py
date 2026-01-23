@@ -5,7 +5,6 @@ import secrets
 from datetime import datetime, timezone, timedelta
 import os
 import yt_dlp
-import requests as http_requests
 from database import init_db, Channel, Video, Playlist, PlaylistVideo, QueueItem, Setting, Category, ChannelCategory, get_session
 from downloader import DownloadWorker
 from scheduler import AutoRefreshScheduler
