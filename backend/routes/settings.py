@@ -295,34 +295,49 @@ def get_missing_metadata():
             )
         ).all()
 
-        # Channels with missing thumbnail file on disk (active channels only)
-        channels = session.query(Channel).filter(Channel.deleted_at.is_(None)).all()
-        missing_channel_thumbs = 0
+        # Channels with missing thumbnail file on disk (all channels in DB)
+        channels = session.query(Channel).all()
+        missing_channel_thumbs = []
         for channel in channels:
             thumb_path = os.path.join(downloads_folder, 'thumbnails', f'{channel.yt_id}.jpg')
             if not os.path.exists(thumb_path):
-                missing_channel_thumbs += 1
+                missing_channel_thumbs.append({
+                    'id': channel.id,
+                    'yt_id': channel.yt_id,
+                    'title': channel.title
+                })
 
         # Library videos with missing thumbnail file on disk
         library_videos = session.query(Video).filter(Video.status == 'library').all()
-        missing_video_thumbs = 0
+        missing_video_thumbs = []
         for video in library_videos:
+            is_missing = False
             if video.thumb_url and not video.thumb_url.startswith('http'):
                 thumb_path = os.path.join(downloads_folder, video.thumb_url)
                 if not os.path.exists(thumb_path):
-                    missing_video_thumbs += 1
+                    is_missing = True
             elif video.channel and video.yt_id:
                 # Construct expected path if thumb_url not set
                 thumb_path = os.path.join(downloads_folder, video.channel.folder_name, f'{video.yt_id}.jpg')
                 if not os.path.exists(thumb_path):
-                    missing_video_thumbs += 1
+                    is_missing = True
+
+            if is_missing:
+                missing_video_thumbs.append({
+                    'id': video.id,
+                    'yt_id': video.yt_id,
+                    'title': video.title,
+                    'channel_title': video.channel.title if video.channel else None
+                })
 
         return jsonify({
             'count': len(videos),
             'videos': missing_videos,
             'broken_thumbnails': len(broken_thumb_videos),
-            'missing_channel_thumbnails': missing_channel_thumbs,
-            'missing_video_thumbnails': missing_video_thumbs
+            'missing_channel_thumbnails': len(missing_channel_thumbs),
+            'missing_channel_thumbs_list': missing_channel_thumbs[:50],  # Limit for display
+            'missing_video_thumbnails': len(missing_video_thumbs),
+            'missing_video_thumbs_list': missing_video_thumbs[:50]  # Limit for display
         })
 
 
