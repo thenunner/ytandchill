@@ -104,13 +104,16 @@ def download_thumbnail(url, save_path):
         return False
 
 
-def ensure_channel_thumbnail(channel_id, downloads_folder):
+def ensure_channel_thumbnail(channel_id, downloads_folder, api_key=None):
     """
     Ensure channel thumbnail exists, downloading if necessary.
+
+    Uses YouTube API if api_key provided (fast), otherwise falls back to yt-dlp.
 
     Args:
         channel_id: YouTube channel ID (e.g., 'UC0QuCui5pNF9k9fiNXkqn_w')
         downloads_folder: Base downloads folder path
+        api_key: Optional YouTube API key for faster fetching
 
     Returns:
         str or None: Relative thumbnail path (e.g., 'thumbnails/UC...jpg') if exists/downloaded, None otherwise
@@ -123,23 +126,39 @@ def ensure_channel_thumbnail(channel_id, downloads_folder):
     if os.path.exists(thumb_path):
         return relative_path
 
-    # Get real channel thumbnail URL via yt-dlp
-    try:
-        from scanner import get_channel_info
-        channel_url = f"https://youtube.com/channel/{channel_id}"
-        channel_info = get_channel_info(channel_url)
-        if channel_info and channel_info.get('thumbnail'):
-            thumb_url = channel_info['thumbnail']
-            logger.info(f"Found channel thumbnail URL for {channel_id}: {thumb_url}")
-            if download_thumbnail(thumb_url, thumb_path):
-                logger.info(f"Downloaded channel thumbnail to {thumb_path}")
-                return relative_path
-            else:
-                logger.warning(f"Failed to download channel thumbnail from {thumb_url}")
+    thumb_url = None
+
+    # Try YouTube API first (fast)
+    if api_key:
+        try:
+            from youtube_api import fetch_channel_thumbnail
+            thumb_url = fetch_channel_thumbnail(channel_id, api_key)
+            if thumb_url:
+                logger.info(f"Found channel thumbnail via API for {channel_id}")
+        except Exception as e:
+            logger.warning(f"API fetch failed for channel {channel_id}: {e}")
+
+    # Fall back to yt-dlp if no API key or API failed
+    if not thumb_url:
+        try:
+            from scanner import get_channel_info
+            channel_url = f"https://youtube.com/channel/{channel_id}"
+            channel_info = get_channel_info(channel_url)
+            if channel_info and channel_info.get('thumbnail'):
+                thumb_url = channel_info['thumbnail']
+                logger.info(f"Found channel thumbnail via yt-dlp for {channel_id}")
+        except Exception as e:
+            logger.warning(f"yt-dlp fetch failed for channel {channel_id}: {e}")
+
+    # Download the thumbnail if we found a URL
+    if thumb_url:
+        if download_thumbnail(thumb_url, thumb_path):
+            logger.info(f"Downloaded channel thumbnail to {thumb_path}")
+            return relative_path
         else:
-            logger.warning(f"No thumbnail found in channel info for {channel_id}")
-    except Exception as e:
-        logger.warning(f"Failed to fetch channel thumbnail for {channel_id}: {e}")
+            logger.warning(f"Failed to download channel thumbnail from {thumb_url}")
+    else:
+        logger.warning(f"No thumbnail found for channel {channel_id}")
 
     return None
 
