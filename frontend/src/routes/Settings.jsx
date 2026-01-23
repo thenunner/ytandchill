@@ -1749,80 +1749,140 @@ export default function Settings() {
       )}
 
       {/* Fix Video Metadata Modal */}
-      {showMetadataFixModal && missingMetadataData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowMetadataFixModal(false)} />
-          <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-2xl w-full">
-            <div className="px-6 py-4 border-b border-dark-border">
-              <h3 className="text-lg font-semibold text-text-primary">Fix Video Metadata</h3>
-            </div>
-            <div className="px-6 py-4">
-              {missingMetadataData.count === 0 && (missingMetadataData.broken_thumbnails || 0) === 0 && (missingMetadataData.missing_channel_thumbnails || 0) === 0 && (missingMetadataData.missing_video_thumbnails || 0) === 0 ? (
-                <p className="text-sm text-text-secondary">✓ No metadata issues found</p>
-              ) : (
-                <>
-                  {missingMetadataData.count > 0 && (
-                    <p className="text-sm text-text-secondary mb-3">
-                      Found <span className="font-semibold text-text-primary">{missingMetadataData.count}</span> library video{missingMetadataData.count !== 1 ? 's' : ''} missing upload date.
-                    </p>
-                  )}
-                  {(missingMetadataData.broken_thumbnails || 0) > 0 && (
-                    <p className="text-sm text-text-secondary mb-3">
-                      Found <span className="font-semibold text-text-primary">{missingMetadataData.broken_thumbnails}</span> video{missingMetadataData.broken_thumbnails !== 1 ? 's' : ''} with broken thumbnail URL{missingMetadataData.broken_thumbnails !== 1 ? 's' : ''}.
-                    </p>
-                  )}
-                  {(missingMetadataData.missing_channel_thumbnails || 0) > 0 && (
-                    <p className="text-sm text-text-secondary mb-3">
-                      Found <span className="font-semibold text-text-primary">{missingMetadataData.missing_channel_thumbnails}</span> channel{missingMetadataData.missing_channel_thumbnails !== 1 ? 's' : ''} missing thumbnail file.
-                    </p>
-                  )}
-                  {(missingMetadataData.missing_video_thumbnails || 0) > 0 && (
-                    <p className="text-sm text-text-secondary mb-3">
-                      Found <span className="font-semibold text-text-primary">{missingMetadataData.missing_video_thumbnails}</span> library video{missingMetadataData.missing_video_thumbnails !== 1 ? 's' : ''} missing thumbnail file.
-                    </p>
-                  )}
-                  {missingMetadataData.count > 0 && (
-                    <p className="text-sm text-text-secondary mb-4">
-                      {hasApiKey
-                        ? 'Will use YouTube API for fast batch fetching.'
-                        : 'Will use yt-dlp (slower). Add a YouTube API key in settings for faster processing.'}
-                    </p>
-                  )}
-                  {missingMetadataData.videos?.length > 0 && (
-                    <div className="max-h-64 overflow-y-auto space-y-2 mb-4">
-                      {missingMetadataData.videos.slice(0, 20).map((video) => (
-                        <div key={video.id} className="p-2 bg-dark-tertiary border border-dark-border rounded text-sm">
-                          <div className="font-medium text-text-primary truncate">{video.title}</div>
-                          <div className="text-xs text-text-secondary">{video.channel_title}</div>
-                        </div>
-                      ))}
-                      {missingMetadataData.count > 20 && (
-                        <p className="text-xs text-text-muted text-center py-2">
-                          ...and {missingMetadataData.count - 20} more
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-            <div className="px-6 py-4 border-t border-dark-border flex gap-3">
-              <button onClick={() => setShowMetadataFixModal(false)} className="btn btn-secondary flex-1">
-                Cancel
+      {showMetadataFixModal && missingMetadataData && (() => {
+        const totalIssues = (missingMetadataData.count || 0) + (missingMetadataData.broken_thumbnails || 0) + (missingMetadataData.missing_channel_thumbnails || 0) + (missingMetadataData.missing_video_thumbnails || 0);
+        const IssueSection = ({ title, count, items, icon, isChannel }) => {
+          const [expanded, setExpanded] = useState(false);
+          if (count === 0) return null;
+          return (
+            <div className="rounded-lg bg-dark-tertiary border border-dark-border overflow-hidden">
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-dark-hover transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
+                  <span className="text-sm font-medium text-text-primary">{title}</span>
+                  <span className="px-2 py-0.5 rounded text-xs font-mono bg-dark-hover text-text-secondary">
+                    {count} {isChannel ? (count === 1 ? 'channel' : 'channels') : (count === 1 ? 'video' : 'videos')}
+                  </span>
+                </div>
+                <svg className={`w-4 h-4 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                </svg>
               </button>
-              {(missingMetadataData.count > 0 || (missingMetadataData.broken_thumbnails || 0) > 0 || (missingMetadataData.missing_channel_thumbnails || 0) > 0 || (missingMetadataData.missing_video_thumbnails || 0) > 0) && (
-                <button
-                  onClick={handleFixMetadata}
-                  disabled={isFixingMetadata}
-                  className="btn btn-primary flex-1 disabled:opacity-50"
-                >
-                  {isFixingMetadata ? 'Fixing...' : `Fix ${missingMetadataData.count + (missingMetadataData.broken_thumbnails || 0) + (missingMetadataData.missing_channel_thumbnails || 0) + (missingMetadataData.missing_video_thumbnails || 0)} Issue${(missingMetadataData.count + (missingMetadataData.broken_thumbnails || 0) + (missingMetadataData.missing_channel_thumbnails || 0) + (missingMetadataData.missing_video_thumbnails || 0)) !== 1 ? 's' : ''}`}
-                </button>
+              {expanded && items?.length > 0 && (
+                <div className="px-4 pb-3 space-y-1.5">
+                  {items.slice(0, 20).map((item) => (
+                    <div key={item.id} className="flex items-center gap-3 px-3 py-2 rounded bg-dark-primary/50">
+                      <div className={`w-8 h-8 ${isChannel ? 'rounded-full' : 'rounded'} flex-shrink-0 flex items-center justify-center bg-dark-hover`}>
+                        {icon}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm text-text-primary truncate">{item.title}</div>
+                        {item.channel_title && <div className="text-xs text-text-muted">{item.channel_title}</div>}
+                        {isChannel && <div className="text-xs font-mono text-text-muted">{item.yt_id?.slice(0, 8)}...</div>}
+                      </div>
+                    </div>
+                  ))}
+                  {count > 20 && (
+                    <p className="text-xs text-text-muted text-center py-2">...and {count - 20} more</p>
+                  )}
+                </div>
               )}
+            </div>
+          );
+        };
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowMetadataFixModal(false)} />
+            <div className="relative bg-dark-secondary border border-dark-border-light rounded-xl shadow-2xl max-w-2xl w-full animate-scale-in">
+              {/* Header */}
+              <div className="px-6 py-4 border-b border-dark-border flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-accent/15">
+                    <svg className="w-5 h-5 text-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-text-primary">Repair Metadata</h3>
+                    <p className="text-xs text-text-muted">{totalIssues} issue{totalIssues !== 1 ? 's' : ''} found</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowMetadataFixModal(false)} className="w-8 h-8 rounded-lg flex items-center justify-center bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              {/* Content */}
+              <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
+                {totalIssues === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <div className="w-16 h-16 rounded-full flex items-center justify-center bg-green-500/15 mb-4">
+                      <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-text-primary">All Clear</p>
+                    <p className="text-xs text-text-muted">No metadata issues found</p>
+                  </div>
+                ) : (
+                  <>
+                    <IssueSection
+                      title="Missing Upload Dates"
+                      count={missingMetadataData.count || 0}
+                      items={missingMetadataData.videos}
+                      icon={<svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>}
+                    />
+                    <IssueSection
+                      title="Broken Thumbnail URLs"
+                      count={missingMetadataData.broken_thumbnails || 0}
+                      items={[]}
+                      icon={<svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>}
+                    />
+                    <IssueSection
+                      title="Missing Channel Thumbnails"
+                      count={missingMetadataData.missing_channel_thumbnails || 0}
+                      items={missingMetadataData.missing_channel_thumbs_list}
+                      isChannel={true}
+                      icon={<svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>}
+                    />
+                    <IssueSection
+                      title="Missing Video Thumbnails"
+                      count={missingMetadataData.missing_video_thumbnails || 0}
+                      items={missingMetadataData.missing_video_thumbs_list}
+                      icon={<svg className="w-4 h-4 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>}
+                    />
+                  </>
+                )}
+              </div>
+              {/* Footer */}
+              <div className="px-6 py-4 border-t border-dark-border flex items-center justify-between bg-dark-tertiary/50">
+                <p className="text-xs text-text-muted">
+                  {hasApiKey ? <><span className="text-accent">Tip:</span> Will use YouTube API for fast fetching</> : <><span className="text-yellow-500">Note:</span> Add API key for faster processing</>}
+                </p>
+                <div className="flex gap-3">
+                  <button onClick={() => setShowMetadataFixModal(false)} className="btn btn-secondary">Cancel</button>
+                  {totalIssues > 0 && (
+                    <button onClick={handleFixMetadata} disabled={isFixingMetadata} className="btn btn-primary disabled:opacity-50 flex items-center gap-2">
+                      {isFixingMetadata ? 'Fixing...' : (
+                        <>
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                          </svg>
+                          Fix {totalIssues} Issue{totalIssues !== 1 ? 's' : ''}
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Reset Auth Confirmation Modal */}
       {showResetAuthModal && (
