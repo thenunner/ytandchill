@@ -1,9 +1,8 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useQueue, useHealth, useAuthCheck, useFirstRunCheck } from './api/queries';
+import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels } from './api/queries';
 import { useQueueSSE } from './api/useQueueSSE';
 import { useNotification } from './contexts/NotificationContext';
-import { useTheme } from './contexts/ThemeContext';
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from './api/client';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
@@ -17,11 +16,13 @@ import PlaylistPlayer from './routes/PlaylistPlayer';
 import Setup from './routes/Setup';
 import Login from './routes/Login';
 import Import from './routes/Import';
-import NavItem from './components/NavItem';
 import ErrorBoundary from './components/ErrorBoundary';
 import UpdateBanner from './components/UpdateBanner';
 import Toast from './components/Toast';
-import { SettingsIcon } from './components/icons';
+import MobileBottomNav from './components/MobileBottomNav';
+import {
+  SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon
+} from './components/icons';
 import { version as APP_VERSION } from '../package.json';
 
 function App() {
@@ -30,11 +31,10 @@ function App() {
   // SSE keeps queue data updated in real-time across all components
   const { isConnected: sseConnected } = useQueueSSE();
   const { data: queueData } = useQueue({ sseConnected });
+  const { data: channelsData } = useChannels();
   const { data: health } = useHealth();
   const { showNotification, removeToast } = useNotification();
-  const { theme } = useTheme();
-  const [showKebabMenu, setShowKebabMenu] = useState(false);
-  const kebabMenuRef = useRef(null);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const clearingCookieWarningRef = useRef(false);
 
   // Update state
@@ -42,10 +42,6 @@ function App() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
-  // Theater mode state (for reducing padding when expanded)
-  const [isTheaterMode, setIsTheaterMode] = useState(() =>
-    localStorage.getItem('theaterMode') === 'true'
-  );
 
   // Track if update toast has been shown (one-time notification)
   const updateToastShownRef = useRef(false);
@@ -80,14 +76,6 @@ function App() {
     }
   }, [health?.latest_version, showNotification]);
 
-  // Listen for theater mode changes (from player toggle)
-  useEffect(() => {
-    const handleStorage = () => {
-      setIsTheaterMode(localStorage.getItem('theaterMode') === 'true');
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
 
   // Handle update banner dismiss
   const handleBannerDismiss = () => {
@@ -243,19 +231,6 @@ function App() {
     prevDownloadRef.current = currentDownload;
   }, [currentDownload, isPaused, showNotification, removeToast]);
 
-  // Close kebab menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (kebabMenuRef.current && !kebabMenuRef.current.contains(event.target)) {
-        setShowKebabMenu(false);
-      }
-    };
-
-    if (showKebabMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showKebabMenu]);
 
   // Auth checks using React Query
   const { data: firstRunData, isLoading: firstRunLoading } = useFirstRunCheck();
@@ -294,53 +269,12 @@ function App() {
     }
   }, [isAuthenticated, location.pathname, navigate]);
 
-  // Memoize navLinks
-  const navLinks = useMemo(() => [
-    {
-      path: '/',
-      label: 'Channels',
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 2H3v16h5v4l4-4h5l4-4V2zm-10 9V7m5 4V7"></path>
-        </svg>
-      )
-    },
-    {
-      path: '/library',
-      label: 'Library',
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-        </svg>
-      )
-    },
-    {
-      path: '/videos',
-      label: 'Videos',
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-          <polyline points="14 2 14 8 20 8"></polyline>
-          <line x1="16" y1="13" x2="8" y2="13"></line>
-          <line x1="16" y1="17" x2="8" y2="17"></line>
-          <polyline points="10 9 9 9 8 9"></polyline>
-        </svg>
-      )
-    },
-    {
-      path: '/queue',
-      label: 'Queue',
-      badge: pending + downloading,
-      icon: (
-        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-          <polyline points="7 10 12 15 17 10"></polyline>
-          <line x1="12" y1="15" x2="12" y2="3"></line>
-        </svg>
-      )
-    },
-  ], [pending, downloading]);
+  const queueCount = pending + downloading;
+
+  // Calculate total videos needing review across all channels (excluding Singles pseudo-channel)
+  const reviewCount = channelsData
+    ?.filter(channel => channel.yt_id !== '__singles__')
+    ?.reduce((total, channel) => total + (channel.video_count || 0), 0) || 0;
 
   // Show loading screen while checking auth
   if (isLoading) {
@@ -356,8 +290,10 @@ function App() {
     return <Navigate to="/setup" replace />;
   }
 
-  // Hide navigation on setup/login pages
+  // Hide navigation on setup/login pages and player pages (player has its own sidebar)
   const isAuthPage = location.pathname === '/setup' || location.pathname === '/login';
+  const isPlayerPage = location.pathname.startsWith('/player/') ||
+    location.pathname.startsWith('/play/');
 
   // Handle logout
   const handleLogout = async () => {
@@ -373,134 +309,137 @@ function App() {
     }
   };
 
-  return (
-    <div className="md:min-h-screen flex flex-col bg-dark-primary">
-      {/* Update Banner - above nav */}
-      {updateAvailable && !bannerDismissed && !isAuthPage && (
-        <UpdateBanner
-          currentVersion={APP_VERSION}
-          latestVersion={latestVersion}
-          onDismiss={handleBannerDismiss}
-        />
-      )}
+  // Sidebar nav item component
+  const SidebarNavLink = ({ to, icon, label, badge, onClick, isButton = false }) => {
+    const isActive = location.pathname === to ||
+      (to === '/' && location.pathname.startsWith('/channel/')) ||
+      (to === '/library' && location.pathname.startsWith('/playlist/'));
+    const baseClasses = `relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+      isActive
+        ? 'bg-accent/20 text-accent-text'
+        : 'text-text-secondary hover:bg-dark-hover hover:text-text-primary'
+    }`;
 
-      {/* Top Navigation Bar - Hidden on setup/login pages */}
-      {!isAuthPage && (
-        <header className="bg-dark-primary/95 backdrop-blur-lg sticky top-0 z-50 border-b border-dark-border">
-          <div className="max-w-screen-2xl mx-auto px-6 lg:px-12 xl:px-16">
-            {/* Main Nav Row */}
-            <div className="flex items-end justify-center gap-1 md:gap-2 h-[60px]">
-              {/* Nav Tabs */}
-              <nav role="navigation" aria-label="Main navigation" className="flex gap-1 md:gap-2">
-                {navLinks.map(link => (
-                  <NavItem
-                    key={link.path}
-                    to={link.path}
-                    icon={<span className="hidden md:inline-flex">{link.icon}</span>}
-                    label={link.label}
-                    badge={link.badge}
-                    className="snap-start flex-shrink-0 px-3 md:px-4"
-                  />
-                ))}
-              </nav>
+    if (isButton) {
+      return (
+        <button onClick={onClick} className={baseClasses} title={label}>
+          {icon}
+          {!sidebarCollapsed && <span className="text-sm font-medium">{label}</span>}
+        </button>
+      );
+    }
 
-              {/* Settings Tab - Hidden on mobile */}
-              <NavItem
-                to="/settings"
-                icon={<SettingsIcon />}
-                label="Settings"
-                indicator={updateAvailable && !bannerDismissed}
-                className="hidden md:flex"
-              />
+    return (
+      <Link to={to} className={baseClasses} title={label}>
+        {icon}
+        {!sidebarCollapsed && (
+          <>
+            <span className="text-sm font-medium">{label}</span>
+            {badge > 0 && (
+              <span className="bg-accent text-dark-primary text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+                {badge > 99 ? '99+' : badge}
+              </span>
+            )}
+          </>
+        )}
+        {sidebarCollapsed && badge > 0 && (
+          <span className="absolute -top-1 -right-1 bg-accent text-dark-primary text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
+            {badge > 99 ? '99+' : badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
 
-              {/* Logout Tab - Hidden on mobile */}
-              <NavItem
-                isButton={true}
-                onClick={handleLogout}
-                icon={
-                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                  </svg>
-                }
-                label="Logout"
-                className="hidden md:flex"
-              />
-
-              {/* Kebab Menu - Mobile only */}
-              <div className="relative flex-shrink-0 md:hidden" ref={kebabMenuRef}>
-                <button
-                  onClick={() => setShowKebabMenu(!showKebabMenu)}
-                  className={`flex items-center justify-center p-2 rounded-lg transition-colors ${
-                    showKebabMenu
-                      ? 'bg-dark-tertiary text-text-primary'
-                      : 'bg-dark-secondary text-text-secondary hover:bg-dark-tertiary'
-                  }`}
-                  title="More options"
-                >
-                  <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <circle cx="12" cy="5" r="2"></circle>
-                    <circle cx="12" cy="12" r="2"></circle>
-                    <circle cx="12" cy="19" r="2"></circle>
-                  </svg>
-                </button>
-
-                {/* Dropdown Menu */}
-                {showKebabMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 z-50">
-                    <Link
-                      to="/settings"
-                      onClick={() => setShowKebabMenu(false)}
-                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2 relative"
-                    >
-                      <SettingsIcon />
-                      Settings
-                      {updateAvailable && !bannerDismissed && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 w-2 h-2 bg-accent rounded-full" />
-                      )}
-                    </Link>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                      </svg>
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </header>
-      )}
-
-      {/* Main Content - no flex-1 on mobile to prevent expansion beyond content */}
-      <main className={`md:flex-1 w-full ${isAuthPage ? '' : isTheaterMode ? 'px-2 pb-2' : 'px-6 lg:px-12 xl:px-16 pb-2'}`}>
+  // Auth pages and player pages get their own layouts
+  if (isAuthPage || isPlayerPage) {
+    return (
+      <div className="min-h-screen bg-dark-primary">
         <ErrorBoundary>
           <Routes>
             <Route path="/setup" element={<Setup />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
-            <Route path="/videos" element={isAuthenticated ? <Videos /> : <Navigate to="/login" replace />} />
-            <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
-            <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
-            <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
-            <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
-            <Route path="/import" element={isAuthenticated ? <Import /> : <Navigate to="/login" replace />} />
-            <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
-            <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
             <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
             <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
             <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
-            <Route path="*" element={<NotFound />} />
           </Routes>
         </ErrorBoundary>
-      </main>
+        <Toast />
+      </div>
+    );
+  }
+
+  // Main layout with sidebar for all other pages
+  return (
+    <div className="flex h-screen overflow-hidden bg-dark-primary">
+      {/* Sidebar Navigation */}
+      <nav
+        className={`hidden md:flex flex-col bg-dark-secondary border-r border-dark-border transition-all duration-200 ${
+          sidebarCollapsed ? 'w-16' : 'w-40'
+        }`}
+      >
+        {/* Sidebar Header */}
+        <div className="flex items-center gap-1 p-2 border-b border-dark-border">
+          {!sidebarCollapsed && (
+            <span className="px-3 text-sm font-medium text-text-secondary">YTandChill</span>
+          )}
+          <button
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="py-1 rounded-lg hover:bg-dark-hover transition-colors"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <img src="/logo.png" alt="Logo" className="w-12 h-12" />
+          </button>
+        </div>
+
+        {/* Nav Links */}
+        <div className="flex-1 p-2 space-y-1">
+          <SidebarNavLink to="/" icon={<ChannelsIcon />} label="Channels" badge={reviewCount} />
+          <SidebarNavLink to="/library" icon={<LibraryIcon />} label="Library" />
+          <SidebarNavLink to="/queue" icon={<QueueIcon />} label="Queue" badge={queueCount} />
+        </div>
+
+        {/* Bottom Links */}
+        <div className="p-2 border-t border-dark-border space-y-1">
+          <SidebarNavLink to="/settings" icon={<SettingsIcon />} label="Settings" />
+          <SidebarNavLink isButton onClick={handleLogout} icon={<LogoutIcon />} label="Logout" />
+        </div>
+      </nav>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        {/* Update Banner */}
+        {updateAvailable && !bannerDismissed && (
+          <UpdateBanner
+            currentVersion={APP_VERSION}
+            latestVersion={latestVersion}
+            onDismiss={handleBannerDismiss}
+          />
+        )}
+
+        {/* Page Content */}
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-4 md:px-6 md:pb-6">
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
+              <Route path="/videos" element={isAuthenticated ? <Videos /> : <Navigate to="/login" replace />} />
+              <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
+              <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+              <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+              <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
+              <Route path="/import" element={isAuthenticated ? <Import /> : <Navigate to="/login" replace />} />
+              <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
+              <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ErrorBoundary>
+        </main>
+
+        {/* Mobile Bottom Navigation */}
+        <div className="md:hidden">
+          <MobileBottomNav queueCount={queueCount} reviewCount={reviewCount} />
+        </div>
+      </div>
 
       {/* Toast Notifications */}
       <Toast />
