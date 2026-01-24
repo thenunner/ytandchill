@@ -235,12 +235,7 @@ export default function ChannelLibrary() {
       const day = video.upload_date.slice(6, 8);
       const parsed = new Date(`${year}-${month}-${day}`);
 
-      // Debug: log if date is invalid
-      if (isNaN(parsed.getTime())) {
-        console.log('Invalid date for video:', video.title, 'upload_date:', video.upload_date);
-      }
-
-      return parsed;
+      return isNaN(parsed.getTime()) ? new Date(video.discovered_at || 0) : parsed;
     }
     // Fallback to discovered_at if neither is available
     return new Date(video.discovered_at || 0);
@@ -296,6 +291,11 @@ export default function ChannelLibrary() {
     setCurrentPage(1);
     setLoadedPages(1); // Reset mobile infinite scroll
   }, [searchInput, sort, durationFilter, contentFilter]);
+
+  // Clear selection when switching between to-review and ignored tabs
+  useEffect(() => {
+    setSelectedVideos([]);
+  }, [contentFilter]);
 
   // Adjust page if current page is now empty (after bulk delete/ignore)
   useEffect(() => {
@@ -518,7 +518,7 @@ export default function ChannelLibrary() {
             {/* Back Arrow */}
             <Link
               to={isLibraryMode ? "/library" : "/"}
-              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
+              className="flex items-center justify-center w-[35px] h-[35px] rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
               title={isLibraryMode ? "Back to Library" : "Back to Channels"}
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -536,7 +536,7 @@ export default function ChannelLibrary() {
                       newParams.delete('filter');
                       setSearchParams(newParams);
                     }}
-                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    className={`h-[35px] px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center ${
                       contentFilter === 'videos'
                         ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                         : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -546,7 +546,7 @@ export default function ChannelLibrary() {
                   </button>
                   <button
                     onClick={() => navigate('/library?tab=playlists')}
-                    className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary"
+                    className="h-[35px] px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary"
                   >
                     Playlists
                   </button>
@@ -559,7 +559,7 @@ export default function ChannelLibrary() {
                       newParams.delete('filter');
                       setSearchParams(newParams);
                     }}
-                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    className={`h-[35px] px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center ${
                       contentFilter === 'to-review'
                         ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                         : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -573,7 +573,7 @@ export default function ChannelLibrary() {
                       newParams.set('filter', 'ignored');
                       setSearchParams(newParams);
                     }}
-                    className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                    className={`h-[35px] px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center ${
                       contentFilter === 'ignored'
                         ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                         : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -692,16 +692,16 @@ export default function ChannelLibrary() {
             setSelectedVideos([]);
           }}
           actions={[
-            {
+            ...(selectedVideos.length > 0 ? [{
+              label: 'Playlist',
+              onClick: () => handleBulkAction('playlist'),
+              variant: 'default'
+            }] : []),
+            ...(selectedVideos.length > 0 ? [{
               label: 'Delete',
               onClick: () => handleBulkAction('delete'),
-              danger: true
-            },
-            {
-              label: 'Add to Playlist',
-              onClick: () => handleBulkAction('playlist'),
-              primary: true
-            }
+              variant: 'danger'
+            }] : [])
           ]}
         />
       )}
@@ -984,7 +984,7 @@ export default function ChannelLibrary() {
       ) : (() => {
         const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedVideos.length);
         return (
-        <div className="px-6 lg:px-12 xl:px-16">
+        <div className="px-0 sm:px-6 lg:px-12 xl:px-16">
           <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedVideos.map(video => (
             <VideoCard

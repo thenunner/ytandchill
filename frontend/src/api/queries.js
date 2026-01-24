@@ -550,16 +550,6 @@ export function useAddImportChannel() {
   });
 }
 
-export function useSetImportChannels() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (urls) => api.setImportChannels(urls),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
-    },
-  });
-}
-
 export function useFetchImportChannel() {
   const queryClient = useQueryClient();
   return useMutation({

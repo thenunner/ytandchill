@@ -33,5 +33,3 @@ export function useMediaQuery(query) {
 
   return matches;
 }
-
-export default useMediaQuery;

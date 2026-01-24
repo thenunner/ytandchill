@@ -19,8 +19,6 @@ import {
 } from '../components/icons';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-const DEBUG = false; // Set to true to enable console logging
-
 export default function PlaylistPlayer() {
   const { playlistId, categoryId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -89,6 +87,7 @@ export default function PlaylistPlayer() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Media query for mobile vs desktop (ensures only one video element exists at a time)
   const isMobile = useMediaQuery('(max-width: 767px)');
@@ -158,18 +157,15 @@ export default function PlaylistPlayer() {
   // Current video based on index
   const currentVideo = useMemo(() => {
     if (videos.length === 0) {
-      if (DEBUG) console.log('[PlaylistPlayer] No videos available');
       return null;
     }
     // Ensure currentIndex is valid
     const safeIndex = Math.min(currentIndex, displayOrder.length - 1);
     const actualIndex = displayOrder[safeIndex];
     if (actualIndex === undefined || actualIndex >= videos.length) {
-      if (DEBUG) console.warn('[PlaylistPlayer] Invalid video index:', actualIndex, 'falling back to first video');
       return videos[0];
     }
-    const video = videos[actualIndex];
-    return video;
+    return videos[actualIndex];
   }, [videos, displayOrder, currentIndex]);
 
   // Next video for preloading
@@ -196,7 +192,6 @@ export default function PlaylistPlayer() {
           // Find where this video is in the display order
           const displayIdx = displayOrder.findIndex(i => i === actualIdx);
           if (displayIdx !== -1) {
-            if (DEBUG) console.log(`Setting initial video: ID=${videoId}, actualIdx=${actualIdx}, displayIdx=${displayIdx}`);
             setCurrentIndex(displayIdx);
           } else {
             // Fallback: if not in display order yet, use actual index
@@ -241,59 +236,29 @@ export default function PlaylistPlayer() {
 
   // Navigation functions
   const goToNext = useCallback(() => {
-    if (DEBUG) console.log('[PlaylistPlayer] goToNext called. currentIndex:', currentIndex, 'displayOrder.length:', displayOrder.length);
     if (videos.length === 0) return;
     if (currentIndex < displayOrder.length - 1) {
-      const newIndex = currentIndex + 1;
-      if (DEBUG) console.log('[PlaylistPlayer] Moving to next video. New index:', newIndex);
-      setCurrentIndex(newIndex);
+      setCurrentIndex(currentIndex + 1);
     } else if (isLooping) {
-      if (DEBUG) console.log('[PlaylistPlayer] Looping back to first video');
       setCurrentIndex(0);
       showNotification('Playlist restarted', 'info');
-    } else {
-      if (DEBUG) console.log('[PlaylistPlayer] At end of playlist, not looping');
     }
   }, [currentIndex, displayOrder.length, isLooping, videos.length, showNotification]);
 
   const goToPrevious = useCallback(() => {
-    if (DEBUG) console.log('[PlaylistPlayer] goToPrevious called. currentIndex:', currentIndex);
     if (videos.length === 0) return;
     if (currentIndex > 0) {
-      const newIndex = currentIndex - 1;
-      if (DEBUG) console.log('[PlaylistPlayer] Moving to previous video. New index:', newIndex);
-      setCurrentIndex(newIndex);
+      setCurrentIndex(currentIndex - 1);
     } else if (isLooping) {
-      const newIndex = displayOrder.length - 1;
-      if (DEBUG) console.log('[PlaylistPlayer] Looping to last video. New index:', newIndex);
-      setCurrentIndex(newIndex);
-    } else {
-      if (DEBUG) console.log('[PlaylistPlayer] At beginning of playlist, not looping');
+      setCurrentIndex(displayOrder.length - 1);
     }
   }, [currentIndex, displayOrder.length, isLooping, videos.length]);
 
   const goToVideo = useCallback((index) => {
-    try {
-      if (DEBUG) console.log('[PlaylistPlayer] goToVideo called. Requested index:', index, 'displayOrder.length:', displayOrder.length);
-      if (index >= 0 && index < displayOrder.length) {
-        const actualVideoIndex = displayOrder[index];
-        const targetVideo = videos[actualVideoIndex];
-        if (DEBUG) {
-          console.log('[PlaylistPlayer] Switching to video at index:', index);
-          console.log('[PlaylistPlayer] Target video:', targetVideo?.title);
-          console.log('[PlaylistPlayer] Video ID:', targetVideo?.id);
-        }
-        setCurrentIndex(index);
-      } else {
-        if (DEBUG) console.warn('[PlaylistPlayer] Invalid index requested:', index);
-      }
-    } catch (error) {
-      if (DEBUG) {
-        console.error('[PlaylistPlayer] ERROR in goToVideo:', error);
-        console.error('[PlaylistPlayer] Error stack:', error.stack);
-      }
+    if (index >= 0 && index < displayOrder.length) {
+      setCurrentIndex(index);
     }
-  }, [displayOrder.length, displayOrder, videos]);
+  }, [displayOrder.length]);
 
   // Handler functions using useCallback
   const handleBack = useCallback(() => {
@@ -391,8 +356,7 @@ export default function PlaylistPlayer() {
       data: { watched: true },
     }).then(() => {
       showNotification('Video marked as watched', 'success');
-    }).catch((error) => {
-      if (DEBUG) console.error('Error marking video as watched:', error);
+    }).catch(() => {
       showNotification('Failed to mark as watched', 'error');
     });
   }, [currentVideo?.id, currentVideo?.watched, updateVideo, showNotification]);
@@ -519,7 +483,6 @@ export default function PlaylistPlayer() {
     if (nextVideo && preloadVideoRef.current) {
       const nextSrc = getVideoSource(nextVideo.file_path);
       if (nextSrc) {
-        if (DEBUG) console.log('Preloading next video:', nextVideo.title);
         preloadVideoRef.current.src = nextSrc;
         preloadVideoRef.current.load();
       }
@@ -534,7 +497,6 @@ export default function PlaylistPlayer() {
 
     // Safety check: don't operate on disposed player
     if (playerRef.current.isDisposed && playerRef.current.isDisposed()) {
-      if (DEBUG) console.error('[PlaylistPlayer] ERROR: Attempted to update source on disposed player!');
       return;
     }
 
@@ -542,81 +504,32 @@ export default function PlaylistPlayer() {
     try {
       videoSrc = getVideoSource(currentVideo.file_path);
       if (!videoSrc) {
-        if (DEBUG) console.error('[PlaylistPlayer] ERROR: No video source for:', currentVideo.file_path);
         return;
-      }
-
-      if (DEBUG) {
-        console.log('[PlaylistPlayer] ===== UPDATING VIDEO SOURCE =====');
-        console.log('[PlaylistPlayer] New video:', currentVideo.title);
-        console.log('[PlaylistPlayer] Video ID:', currentVideo.id);
-        console.log('[PlaylistPlayer] Source path:', videoSrc);
-        console.log('[PlaylistPlayer] Player state before update:', {
-          paused: playerRef.current.paused(),
-          currentTime: playerRef.current.currentTime(),
-          duration: playerRef.current.duration()
-        });
       }
 
       // Reset player state before changing source
       playerRef.current.pause();
-      if (DEBUG) console.log('[PlaylistPlayer] Player paused');
 
       playerRef.current.src({
         src: videoSrc,
         type: 'video/mp4'
       });
-      if (DEBUG) console.log('[PlaylistPlayer] Source set to:', videoSrc);
 
       // Explicitly load the new source
       playerRef.current.load();
-      if (DEBUG) console.log('[PlaylistPlayer] Load() called');
     } catch (error) {
-      if (DEBUG) {
-        console.error('[PlaylistPlayer] FATAL ERROR updating video source:', error);
-        console.error('[PlaylistPlayer] Error stack:', error.stack);
-        console.error('[PlaylistPlayer] Current video:', currentVideo);
-      }
+      // Silently handle errors
     }
 
     // Restore position after source loads
     playerRef.current.one('loadedmetadata', () => {
-      if (DEBUG) {
-        console.log('[PlaylistPlayer] loadedmetadata event fired');
-        console.log('[PlaylistPlayer] Video metadata loaded:', {
-          title: currentVideo.title,
-          duration: playerRef.current.duration(),
-          videoWidth: playerRef.current.videoWidth(),
-          videoHeight: playerRef.current.videoHeight()
-        });
-      }
-
       // In playlist mode, ALWAYS start from beginning (don't restore saved position)
-      // This allows watching playlists start-to-finish without jumping to saved positions
-      if (DEBUG) console.log('[PlaylistPlayer] Starting from beginning (playlist mode - ignore saved position)');
       playerRef.current.currentTime(0);
 
       // Autoplay on desktop and tablet (not mobile)
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (!isMobile) {
-        if (DEBUG) console.log('[PlaylistPlayer] Attempting autoplay (desktop/tablet)');
-        playerRef.current.play().catch(e => {
-          if (DEBUG) console.warn('[PlaylistPlayer] Autoplay prevented:', e);
-        });
-      } else {
-        if (DEBUG) console.log('[PlaylistPlayer] Skipping autoplay (mobile device)');
-      }
-    });
-
-    // Add error handler
-    playerRef.current.one('error', (e) => {
-      if (DEBUG) {
-        console.error('[PlaylistPlayer] ERROR: Video error event:', e);
-        console.error('[PlaylistPlayer] Error details:', {
-          error: playerRef.current.error(),
-          src: videoSrc,
-          readyState: playerRef.current.readyState()
-        });
+      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (!isMobileDevice) {
+        playerRef.current.play().catch(() => {});
       }
     });
   }, [currentVideo?.id, playerRef]);
@@ -1270,10 +1183,10 @@ export default function PlaylistPlayer() {
             <button
               onClick={goToPrevious}
               disabled={currentIndex === 0 && !isLooping}
-              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               title="Previous"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
               </svg>
             </button>
@@ -1283,10 +1196,10 @@ export default function PlaylistPlayer() {
             <button
               onClick={goToNext}
               disabled={currentIndex === displayOrder.length - 1 && !isLooping}
-              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
               title="Next"
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
               </svg>
             </button>
@@ -1303,35 +1216,30 @@ export default function PlaylistPlayer() {
             <span>{formatDuration(currentVideo.duration_sec)}</span>
           </div>
 
-          {/* Labeled Action Buttons */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={handleBack}
-              className="mobile-action-btn"
-            >
-              <ArrowLeftIcon className="w-4 h-4" />
-              <span>Back</span>
-            </button>
+          {/* Action Buttons - Mobile */}
+          <div className="flex gap-2">
             <button
               onClick={toggleWatched}
-              className={`mobile-action-btn ${currentVideo.watched ? 'active' : ''}`}
+              className={`flex items-center justify-center px-5 py-3 border rounded-lg text-sm font-medium transition-colors ${
+                currentVideo.watched
+                  ? 'bg-accent border-accent text-white'
+                  : 'bg-dark-secondary border-dark-border text-text-primary'
+              }`}
               title={currentVideo.watched ? 'Mark unwatched' : 'Mark watched'}
             >
-              <EyeIcon className="w-4 h-4" />
+              <EyeIcon className="w-5 h-5" />
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="mobile-action-btn danger"
+              className="flex items-center justify-center px-5 py-3 bg-dark-secondary border border-dark-border rounded-lg text-red-400 text-sm font-medium transition-colors"
             >
-              <TrashIcon className="w-4 h-4" />
-              <span>Delete</span>
+              Delete
             </button>
             <button
               onClick={() => setShowMobileQueue(true)}
-              className="mobile-action-btn"
+              className="flex items-center justify-center px-5 py-3 bg-dark-secondary border border-dark-border rounded-lg text-text-primary text-sm font-medium transition-colors ml-auto"
             >
-              <QueueIcon className="w-4 h-4" />
-              <span>Playlist</span>
+              Playlist
             </button>
           </div>
         </div>

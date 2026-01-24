@@ -15,8 +15,6 @@ import {
   ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon
 } from '../components/icons';
 
-const DEBUG = false; // Set to true to enable console logging
-
 export default function Player() {
   const { videoId } = useParams();
   const navigate = useNavigate();
@@ -93,7 +91,6 @@ export default function Player() {
   // Set video source when player is ready
   useEffect(() => {
     if (!playerRef.current || !video?.file_path) {
-      if (DEBUG) console.log('[Player] Skipping source update - no player or no video file path');
       return;
     }
 
@@ -102,22 +99,13 @@ export default function Player() {
 
       // Safety check: don't operate on disposed player
       if (player.isDisposed && player.isDisposed()) {
-        if (DEBUG) console.error('[Player] ERROR: Attempted to update source on disposed player!');
         return;
       }
 
       const videoSrc = getVideoSource(video.file_path);
 
       if (!videoSrc) {
-        if (DEBUG) console.error('[Player] ERROR: No video source for:', video.file_path);
         return;
-      }
-
-      if (DEBUG) {
-        console.log('[Player] ===== SETTING VIDEO SOURCE =====');
-        console.log('[Player] Video:', video.title);
-        console.log('[Player] Video ID:', video.id);
-        console.log('[Player] Source path:', videoSrc);
       }
 
       player.src({
@@ -125,13 +113,10 @@ export default function Player() {
         type: 'video/mp4'
       });
 
-      if (DEBUG) console.log('[Player] Source set successfully to:', videoSrc);
-
       // Add error notification
       const handleError = () => {
         const error = player.error();
         if (error) {
-          if (DEBUG) console.error('[Player] Video playback error:', error);
           showNotificationRef.current('Failed to load video', 'error');
         }
       };
@@ -142,9 +127,7 @@ export default function Player() {
         player.off('error', handleError);
       };
     } catch (error) {
-      if (DEBUG) {
-        console.error('[Player] FATAL ERROR setting video source:', error);
-      }
+      // Silently handle errors
     }
   }, [playerRef, video?.file_path, video?.id]);
 
@@ -296,36 +279,30 @@ export default function Player() {
               <span>{formatDuration(video.duration_sec)}</span>
             </div>
 
-            {/* Action Buttons - Mobile (Labeled) */}
+            {/* Action Buttons - Mobile */}
             <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleBack}
-                className="mobile-action-btn"
-              >
-                <ArrowLeftIcon className="w-4 h-4" />
-                <span>Back</span>
-              </button>
               <button
                 ref={addToPlaylistButtonRef}
                 onClick={() => setShowPlaylistMenu(true)}
-                className="mobile-action-btn"
+                className="flex items-center justify-center px-5 py-3 bg-dark-secondary border border-dark-border rounded-lg text-text-primary text-sm font-medium transition-colors"
               >
-                <PlusIcon className="w-4 h-4" />
-                <span>Playlist</span>
+                Playlist
               </button>
               <button
                 onClick={toggleWatched}
-                className={`mobile-action-btn ${video.watched ? 'active' : ''}`}
+                className={`flex items-center justify-center px-5 py-3 border rounded-lg text-sm font-medium transition-colors ${
+                  video.watched
+                    ? 'bg-accent border-accent text-white'
+                    : 'bg-dark-secondary border-dark-border text-text-primary'
+                }`}
               >
-                <EyeIcon className="w-4 h-4" />
-                <span>{video.watched ? 'Watched' : 'Watched'}</span>
+                <EyeIcon className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="mobile-action-btn danger"
+                className="flex items-center justify-center px-5 py-3 bg-dark-secondary border border-dark-border rounded-lg text-red-400 text-sm font-medium transition-colors"
               >
-                <TrashIcon className="w-4 h-4" />
-                <span>Delete</span>
+                Delete
               </button>
             </div>
           </div>
@@ -467,39 +444,36 @@ export default function Player() {
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={handleBack}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors text-sm"
+                  className="flex items-center justify-center px-4 py-2 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors text-sm font-medium"
                 >
-                  <ArrowLeftIcon />
-                  <span className="font-medium">Back</span>
+                  Back
                 </button>
 
                 <button
                   ref={addToPlaylistButtonRef}
                   onClick={() => setShowPlaylistMenu(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary transition-colors text-sm"
+                  className="flex items-center justify-center px-4 py-2 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary transition-colors text-sm font-medium"
                 >
-                  <PlusIcon />
-                  <span className="font-medium">Playlist</span>
+                  Playlist
                 </button>
 
                 <button
                   onClick={toggleWatched}
-                  className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-sm ${
+                  className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors text-sm font-medium ${
                     video.watched
                       ? 'bg-accent border-accent text-dark-primary'
                       : 'bg-dark-surface border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary'
                   }`}
                 >
                   <EyeIcon />
-                  <span className="font-medium">{video.watched ? 'Watched' : 'Mark Watched'}</span>
+                  <span>{video.watched ? 'Watched' : 'Mark Watched'}</span>
                 </button>
 
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors text-sm"
+                  className="flex items-center justify-center px-4 py-2 bg-dark-surface border border-dark-border rounded-lg text-red-400 hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors text-sm font-medium"
                 >
-                  <TrashIcon />
-                  <span className="font-medium">Delete</span>
+                  Delete
                 </button>
               </div>
             </div>

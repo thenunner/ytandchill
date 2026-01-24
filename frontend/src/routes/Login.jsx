@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useNotification } from '../contexts/NotificationContext';
-
 function Login() {
   const navigate = useNavigate();
-  const { showNotification } = useNotification();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);

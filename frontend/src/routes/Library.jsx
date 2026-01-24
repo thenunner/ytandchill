@@ -523,7 +523,7 @@ export default function Library() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveTab('channels')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`h-[35px] px-3 rounded-lg text-sm font-medium transition-colors flex items-center ${
                     activeTab === 'channels'
                       ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -533,7 +533,7 @@ export default function Library() {
                 </button>
                 <button
                   onClick={() => setActiveTab('playlists')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`h-[35px] px-3 rounded-lg text-sm font-medium transition-colors flex items-center ${
                     activeTab === 'playlists'
                       ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                       : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -543,7 +543,7 @@ export default function Library() {
                 </button>
                 <Link
                   to="/import"
-                  className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
+                  className="hidden sm:flex h-10 px-3 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
                 >
                   <UploadIcon className="w-4 h-4" />
                   <span>Import</span>
@@ -619,7 +619,7 @@ export default function Library() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveTab('channels')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`h-[35px] px-3 rounded-lg text-sm font-medium transition-colors flex items-center ${
                   activeTab === 'channels'
                     ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                     : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -629,7 +629,7 @@ export default function Library() {
               </button>
               <button
                 onClick={() => setActiveTab('playlists')}
-                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`h-[35px] px-3 rounded-lg text-sm font-medium transition-colors flex items-center ${
                   activeTab === 'playlists'
                     ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
                     : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
@@ -639,23 +639,13 @@ export default function Library() {
               </button>
               <Link
                 to="/import"
-                className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
+                className="hidden sm:flex h-10 px-3 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
               >
                 <UploadIcon className="w-4 h-4" />
                 <span>Import</span>
               </Link>
 
-              {/* + Category Button */}
-              <button
-                onClick={() => setShowCreateCategoryModal(true)}
-                className="px-2.5 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-text-primary border border-dark-border hover:border-dark-border-light flex items-center gap-1.5"
-                title="Create new category"
-              >
-                <PlusIcon />
-                <span className="hidden sm:inline">Category</span>
-              </button>
-
-              {/* Edit Button - desktop only here, next to Category */}
+              {/* Edit Button - desktop only */}
               <button
                 onClick={() => {
                   setEditMode(!editMode);
@@ -731,30 +721,19 @@ export default function Library() {
           setSelectedPlaylists([]);
         }}
         actions={[
-          {
-            label: 'Assign Category',
-            icon: (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-            ),
+          ...(selectedPlaylists.length > 0 ? [{
+            label: 'Category',
             onClick: () => {
               setCategoryActionType('bulk');
-              setShowCategorySelectorModal(true);
+              setShowCategorySelectorModal(prev => !prev);
             },
-            primary: true
-          },
-          {
+            variant: 'default'
+          }] : []),
+          ...(selectedPlaylists.length > 0 ? [{
             label: 'Delete',
-            icon: (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
-            ),
             onClick: handleBulkDeletePlaylists,
-            danger: true
-          }
+            variant: 'danger'
+          }] : [])
         ]}
       />
 

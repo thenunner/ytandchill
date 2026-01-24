@@ -1,20 +1,21 @@
-import { cloneElement, isValidElement } from 'react';
-
-// Simple tooltip using native title attribute
-// For a more styled tooltip, we'd need to use a portal to escape overflow:hidden containers
+import { useState } from 'react';
 
 export default function Tooltip({ children, text }) {
-  if (!text) return children;
+  const [show, setShow] = useState(false);
 
-  // Clone the child element and add the title attribute
-  if (isValidElement(children)) {
-    return cloneElement(children, { title: text });
-  }
-
-  // Fallback: wrap in span with title
   return (
-    <span title={text}>
-      {children}
-    </span>
+    <div className="relative inline-block">
+      <div
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+      >
+        {children}
+      </div>
+      {show && (
+        <div className="absolute z-50 px-2 py-1 text-xs text-white bg-gray-800 rounded shadow-lg whitespace-nowrap bottom-full left-1/2 transform -translate-x-1/2 mb-1">
+          {text}
+        </div>
+      )}
+    </div>
   );
 }

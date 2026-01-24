@@ -2,6 +2,7 @@ import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-r
 import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels } from './api/queries';
 import { useQueueSSE } from './api/useQueueSSE';
 import { useNotification } from './contexts/NotificationContext';
+import { SelectionBarProvider, useSelectionBar } from './contexts/SelectionBarContext';
 import { useEffect, useState, useRef } from 'react';
 import api from './api/client';
 import Channels from './routes/Channels';
@@ -21,7 +22,7 @@ import UpdateBanner from './components/UpdateBanner';
 import Toast from './components/Toast';
 import MobileBottomNav from './components/MobileBottomNav';
 import {
-  SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon
+  SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon
 } from './components/icons';
 import { version as APP_VERSION } from '../package.json';
 
@@ -419,7 +420,7 @@ function App() {
         )}
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden px-3 pb-4 md:px-6 md:pb-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden px-0 pb-4 sm:px-6 sm:pb-6">
           <ErrorBoundary>
             <Routes>
               <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
@@ -436,14 +437,25 @@ function App() {
           </ErrorBoundary>
         </main>
 
-        {/* Mobile Bottom Navigation */}
-        <div className="md:hidden">
-          <MobileBottomNav queueCount={queueCount} reviewCount={reviewCount} />
-        </div>
+        {/* Mobile Bottom Navigation - hidden when SelectionBar is visible */}
+        <MobileBottomNavWrapper queueCount={queueCount} reviewCount={reviewCount} />
       </div>
 
       {/* Toast Notifications */}
       <Toast />
+    </div>
+  );
+}
+
+// Wrapper component for MobileBottomNav that hides when SelectionBar is visible
+function MobileBottomNavWrapper({ queueCount, reviewCount }) {
+  const { isSelectionBarVisible } = useSelectionBar();
+
+  if (isSelectionBarVisible) return null;
+
+  return (
+    <div className="md:hidden">
+      <MobileBottomNav queueCount={queueCount} reviewCount={reviewCount} />
     </div>
   );
 }
@@ -463,4 +475,13 @@ function NotFound() {
   );
 }
 
-export default App;
+// Wrap App with SelectionBarProvider
+function AppWithProviders() {
+  return (
+    <SelectionBarProvider>
+      <App />
+    </SelectionBarProvider>
+  );
+}
+
+export default AppWithProviders;

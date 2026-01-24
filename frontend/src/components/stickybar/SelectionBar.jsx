@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSelectionBar } from '../../contexts/SelectionBarContext';
 
 /**
  * SelectionBar - A floating bottom bar for edit mode selection controls
@@ -27,24 +28,32 @@ export default function SelectionBar({
 }) {
   const [isVisible, setIsVisible] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const { setSelectionBarVisible } = useSelectionBar();
 
   // Handle show/hide with animation
   useEffect(() => {
     if (show) {
       setIsVisible(true);
+      setSelectionBarVisible(true);
       // Small delay to trigger animation
       requestAnimationFrame(() => {
         setIsAnimating(true);
       });
     } else {
       setIsAnimating(false);
+      setSelectionBarVisible(false);
       // Wait for animation to complete before hiding
       const timer = setTimeout(() => {
         setIsVisible(false);
       }, 200);
       return () => clearTimeout(timer);
     }
-  }, [show]);
+  }, [show, setSelectionBarVisible]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => setSelectionBarVisible(false);
+  }, [setSelectionBarVisible]);
 
   if (!isVisible) return null;
 
@@ -56,62 +65,76 @@ export default function SelectionBar({
           : 'translate-y-full opacity-0'
       }`}
     >
-      <div className="bg-dark-secondary/95 backdrop-blur-lg border-t border-dark-border shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
-          {/* Single row layout - wraps on mobile if needed, centered on desktop */}
-          <div className="flex flex-row flex-wrap items-center justify-center gap-2 sm:gap-3">
-            {/* Selection count */}
-            <div className="text-sm whitespace-nowrap flex-shrink-0">
-              <span className="text-text-primary font-semibold">{selectedCount}</span>
-              <span className="text-text-secondary"> selected</span>
+      <div className="bg-dark-secondary/95 backdrop-blur-lg border-t border-dark-border shadow-[0_-4px_20px_rgba(0,0,0,0.3)] safe-area-bottom">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-3.5 pb-[15px] sm:py-3">
+          {/* Mobile: two-group layout, Desktop: centered */}
+          <div className="flex items-center justify-between md:justify-center gap-2 sm:gap-3">
+            {/* Left group: count + All + Clear */}
+            <div className="flex items-center gap-2 sm:gap-2">
+              {/* Selection count - number on mobile, "X Selected" on desktop */}
+              <span className="text-base sm:text-sm text-text-primary font-semibold min-w-[1.5rem] text-center">
+                <span className="md:hidden">{selectedCount}</span>
+                <span className="hidden md:inline">{selectedCount} Selected</span>
+              </span>
+
+              {/* All button - hide when all are selected */}
+              {!hideSelectControls && totalCount > 0 && selectedCount < totalCount && (
+                <button
+                  onClick={onSelectAll}
+                  className="px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors"
+                >
+                  All
+                </button>
+              )}
+
+              {/* Clear button - only show when items selected */}
+              {!hideSelectControls && selectedCount > 0 && (
+                <button
+                  onClick={onClear}
+                  className="px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors"
+                >
+                  Clear
+                </button>
+              )}
             </div>
 
-            {/* Select All / Clear buttons */}
-            {!hideSelectControls && totalCount > 0 && (
-              <button
-                onClick={onSelectAll}
-                className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors whitespace-nowrap"
-              >
-                All ({totalCount})
-              </button>
-            )}
-            {!hideSelectControls && selectedCount > 0 && (
-              <button
-                onClick={onClear}
-                className="px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors"
-              >
-                Clear
-              </button>
-            )}
+            {/* Right group: actions + Done */}
+            <div className="flex items-center gap-2 sm:gap-2">
+              {actions.map((action, index) => {
+                const variantClasses = {
+                  primary: 'bg-accent hover:bg-accent-hover !text-white font-medium',
+                  accent: 'bg-accent/20 hover:bg-accent/30 text-accent-text border border-accent/40 font-medium',
+                  danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300',
+                  warning: 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300',
+                  success: 'bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300',
+                  default: 'bg-dark-tertiary hover:bg-dark-hover text-text-primary'
+                };
+                const variant = action.variant || (action.danger ? 'danger' : action.primary ? 'primary' : 'default');
 
-            {/* Action buttons */}
-            {actions.length > 0 && (
-              <div className="flex items-center gap-2">
-                {actions.map((action, index) => {
-                  const variantClasses = {
-                    primary: 'bg-accent hover:bg-accent-hover !text-white font-medium',
-                    accent: 'bg-accent/20 hover:bg-accent/30 text-accent-text border border-accent/40 font-medium',
-                    danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300',
-                    warning: 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300',
-                    success: 'bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300',
-                    default: 'bg-dark-tertiary hover:bg-dark-hover text-text-primary'
-                  };
-                  const variant = action.variant || (action.danger ? 'danger' : action.primary ? 'primary' : 'default');
+                return (
+                  <button
+                    key={index}
+                    onClick={action.onClick}
+                    disabled={action.disabled}
+                    className={`px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm rounded-lg transition-colors flex items-center gap-1 disabled:opacity-75 disabled:cursor-not-allowed whitespace-nowrap ${variantClasses[variant]}`}
+                    {...(action.dataAttrs || {})}
+                  >
+                    {action.icon && <span className="w-4 h-4">{action.icon}</span>}
+                    <span>{action.label}</span>
+                  </button>
+                );
+              })}
 
-                  return (
-                    <button
-                      key={index}
-                      onClick={action.onClick}
-                      disabled={action.disabled}
-                      className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors flex items-center gap-1 disabled:opacity-75 disabled:cursor-not-allowed whitespace-nowrap ${variantClasses[variant]}`}
-                    >
-                      {action.icon && <span className="w-4 h-4">{action.icon}</span>}
-                      <span>{action.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+              {/* Done button */}
+              {!hideDone && onDone && (
+                <button
+                  onClick={onDone}
+                  className="px-3 sm:px-4 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors"
+                >
+                  Done
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

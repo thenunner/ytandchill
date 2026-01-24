@@ -139,41 +139,52 @@ export default function VideoCard({
     }
   }, [previewMuted, previewPlaying]);
 
+  const isDownloaded = video.status === 'library';
+  const isDownloading = video.status === 'downloading';
+
+  // Compute video source URL for previews
+  const videoSrc = isDownloaded && video.file_path
+    ? `/api/media/${video.file_path.replace(/\\/g, '/').split('/').slice(-2).join('/')}`
+    : null;
+
+  // Ensure video element has correct src when videoSrc changes
+  useEffect(() => {
+    if (videoPreviewRef.current && videoSrc) {
+      if (videoPreviewRef.current.getAttribute('src') !== videoSrc) {
+        videoPreviewRef.current.src = videoSrc;
+      }
+    }
+  }, [videoSrc]);
+
   const handlePreviewStart = () => {
-    if (!isDownloaded || !video.file_path) return;
+    if (!videoSrc || !videoPreviewRef.current) return;
 
-    if (videoPreviewRef.current) {
-      // Build video source URL
-      const pathParts = video.file_path.replace(/\\/g, '/').split('/');
-      const videoSrc = `/api/media/${pathParts.slice(-2).join('/')}`;
+    const video_el = videoPreviewRef.current;
 
-      const video_el = videoPreviewRef.current;
+    // Ensure the video element has the correct src (fix for React not updating it)
+    if (video_el.getAttribute('src') !== videoSrc) {
+      video_el.src = videoSrc;
+      video_el.load();
+    }
 
-      // Only set src if not already set
-      if (video_el.src !== window.location.origin + videoSrc) {
-        video_el.src = videoSrc;
-        video_el.load(); // Required when preload="none"
-      }
+    // Wait for video to be ready before showing
+    const playPreview = () => {
+      video_el.currentTime = 0;
+      setPreviewPlaying(true);
+      video_el.play().catch(() => {
+        setPreviewPlaying(false);
+      });
+    };
 
-      // Wait for video to be ready before showing
-      const playPreview = () => {
-        video_el.currentTime = 0;
-        setPreviewPlaying(true);
-        video_el.play().catch(() => {
-          setPreviewPlaying(false);
-        });
-      };
-
-      // If video already has data, play immediately
-      if (video_el.readyState >= 2) {
+    // If video already has data (from preload="metadata"), play immediately
+    if (video_el.readyState >= 2) {
+      playPreview();
+    } else {
+      // Wait for enough data to play
+      video_el.oncanplay = () => {
         playPreview();
-      } else {
-        // Wait for enough data to play
-        video_el.oncanplay = () => {
-          playPreview();
-          video_el.oncanplay = null;
-        };
-      }
+        video_el.oncanplay = null;
+      };
     }
   };
 
@@ -187,9 +198,6 @@ export default function VideoCard({
       videoPreviewRef.current.oncanplay = null;
     }
   };
-
-  const isDownloaded = video.status === 'library';
-  const isDownloading = video.status === 'downloading';
 
   // Get status badge info - only show DOWNLOADING, QUEUED, IGNORED, or GEO-BLOCKED
   const getStatusBadge = () => {
@@ -226,15 +234,16 @@ export default function VideoCard({
         onMouseLeave={handlePreviewStop}
       >
         {/* Video Preview Element (hidden until hover) */}
-        {isDownloaded && video.file_path && (
+        {videoSrc && (
           <>
             <video
               ref={videoPreviewRef}
+              src={videoSrc}
               className={`absolute inset-0 w-full h-full object-cover ${previewPlaying ? 'block' : 'hidden'}`}
               muted
               playsInline
               loop
-              preload="none"
+              preload="metadata"
             />
             {/* Audio toggle button - shows during preview */}
             {previewPlaying && (
@@ -319,18 +328,18 @@ export default function VideoCard({
         )}
 
         {/* Selection Checkbox - Top Right */}
-        {/* In edit mode: always show checkbox (empty when not selected, filled when selected) */}
+        {/* In edit mode: always show circular badge (empty when not selected, check when selected) */}
         {/* Otherwise: only show checkmark when selected */}
         {editMode ? (
-          <div className={`absolute top-2 right-2 rounded-md p-0.5 shadow-lg z-10 transition-colors ${
+          <div className={`absolute top-2 right-2 rounded-full p-1.5 shadow-lg z-10 transition-colors ${
             isSelected
-              ? 'bg-accent text-white'
-              : 'bg-black/60 text-white/60 border-2 border-white/40'
+              ? 'bg-accent'
+              : 'bg-black/60 border-2 border-white/50'
           }`}>
             {isSelected ? (
-              <CheckmarkIcon className="w-5 h-5" strokeWidth="3" />
+              <CheckmarkIcon className="w-4 h-4 text-white" strokeWidth="3" />
             ) : (
-              <div className="w-5 h-5" />
+              <div className="w-4 h-4" />
             )}
           </div>
         ) : (

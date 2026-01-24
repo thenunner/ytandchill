@@ -94,8 +94,9 @@ export function registerTheaterButton() {
 }
 
 /**
- * Creates a custom theater mode button for video.js player (deprecated - use registerTheaterButton)
- * @deprecated Use registerTheaterButton() instead
+ * Wrapper function that registers the theater button component.
+ * Calls registerTheaterButton() internally.
+ * @param {Function} onToggle - Unused, kept for backwards compatibility
  */
 export function createTheaterButton(onToggle) {
   registerTheaterButton();
