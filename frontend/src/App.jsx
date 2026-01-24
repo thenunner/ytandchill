@@ -22,7 +22,7 @@ import UpdateBanner from './components/UpdateBanner';
 import Toast from './components/Toast';
 import MobileBottomNav from './components/MobileBottomNav';
 import {
-  SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon
+  SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon
 } from './components/icons';
 import { version as APP_VERSION } from '../package.json';
 
@@ -389,16 +389,16 @@ function App() {
         }`}
       >
         {/* Sidebar Header */}
-        <div className="flex items-center gap-1 p-2 border-b border-dark-border">
+        <div className="flex items-center justify-between p-2 border-b border-dark-border">
           {!sidebarCollapsed && (
-            <span className="px-3 text-sm font-medium text-text-secondary">YTandChill</span>
+            <img src="/logo.png" alt="YTandChill" className="h-10 w-28" />
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="py-1 rounded-lg hover:bg-dark-hover transition-colors"
+            className="p-2 rounded-lg hover:bg-dark-hover transition-colors text-text-secondary"
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            <img src="/logo.png" alt="Logo" className="w-12 h-12" />
+            {sidebarCollapsed ? <MenuIcon className="w-6 h-6" /> : <CollapseIcon className="w-6 h-6" />}
           </button>
         </div>
 
