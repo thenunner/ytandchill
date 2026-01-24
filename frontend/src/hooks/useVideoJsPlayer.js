@@ -160,7 +160,7 @@ export function useVideoJsPlayer({
     // DEVICE-SPECIFIC CONTROL VISIBILITY BEHAVIOR
     // ============================================
     if (isMobile) {
-      // Mobile: Controls always visible EXCEPT in fullscreen (YouTube-style)
+      // Mobile: Controls always visible EXCEPT in fullscreen (YT-style)
       let mobileFullscreenTimeout = null;
       const MOBILE_FULLSCREEN_HIDE_DELAY = 2000;
 

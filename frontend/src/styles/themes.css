@@ -51,7 +51,7 @@
   --text-secondary: 228 14% 66%;   /* Medium gray */
   --text-muted: 220 8% 62%;        /* Improved contrast for muted text */
 
-  /* Accent - YouTube Red */
+  /* Accent - YT Red */
   --accent: 0 100% 45%;            /* Darker red for buttons/backgrounds */
   --accent-hover: 0 100% 55%;      /* Lighter red on hover */
   --accent-text: 0 100% 60%;       /* Brighter red for text readability */

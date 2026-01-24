@@ -31,7 +31,7 @@ export default function Channels() {
   const { cardSize, setCardSize } = useCardSize('channels');
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const gridColumns = useGridColumns(cardSize);
+  const gridColumns = useGridColumns(cardSize, 'channels');
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [newChannelUrl, setNewChannelUrl] = useState('');
@@ -1170,7 +1170,7 @@ export default function Channels() {
                   }
                 }}
               >
-                {/* Channel Thumbnail - YouTube style */}
+                {/* Channel Thumbnail - YT style */}
                 <div className={`relative w-full aspect-video bg-dark-tertiary overflow-hidden transition-all rounded-t-xl rounded-b-xl group-hover:rounded-b-none ${
                   (channel.video_count || 0) > 0 ? 'border-4 border-accent' : ''
                 }`}>
@@ -1267,7 +1267,7 @@ export default function Channels() {
             </svg>
             <h3 className="text-xl font-semibold text-text-primary mb-2">No channels yet</h3>
             <p className="text-text-secondary mb-6 text-center max-w-md">
-              Subscribe to YouTube channels to monitor them for new videos
+              Subscribe to YT channels to monitor them for new videos
             </p>
             <button
               onClick={() => setShowAddForm(true)}

@@ -125,7 +125,7 @@ export default function Settings() {
   // Cookie source state
   const [cookieSource, setCookieSource] = useState('file');
 
-  // YouTube API key state
+  // YT API key state
   const [youtubeApiKey, setYoutubeApiKey] = useState('');
   const [hasApiKey, setHasApiKey] = useState(false);
   const [apiKeySaving, setApiKeySaving] = useState(false);
@@ -525,7 +525,7 @@ export default function Settings() {
 
       const parts = [];
       if (data.updated > 0) {
-        const method = data.method === 'api' ? 'YouTube API' : 'yt-dlp';
+        const method = data.method === 'api' ? 'YT API' : 'yt-dlp';
         parts.push(`${data.updated} upload date${data.updated !== 1 ? 's' : ''} via ${method}`);
       }
       if (data.thumbnails_fixed > 0) {
@@ -639,7 +639,7 @@ export default function Settings() {
       try {
         await updateSettings.mutateAsync({ youtube_api_key: '' });
         setHasApiKey(false);
-        showNotification('YouTube API key cleared', 'success');
+        showNotification('YT API key cleared', 'success');
       } catch (err) {
         showNotification('Failed to clear API key', 'error');
       } finally {
@@ -910,7 +910,7 @@ export default function Settings() {
               </div>
             </div>
             <div className="settings-toggle-group">
-              <Tooltip text="When the video was originally published on YouTube">
+              <Tooltip text="When the video was originally published on YT">
                 <button
                   onClick={async () => {
                     setLibraryDateDisplay('uploaded');
@@ -1119,7 +1119,7 @@ export default function Settings() {
               }`}></span>
               <div>
                 <div className="setting-name">Cookies</div>
-                <div className="setting-desc">YouTube authentication for downloads</div>
+                <div className="setting-desc">YT authentication for downloads</div>
               </div>
             </div>
             <div className="settings-toggle-group">
@@ -1598,7 +1598,7 @@ export default function Settings() {
                 <div className="flex items-center justify-between">
                   <div>
                     <div className="font-medium text-text-primary">Unavailable Videos <span className="text-text-muted font-normal">({repairData.not_found_videos?.length || 0} found)</span></div>
-                    <div className="text-xs text-text-secondary mt-1">Remove videos from DB no longer playable on YouTube</div>
+                    <div className="text-xs text-text-secondary mt-1">Remove videos from DB no longer playable on YT</div>
                   </div>
                   <div className="text-2xl text-text-muted">→</div>
                 </div>
@@ -1645,7 +1645,7 @@ export default function Settings() {
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowNotFoundModal(false)} />
           <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-2xl w-full">
             <div className="px-6 py-4 border-b border-dark-border">
-              <h3 className="text-lg font-semibold text-text-primary">Videos Not Found on YouTube</h3>
+              <h3 className="text-lg font-semibold text-text-primary">Videos Not Found on YT</h3>
             </div>
             <div className="px-6 py-4">
               {repairData.not_found_videos?.length === 0 ? (
@@ -1879,7 +1879,7 @@ export default function Settings() {
               {/* Footer */}
               <div className="px-6 py-4 border-t border-dark-border flex items-center justify-between bg-dark-tertiary/50">
                 <p className="text-xs text-text-muted">
-                  {hasApiKey ? <><span className="text-accent">Tip:</span> Will use YouTube API for fast fetching</> : <><span className="text-yellow-500">Note:</span> Add API key for faster processing</>}
+                  {hasApiKey ? <><span className="text-accent">Tip:</span> Will use YT API for fast fetching</> : <><span className="text-yellow-500">Note:</span> Add API key for faster processing</>}
                 </p>
                 <div className="flex gap-3">
                   <button onClick={() => setShowMetadataFixModal(false)} className="btn btn-secondary">Cancel</button>
