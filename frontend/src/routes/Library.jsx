@@ -843,9 +843,9 @@ export default function Library() {
                     </svg>
                   </div>
                 )}
-                {/* New Videos Badge */}
+                {/* New Videos Badge - matches Channels tab style */}
                 {channel.newVideoCount > 0 && (
-                  <div className="absolute top-2 left-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-xl rounded-br-lg leading-none z-20">
                     {channel.newVideoCount > 99 ? '99+' : channel.newVideoCount}
                   </div>
                 )}
