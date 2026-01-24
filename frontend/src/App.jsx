@@ -311,9 +311,10 @@ function App() {
 
   // Sidebar nav item component
   const SidebarNavLink = ({ to, icon, label, badge, onClick, isButton = false }) => {
+    // /channel/:id/library is part of Library, not Channels
     const isActive = location.pathname === to ||
-      (to === '/' && location.pathname.startsWith('/channel/')) ||
-      (to === '/library' && location.pathname.startsWith('/playlist/'));
+      (to === '/' && location.pathname.startsWith('/channel/') && !location.pathname.endsWith('/library')) ||
+      (to === '/library' && (location.pathname.startsWith('/playlist/') || location.pathname.endsWith('/library')));
     const baseClasses = `relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
       isActive
         ? 'bg-accent/20 text-accent-text'

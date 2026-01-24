@@ -19,13 +19,15 @@ export default function MobileBottomNav({ queueCount = 0, reviewCount = 0 }) {
       icon: ChannelsIcon,
       label: 'Channels',
       badge: reviewCount,
-      isActive: location.pathname === '/' || location.pathname.startsWith('/channel/')
+      // /channel/:id/library is part of Library, not Channels
+      isActive: location.pathname === '/' || (location.pathname.startsWith('/channel/') && !location.pathname.endsWith('/library'))
     },
     {
       to: '/library',
       icon: LibraryIcon,
       label: 'Library',
-      isActive: location.pathname === '/library' || location.pathname.startsWith('/playlist/')
+      // Include /channel/:id/library as part of Library
+      isActive: location.pathname === '/library' || location.pathname.startsWith('/playlist/') || location.pathname.endsWith('/library')
     },
     {
       to: '/queue',
