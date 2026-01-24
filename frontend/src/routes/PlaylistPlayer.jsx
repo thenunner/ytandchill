@@ -1,18 +1,22 @@
-import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import 'video.js/dist/video-js.css';
-import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo } from '../api/queries';
+import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
+import MobileBottomNav from '../components/MobileBottomNav';
 import {
   formatDuration,
   getVideoSource,
 } from '../utils/videoPlayerUtils';
-import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/icons';
+import {
+  ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon, SettingsIcon,
+  ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon
+} from '../components/icons';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const DEBUG = false; // Set to true to enable console logging
@@ -21,7 +25,12 @@ export default function PlaylistPlayer() {
   const { playlistId, categoryId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { showNotification } = useNotification();
+  const { data: queueData } = useQueue({});
+
+  // Queue count for sidebar badge
+  const queueCount = queueData?.queue?.length || 0;
 
   // Get starting video from URL if provided
   const startVideoId = searchParams.get('v');
@@ -56,6 +65,9 @@ export default function PlaylistPlayer() {
 
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
+
+  // Sidebar State
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Playlist State
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -394,6 +406,32 @@ export default function PlaylistPlayer() {
     localStorage.setItem('queueCollapsed', newMode.toString());
   }, []);
 
+  // Auto-collapse sidebar in theater mode
+  useEffect(() => {
+    if (isTheaterMode) {
+      setSidebarCollapsed(true);
+    }
+  }, [isTheaterMode]);
+
+  // Toggle sidebar
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed(prev => !prev);
+  }, []);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      window.location.replace('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      window.location.replace('/login');
+    }
+  };
+
   // Update goToNextRef
   useEffect(() => {
     goToNextRef.current = goToNext;
@@ -609,69 +647,112 @@ export default function PlaylistPlayer() {
     );
   }
 
-  return (
-    <div className="space-y-4 animate-fade-in pt-4">
-      {/* ========== DESKTOP LAYOUT (Normal + Theater use same video element) ========== */}
-      {!isMobile && (
-        <div>
-          <div className={`flex gap-4 items-start ${isTheaterMode ? 'flex-col' : ''}`}>
-            {/* LEFT: Control Buttons - only show in normal mode */}
-            {!isTheaterMode && (
-              <div className="flex flex-col gap-3 flex-shrink-0">
-                <button
-                  onClick={handleBack}
-                  className="icon-btn hover:bg-accent hover:border-accent"
-                  title="Back"
-                  aria-label="Go back to previous page"
-                >
-                  <ArrowLeftIcon className="w-5 h-5" />
-                </button>
-                <button
-                  ref={!isTheaterMode ? addToPlaylistButtonRef : undefined}
-                  onClick={() => setShowPlaylistMenu(true)}
-                  className="icon-btn hover:bg-accent hover:border-accent"
-                  title="Add to playlist"
-                  aria-label="Add video to playlist"
-                >
-                  <PlusIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={toggleWatched}
-                  className={`icon-btn hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
-                  title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
-                  aria-label={currentVideo.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
-                >
-                  <EyeIcon className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="icon-btn hover:bg-red-600 hover:border-red-700"
-                  title="Delete video"
-                  aria-label="Delete video permanently"
-                >
-                  <TrashIcon className="w-5 h-5" />
-                </button>
-              </div>
+  // Sidebar nav item component
+  const NavLink = ({ to, icon, label, badge, onClick, isButton = false }) => {
+    const isActive = location.pathname === to;
+    const baseClasses = `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+      isActive
+        ? 'bg-accent/20 text-accent-text'
+        : 'text-text-secondary hover:bg-dark-hover hover:text-text-primary'
+    }`;
+
+    if (isButton) {
+      return (
+        <button onClick={onClick} className={baseClasses} title={label}>
+          {icon}
+          {!sidebarCollapsed && <span className="text-sm font-medium">{label}</span>}
+        </button>
+      );
+    }
+
+    return (
+      <Link to={to} className={baseClasses} title={label}>
+        {icon}
+        {!sidebarCollapsed && (
+          <>
+            <span className="text-sm font-medium">{label}</span>
+            {badge > 0 && (
+              <span className="ml-auto bg-accent text-dark-primary text-xs font-bold px-2 py-0.5 rounded-full">
+                {badge}
+              </span>
             )}
+          </>
+        )}
+        {sidebarCollapsed && badge > 0 && (
+          <span className="absolute -top-1 -right-1 bg-accent text-dark-primary text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
 
-            {/* CENTER: Player + Info - width changes based on theater mode */}
-            <div className={isTheaterMode ? 'w-full' : 'w-[55%]'}>
-              {/* Video Wrapper - .player-wrapper class controls sizing via CSS */}
-              <div className={`player-wrapper shadow-card-hover ${isTheaterMode ? 'mx-6' : ''}`}>
-                <video
-                  ref={videoRef}
-                  className="video-js vjs-big-play-centered"
-                  playsInline
-                  preload="auto"
-                />
+  // Desktop layout with sidebar
+  if (!isMobile) {
+    return (
+      <div className="flex h-screen overflow-hidden animate-fade-in">
+        {/* Sidebar Navigation */}
+        <nav
+          className={`flex flex-col bg-dark-secondary border-r border-dark-border transition-all duration-200 ${
+            sidebarCollapsed ? 'w-16' : 'w-44'
+          }`}
+        >
+          {/* Sidebar Header - Toggle Button */}
+          <div className="flex items-center justify-between p-3 border-b border-dark-border">
+            {!sidebarCollapsed && (
+              <span className="text-sm font-medium text-text-secondary">YTandChill</span>
+            )}
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors"
+              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {sidebarCollapsed ? <MenuIcon /> : <CollapseIcon />}
+            </button>
+          </div>
+
+          {/* Nav Links */}
+          <div className="flex-1 p-2 space-y-1">
+            <NavLink to="/" icon={<ChannelsIcon />} label="Channels" />
+            <NavLink to="/library" icon={<LibraryIcon />} label="Library" />
+            <NavLink to="/queue" icon={<QueueIcon />} label="Queue" badge={queueCount} />
+          </div>
+
+          {/* Bottom Links */}
+          <div className="p-2 border-t border-dark-border space-y-1">
+            <NavLink to="/settings" icon={<SettingsIcon />} label="Settings" />
+            <NavLink isButton onClick={handleLogout} icon={<LogoutIcon />} label="Logout" />
+          </div>
+        </nav>
+
+        {/* Main Content Area */}
+        <div className="flex-1 bg-dark-primary min-h-0 overflow-y-auto">
+          {/* ===== THEATER MODE ===== */}
+          {isTheaterMode && (
+            <div>
+              {/* Video fills viewport height, letterboxed horizontally */}
+              <div className="bg-black flex justify-center">
+                <div style={{ width: '100%', maxWidth: 'calc(100vh * 16 / 9)' }}>
+                  <div
+                    className="player-wrapper"
+                    style={{ height: '100vh', width: '100%' }}
+                  >
+                    <video
+                      ref={videoRef}
+                      className="video-js vjs-big-play-centered"
+                      playsInline
+                      preload="auto"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Video Info */}
-              <div className={`mt-4 space-y-3 ${isTheaterMode ? 'mx-6' : ''}`}>
-                <h1 className={`font-bold text-text-primary leading-tight ${isTheaterMode ? 'text-2xl' : 'text-xl'}`}>
+              {/* Video Info under video */}
+              <div className="bg-dark-primary py-4 px-6">
+                <h1 className="text-2xl font-bold text-text-primary leading-tight">
                   {currentVideo.title}
                 </h1>
-                <div className="flex flex-wrap items-center gap-3 text-sm text-text-secondary">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-text-secondary mt-2">
                   <Link
                     to={`/channel/${currentVideo.channel_id}/library`}
                     className="hover:text-text-primary transition-colors font-medium"
@@ -700,106 +781,107 @@ export default function PlaylistPlayer() {
                     </>
                   )}
                 </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={handleBack}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors text-sm"
+                  >
+                    <ArrowLeftIcon />
+                    <span className="font-medium">Back</span>
+                  </button>
+
+                  <button
+                    ref={addToPlaylistButtonRef}
+                    onClick={() => setShowPlaylistMenu(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary transition-colors text-sm"
+                  >
+                    <PlusIcon />
+                    <span className="font-medium">Playlist</span>
+                  </button>
+
+                  <button
+                    onClick={toggleWatched}
+                    className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-sm ${
+                      currentVideo.watched
+                        ? 'bg-accent border-accent text-dark-primary'
+                        : 'bg-dark-surface border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary'
+                    }`}
+                  >
+                    <EyeIcon />
+                    <span className="font-medium">{currentVideo.watched ? 'Watched' : 'Mark Watched'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors text-sm"
+                  >
+                    <TrashIcon />
+                    <span className="font-medium">Delete</span>
+                  </button>
+                </div>
               </div>
 
-              {/* Theater Mode: Horizontal Queue Under Video */}
-              {isTheaterMode && (
-                <div className="bg-surface rounded-xl shadow-card mt-4 overflow-hidden">
-                  {/* Combined Header: Back | Playlist Info | Controls | Action Buttons */}
-                  <div className="p-4 border-b border-accent/30 flex items-center gap-4">
-                    {/* Back Button */}
-                    <button
-                      onClick={handleBack}
-                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent flex-shrink-0"
-                      title="Back"
-                      aria-label="Go back to previous page"
-                    >
-                      <ArrowLeftIcon className="w-4 h-4" />
-                    </button>
-
-                    {/* Playlist Info */}
-                    <div className="flex-shrink-0">
-                      <h2 className="font-semibold text-text-primary">{sourceTitle}</h2>
-                      <p className="text-sm text-text-secondary">{currentIndex + 1} of {videos.length} videos</p>
-                    </div>
-
-                    {/* Playlist Controls + Action Buttons (grouped together) */}
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={goToPrevious}
-                        disabled={currentIndex === 0 && !isLooping}
-                        className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="Previous video (P)"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={shufflePlaylist}
-                        className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
-                        title="Shuffle playlist (S)"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="16 3 21 3 21 8"></polyline>
-                          <line x1="4" y1="20" x2="21" y2="3"></line>
-                          <polyline points="21 16 21 21 16 21"></polyline>
-                          <line x1="15" y1="15" x2="21" y2="21"></line>
-                          <line x1="4" y1="4" x2="9" y2="9"></line>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={toggleLoop}
-                        className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
-                        title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M17 1l4 4-4 4"></path>
-                          <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                          <path d="M7 23l-4-4 4-4"></path>
-                          <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                        </svg>
-                      </button>
-                      <button
-                        onClick={goToNext}
-                        disabled={currentIndex === displayOrder.length - 1 && !isLooping}
-                        className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-                        title="Next video (N)"
-                      >
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
-                        </svg>
-                      </button>
-
-                      {/* Divider */}
-                      <div className="w-px h-6 mx-1 bg-border-light"></div>
-
-                      {/* Action Buttons (Add, Watch, Delete) - immediately after Next */}
-                      <button
-                        ref={isTheaterMode ? addToPlaylistButtonRef : undefined}
-                        onClick={() => setShowPlaylistMenu(true)}
-                        className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
-                        title="Add to playlist"
-                      >
-                        <PlusIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={toggleWatched}
-                        className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${currentVideo.watched ? 'bg-accent' : ''}`}
-                        title={currentVideo.watched ? 'Mark as unwatched' : 'Mark as watched'}
-                      >
-                        <EyeIcon className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="icon-btn icon-btn-sm hover:bg-red-600 hover:border-red-700"
-                        title="Delete video"
-                      >
-                        <TrashIcon className="w-4 h-4" />
-                      </button>
-                    </div>
-
+              {/* Horizontal Queue */}
+              <div className="bg-surface mx-6 mb-6 rounded-xl shadow-card overflow-hidden">
+                {/* Header: Playlist Info + Controls */}
+                <div className="p-4 border-b border-accent/30 flex items-center gap-4">
+                  {/* Playlist Info */}
+                  <div className="flex-shrink-0">
+                    <h2 className="font-semibold text-text-primary">{sourceTitle}</h2>
+                    <p className="text-sm text-text-secondary">{currentIndex + 1} of {videos.length} videos</p>
                   </div>
+
+                  {/* Playlist Controls */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={goToPrevious}
+                      disabled={currentIndex === 0 && !isLooping}
+                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Previous video (P)"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={shufflePlaylist}
+                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
+                      title="Shuffle playlist (S)"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="16 3 21 3 21 8"></polyline>
+                        <line x1="4" y1="20" x2="21" y2="3"></line>
+                        <polyline points="21 16 21 21 16 21"></polyline>
+                        <line x1="15" y1="15" x2="21" y2="21"></line>
+                        <line x1="4" y1="4" x2="9" y2="9"></line>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={toggleLoop}
+                      className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
+                      title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M17 1l4 4-4 4"></path>
+                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                        <path d="M7 23l-4-4 4-4"></path>
+                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={goToNext}
+                      disabled={currentIndex === displayOrder.length - 1 && !isLooping}
+                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+                      title="Next video (N)"
+                    >
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
 
                   {/* Horizontal Queue with Overlay Scroll Buttons */}
                   <div className="relative group">
@@ -921,17 +1003,109 @@ export default function PlaylistPlayer() {
                       </div>
                     )}
                   </div>
-                </div>
-              )}
+              </div>
             </div>
+          )}
 
-            {/* RIGHT: Queue Sidebar - only show in normal mode */}
-            {!isTheaterMode && (
-              <div
-                ref={sidebarRef}
-                className="bg-surface rounded-xl shadow-card overflow-hidden flex flex-col w-[40%] flex-shrink-0"
-                style={{ maxHeight: '500px' }}
-              >
+          {/* ===== NORMAL MODE ===== */}
+          {!isTheaterMode && (
+            <div className="space-y-4 pt-4 px-4">
+              <div className="flex gap-4 items-start max-w-[1600px]">
+                {/* LEFT: Player + Info */}
+                <div className="flex-1 min-w-0">
+                  {/* Video Wrapper */}
+                  <div className="player-wrapper shadow-card-hover">
+                    <video
+                      ref={videoRef}
+                      className="video-js vjs-big-play-centered"
+                      playsInline
+                      preload="auto"
+                    />
+                  </div>
+
+                  {/* Video Info */}
+                  <div className="mt-4 space-y-3">
+                    <h1 className="text-xl font-bold text-text-primary leading-tight">
+                      {currentVideo.title}
+                    </h1>
+                    <div className="flex flex-wrap items-center gap-3 text-sm text-text-secondary">
+                      <Link
+                        to={`/channel/${currentVideo.channel_id}/library`}
+                        className="hover:text-text-primary transition-colors font-medium"
+                      >
+                        {currentVideo.channel_title}
+                      </Link>
+                      <span>•</span>
+                      <span>{formatDuration(currentVideo.duration_sec)}</span>
+                      <span>•</span>
+                      <span>
+                        {currentVideo.upload_date
+                          ? new Date(
+                              currentVideo.upload_date.slice(0, 4),
+                              currentVideo.upload_date.slice(4, 6) - 1,
+                              currentVideo.upload_date.slice(6, 8)
+                            ).toLocaleDateString()
+                          : 'Unknown date'}
+                      </span>
+                      {currentVideo.watched && (
+                        <>
+                          <span>•</span>
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold text-xs">
+                            <CheckmarkIcon className="w-3.5 h-3.5" />
+                            Watched
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 mt-3">
+                      <button
+                        onClick={handleBack}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors text-sm"
+                      >
+                        <ArrowLeftIcon />
+                        <span className="font-medium">Back</span>
+                      </button>
+
+                      <button
+                        ref={addToPlaylistButtonRef}
+                        onClick={() => setShowPlaylistMenu(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary transition-colors text-sm"
+                      >
+                        <PlusIcon />
+                        <span className="font-medium">Playlist</span>
+                      </button>
+
+                      <button
+                        onClick={toggleWatched}
+                        className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-sm ${
+                          currentVideo.watched
+                            ? 'bg-accent border-accent text-dark-primary'
+                            : 'bg-dark-surface border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary'
+                        }`}
+                      >
+                        <EyeIcon />
+                        <span className="font-medium">{currentVideo.watched ? 'Watched' : 'Mark Watched'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => setShowDeleteConfirm(true)}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors text-sm"
+                      >
+                        <TrashIcon />
+                        <span className="font-medium">Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* RIGHT: Queue Sidebar */}
+                <div
+                  ref={sidebarRef}
+                  className="bg-surface rounded-xl shadow-card overflow-hidden flex flex-col w-80 flex-shrink-0"
+                  style={{ maxHeight: '500px' }}
+                >
                 <div className="p-4 border-b border-accent/30 flex-shrink-0">
                   <div className="flex items-center justify-between mb-3">
                     <div>
@@ -1037,194 +1211,17 @@ export default function PlaylistPlayer() {
                   })}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* ========== MOBILE LAYOUT (Same for both modes) ========== */}
-      {isMobile && (
-      <div>
-        {/* Video Player - dedicated mobile class for clean full-bleed sizing */}
-        <div className="player-wrapper-mobile">
-          <video
-            ref={videoRef}
-            className="video-js vjs-big-play-centered"
-            playsInline
-            preload="auto"
-          />
-        </div>
-
-        {/* Video Info */}
-        <div className="mt-4 space-y-3">
-          <h1 className="text-lg font-bold text-text-primary leading-tight">
-            {currentVideo.title}
-          </h1>
-          <div className="flex flex-wrap items-center gap-2 text-xs text-text-secondary">
-            <Link
-              to={`/channel/${currentVideo.channel_id}/library`}
-              className="hover:text-text-primary transition-colors font-medium"
-            >
-              {currentVideo.channel_title}
-            </Link>
-            <span>•</span>
-            <span>{formatDuration(currentVideo.duration_sec)}</span>
-            <span>•</span>
-            <span>
-              {currentVideo.upload_date
-                ? new Date(
-                    currentVideo.upload_date.slice(0, 4),
-                    currentVideo.upload_date.slice(4, 6) - 1,
-                    currentVideo.upload_date.slice(6, 8)
-                  ).toLocaleDateString()
-                : 'Unknown date'}
-            </span>
-            {currentVideo.watched && (
-              <>
-                <span>•</span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold text-xs">
-                  <CheckmarkIcon className="w-3 h-3" />
-                  Watched
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* Control Buttons - Mobile horizontal row (Back, Delete, then playlist controls) */}
-          <div className="flex flex-wrap gap-2 mt-3">
-            <button
-              onClick={handleBack}
-              className="icon-btn hover:bg-accent hover:border-accent"
-              title="Back"
-            >
-              <ArrowLeftIcon className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="icon-btn hover:bg-red-600 hover:border-red-700"
-              title="Delete video"
-            >
-              <TrashIcon className="w-5 h-5" />
-            </button>
-
-            {/* Divider */}
-            <div className="w-px h-10 bg-border-light self-center"></div>
-
-            {/* Playlist controls */}
-            <button
-              onClick={goToPrevious}
-              disabled={currentIndex === 0 && !isLooping}
-              className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30"
-              title="Previous"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
-              </svg>
-            </button>
-            <button
-              onClick={shufflePlaylist}
-              className="icon-btn hover:bg-accent hover:border-accent"
-              title="Shuffle"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="16 3 21 3 21 8"></polyline>
-                <line x1="4" y1="20" x2="21" y2="3"></line>
-                <polyline points="21 16 21 21 16 21"></polyline>
-                <line x1="15" y1="15" x2="21" y2="21"></line>
-                <line x1="4" y1="4" x2="9" y2="9"></line>
-              </svg>
-            </button>
-            <button
-              onClick={toggleLoop}
-              className={`icon-btn hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
-              title={isLooping ? 'Disable loop' : 'Enable loop'}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M17 1l4 4-4 4"></path>
-                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                <path d="M7 23l-4-4 4-4"></path>
-                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-              </svg>
-            </button>
-            <button
-              onClick={goToNext}
-              disabled={currentIndex === displayOrder.length - 1 && !isLooping}
-              className="icon-btn hover:bg-accent hover:border-accent disabled:opacity-30"
-              title="Next"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Queue Section */}
-        <div className="bg-surface rounded-xl shadow-card mt-4 overflow-hidden">
-          <div className="p-3 border-b border-accent/30">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-sm text-text-primary">{sourceTitle}</h3>
-                <p className="text-xs text-text-secondary">{currentIndex + 1} of {videos.length} videos</p>
-              </div>
             </div>
           </div>
-
-          {/* Vertical Queue List */}
-          <div className="max-h-[300px] overflow-y-auto">
-            {displayOrder.map((actualIndex, displayIndex) => {
-              const video = videos[actualIndex];
-              if (!video) return null;
-              const isCurrent = displayIndex === currentIndex;
-
-              return (
-                <button
-                  key={video.id}
-                  onClick={() => goToVideo(displayIndex)}
-                  className={`w-full p-2 flex gap-2 hover:bg-surface-hover transition-colors ${
-                    isCurrent ? 'bg-accent/20 border-l-2 border-accent' : ''
-                  }`}
-                >
-                  <div className="relative flex-shrink-0 w-20 h-12 bg-black rounded overflow-hidden">
-                    {video.thumb_url ? (
-                      <img src={video.thumb_url} alt={video.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-surface-hover">
-                        <svg className="w-6 h-6 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-                          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-xs px-1 rounded">
-                      {formatDuration(video.duration_sec)}
-                    </div>
-                    {video.watched && (
-                      <div className="absolute top-0.5 left-0.5 bg-accent/90 text-accent-text px-1 rounded">
-                        <CheckmarkIcon className="w-2.5 h-2.5" />
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 text-left min-w-0">
-                    <h3 className={`text-xs font-medium line-clamp-2 leading-tight ${isCurrent ? 'text-accent-text' : 'text-text-primary'}`}>
-                      {video.title}
-                    </h3>
-                    <p className="text-xs text-text-secondary mt-0.5">{video.channel_title}</p>
-                  </div>
-                  {isCurrent && <PlayIcon className="w-4 h-4 text-accent flex-shrink-0 self-center" />}
-                </button>
-              );
-            })}
-          </div>
+          )}
         </div>
-      </div>
-      )}
 
-      {/* Hidden Preload Video */}
-      <video
-        ref={preloadVideoRef}
-        style={{ display: 'none' }}
-        preload="auto"
-      />
+        {/* Hidden Preload Video */}
+        <video
+          ref={preloadVideoRef}
+          style={{ display: 'none' }}
+          preload="auto"
+        />
 
         {/* Delete Confirmation Dialog */}
         <ConfirmDialog
@@ -1247,6 +1244,241 @@ export default function PlaylistPlayer() {
             onClose={() => setShowPlaylistMenu(false)}
           />
         )}
+      </div>
+    );
+  }
+
+  // Mobile layout with bottom navigation
+  return (
+    <div className="flex flex-col h-screen bg-dark-primary animate-fade-in">
+      {/* Scrollable Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Video Player */}
+        <div className="player-wrapper-mobile">
+          <video
+            ref={videoRef}
+            className="video-js vjs-big-play-centered"
+            playsInline
+            preload="auto"
+          />
+        </div>
+
+        {/* Video Info with Prev/Next Controls */}
+        <div className="px-4 py-3 space-y-3">
+          {/* Title with Prev/Next buttons */}
+          <div className="flex items-start gap-2">
+            <button
+              onClick={goToPrevious}
+              disabled={currentIndex === 0 && !isLooping}
+              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title="Previous"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+              </svg>
+            </button>
+            <h1 className="flex-1 text-base font-semibold text-text-primary leading-tight line-clamp-2">
+              {currentVideo.title}
+            </h1>
+            <button
+              onClick={goToNext}
+              disabled={currentIndex === displayOrder.length - 1 && !isLooping}
+              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-dark-surface border border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              title="Next"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 text-xs text-text-secondary">
+            <Link
+              to={`/channel/${currentVideo.channel_id}/library`}
+              className="hover:text-text-primary transition-colors font-medium"
+            >
+              {currentVideo.channel_title}
+            </Link>
+            <span>•</span>
+            <span>{formatDuration(currentVideo.duration_sec)}</span>
+          </div>
+
+          {/* Labeled Action Buttons */}
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleBack}
+              className="mobile-action-btn"
+            >
+              <ArrowLeftIcon className="w-4 h-4" />
+              <span>Back</span>
+            </button>
+            <button
+              onClick={toggleWatched}
+              className={`mobile-action-btn ${currentVideo.watched ? 'active' : ''}`}
+              title={currentVideo.watched ? 'Mark unwatched' : 'Mark watched'}
+            >
+              <EyeIcon className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="mobile-action-btn danger"
+            >
+              <TrashIcon className="w-4 h-4" />
+              <span>Delete</span>
+            </button>
+            <button
+              onClick={() => setShowMobileQueue(true)}
+              className="mobile-action-btn"
+            >
+              <QueueIcon className="w-4 h-4" />
+              <span>Playlist</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Full-Screen Playlist Overlay */}
+      {showMobileQueue && (
+        <div className="fixed inset-0 z-50 bg-dark-primary flex flex-col animate-fade-in">
+          {/* Overlay Header */}
+          <div className="p-4 border-b border-dark-border flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-base text-text-primary">{sourceTitle}</h3>
+              <p className="text-xs text-text-secondary">{currentIndex + 1} of {videos.length} videos</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={shufflePlaylist}
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-surface border border-dark-border text-text-secondary active:bg-red-500 active:border-red-500 active:text-white transition-all"
+                title="Shuffle"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="16 3 21 3 21 8"></polyline>
+                  <line x1="4" y1="20" x2="21" y2="3"></line>
+                  <polyline points="21 16 21 21 16 21"></polyline>
+                  <line x1="15" y1="15" x2="21" y2="21"></line>
+                  <line x1="4" y1="4" x2="9" y2="9"></line>
+                </svg>
+              </button>
+              <button
+                onClick={toggleLoop}
+                className={`w-10 h-10 flex items-center justify-center rounded-lg border transition-all ${
+                  isLooping
+                    ? 'bg-red-500 border-red-500 text-white'
+                    : 'bg-dark-surface border-dark-border text-text-secondary'
+                }`}
+                title={isLooping ? 'Disable loop' : 'Enable loop'}
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17 1l4 4-4 4"></path>
+                  <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                  <path d="M7 23l-4-4 4-4"></path>
+                  <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+                </svg>
+              </button>
+              <button
+                onClick={() => setShowMobileQueue(false)}
+                className="w-10 h-10 flex items-center justify-center rounded-lg bg-dark-surface border border-dark-border text-text-secondary hover:bg-red-500 hover:border-red-500 hover:text-white transition-all"
+                title="Close"
+              >
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable Queue List */}
+          <div className="flex-1 overflow-y-auto">
+            {displayOrder.map((actualIndex, displayIndex) => {
+              const video = videos[actualIndex];
+              if (!video) return null;
+              const isCurrent = displayIndex === currentIndex;
+              const watchProgress = video.watch_position && video.duration_sec
+                ? Math.min((video.watch_position / video.duration_sec) * 100, 100)
+                : 0;
+
+              return (
+                <button
+                  key={video.id}
+                  onClick={() => {
+                    goToVideo(displayIndex);
+                    setShowMobileQueue(false);
+                  }}
+                  className={`w-full p-3 flex gap-3 hover:bg-surface-hover transition-colors ${
+                    isCurrent ? 'bg-accent/20 border-l-2 border-accent' : ''
+                  }`}
+                >
+                  <div className="relative flex-shrink-0 w-24 h-14 bg-black rounded overflow-hidden">
+                    {video.thumb_url ? (
+                      <img src={video.thumb_url} alt={video.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-surface-hover">
+                        <svg className="w-6 h-6 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="absolute bottom-0.5 right-0.5 bg-black/80 text-white text-xs px-1 rounded">
+                      {formatDuration(video.duration_sec)}
+                    </div>
+                    {video.watched && (
+                      <div className="absolute top-0.5 left-0.5 bg-accent/90 text-accent-text px-1 rounded">
+                        <CheckmarkIcon className="w-2.5 h-2.5" />
+                      </div>
+                    )}
+                    {watchProgress > 0 && !video.watched && (
+                      <div className="watch-progress-bar">
+                        <div className="watch-progress-bar-fill" style={{ width: `${watchProgress}%` }} />
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <h3 className={`text-sm font-medium line-clamp-2 leading-tight ${isCurrent ? 'text-accent-text' : 'text-text-primary'}`}>
+                      {video.title}
+                    </h3>
+                    <p className="text-xs text-text-secondary mt-1">{video.channel_title}</p>
+                  </div>
+                  {isCurrent && <PlayIcon className="w-5 h-5 text-accent flex-shrink-0 self-center" />}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Bottom Navigation */}
+      <MobileBottomNav queueCount={queueCount} />
+
+      {/* Hidden Preload Video */}
+      <video
+        ref={preloadVideoRef}
+        style={{ display: 'none' }}
+        preload="auto"
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete Video"
+        message={`Are you sure you want to delete "${currentVideo.title}"? This will permanently remove the video file from your system.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDanger={true}
+      />
+
+      {/* Add to Playlist Menu */}
+      {showPlaylistMenu && (
+        <AddToPlaylistMenu
+          videoId={currentVideo.id}
+          video={currentVideo}
+          triggerRef={addToPlaylistButtonRef}
+          onClose={() => setShowPlaylistMenu(false)}
+        />
+      )}
     </div>
   );
 }

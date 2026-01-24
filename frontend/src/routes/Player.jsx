@@ -1,15 +1,19 @@
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import 'video.js/dist/video-js.css';
-import { useVideo, useUpdateVideo, useDeleteVideo } from '../api/queries';
+import { useVideo, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
+import MobileBottomNav from '../components/MobileBottomNav';
 import { formatDuration, getVideoSource } from '../utils/videoPlayerUtils';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon } from '../components/icons';
+import {
+  ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, SettingsIcon,
+  ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon
+} from '../components/icons';
 
 const DEBUG = false; // Set to true to enable console logging
 
@@ -18,6 +22,7 @@ export default function Player() {
   const navigate = useNavigate();
   const location = useLocation();
   const { data: video, isLoading } = useVideo(videoId);
+  const { data: queueData } = useQueue({});
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
   const { showNotification } = useNotification();
@@ -33,6 +38,7 @@ export default function Player() {
   // State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(() => {
     const saved = localStorage.getItem('theaterMode');
     return saved === 'true';
@@ -41,11 +47,21 @@ export default function Player() {
   // Media query for mobile detection
   const isMobile = useMediaQuery('(max-width: 767px)');
 
+  // Queue count for badge
+  const queueCount = queueData?.queue?.length || 0;
+
   // Keep refs updated with latest values
   useEffect(() => {
     showNotificationRef.current = showNotification;
     videoDataRef.current = video;
   });
+
+  // Auto-collapse sidebar in theater mode
+  useEffect(() => {
+    if (isTheaterMode) {
+      setSidebarCollapsed(true);
+    }
+  }, [isTheaterMode]);
 
   // Handle watched callback
   const handleWatched = useCallback(() => {
@@ -102,11 +118,6 @@ export default function Player() {
         console.log('[Player] Video:', video.title);
         console.log('[Player] Video ID:', video.id);
         console.log('[Player] Source path:', videoSrc);
-        console.log('[Player] Player state before update:', {
-          paused: player.paused(),
-          currentTime: player.currentTime(),
-          duration: player.duration()
-        });
       }
 
       player.src({
@@ -120,26 +131,12 @@ export default function Player() {
       const handleError = () => {
         const error = player.error();
         if (error) {
-          if (DEBUG) console.error('[Player] Video playback error:', {
-            code: error.code,
-            message: error.message,
-            type: error.type
-          });
+          if (DEBUG) console.error('[Player] Video playback error:', error);
           showNotificationRef.current('Failed to load video', 'error');
         }
       };
 
       player.on('error', handleError);
-
-      // Log when metadata loads
-      player.one('loadedmetadata', () => {
-        if (DEBUG) console.log('[Player] Video metadata loaded:', {
-          title: video.title,
-          duration: player.duration(),
-          videoWidth: player.videoWidth(),
-          videoHeight: player.videoHeight()
-        });
-      });
 
       return () => {
         player.off('error', handleError);
@@ -147,11 +144,23 @@ export default function Player() {
     } catch (error) {
       if (DEBUG) {
         console.error('[Player] FATAL ERROR setting video source:', error);
-        console.error('[Player] Error stack:', error.stack);
-        console.error('[Player] Video data:', video);
       }
     }
   }, [playerRef, video?.file_path, video?.id]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      window.location.replace('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+      window.location.replace('/login');
+    }
+  };
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -191,7 +200,6 @@ export default function Player() {
   };
 
   const handleBack = () => {
-    // Use referrer from state if available, otherwise default to channel library
     const referrer = location.state?.from || `/channel/${video.channel_id}/library`;
     navigate(referrer);
   };
@@ -211,58 +219,58 @@ export default function Player() {
     }
   };
 
-  return (
-    <div className="space-y-4 animate-fade-in pt-4">
-      {/* Flex Container: Buttons left, Player+Info right */}
-      <div className="flex flex-col md:flex-row md:gap-4 md:items-start">
-        {/* Control Buttons - Desktop: vertical column on left */}
-        <div className="hidden md:flex md:flex-col md:gap-3">
-          <button
-            onClick={handleBack}
-            className="icon-btn hover:bg-accent hover:border-accent"
-            title="Back"
-            aria-label="Go back to previous page"
-          >
-            <ArrowLeftIcon />
-          </button>
+  const toggleSidebar = () => {
+    setSidebarCollapsed(!sidebarCollapsed);
+  };
 
-          <button
-            ref={addToPlaylistButtonRef}
-            onClick={() => setShowPlaylistMenu(true)}
-            className="icon-btn hover:bg-accent hover:border-accent"
-            title="Add to playlist"
-            aria-label="Add video to playlist"
-          >
-            <PlusIcon />
-          </button>
+  // Sidebar nav item component
+  const NavLink = ({ to, icon, label, badge, onClick, isButton = false }) => {
+    const isActive = location.pathname === to;
+    const baseClasses = `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+      isActive
+        ? 'bg-accent/20 text-accent-text'
+        : 'text-text-secondary hover:bg-dark-hover hover:text-text-primary'
+    }`;
 
-          <button
-            onClick={toggleWatched}
-            className={`icon-btn hover:bg-accent hover:border-accent ${video.watched ? 'bg-accent' : ''}`}
-            title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
-            aria-label={video.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
-          >
-            <EyeIcon />
-          </button>
+    if (isButton) {
+      return (
+        <button onClick={onClick} className={baseClasses} title={label}>
+          {icon}
+          {!sidebarCollapsed && <span className="text-sm font-medium">{label}</span>}
+        </button>
+      );
+    }
 
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="icon-btn hover:bg-red-600 hover:border-red-700"
-            title="Delete video"
-            aria-label="Delete video permanently"
-          >
-            <TrashIcon />
-          </button>
-        </div>
+    return (
+      <Link to={to} className={baseClasses} title={label}>
+        {icon}
+        {!sidebarCollapsed && (
+          <>
+            <span className="text-sm font-medium">{label}</span>
+            {badge > 0 && (
+              <span className="ml-auto bg-accent text-dark-primary text-xs font-bold px-2 py-0.5 rounded-full">
+                {badge}
+              </span>
+            )}
+          </>
+        )}
+        {sidebarCollapsed && badge > 0 && (
+          <span className="absolute -top-1 -right-1 bg-accent text-dark-primary text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
+            {badge}
+          </span>
+        )}
+      </Link>
+    );
+  };
 
-        {/* Player Container */}
-        <div className={`transition-all duration-300 ease-in-out ${
-          isTheaterMode
-            ? 'w-full'
-            : 'md:w-[60%] md:max-w-[83.333%]'
-        }`} style={{ willChange: 'width' }}>
-          {/* Video Wrapper - use dedicated mobile class or desktop class */}
-          <div className={isMobile ? 'player-wrapper-mobile' : `player-wrapper shadow-card-hover ${isTheaterMode ? 'mx-6' : ''}`}>
+  // Mobile layout with bottom navigation
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-screen bg-dark-primary animate-fade-in">
+        {/* Scrollable Content Area */}
+        <div className="flex-1 overflow-y-auto">
+          {/* Video Wrapper */}
+          <div className="player-wrapper-mobile">
             <video
               ref={videoRef}
               className="video-js vjs-big-play-centered"
@@ -271,13 +279,13 @@ export default function Player() {
             />
           </div>
 
-          {/* Video Info Below Player */}
-          <div className={`mt-2 md:mt-4 space-y-2 md:space-y-3 ${isTheaterMode ? 'mx-6' : ''}`}>
-            <h1 className="text-lg md:text-2xl font-bold text-text-primary leading-tight line-clamp-2">
+          {/* Video Info */}
+          <div className="px-4 py-3 space-y-3">
+            <h1 className="text-base font-semibold text-text-primary leading-tight line-clamp-2">
               {video.title}
             </h1>
 
-            <div className="flex items-center gap-2 md:gap-3 text-xs md:text-sm text-text-secondary">
+            <div className="flex items-center gap-2 text-xs text-text-secondary">
               <Link
                 to={`/channel/${video.channel_id}/library`}
                 className="hover:text-text-primary transition-colors font-medium"
@@ -286,92 +294,57 @@ export default function Player() {
               </Link>
               <span>•</span>
               <span>{formatDuration(video.duration_sec)}</span>
-              <span>•</span>
-              <span>
-                {video.upload_date
-                  ? new Date(
-                      video.upload_date.slice(0, 4),
-                      video.upload_date.slice(4, 6) - 1,
-                      video.upload_date.slice(6, 8)
-                    ).toLocaleDateString()
-                  : 'Unknown date'}
-              </span>
-              {video.watched && (
-                <>
-                  <span>•</span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-accent/20 border border-accent/40 text-accent-text font-semibold">
-                    <CheckmarkIcon className="w-3.5 h-3.5" />
-                    Watched
-                  </span>
-                </>
-              )}
             </div>
 
-            {/* Control Buttons - Mobile: horizontal row below info */}
-            <div className="flex md:hidden gap-2 mt-2">
+            {/* Action Buttons - Mobile (Labeled) */}
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={handleBack}
-                className="icon-btn hover:bg-accent hover:border-accent"
-                title="Back"
-                aria-label="Go back to previous page"
+                className="mobile-action-btn"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
+                <ArrowLeftIcon className="w-4 h-4" />
+                <span>Back</span>
               </button>
-
               <button
+                ref={addToPlaylistButtonRef}
                 onClick={() => setShowPlaylistMenu(true)}
-                className="icon-btn hover:bg-accent hover:border-accent"
-                title="Add to playlist"
-                aria-label="Add video to playlist"
+                className="mobile-action-btn"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 5v14m-7-7h14"></path>
-                </svg>
+                <PlusIcon className="w-4 h-4" />
+                <span>Playlist</span>
               </button>
-
               <button
                 onClick={toggleWatched}
-                className={`icon-btn hover:bg-accent hover:border-accent ${video.watched ? 'bg-accent' : ''}`}
-                title={video.watched ? 'Mark as unwatched' : 'Mark as watched'}
-                aria-label={video.watched ? 'Mark video as unwatched' : 'Mark video as watched'}
+                className={`mobile-action-btn ${video.watched ? 'active' : ''}`}
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                  <circle cx="12" cy="12" r="3"></circle>
-                </svg>
+                <EyeIcon className="w-4 h-4" />
+                <span>{video.watched ? 'Watched' : 'Watched'}</span>
               </button>
-
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="icon-btn hover:bg-red-600 hover:border-red-700"
-                title="Delete video"
-                aria-label="Delete video permanently"
+                className="mobile-action-btn danger"
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="3 6 5 6 21 6"></polyline>
-                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                </svg>
+                <TrashIcon className="w-4 h-4" />
+                <span>Delete</span>
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-        {/* Delete Confirmation Dialog */}
+        {/* Mobile Bottom Navigation */}
+        <MobileBottomNav queueCount={queueCount} />
+
+        {/* Dialogs */}
         <ConfirmDialog
           isOpen={showDeleteConfirm}
           onClose={() => setShowDeleteConfirm(false)}
           onConfirm={handleDelete}
           title="Delete Video"
-          message={`Are you sure you want to delete "${video.title}"? This will permanently remove the video file from your system.`}
+          message={`Are you sure you want to delete "${video.title}"?`}
           confirmText="Delete"
           cancelText="Cancel"
           isDanger={true}
         />
-
-        {/* Add to Playlist Menu */}
         {showPlaylistMenu && (
           <AddToPlaylistMenu
             videoId={video.id}
@@ -380,6 +353,180 @@ export default function Player() {
             onClose={() => setShowPlaylistMenu(false)}
           />
         )}
+      </div>
+    );
+  }
+
+  // Desktop layout with sidebar
+  return (
+    <div className="flex h-screen overflow-hidden animate-fade-in">
+      {/* Sidebar Navigation */}
+      <nav
+        className={`flex flex-col bg-dark-secondary border-r border-dark-border transition-all duration-200 ${
+          sidebarCollapsed ? 'w-16' : 'w-44'
+        }`}
+      >
+        {/* Sidebar Header - Toggle Button */}
+        <div className="flex items-center justify-between p-3 border-b border-dark-border">
+          {!sidebarCollapsed && (
+            <span className="text-sm font-medium text-text-secondary">YTandChill</span>
+          )}
+          <button
+            onClick={toggleSidebar}
+            className="p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors"
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {sidebarCollapsed ? <MenuIcon /> : <CollapseIcon />}
+          </button>
+        </div>
+
+        {/* Nav Links */}
+        <div className="flex-1 p-2 space-y-1">
+          <NavLink to="/" icon={<ChannelsIcon />} label="Channels" />
+          <NavLink to="/library" icon={<LibraryIcon />} label="Library" />
+          <NavLink to="/queue" icon={<QueueIcon />} label="Queue" badge={queueCount} />
+        </div>
+
+        {/* Bottom Links */}
+        <div className="p-2 border-t border-dark-border space-y-1">
+          <NavLink to="/settings" icon={<SettingsIcon />} label="Settings" />
+          <NavLink isButton onClick={handleLogout} icon={<LogoutIcon />} label="Logout" />
+        </div>
+      </nav>
+
+      {/* Main Content Area - Single video element, styling changes based on mode */}
+      <div className="flex-1 flex flex-col overflow-y-auto bg-dark-primary">
+        {/* Video Section - container styling changes, video element stays mounted */}
+        <div
+          className={`shrink-0 ${
+            isTheaterMode ? 'bg-black flex justify-center' : 'p-4 pb-0'
+          }`}
+        >
+          <div
+            className="flex flex-col"
+            style={
+              isTheaterMode
+                ? { width: '100%', maxWidth: 'calc(100vh * 16 / 9)' }
+                : {}
+            }
+          >
+            {/* Video Wrapper */}
+            <div
+              className={`player-wrapper ${isTheaterMode ? '' : 'shadow-card-hover'}`}
+              style={{
+                height: isTheaterMode ? '100vh' : 'calc(100vh - 180px)',
+                maxWidth: isTheaterMode ? '100%' : 'calc((100vh - 180px) * 16 / 9)',
+                width: '100%',
+              }}
+            >
+              <video
+                ref={videoRef}
+                className="video-js vjs-big-play-centered"
+                playsInline
+                preload="auto"
+              />
+            </div>
+
+            {/* Info Section - in theater mode, stays with video; in normal mode, separate */}
+            <div className={`${isTheaterMode ? 'bg-dark-primary py-3 px-1' : 'py-3'}`}>
+              <h1 className="text-lg font-bold text-text-primary leading-tight line-clamp-2">
+                {video.title}
+              </h1>
+
+              <div className="flex items-center gap-2 mt-1 text-sm text-text-secondary">
+                <Link
+                  to={`/channel/${video.channel_id}/library`}
+                  className="hover:text-text-primary transition-colors font-medium"
+                >
+                  {video.channel_title}
+                </Link>
+                <span>•</span>
+                <span>{formatDuration(video.duration_sec)}</span>
+                <span>•</span>
+                <span>
+                  {video.upload_date
+                    ? new Date(
+                        video.upload_date.slice(0, 4),
+                        video.upload_date.slice(4, 6) - 1,
+                        video.upload_date.slice(6, 8)
+                      ).toLocaleDateString()
+                    : 'Unknown date'}
+                </span>
+                {video.watched && (
+                  <>
+                    <span>•</span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent-text text-xs font-semibold">
+                      <CheckmarkIcon className="w-3 h-3" />
+                      Watched
+                    </span>
+                  </>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 mt-3">
+                <button
+                  onClick={handleBack}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors text-sm"
+                >
+                  <ArrowLeftIcon />
+                  <span className="font-medium">Back</span>
+                </button>
+
+                <button
+                  ref={addToPlaylistButtonRef}
+                  onClick={() => setShowPlaylistMenu(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary transition-colors text-sm"
+                >
+                  <PlusIcon />
+                  <span className="font-medium">Playlist</span>
+                </button>
+
+                <button
+                  onClick={toggleWatched}
+                  className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-sm ${
+                    video.watched
+                      ? 'bg-accent border-accent text-dark-primary'
+                      : 'bg-dark-surface border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary'
+                  }`}
+                >
+                  <EyeIcon />
+                  <span className="font-medium">{video.watched ? 'Watched' : 'Mark Watched'}</span>
+                </button>
+
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors text-sm"
+                >
+                  <TrashIcon />
+                  <span className="font-medium">Delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Dialogs */}
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={handleDelete}
+        title="Delete Video"
+        message={`Are you sure you want to delete "${video.title}"? This will permanently remove the video file from your system.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        isDanger={true}
+      />
+
+      {showPlaylistMenu && (
+        <AddToPlaylistMenu
+          videoId={video.id}
+          video={video}
+          triggerRef={addToPlaylistButtonRef}
+          onClose={() => setShowPlaylistMenu(false)}
+        />
+      )}
     </div>
   );
 }

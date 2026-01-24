@@ -240,9 +240,13 @@ export function useVideoJsPlayer({
         if (desktopHideTimeout) {
           clearTimeout(desktopHideTimeout);
         }
+        // Don't hide controls if video is paused
+        if (player.paused()) {
+          return;
+        }
         desktopHideTimeout = setTimeout(() => {
-          // Don't hide if mouse is hovering over control bar
-          if (!isHoveringControlBar) {
+          // Don't hide if mouse is hovering over control bar or if paused
+          if (!isHoveringControlBar && !player.paused()) {
             player.userActive(false);
           }
         }, DESKTOP_HIDE_DELAY);
@@ -268,11 +272,13 @@ export function useVideoJsPlayer({
       controlBarEl.addEventListener('mouseenter', handleControlBarMouseEnter);
       controlBarEl.addEventListener('mouseleave', handleControlBarMouseLeave);
 
-      // When paused, start timer to hide controls
+      // When paused, keep controls visible (don't auto-hide)
       player.on('pause', () => {
-        if (!isHoveringControlBar) {
-          hideControlsAfterDelay();
+        if (desktopHideTimeout) {
+          clearTimeout(desktopHideTimeout);
+          desktopHideTimeout = null;
         }
+        player.userActive(true);  // Force controls visible
       });
 
       // When playing, let Video.js handle via inactivityTimeout
@@ -283,10 +289,18 @@ export function useVideoJsPlayer({
         }
       });
 
-      // When user becomes active (mouse move), reset timer if paused
-      player.on('useractive', () => {
-        if (player.paused() && !isHoveringControlBar) {
-          hideControlsAfterDelay();
+      // When user becomes inactive, check if paused - if so, force controls visible
+      player.on('userinactive', () => {
+        if (player.paused()) {
+          // Override Video.js hiding controls when paused
+          player.userActive(true);
+        }
+      });
+
+      // On canplay (fires after mode switch), ensure controls visible if paused
+      player.on('canplay', () => {
+        if (player.paused()) {
+          player.userActive(true);
         }
       });
 
@@ -380,6 +394,8 @@ export function useVideoJsPlayer({
               setTimeout(() => {
                 try {
                   player.hasStarted(true);
+                  // Ensure controls are visible after init (especially after theater mode switch)
+                  player.userActive(true);
                 } catch (err) {
                   console.warn('[useVideoJsPlayer] Failed to mark as started:', err);
                 }

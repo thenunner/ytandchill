@@ -141,7 +141,7 @@
 
   /* Filter Button */
   .filter-btn {
-    @apply flex items-center gap-1 sm:gap-2 px-2 sm:px-3.5 py-2 rounded-lg;
+    @apply flex items-center gap-1 sm:gap-2 px-2 sm:px-3.5 h-9 rounded-lg;
     @apply bg-dark-primary/95 border border-dark-border text-text-primary;
     @apply text-xs sm:text-sm cursor-pointer transition-all duration-200;
     @apply hover:bg-dark-tertiary/50;
@@ -913,5 +913,49 @@
   .filter-btn.show-label span {
     display: inline;
   }
+}
+
+/* ===== MOBILE BOTTOM NAVIGATION & ACTION BUTTONS ===== */
+
+/* Mobile Action Buttons (Labeled) */
+.mobile-action-btn {
+  @apply flex items-center gap-1.5 px-3 py-2;
+  @apply bg-dark-secondary border border-dark-border rounded-lg;
+  @apply text-text-secondary text-xs font-medium;
+  @apply transition-all duration-200 cursor-pointer;
+}
+
+.mobile-action-btn:hover {
+  @apply bg-dark-hover border-dark-border-light text-text-primary;
+}
+
+.mobile-action-btn:active {
+  @apply bg-dark-tertiary;
+}
+
+.mobile-action-btn.active {
+  @apply bg-accent border-accent text-white;
+}
+
+.mobile-action-btn.danger {
+  @apply text-red-400 border-red-500/30;
+}
+
+.mobile-action-btn.danger:hover {
+  @apply bg-red-600 border-red-600 text-white;
+}
+
+/* Safe Area Bottom padding for iOS */
+.safe-area-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom, 8px), 8px);
+}
+
+/* Watch progress bar on queue thumbnails */
+.watch-progress-bar {
+  @apply absolute bottom-0 left-0 right-0 h-1 bg-white/30;
+}
+
+.watch-progress-bar-fill {
+  @apply h-full bg-accent;
 }
 
