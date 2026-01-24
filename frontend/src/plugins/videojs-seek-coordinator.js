@@ -50,12 +50,13 @@ class SeekCoordinatorPlugin extends Plugin {
     // Wrap player.currentTime() to intercept ALL seek requests
     this.wrapCurrentTime();
 
-    // Listen to seeking state events
-    this.player.on('seeking', () => this.handleSeeking());
-    this.player.on('seeked', () => this.handleSeeked());
+    // Bind handlers so we can remove them later
+    this._handleSeeking = () => this.handleSeeking();
+    this._handleSeeked = () => this.handleSeeked();
 
-    // Cleanup on dispose
-    this.player.on('dispose', () => this.dispose());
+    // Listen to seeking state events
+    this.player.on('seeking', this._handleSeeking);
+    this.player.on('seeked', this._handleSeeked);
   }
 
   /**
@@ -239,7 +240,7 @@ class SeekCoordinatorPlugin extends Plugin {
       }
 
       // Restore original currentTime if we wrapped it
-      if (this.originalCurrentTime) {
+      if (this.originalCurrentTime && this.player && !this.player.isDisposed()) {
         this.player.currentTime = this.originalCurrentTime;
       }
 
@@ -260,9 +261,35 @@ class SeekCoordinatorPlugin extends Plugin {
    * Cleanup on player disposal
    */
   dispose() {
-    this.disable();
+    // Cancel any pending RAF
+    if (this.rafId) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
+
+    // Remove event listeners if player still exists
+    if (this.player && !this.player.isDisposed()) {
+      if (this._handleSeeking) {
+        this.player.off('seeking', this._handleSeeking);
+      }
+      if (this._handleSeeked) {
+        this.player.off('seeked', this._handleSeeked);
+      }
+
+      // Restore original currentTime if we wrapped it
+      if (this.originalCurrentTime) {
+        this.player.currentTime = this.originalCurrentTime;
+        this.originalCurrentTime = null;
+      }
+    }
+
     this.seekTarget = null;
-    super.dispose();
+    this.options.enabled = false;
+
+    // Only call super.dispose() if player is still valid
+    if (this.player && !this.player.isDisposed()) {
+      super.dispose();
+    }
   }
 }
 

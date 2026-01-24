@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels } from '../api/queries';
 import api from '../api/client';
@@ -164,7 +164,14 @@ export default function Settings() {
 
   // Only fetch logs when the logs section is visible
   const { data: logsData } = useLogs(500, { enabled: showLogs });
+  const logContentRef = useRef(null);
 
+  // Scroll logs to bottom when opened or when data loads
+  useEffect(() => {
+    if (showLogs && logContentRef.current) {
+      logContentRef.current.scrollTop = logContentRef.current.scrollHeight;
+    }
+  }, [showLogs, logsData]);
 
   // Queue/DB Repair state
   const [showRepairModal, setShowRepairModal] = useState(false);
@@ -829,8 +836,9 @@ export default function Settings() {
           </div>
 
           <div className="setting-row mobile-stack">
-            <div className="setting-label flex items-center gap-2">
+            <div className="setting-label flex items-center gap-2 max-md:w-full">
               <div className="setting-name">SponsorBlock</div>
+              <div className="flex items-center gap-2 max-md:ml-auto">
               <Tooltip text="Skip SponsorBlock for videos 60 minutes or longer to avoid long re-encoding times">
                 <button
                   onClick={async () => {
@@ -853,6 +861,7 @@ export default function Settings() {
                 </button>
               </Tooltip>
               <span className="text-xs text-text-muted">60min+ videos</span>
+              </div>
             </div>
             <div className="settings-toggle-group">
               <Tooltip text="Paid promotions and sponsored segments">
@@ -965,7 +974,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="setting-row mobile-stack">
+          <div className="setting-row">
             <div className="setting-label">
               <div>
                 <div className="setting-name">Card Size - Channels</div>
@@ -991,7 +1000,7 @@ export default function Settings() {
             </div>
           </div>
 
-          <div className="setting-row mobile-stack">
+          <div className="setting-row">
             <div className="setting-label">
               <div>
                 <div className="setting-name">Card Size - Library</div>
@@ -1325,6 +1334,17 @@ export default function Settings() {
           <div className="section-header cursor-pointer" onClick={() => toggleSection('system')}>
             <SystemIcon />
             System
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                fetch('/api/auth/logout', { method: 'POST', credentials: 'include' })
+                  .then(() => window.location.replace('/login'))
+                  .catch(() => window.location.replace('/login'));
+              }}
+              className="md:hidden ml-auto mr-2 px-2.5 py-1 text-sm font-semibold text-red-500 bg-dark-tertiary border border-dark-border rounded-md hover:bg-dark-hover hover:border-red-500/50 transition-all"
+            >
+              Logout
+            </button>
             <ChevronIcon collapsed={collapsedSections.system} />
           </div>
 
@@ -1404,19 +1424,18 @@ export default function Settings() {
             )}
           </div>
 
-          {/* Forgot Password */}
+          {/* Can't Access Account */}
           <div className="setting-row">
             <div className="setting-label">
               <div>
-                <div className="setting-name">Forgot Password?</div>
-                <div className="setting-desc">Wipe credentials and return to initial setup</div>
+                <div className="setting-name">Can't Access your Account?</div>
               </div>
             </div>
             <button
               onClick={() => setShowResetAuthModal(true)}
               className="settings-action-btn text-red-400 hover:text-red-300"
             >
-              Wipe Credentials
+              Reset
             </button>
           </div>
 
@@ -1507,7 +1526,6 @@ export default function Settings() {
                   ))}
                 </div>
                 <button onClick={toggleLogs} className="settings-action-btn">
-                  <EyeIcon />
                   {showLogs ? 'Hide' : 'View'} Logs
                 </button>
               </div>
@@ -1522,7 +1540,7 @@ export default function Settings() {
                   </span>
                 )}
               </div>
-              <div className="log-content">
+              <div className="log-content" ref={logContentRef}>
                 {logsData?.logs && logsData.logs.length > 0 ? (
                   logsData.logs.map((line, index) => {
                     const levelMatch = line.match(/^(.* - )(\[(?:ERROR|WARNING|INFO|API|DEBUG)\])( - .*)$/);

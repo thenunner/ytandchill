@@ -43,8 +43,6 @@ export const detectDeviceType = () => {
 
 // Initialize YouTube-style mobile touch controls for video.js player
 export const initializeMobileTouchControls = (player, isIOSDevice) => {
-  console.log('Initializing YouTube-style touch controls');
-
   // Double-tap to enter fullscreen when NOT in fullscreen, prevent exit when IN fullscreen
   let lastVideoTapTime = 0;
   const mediaTouchHandler = (e) => {

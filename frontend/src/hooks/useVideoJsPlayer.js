@@ -72,7 +72,6 @@ export function useVideoJsPlayer({
     const videoElementChanged = lastVideoElementRef.current && lastVideoElementRef.current !== elem;
 
     if (videoElementChanged && playerRef.current) {
-      console.log('[useVideoJsPlayer] Video element changed, disposing old player');
       try {
         if (!playerRef.current.isDisposed()) {
           playerRef.current.dispose();
@@ -89,11 +88,8 @@ export function useVideoJsPlayer({
     // For persistent players (playlists), don't reinitialize if player already exists
     // UNLESS the video element changed (handled above)
     if (persistPlayer && playerRef.current) {
-      console.log('[useVideoJsPlayer] Persistent player exists, skipping reinitialization');
       return;
     }
-
-    console.log('[useVideoJsPlayer] Initializing new video.js player');
 
     const { isMobile, isIOS } = detectDeviceType();
 
@@ -138,17 +134,14 @@ export function useVideoJsPlayer({
     });
 
     playerRef.current = player;
-    console.log('[useVideoJsPlayer] Player initialized successfully. Player ID:', player.id());
 
     // Enable seek coordinator plugin
     player.seekCoordinator({
       snapBackward: 0.4,    // Snap 400ms backward for keyframes
       settleTime: 100,      // Wait 100ms after seeks (Chrome decoder settling)
       enabled: true,        // Enable plugin
-      debug: false,         // Set to true for console logging
+      debug: false,
     });
-
-    console.log('[useVideoJsPlayer] Seek coordinator plugin enabled');
 
     // Apply default playback speed from settings
     fetch('/api/settings', { credentials: 'include' })
@@ -157,7 +150,6 @@ export function useVideoJsPlayer({
         const defaultSpeed = parseFloat(settings.default_playback_speed) || 1;
         if (defaultSpeed !== 1 && player && !player.isDisposed()) {
           player.playbackRate(defaultSpeed);
-          console.log(`[useVideoJsPlayer] Applied default playback speed: ${defaultSpeed}x`);
         }
       })
       .catch(err => {
@@ -187,10 +179,8 @@ export function useVideoJsPlayer({
       // Fullscreen change: toggle auto-hide behavior
       player.on('fullscreenchange', () => {
         if (player.isFullscreen()) {
-          console.log('[useVideoJsPlayer] Mobile fullscreen: enabling auto-hide');
           showControlsTemporarily();
         } else {
-          console.log('[useVideoJsPlayer] Mobile exit fullscreen: controls always visible');
           if (mobileFullscreenTimeout) {
             clearTimeout(mobileFullscreenTimeout);
           }
@@ -312,8 +302,6 @@ export function useVideoJsPlayer({
         controlBarEl.removeEventListener('mouseenter', handleControlBarMouseEnter);
         controlBarEl.removeEventListener('mouseleave', handleControlBarMouseLeave);
       });
-
-      console.log('[useVideoJsPlayer] Desktop/Tablet: auto-hide controls after 2s (stays visible on control bar hover)');
     }
 
     // Add custom seek buttons to control bar (desktop/tablet)
@@ -332,8 +320,6 @@ export function useVideoJsPlayer({
         const seekFwdBtn = controlBar.addChild('SeekForward10Button', {},
           controlBar.children().indexOf(seekBackBtn) + 1
         );
-
-        console.log('[useVideoJsPlayer] Added +10/-10 seek buttons to control bar');
       } catch (error) {
         console.error('[useVideoJsPlayer] Error adding seek buttons:', error);
       }
@@ -355,7 +341,6 @@ export function useVideoJsPlayer({
         if (fullscreenToggle) {
           const controlBarEl = player.controlBar.el();
           controlBarEl.insertBefore(theaterButton.el(), fullscreenToggle.el());
-          console.log('[useVideoJsPlayer] Theater button positioned before fullscreen');
         }
       } catch (error) {
         console.error('[useVideoJsPlayer] Error adding theater button:', error);
@@ -366,7 +351,6 @@ export function useVideoJsPlayer({
     if (video.file_path) {
       const videoSrc = getVideoSource(video.file_path);
       if (videoSrc) {
-        console.log('[useVideoJsPlayer] Setting initial video source:', videoSrc);
         player.src({ src: videoSrc, type: 'video/mp4' });
 
         // When metadata loads, restore progress and prepare video frame
@@ -378,10 +362,6 @@ export function useVideoJsPlayer({
             const startTime = (video.progress_sec && video.progress_sec > 0 && video.progress_sec < duration * 0.95)
               ? video.progress_sec
               : 0;
-
-            if (startTime > 0) {
-              console.log(`[useVideoJsPlayer] Restoring progress to ${startTime}s`);
-            }
 
             player.currentTime(startTime);
 
@@ -418,7 +398,6 @@ export function useVideoJsPlayer({
                 src: subtitleUrl,
                 default: false
               }, false);
-              console.log('[useVideoJsPlayer] Added subtitle track:', subtitleUrl);
             }
           })
           .catch(() => {}); // Silently ignore if no subtitles
@@ -439,7 +418,6 @@ export function useVideoJsPlayer({
 
       try {
         const currentTime = Math.floor(player.currentTime());
-        console.log(`[useVideoJsPlayer] Saving progress immediately: ${currentTime}s`);
         updateVideoRef.current.mutate({
           id: videoDataRef.current.id,
           data: { playback_seconds: currentTime },
@@ -596,14 +574,12 @@ export function useVideoJsPlayer({
         const savedPosition = video.playback_seconds || 0;
 
         if (savedPosition > 0 && savedPosition < duration - 5) {
-          console.log(`Restoring playback position: ${savedPosition}s`);
           player.currentTime(savedPosition);
         }
       });
     } else {
       // Playlist mode - always start from beginning
       player.on('loadedmetadata', () => {
-        console.log('Starting video from beginning (playlist mode)');
         player.currentTime(0);
       });
     }
@@ -651,7 +627,6 @@ export function useVideoJsPlayer({
       }
       document.removeEventListener('keydown', handleKeyPress);
       if (playerRef.current) {
-        console.log('[useVideoJsPlayer] Disposing player');
         playerRef.current.dispose();
         playerRef.current = null;
       }
@@ -667,7 +642,6 @@ export function useVideoJsPlayer({
       if (playerRef.current && !playerRef.current.isDisposed() && saveProgress && updateVideoRef.current && videoDataRef.current) {
         try {
           const currentTime = Math.floor(playerRef.current.currentTime());
-          console.log(`[useVideoJsPlayer] Saving progress on page unload: ${currentTime}s`);
           updateVideoRef.current.mutate({
             id: videoDataRef.current.id,
             data: { playback_seconds: currentTime },
@@ -687,15 +661,13 @@ export function useVideoJsPlayer({
   // Component unmount cleanup: Always pause and dispose player when leaving the page
   useEffect(() => {
     return () => {
-      console.log('[useVideoJsPlayer] Component unmounting, cleaning up player');
       if (playerRef.current && !playerRef.current.isDisposed()) {
-        console.log('[useVideoJsPlayer] Pausing and disposing player on unmount');
         playerRef.current.pause();
         playerRef.current.dispose();
         playerRef.current = null;
       }
     };
-  }, []); // Empty deps = only runs on component mount/unmount
+  }, []);
 
   // Update theater button state when mode changes
   useEffect(() => {

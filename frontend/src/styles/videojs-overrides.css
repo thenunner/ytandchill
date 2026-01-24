@@ -29,6 +29,29 @@
   font-family: inherit;
 }
 
+/* Ensure control text (accessibility labels) are hidden visually */
+.video-js .vjs-control-text {
+  border: 0 !important;
+  clip: rect(0 0 0 0) !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+  position: absolute !important;
+  width: 1px !important;
+}
+
+/* Hide text track display and settings buttons (can cause "Show Text?" display issues) */
+.video-js .vjs-text-track-display,
+.video-js .vjs-text-track-settings {
+  /* Keep functional but ensure no stray text shows */
+}
+
+.video-js .vjs-subs-caps-button .vjs-control-text,
+.video-js .vjs-captions-button .vjs-control-text,
+.video-js .vjs-subtitles-button .vjs-control-text {
+  display: none !important;
+}
+
 /* Hide big play button - use control bar instead */
 .video-js .vjs-big-play-button {
   display: none !important;
@@ -293,6 +316,7 @@
   display: block;
 }
 
+
 /* ===== UNIFIED CONTROL BAR SIZING ===== */
 /*
  * This section creates a consistent, uniform control bar where all elements
@@ -511,11 +535,22 @@
  * Touch-friendly menu for speed control
  * --------------------------------------------- */
 
-/* Playback rate button */
+/* Playback rate button - ensure only speed value is shown */
+.video-js .vjs-playback-rate {
+  width: auto !important;
+  min-width: 44px;
+}
+
 .video-js .vjs-playback-rate .vjs-playback-rate-value {
   font-size: 13px;
   line-height: 44px;
   font-weight: 600;
+  display: block !important;
+}
+
+/* Hide any control text that might be showing */
+.video-js .vjs-playback-rate .vjs-control-text {
+  display: none !important;
 }
 
 /* Playback rate menu */

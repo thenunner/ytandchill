@@ -391,24 +391,12 @@ export default function Videos() {
           actions={selectedVideos.size > 0 ? [
             {
               label: 'Ignore',
-              icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                </svg>
-              ),
               onClick: handleRemoveSelected,
               disabled: isRemoving,
               variant: 'warning'
             },
             {
               label: 'Queue',
-              icon: (
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <polyline points="19 12 12 19 5 12"></polyline>
-                </svg>
-              ),
               onClick: handleQueueSelected,
               disabled: isQueueing,
               variant: 'primary'

@@ -55,8 +55,23 @@ def serve_media(filename):
         logger.warning(f"File not found: {file_abs}")
         return jsonify({'error': 'File not found'}), 404
 
-    # Get file size and MIME type
-    file_size = os.path.getsize(file_abs)
+    # Get file stats for size, modification time, and ETag generation
+    file_stat = os.stat(file_abs)
+    file_size = file_stat.st_size
+    file_mtime = int(file_stat.st_mtime)
+
+    # Generate ETag from size and modification time (cache busting if file changes)
+    etag = f'"{file_size}-{file_mtime}"'
+
+    # Check If-None-Match header for cache validation
+    if_none_match = request.headers.get('If-None-Match')
+    if if_none_match and if_none_match == etag:
+        # File hasn't changed - return 304 Not Modified
+        return Response(status=304, headers={
+            'ETag': etag,
+            'Cache-Control': 'public, max-age=86400'
+        })
+
     mime_type, _ = mimetypes.guess_type(file_abs)
     if not mime_type:
         mime_type = 'video/mp4'  # Default fallback
@@ -70,8 +85,9 @@ def serve_media(filename):
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Content-Length'] = str(file_size)
         response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['ETag'] = etag
 
-        # Add cache headers for images (thumbnails)
+        # Add cache headers based on content type
         if mime_type and mime_type.startswith('image/'):
             if filename.startswith('thumbnails/'):
                 # Channel thumbnails rarely change - cache for 1 week
@@ -79,6 +95,9 @@ def serve_media(filename):
             else:
                 # Video thumbnails - cache for 1 day
                 response.headers['Cache-Control'] = 'public, max-age=86400'
+        elif mime_type and mime_type.startswith('video/'):
+            # Video files - cache for 1 day, revalidate with ETag
+            response.headers['Cache-Control'] = 'public, max-age=86400'
 
         return response
 
@@ -111,7 +130,8 @@ def serve_media(filename):
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Content-Length'] = str(length)
         response.headers['Content-Type'] = mime_type
-        response.headers['Cache-Control'] = 'public, max-age=3600'
+        response.headers['Cache-Control'] = 'public, max-age=86400'
+        response.headers['ETag'] = etag
         # Connection header removed - WSGI servers (Waitress) manage this automatically per PEP 3333
         response.headers['Access-Control-Allow-Origin'] = '*'
 
@@ -124,4 +144,6 @@ def serve_media(filename):
         response = send_file(file_abs, mimetype=mime_type, conditional=True)
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['ETag'] = etag
+        response.headers['Cache-Control'] = 'public, max-age=86400'
         return response

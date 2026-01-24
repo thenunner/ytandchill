@@ -141,7 +141,7 @@
 
   /* Filter Button */
   .filter-btn {
-    @apply flex items-center gap-1 sm:gap-2 px-2 sm:px-3.5 h-9 rounded-lg;
+    @apply flex items-center gap-1 sm:gap-2 px-2 sm:px-3.5 h-[35px] rounded-lg;
     @apply bg-dark-primary/95 border border-dark-border text-text-primary;
     @apply text-xs sm:text-sm cursor-pointer transition-all duration-200;
     @apply hover:bg-dark-tertiary/50;
@@ -617,7 +617,7 @@
 
 /* Interval Inline Config */
 .interval-inline {
-  @apply flex items-center gap-2;
+  @apply flex items-center gap-2 ml-auto;
 }
 
 .interval-label {
@@ -636,7 +636,7 @@
 
 /* Preset Time Buttons */
 .preset-times {
-  @apply flex flex-wrap gap-1.5;
+  @apply flex flex-wrap gap-1.5 ml-auto;
 }
 
 .preset-time-btn {
@@ -765,11 +765,11 @@
   }
 
   .setting-row.mobile-stack .settings-toggle-group {
-    width: 100%;
+    width: auto;
+    align-self: flex-end;
   }
 
   .setting-row.mobile-stack .settings-toggle-btn {
-    flex: 1;
     text-align: center;
   }
 
@@ -781,15 +781,14 @@
   /* Theme Grid - 2 rows on mobile */
   .theme-grid {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    gap: 8px;
-    width: 100%;
+    grid-template-columns: repeat(4, auto);
+    gap: 14px;
   }
 
   .theme-option {
     flex-shrink: 0;
-    width: 32px;
-    height: 32px;
+    width: 35px;
+    height: 35px;
   }
 
   /* Auto-scan config mobile fixes */
@@ -807,15 +806,18 @@
   }
 
   .autoscan-config .preset-times {
-    width: 100%;
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: 6px;
+    display: grid;
+    grid-template-columns: repeat(4, auto);
+    gap: 8px;
+    width: auto;
+    margin-left: auto;
   }
 
   .autoscan-config .interval-inline {
     flex-wrap: wrap;
     gap: 8px;
+    justify-content: flex-end;
+    width: 100%;
   }
 
   /* Log level - stack on mobile */
@@ -902,7 +904,7 @@
 
   /* Filter button compact */
   .filter-btn {
-    padding: 6px 8px;
+    padding: 7px 8px;
     font-size: 11px;
   }
 

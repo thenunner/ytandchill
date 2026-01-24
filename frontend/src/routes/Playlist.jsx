@@ -226,7 +226,7 @@ export default function Playlist() {
               onClick={() => {
                 navigate(location.state?.from || '/library?tab=playlists');
               }}
-              className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
+              className="flex items-center justify-center w-[35px] h-[35px] rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
               title="Back"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -244,12 +244,8 @@ export default function Playlist() {
                 setEditMode(!editMode);
                 setSelectedVideos([]);
               }}
-              className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
+              className={`filter-btn show-label ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
             >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
               <span>{editMode ? 'Done' : 'Edit'}</span>
             </button>
 
@@ -335,20 +331,16 @@ export default function Playlist() {
           setSelectedVideos([]);
         }}
         actions={[
-          {
-            label: 'Mark Watched',
-            onClick: () => handleBulkAction('mark-watched'),
-            primary: true
-          },
-          {
-            label: 'Playlist Options',
-            onClick: () => setShowBulkPlaylistOptions(true)
-          },
-          {
+          ...(selectedVideos.length > 0 ? [{
+            label: 'Playlist',
+            onClick: () => setShowBulkPlaylistOptions(true),
+            variant: 'default'
+          }] : []),
+          ...(selectedVideos.length > 0 ? [{
             label: 'Delete',
             onClick: () => handleBulkAction('delete'),
-            danger: true
-          }
+            variant: 'danger'
+          }] : [])
         ]}
       />
 
@@ -356,7 +348,7 @@ export default function Playlist() {
       {sortedVideos.length > 0 ? (() => {
         const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedVideos.length);
         return (
-        <div className="px-6 lg:px-12 xl:px-16">
+        <div className="px-0 sm:px-6 lg:px-12 xl:px-16">
           <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
           {paginatedVideos.map((video) => (
             <VideoCard

@@ -360,9 +360,13 @@ export default function Channels() {
         setShowCategorySubmenu(null);
       }
 
-      // Close category filter if clicking outside
+      // Close category filter if clicking outside (but not on the Category button itself)
       if (categoryFilterRef.current && !categoryFilterRef.current.contains(event.target)) {
-        setShowCategoryFilter(false);
+        // Check if clicking on the Category button in SelectionBar
+        const isCategoryButton = event.target.closest('[data-category-trigger]');
+        if (!isCategoryButton) {
+          setShowCategoryFilter(false);
+        }
       }
     };
 
@@ -546,7 +550,7 @@ export default function Channels() {
           <div className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className={`h-9 w-9 p-0 flex items-center justify-center border rounded-lg transition-all flex-shrink-0 ${
+              className={`h-[35px] w-[35px] p-0 flex items-center justify-center border rounded-lg transition-all flex-shrink-0 ${
                 !isLoading && filteredAndSortedChannels.length === 0 && !showAddForm
                   ? 'bg-green-600 hover:bg-green-700 border-green-500 text-white shadow-lg shadow-green-500/50 animate-pulse'
                   : 'bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary'
@@ -569,7 +573,7 @@ export default function Channels() {
             {/* Browse button - quick video grabs without subscribing */}
             <button
               onClick={() => navigate('/videos')}
-              className="h-9 px-3 flex items-center gap-1.5 border rounded-lg transition-all flex-shrink-0 bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary text-sm font-medium"
+              className="h-[35px] px-3 flex items-center gap-1.5 border rounded-lg transition-all flex-shrink-0 bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary text-sm font-medium"
               title="Browse and grab videos without subscribing to a channel"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -580,7 +584,7 @@ export default function Channels() {
             </button>
 
             {/* Unified Scan Button Group */}
-            <div className="flex items-center gap-1.5 px-2 h-9 bg-dark-secondary border border-dark-border rounded-lg">
+            <div className="flex items-center gap-1.5 px-2 h-[35px] bg-dark-secondary border border-dark-border rounded-lg">
               {/* Spinning Icon */}
               <svg
                 className={`w-4 h-4 flex-shrink-0 transition-colors ${
@@ -634,167 +638,6 @@ export default function Channels() {
                 All
               </button>
             </div>
-
-          {/* Category Filter */}
-          <div className="relative" ref={categoryFilterRef}>
-            <button
-              onClick={() => setShowCategoryFilter(!showCategoryFilter)}
-              className={`filter-btn ${selectedCategories.length > 0 ? 'ring-2 ring-accent/40' : ''}`}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-              <span>
-                {selectedCategories.length === 0
-                  ? 'Category'
-                  : selectedCategories.length === 1
-                    ? (selectedCategories[0] === 'uncategorized' ? 'Uncategorized' : categories?.find(c => c.id === selectedCategories[0])?.name || 'Category')
-                    : `${selectedCategories.length} categories`}
-              </span>
-            </button>
-
-            {/* Category Filter/Assign Dropdown */}
-            {showCategoryFilter && (
-              <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
-                <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase flex justify-between items-center">
-                  <span>
-                    {selectedChannels.length > 0
-                      ? `Assign ${selectedChannels.length} channel${selectedChannels.length > 1 ? 's' : ''} to:`
-                      : 'Filter by Category'}
-                  </span>
-                  {selectedChannels.length === 0 && selectedCategories.length > 0 && (
-                    <button
-                      onClick={() => setSelectedCategories([])}
-                      className="text-accent-text hover:text-accent-text/80 text-xs normal-case"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-
-                {/* Uncategorized option */}
-                <button
-                  className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer w-full text-left"
-                  onClick={async () => {
-                    if (selectedChannels.length > 0) {
-                      // Bulk assign mode - set all selected channels to uncategorized
-                      const count = selectedChannels.length;
-                      showNotification(`Assigning ${count} channel${count > 1 ? 's' : ''} to Uncategorized...`, 'info');
-
-                      let successCount = 0;
-                      let errorCount = 0;
-
-                      for (const channelId of selectedChannels) {
-                        try {
-                          await updateChannel.mutateAsync({ id: channelId, data: { category_id: null } });
-                          successCount++;
-                        } catch (error) {
-                          console.error(`Failed to update channel ${channelId}:`, error);
-                          errorCount++;
-                        }
-                      }
-
-                      if (errorCount === 0) {
-                        showNotification(`${successCount} channel${successCount > 1 ? 's' : ''} set to Uncategorized`, 'success');
-                      } else {
-                        showNotification(`${successCount} assigned, ${errorCount} failed`, 'warning');
-                      }
-
-                      setSelectedChannels([]);
-                      setShowCategoryFilter(false);
-                    } else {
-                      // Filter mode - toggle uncategorized filter
-                      if (selectedCategories.includes('uncategorized')) {
-                        setSelectedCategories(selectedCategories.filter(c => c !== 'uncategorized'));
-                      } else {
-                        setSelectedCategories([...selectedCategories, 'uncategorized']);
-                      }
-                    }
-                  }}
-                >
-                  {selectedChannels.length === 0 && (
-                    <input
-                      type="checkbox"
-                      checked={selectedCategories.includes('uncategorized')}
-                      readOnly
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
-                    />
-                  )}
-                  <span className="text-sm text-text-secondary italic">Uncategorized</span>
-                </button>
-
-                {/* Category list */}
-                {categories?.map(category => (
-                  <button
-                    key={category.id}
-                    className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer w-full text-left"
-                    onClick={async () => {
-                      if (selectedChannels.length > 0) {
-                        // Bulk assign mode
-                        const count = selectedChannels.length;
-                        showNotification(`Assigning ${count} channel${count > 1 ? 's' : ''} to ${category.name}...`, 'info');
-
-                        let successCount = 0;
-                        let errorCount = 0;
-
-                        for (const channelId of selectedChannels) {
-                          try {
-                            await updateChannel.mutateAsync({ id: channelId, data: { category_id: category.id } });
-                            successCount++;
-                          } catch (error) {
-                            console.error(`Failed to update channel ${channelId}:`, error);
-                            errorCount++;
-                          }
-                        }
-
-                        if (errorCount === 0) {
-                          showNotification(`${successCount} channel${successCount > 1 ? 's' : ''} assigned to ${category.name}`, 'success');
-                        } else {
-                          showNotification(`${successCount} assigned, ${errorCount} failed`, 'warning');
-                        }
-
-                        // Invalidate channel-categories to update counts
-                        queryClient.invalidateQueries(['channel-categories']);
-                        setSelectedChannels([]);
-                        setShowCategoryFilter(false);
-                      } else {
-                        // Filter mode - toggle category filter
-                        if (selectedCategories.includes(category.id)) {
-                          setSelectedCategories(selectedCategories.filter(c => c !== category.id));
-                        } else {
-                          setSelectedCategories([...selectedCategories, category.id]);
-                        }
-                      }
-                    }}
-                  >
-                    {selectedChannels.length === 0 && (
-                      <input
-                        type="checkbox"
-                        checked={selectedCategories.includes(category.id)}
-                        readOnly
-                        className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
-                      />
-                    )}
-                    <span className="text-sm text-text-primary">{category.name}</span>
-                    <span className="text-xs text-text-muted ml-auto">{category.channel_count}</span>
-                  </button>
-                ))}
-
-                {/* Manage Categories */}
-                <div className="border-t border-dark-border mt-2 pt-2">
-                  <button
-                    onClick={() => {
-                      setShowCategoryFilter(false);
-                      setShowCategoryModal(true);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-accent-text hover:bg-dark-hover"
-                  >
-                    Manage Categories...
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
 
             {/* Sort Dropdown - mobile only, next to Edit */}
             <div className="sm:hidden">
@@ -884,19 +727,115 @@ export default function Channels() {
           setSelectedChannels([]);
         }}
         actions={[
-          {
-            label: 'Assign Category',
-            onClick: () => setShowCategoryFilter(true),
-            variant: 'default'
-          },
-          {
+          ...(selectedChannels.length > 0 ? [{
+            label: 'Category',
+            onClick: () => setShowCategoryFilter(prev => !prev),
+            variant: 'default',
+            dataAttrs: { 'data-category-trigger': true }
+          }] : []),
+          ...(selectedChannels.length > 0 ? [{
             label: 'Delete',
             onClick: () => setDeleteConfirm({ bulk: true, count: selectedChannels.length }),
-            disabled: selectedChannels.length === 0,
-            variant: 'primary'
-          }
+            variant: 'danger'
+          }] : [])
         ]}
       />
+
+      {/* Category Assign Dropdown (triggered from SelectionBar) */}
+      {showCategoryFilter && (
+        <div
+          ref={categoryFilterRef}
+          className="fixed bottom-20 left-3 right-3 sm:left-auto sm:right-4 sm:w-64 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[60]"
+        >
+          <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase">
+            Assign to Category
+          </div>
+
+          {/* Uncategorized option */}
+          <button
+            className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer w-full text-left"
+            onClick={async () => {
+              const count = selectedChannels.length;
+              showNotification(`Assigning ${count} channel${count > 1 ? 's' : ''} to Uncategorized...`, 'info');
+
+              let successCount = 0;
+              let errorCount = 0;
+
+              for (const channelId of selectedChannels) {
+                try {
+                  await updateChannel.mutateAsync({ id: channelId, data: { category_id: null } });
+                  successCount++;
+                } catch (error) {
+                  console.error(`Failed to update channel ${channelId}:`, error);
+                  errorCount++;
+                }
+              }
+
+              if (errorCount === 0) {
+                showNotification(`${successCount} channel${successCount > 1 ? 's' : ''} set to Uncategorized`, 'success');
+              } else {
+                showNotification(`${successCount} assigned, ${errorCount} failed`, 'warning');
+              }
+
+              setSelectedChannels([]);
+              setShowCategoryFilter(false);
+            }}
+          >
+            <span className="text-sm text-text-secondary italic">Uncategorized</span>
+          </button>
+
+          {/* Category list */}
+          {categories?.map(category => (
+            <button
+              key={category.id}
+              className="flex items-center gap-2 px-4 py-2 hover:bg-dark-hover cursor-pointer w-full text-left"
+              onClick={async () => {
+                const count = selectedChannels.length;
+                showNotification(`Assigning ${count} channel${count > 1 ? 's' : ''} to ${category.name}...`, 'info');
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                for (const channelId of selectedChannels) {
+                  try {
+                    await updateChannel.mutateAsync({ id: channelId, data: { category_id: category.id } });
+                    successCount++;
+                  } catch (error) {
+                    console.error(`Failed to update channel ${channelId}:`, error);
+                    errorCount++;
+                  }
+                }
+
+                if (errorCount === 0) {
+                  showNotification(`${successCount} channel${successCount > 1 ? 's' : ''} assigned to ${category.name}`, 'success');
+                } else {
+                  showNotification(`${successCount} assigned, ${errorCount} failed`, 'warning');
+                }
+
+                queryClient.invalidateQueries(['channel-categories']);
+                setSelectedChannels([]);
+                setShowCategoryFilter(false);
+              }}
+            >
+              <span className="text-sm text-text-primary">{category.name}</span>
+              <span className="text-xs text-text-muted ml-auto">{category.channel_count}</span>
+            </button>
+          ))}
+
+          {/* Manage Categories */}
+          <div className="border-t border-dark-border mt-2 pt-2">
+            <button
+              onClick={() => {
+                setShowCategoryFilter(false);
+                setShowCategoryModal(true);
+              }}
+              className="w-full px-4 py-2 text-left text-sm text-accent-text hover:bg-dark-hover"
+            >
+              Manage Categories...
+            </button>
+          </div>
+        </div>
+      )}
 
       {showAddForm && (
         <div className="card p-4 animate-slide-down max-w-2xl mx-auto">
