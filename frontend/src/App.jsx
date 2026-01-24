@@ -109,7 +109,7 @@ function App() {
     prevOperationRef.current = currentOperation;
   }, [currentOperation, showNotification]);
 
-  // Active scanning toast
+  // Active scanning toast - depend on message specifically to catch updates
   useEffect(() => {
     if (currentOperation?.type === 'scanning' && currentOperation?.message) {
       showNotification(currentOperation.message, 'scanning', { id: 'scanning', persistent: true });
@@ -117,7 +117,7 @@ function App() {
       // Always remove scanning toast when not actively scanning
       removeToast('scanning');
     }
-  }, [currentOperation, showNotification, removeToast]);
+  }, [currentOperation?.type, currentOperation?.message, showNotification, removeToast]);
 
   // Error message toast
   useEffect(() => {
