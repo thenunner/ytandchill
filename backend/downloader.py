@@ -895,8 +895,8 @@ class DownloadWorker:
         elapsed = time.time() - self.last_download_time
         remaining = self.next_download_delay - elapsed
 
-        if remaining <= 0:
-            # Delay already passed
+        if remaining <= 1:
+            # Delay already passed (or less than 1 sec remaining - not worth showing)
             self.delay_info = None
             self.last_download_time = None
             self.next_download_delay = 0

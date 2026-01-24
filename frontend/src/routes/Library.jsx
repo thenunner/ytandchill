@@ -6,7 +6,7 @@ import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
@@ -510,14 +510,14 @@ export default function Library() {
 
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="animate-fade-in">
 
       {/* Header */}
-      <StickyBar className="mb-4">
+      <StickyBar>
         {activeTab === 'channels' ? (
           /* Channels Tab: Desktop = single row, Mobile = 2 rows */
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            {/* Left: Tabs + Sort + Pagination */}
+            {/* Left: Tabs + Sort + Search (mobile) */}
             <div className="flex items-center justify-between sm:justify-start gap-2">
               {/* Tabs */}
               <div className="flex items-center gap-2">
@@ -549,18 +549,43 @@ export default function Library() {
                   <span>Import</span>
                 </Link>
               </div>
+
+              {/* Sort + Search - right side on mobile */}
+              <div className="flex items-center gap-1.5">
+                {/* Sort Dropdown - mobile only here */}
+                <div className="sm:hidden">
+                  <SortDropdown
+                    value={channelSortBy}
+                    onChange={(value) => {
+                      setChannelSortBy(value);
+                      localStorage.setItem('library_channelSortBy', value);
+                    }}
+                    options={[
+                      { value: 'title-asc', label: 'A → Z' },
+                      { value: 'title-desc', label: 'Z → A' },
+                      { divider: true },
+                      { value: 'count-desc', label: 'Most Videos' },
+                      { value: 'count-asc', label: 'Least Videos' },
+                      { divider: true },
+                      { value: 'date-desc', label: 'Newest' },
+                      { value: 'date-asc', label: 'Oldest' },
+                    ]}
+                  />
+                </div>
+
+                {/* Collapsible Search */}
+                <CollapsibleSearch
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  placeholder="Search..."
+                  desktopWidth="sm:w-[160px]"
+                />
+              </div>
             </div>
 
-            {/* Right: Search + Sort + Pagination */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <SearchInput
-                value={searchInput}
-                onChange={setSearchInput}
-                placeholder="Search..."
-                className="w-24 sm:w-[160px]"
-              />
-
-              {/* Sort Dropdown */}
+            {/* Right: Sort (desktop) + Pagination */}
+            <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+              {/* Sort Dropdown - desktop only */}
               <SortDropdown
                 value={channelSortBy}
                 onChange={(value) => {
@@ -579,89 +604,91 @@ export default function Library() {
                 ]}
               />
 
-              {!isMobile && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalItems={channelsList.length}
-                  itemsPerPage={itemsPerPage}
-                  onPageChange={setCurrentPage}
-                />
-              )}
+              <Pagination
+                currentPage={currentPage}
+                totalItems={channelsList.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+              />
             </div>
           </div>
         ) : (
-          /* Playlists Tab: Desktop = single row, Mobile = 2 rows */
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            {/* Left: Tabs + Category + Edit */}
-            <div className="flex items-center justify-between sm:justify-start gap-2">
-              {/* Tabs + Category */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab('channels')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'channels'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  Channels
-                </button>
-                <button
-                  onClick={() => setActiveTab('playlists')}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    activeTab === 'playlists'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  Playlists
-                </button>
-                <Link
-                  to="/import"
-                  className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
-                >
-                  <UploadIcon className="w-4 h-4" />
-                  <span>Import</span>
-                </Link>
+          /* Playlists Tab: Single row with all controls */
+          <div className="flex items-center justify-between gap-2">
+            {/* Left: Tabs + Category */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('channels')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'channels'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                }`}
+              >
+                Channels
+              </button>
+              <button
+                onClick={() => setActiveTab('playlists')}
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  activeTab === 'playlists'
+                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
+                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
+                }`}
+              >
+                Playlists
+              </button>
+              <Link
+                to="/import"
+                className="hidden sm:flex px-3 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
+              >
+                <UploadIcon className="w-4 h-4" />
+                <span>Import</span>
+              </Link>
 
-                {/* + Category Button */}
-                <button
-                  onClick={() => setShowCreateCategoryModal(true)}
-                  className="px-2.5 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-text-primary border border-dark-border hover:border-dark-border-light flex items-center gap-1.5"
-                  title="Create new category"
-                >
-                  <PlusIcon />
-                  <span className="hidden sm:inline">Category</span>
-                </button>
-              </div>
+              {/* + Category Button */}
+              <button
+                onClick={() => setShowCreateCategoryModal(true)}
+                className="px-2.5 py-2 rounded-lg text-sm font-medium transition-colors bg-dark-tertiary hover:bg-dark-hover text-text-primary border border-dark-border hover:border-dark-border-light flex items-center gap-1.5"
+                title="Create new category"
+              >
+                <PlusIcon />
+                <span className="hidden sm:inline">Category</span>
+              </button>
 
-              {/* Edit (desktop only) */}
-              <div className="flex items-center gap-2">
-                {/* Divider - hidden on mobile */}
-                <div className="toolbar-divider hidden sm:block" />
+              {/* Edit Button - desktop only here, next to Category */}
+              <button
+                onClick={() => {
+                  setEditMode(!editMode);
+                  setSelectedPlaylists([]);
+                }}
+                className={`hidden sm:flex filter-btn show-label ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
+              >
+                <span>{editMode ? 'Done' : 'Edit'}</span>
+              </button>
 
-                {/* Edit Button */}
-                <button
-                  onClick={() => {
-                    setEditMode(!editMode);
-                    setSelectedPlaylists([]);
-                  }}
-                  className={`filter-btn show-label ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
-                >
-                  <span>{editMode ? 'Done' : 'Edit'}</span>
-                </button>
+              {/* Search - desktop only here, next to Edit */}
+              <div className="hidden sm:block">
+                <SearchInput
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  placeholder="Search playlists..."
+                  className="w-[200px]"
+                />
               </div>
             </div>
 
-            {/* Right: Search + Sort */}
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {/* Search */}
-              <SearchInput
-                value={searchInput}
-                onChange={setSearchInput}
-                placeholder="Search..."
-                className="w-24 sm:w-[160px]"
-              />
+            {/* Right: Edit (mobile) + Sort + Search (mobile) */}
+            <div className="flex items-center gap-1.5">
+              {/* Edit Button - mobile only */}
+              <button
+                onClick={() => {
+                  setEditMode(!editMode);
+                  setSelectedPlaylists([]);
+                }}
+                className={`sm:hidden filter-btn show-label ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
+              >
+                <span>{editMode ? 'Done' : 'Edit'}</span>
+              </button>
 
               {/* Sort Dropdown */}
               <SortDropdown
@@ -678,6 +705,15 @@ export default function Library() {
                   { value: 'count-asc', label: 'Least Videos' },
                 ]}
               />
+
+              {/* Collapsible Search - mobile only */}
+              <div className="sm:hidden">
+                <CollapsibleSearch
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  placeholder="Search..."
+                />
+              </div>
             </div>
           </div>
         )}
@@ -838,8 +874,8 @@ export default function Library() {
             );
           })()}
 
-          {/* Bottom Pagination (desktop) or Load More (mobile) */}
-          {channelsList.length > 0 && (
+          {/* Bottom Pagination (desktop) or Load More (mobile) - only show if more than one page */}
+          {channelsList.length > itemsPerPage && (
             isMobile ? (
               <LoadMore
                 currentCount={paginatedChannelsList.length}
@@ -977,7 +1013,7 @@ export default function Library() {
                             return (
                               <div
                                 key={playlist.id}
-                                className="card relative cursor-pointer transition-colors group"
+                                className="group cursor-pointer transition-colors rounded"
                                 onClick={(e) => {
                                   if (editMode) {
                                     togglePlaylistSelection(playlist.id);
@@ -990,7 +1026,7 @@ export default function Library() {
                               >
                                 {/* Playlist thumbnail */}
                                 <div className={`relative aspect-video bg-dark-tertiary overflow-hidden transition-all ${
-                                  editMode && isSelected
+                                  isSelected
                                     ? 'rounded-t-xl'
                                     : 'rounded-t-xl rounded-b-xl group-hover:rounded-b-none'
                                 }`}>
@@ -1016,12 +1052,17 @@ export default function Library() {
                                       </svg>
                                     </div>
                                   )}
+
+                                  {/* Video count badge - bottom right */}
+                                  <div className={`absolute bottom-1 right-1 bg-black/80 text-white ${textSizes.badge} font-semibold px-1.5 py-0.5 rounded z-20`}>
+                                    {playlist.video_count || 0} videos
+                                  </div>
                                 </div>
 
                                 {/* Playlist info */}
-                                <div className={`p-3 space-y-2 rounded-b-xl transition-colors ${editMode && isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
-                                  {/* Title + 3-Dot Menu (inline, YouTube style) */}
-                                  <div className="flex items-start justify-between gap-2">
+                                <div className={`p-3 space-y-1 rounded-b-xl transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
+                                  {/* Title + 3-Dot Menu (inline, vertically centered) */}
+                                  <div className="flex items-center justify-between gap-2">
                                     <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 leading-tight flex-1`} title={playlist.title || playlist.name}>
                                       {playlist.title || playlist.name}
                                     </h3>
@@ -1112,11 +1153,12 @@ export default function Library() {
                                     )}
                                   </div>
 
-                                  {/* Metadata */}
-                                  <div className="flex items-center justify-between text-sm text-text-secondary">
-                                    <span>{playlist.video_count || 0} videos</span>
-                                    <span title={playlist.channel_title}>{playlist.channel_title}</span>
-                                  </div>
+                                  {/* Metadata - Channel title */}
+                                  {playlist.channel_title && (
+                                    <div className={`${textSizes.metadata} text-text-secondary truncate`} title={playlist.channel_title}>
+                                      {playlist.channel_title}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );
@@ -1153,9 +1195,7 @@ export default function Library() {
                         return (
                           <div
                             key={playlist.id}
-                            className={`card relative cursor-pointer transition-colors ${
-                              isSelected ? 'ring-2 ring-accent/60' : ''
-                            } ${editMode ? 'hover:ring-2 hover:ring-accent/50' : 'group'}`}
+                            className="group cursor-pointer transition-colors rounded"
                             onClick={(e) => {
                               if (editMode) {
                                 togglePlaylistSelection(playlist.id);
@@ -1167,7 +1207,11 @@ export default function Library() {
                             }}
                           >
                             {/* Playlist thumbnail */}
-                            <div className="relative aspect-video bg-dark-tertiary rounded-t-xl overflow-hidden">
+                            <div className={`relative aspect-video bg-dark-tertiary overflow-hidden transition-all ${
+                              isSelected
+                                ? 'rounded-t-xl'
+                                : 'rounded-t-xl rounded-b-xl group-hover:rounded-b-none'
+                            }`}>
                               {playlist.thumbnail ? (
                                 <img
                                   src={playlist.thumbnail}
@@ -1190,6 +1234,11 @@ export default function Library() {
                                   </svg>
                                 </div>
                               )}
+
+                              {/* Video count badge - bottom right */}
+                              <div className={`absolute bottom-1 right-1 bg-black/80 text-white ${textSizes.badge} font-semibold px-1.5 py-0.5 rounded z-20`}>
+                                {playlist.video_count || 0} videos
+                              </div>
                             </div>
 
                             {/* 3-Dot Menu - Outside thumbnail to avoid overflow clipping */}
@@ -1280,14 +1329,16 @@ export default function Library() {
                             )}
 
                             {/* Playlist info */}
-                            <div className="p-3">
-                              <h3 className={`${textSizes.title} font-semibold text-text-primary group-hover:text-accent transition-colors line-clamp-2 mb-1`} title={playlist.title || playlist.name}>
+                            <div className={`p-3 space-y-1 rounded-b-xl transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
+                              <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 leading-tight`} title={playlist.title || playlist.name}>
                                 {playlist.title || playlist.name}
                               </h3>
-                              <div className="flex items-center justify-between text-sm text-text-secondary">
-                                <span>{playlist.video_count || 0} videos</span>
-                                <span title={playlist.channel_title}>{playlist.channel_title}</span>
-                              </div>
+                              {/* Metadata - Channel title */}
+                              {playlist.channel_title && (
+                                <div className={`${textSizes.metadata} text-text-secondary truncate`} title={playlist.channel_title}>
+                                  {playlist.channel_title}
+                                </div>
+                              )}
                             </div>
                           </div>
                         );

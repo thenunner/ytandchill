@@ -6,7 +6,7 @@ export default function Toast() {
   if (!toasts || toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-3 max-w-sm">
+    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3 max-w-sm">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={() => removeToast(toast.id)} />
       ))}
@@ -135,11 +135,19 @@ function ToastItem({ toast, onDismiss }) {
 
   return (
     <div
-      onClick={onDismiss}
-      className={`animate-slide-up flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg text-white cursor-pointer hover:opacity-90 transition-opacity ${typeStyles[type] || typeStyles.info}`}
+      className={`animate-slide-up flex items-center gap-3 px-4 py-3 rounded-lg border shadow-lg text-white ${typeStyles[type] || typeStyles.info}`}
     >
       {icons[type] || icons.info}
       <span className="text-sm font-medium flex-1">{message}</span>
+      <button
+        onClick={onDismiss}
+        className="ml-2 p-1 rounded hover:bg-white/20 transition-colors flex-shrink-0"
+        title="Dismiss"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
     </div>
   );
 }

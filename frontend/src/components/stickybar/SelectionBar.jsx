@@ -58,8 +58,8 @@ export default function SelectionBar({
     >
       <div className="bg-dark-secondary/95 backdrop-blur-lg border-t border-dark-border shadow-[0_-4px_20px_rgba(0,0,0,0.3)]">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-3">
-          {/* Single row layout - wraps on mobile if needed */}
-          <div className="flex flex-row flex-wrap items-center gap-2 sm:gap-3">
+          {/* Single row layout - wraps on mobile if needed, centered on desktop */}
+          <div className="flex flex-row flex-wrap items-center justify-center gap-2 sm:gap-3">
             {/* Selection count */}
             <div className="text-sm whitespace-nowrap flex-shrink-0">
               <span className="text-text-primary font-semibold">{selectedCount}</span>
@@ -84,12 +84,13 @@ export default function SelectionBar({
               </button>
             )}
 
-            {/* Action buttons - push to right on desktop */}
+            {/* Action buttons */}
             {actions.length > 0 && (
-              <div className="flex items-center gap-2 sm:ml-auto">
+              <div className="flex items-center gap-2">
                 {actions.map((action, index) => {
                   const variantClasses = {
-                    primary: 'bg-accent hover:bg-accent-hover text-white font-medium',
+                    primary: 'bg-accent hover:bg-accent-hover !text-white font-medium',
+                    accent: 'bg-accent/20 hover:bg-accent/30 text-accent-text border border-accent/40 font-medium',
                     danger: 'bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300',
                     warning: 'bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 hover:text-yellow-300',
                     success: 'bg-green-500/10 hover:bg-green-500/20 text-green-400 hover:text-green-300',
@@ -102,7 +103,7 @@ export default function SelectionBar({
                       key={index}
                       onClick={action.onClick}
                       disabled={action.disabled}
-                      className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap ${variantClasses[variant]}`}
+                      className={`px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-lg transition-colors flex items-center gap-1 disabled:opacity-75 disabled:cursor-not-allowed whitespace-nowrap ${variantClasses[variant]}`}
                     >
                       {action.icon && <span className="w-4 h-4">{action.icon}</span>}
                       <span>{action.label}</span>
