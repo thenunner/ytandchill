@@ -186,7 +186,7 @@ class SeekCoordinatorPlugin extends Plugin {
       return time;
     }
 
-    // Snap backward (YouTube GOP hedge)
+    // Snap backward (YT GOP hedge)
     const snapped = Math.max(0, time - this.options.snapBackward);
 
     return snapped;

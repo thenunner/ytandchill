@@ -8,7 +8,7 @@ export function getUserFriendlyError(errorMessage) {
 
   // Rate limit issues
   if (lowerError.includes('rate limit')) {
-    return 'YouTube rate limit detected. Wait a few minutes and try again, or refresh your cookies.';
+    return 'YT rate limit detected. Wait a few minutes and try again, or refresh your cookies.';
   }
 
   // Cookie issues
@@ -48,16 +48,16 @@ export function getUserFriendlyError(errorMessage) {
 
   // 403 Forbidden
   if (lowerError.includes('403') || lowerError.includes('forbidden')) {
-    return 'Access forbidden (403). This usually means YouTube rate limiting. Update your cookies.txt and wait 30-60 minutes before trying again.';
+    return 'Access forbidden (403). This usually means YT rate limiting. Update your cookies.txt and wait 30-60 minutes before trying again.';
   }
 
   // Generic HTTP errors
   if (lowerError.includes('500') || lowerError.includes('internal server error')) {
-    return 'YouTube server error (500). This is a temporary issue on YouTube\'s end. Please try again later.';
+    return 'YT server error (500). This is a temporary issue on YT\'s end. Please try again later.';
   }
 
   if (lowerError.includes('502') || lowerError.includes('503') || lowerError.includes('504')) {
-    return 'YouTube is experiencing service issues. Please try again later.';
+    return 'YT is experiencing service issues. Please try again later.';
   }
 
   // SSL/Certificate errors

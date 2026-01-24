@@ -498,7 +498,7 @@ export function useLogs(lines = 500, options = {}) {
   });
 }
 
-// YouTube Playlist Import
+// YT Playlist Import
 export function useScanYouTubePlaylist() {
   return useMutation({
     mutationFn: ({ url, filter = 'new' }) => api.scanYouTubePlaylist(url, filter),

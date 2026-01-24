@@ -1,5 +1,6 @@
 // Grid column calculator utility for responsive card grids
-export const getGridColumns = (cardSize) => {
+// context: 'channels' for channel cards, 'library' (default) for video cards
+export const getGridColumns = (cardSize, context = 'library') => {
   const width = window.innerWidth;
   const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -12,14 +13,24 @@ export const getGridColumns = (cardSize) => {
     },
     // Desktop devices (mouse/trackpad)
     desktop: {
-      sm: { upTo1920: 8, over1920: 12 },
-      md: { upTo1920: 6, over1920: 10 },
-      lg: { upTo1920: 4, over1920: 6 }
+      channels: {
+        sm: { upTo1920: 8, over1920: 12 },
+        md: { upTo1920: 6, over1920: 10 },
+        lg: { upTo1920: 5, over1920: 7 }
+      },
+      library: {
+        sm: { upTo1920: 8, over1920: 12 },
+        md: { upTo1920: 6, over1920: 10 },
+        lg: { upTo1920: 4, over1920: 6 }
+      }
     }
   };
 
   const deviceType = isTouch ? 'touch' : 'desktop';
-  const config = columnConfig[deviceType][cardSize] || columnConfig.desktop.md;
+  const desktopConfig = columnConfig.desktop[context] || columnConfig.desktop.library;
+  const config = isTouch
+    ? columnConfig.touch[cardSize] || columnConfig.touch.md
+    : desktopConfig[cardSize] || desktopConfig.md;
 
   if (isTouch) {
     // Touch devices: phones and tablets

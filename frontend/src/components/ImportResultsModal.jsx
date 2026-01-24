@@ -228,7 +228,7 @@ export default function ImportResultsModal({ imported = [], skipped = [], failed
             </button>
           </div>
           <p className="text-[12px] text-[#64748b] leading-relaxed">
-            Your files have been matched against your YouTube library.
+            Your files have been matched against your YT library.
             Successfully matched files are now linked to their videos.
           </p>
 

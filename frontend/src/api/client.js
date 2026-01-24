@@ -371,7 +371,7 @@ class APIClient {
     return this.request(`/logs?scope=${scope}`, { method: 'DELETE' });
   }
 
-  // YouTube Playlist Import
+  // YT Playlist Import
   scanYouTubePlaylist(url, filter = 'new') {
     return this.request('/youtube-playlists/scan', {
       method: 'POST',

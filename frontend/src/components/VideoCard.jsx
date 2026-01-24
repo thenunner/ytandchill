@@ -362,7 +362,7 @@ export default function VideoCard({
           </div>
         )}
 
-        {/* Duration overlay - bottom right (YouTube style) - hidden during preview */}
+        {/* Duration overlay - bottom right (YT style) - hidden during preview */}
         {video.duration_sec && !previewPlaying && (
           <div className={`absolute bottom-1 right-1 bg-black/80 text-white ${textSizes.badge} font-semibold px-1.5 py-0.5 rounded z-20`}>
             {formatDuration(video.duration_sec)}

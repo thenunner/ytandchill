@@ -20,11 +20,12 @@ export default function Library() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize('library');
-  const gridColumns = useGridColumns(cardSize);
   const { data: settings } = useSettings();
 
   const [searchInput, setSearchInput] = useState('');
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'channels');
+  // Use 'channels' context for playlists tab (5 cols for large), 'library' for channels tab (4 cols)
+  const gridColumns = useGridColumns(cardSize, activeTab === 'playlists' ? 'channels' : 'library');
   const [editMode, setEditMode] = useState(false);
   const [selectedPlaylists, setSelectedPlaylists] = useState([]);
   const [showRenameModal, setShowRenameModal] = useState(false);

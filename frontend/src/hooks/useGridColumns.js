@@ -5,8 +5,8 @@ import { getGridColumns } from '../utils/gridUtils';
  * Custom hook to manage grid columns with proper orientation change handling
  * Fixes issue where mobile orientation changes don't update grid immediately
  */
-export const useGridColumns = (cardSize) => {
-  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize));
+export const useGridColumns = (cardSize, context = 'library') => {
+  const [gridColumns, setGridColumns] = useState(getGridColumns(cardSize, context));
 
   useEffect(() => {
     const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
@@ -15,11 +15,11 @@ export const useGridColumns = (cardSize) => {
       // Only delay for touch devices during orientation changes
       if (isTouch) {
         setTimeout(() => {
-          setGridColumns(getGridColumns(cardSize));
+          setGridColumns(getGridColumns(cardSize, context));
         }, 100);
       } else {
         // Desktop: update immediately, no delay
-        setGridColumns(getGridColumns(cardSize));
+        setGridColumns(getGridColumns(cardSize, context));
       }
     };
 
@@ -34,7 +34,7 @@ export const useGridColumns = (cardSize) => {
       window.removeEventListener('resize', updateColumns);
       window.removeEventListener('orientationchange', updateColumns);
     };
-  }, [cardSize]);
+  }, [cardSize, context]);
 
   return gridColumns;
 };

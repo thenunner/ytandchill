@@ -41,7 +41,7 @@ export const detectDeviceType = () => {
   return { isMobile: isMobileDevice(), isIOS: isIOSDevice };
 };
 
-// Initialize YouTube-style mobile touch controls for video.js player
+// Initialize YT-style mobile touch controls for video.js player
 export const initializeMobileTouchControls = (player, isIOSDevice) => {
   // Double-tap to enter fullscreen when NOT in fullscreen, prevent exit when IN fullscreen
   let lastVideoTapTime = 0;
@@ -82,7 +82,7 @@ export const initializeMobileTouchControls = (player, isIOSDevice) => {
     pointer-events: auto !important;
   `;
 
-  // Modern semi-transparent button style (YouTube-like)
+  // Modern semi-transparent button style (YT-like)
   const buttonStyle = (size = 100) => `
     position: absolute;
     background: rgba(255, 255, 255, 0.15);
