@@ -228,6 +228,10 @@ def require_authentication():
     if request.path.startswith('/api/media/'):
         return None
 
+    # Allow SSE stream without auth - EventSource triggers browser auth popup on 401
+    if request.path == '/api/queue/stream':
+        return None
+
     # Allow root path for React app
     if request.path == '/' or not request.path.startswith('/api/'):
         return None
