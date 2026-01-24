@@ -509,9 +509,18 @@ init_settings()
 # Helper functions
 def serialize_channel(channel):
     # Calculate video counts based on status
+    library_videos = [v for v in channel.videos if v.status == 'library']
     discovered_count = len([v for v in channel.videos if v.status == 'discovered'])
-    downloaded_count = len([v for v in channel.videos if v.status == 'library'])
+    downloaded_count = len(library_videos)
     ignored_count = len([v for v in channel.videos if v.status in ['ignored', 'geoblocked']])
+
+    # Calculate new video count (videos downloaded since last visit)
+    if channel.last_visited_at is None:
+        # Never visited - all library videos are "new"
+        new_video_count = downloaded_count
+    else:
+        # Count videos downloaded after last visit
+        new_video_count = len([v for v in library_videos if v.downloaded_at and v.downloaded_at > channel.last_visited_at])
 
     # Get the most recent video upload date
     last_video_date = None
@@ -549,6 +558,8 @@ def serialize_channel(channel):
         'video_count': discovered_count,
         'downloaded_count': downloaded_count,
         'ignored_count': ignored_count,
+        'new_video_count': new_video_count,
+        'last_visited_at': channel.last_visited_at.replace(tzinfo=timezone.utc).isoformat() if channel.last_visited_at else None,
         'category_id': channel.category_id,
         'category_name': channel.category.name if channel.category else None
     }

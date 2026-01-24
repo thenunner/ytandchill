@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel, useSettings } from '../api/queries';
+import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel, useSettings, useMarkChannelVisited } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
@@ -33,10 +33,18 @@ export default function ChannelLibrary() {
   const deleteChannel = useDeleteChannel();
   const scanChannel = useScanChannel();
   const updateChannel = useUpdateChannel();
+  const markChannelVisited = useMarkChannelVisited();
   const { showNotification } = useNotification();
 
   // Detect library mode from URL
   const isLibraryMode = location.pathname.endsWith('/library');
+
+  // Mark channel as visited when entering from Library tab (for new videos badge)
+  useEffect(() => {
+    if (isLibraryMode && channelId) {
+      markChannelVisited.mutate(parseInt(channelId));
+    }
+  }, [channelId, isLibraryMode]);
 
   // Use appropriate card size based on whether we're in library or channels mode
   const { cardSize, setCardSize } = useCardSize(isLibraryMode ? 'library' : 'channels');

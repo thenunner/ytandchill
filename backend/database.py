@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Float, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import create_engine, Column, Integer, BigInteger, String, Float, Boolean, DateTime, ForeignKey, Text, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
 from datetime import datetime, timezone
@@ -24,6 +24,7 @@ class Channel(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     deleted_at = Column(DateTime, nullable=True, index=True)  # Soft delete: NULL = active, set = deleted
+    last_visited_at = Column(DateTime, nullable=True)  # Last time user visited this channel in Library
     category_id = Column(Integer, ForeignKey('channel_categories.id'), nullable=True, index=True)
 
     videos = relationship('Video', back_populates='channel')
@@ -132,6 +133,15 @@ def init_db(database_url=None):
     engine = create_engine(database_url, echo=False)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
+
+    # Run migrations for new columns on existing tables
+    with engine.connect() as conn:
+        # Check if last_visited_at column exists in channels table
+        result = conn.execute(text("PRAGMA table_info(channels)"))
+        columns = [row[1] for row in result]
+        if 'last_visited_at' not in columns:
+            conn.execute(text("ALTER TABLE channels ADD COLUMN last_visited_at DATETIME"))
+            conn.commit()
 
     # Initialize default settings including auth credentials
     session = Session()

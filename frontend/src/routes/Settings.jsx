@@ -923,7 +923,7 @@ export default function Settings() {
                   }}
                   className={`settings-toggle-btn ${libraryDateDisplay === 'uploaded' ? 'active' : ''}`}
                 >
-                  Uploaded
+                  YT Upload
                 </button>
               </Tooltip>
               <Tooltip text="When the video was added to your library">
@@ -939,7 +939,7 @@ export default function Settings() {
                   }}
                   className={`settings-toggle-btn ${libraryDateDisplay === 'downloaded' ? 'active' : ''}`}
                 >
-                  Downloaded
+                  Download
                 </button>
               </Tooltip>
             </div>
