@@ -12,7 +12,7 @@ import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 
 export default function Playlist() {
@@ -216,20 +216,15 @@ export default function Playlist() {
 
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Sticky Header Row - 2 column grid: LEFT (back, title, search) | RIGHT (controls) */}
+      {/* Sticky Header Row */}
       <StickyBar className="-mx-8 px-8 mb-4">
-        <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 items-center">
-          {/* LEFT: Back, Title, Search */}
+        <div className="flex items-center justify-between gap-2">
+          {/* LEFT: Back, Title, Edit, Sort, Search */}
           <div className="flex items-center gap-2 flex-wrap">
             {/* Back Arrow */}
             <button
               onClick={() => {
-                const referrer = location.state?.from || (
-                  playlist.channel_id
-                    ? `/channel/${playlist.channel_id}/library?filter=playlists`
-                    : '/library?tab=playlists'
-                );
-                navigate(referrer);
+                navigate(location.state?.from || '/library?tab=playlists');
               }}
               className="flex items-center justify-center w-9 h-9 rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
               title="Back"
@@ -243,26 +238,58 @@ export default function Playlist() {
             <h2 className="text-lg font-semibold text-text-primary">{playlist.name}</h2>
             <span className="text-sm text-text-secondary">({sortedVideos.length} videos)</span>
 
-            {/* Search - left justified */}
-            <SearchInput
+            {/* Edit Button */}
+            <button
+              onClick={() => {
+                setEditMode(!editMode);
+                setSelectedVideos([]);
+              }}
+              className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <span>{editMode ? 'Done' : 'Edit'}</span>
+            </button>
+
+            {/* Sort Dropdown - Mobile only here */}
+            <div className="sm:hidden">
+              <SortDropdown
+                value={sort}
+                onChange={setSort}
+                options={[
+                  { value: 'date-desc', label: 'Newest' },
+                  { value: 'date-asc', label: 'Oldest' },
+                  { divider: true },
+                  { value: 'title-asc', label: 'A → Z' },
+                  { value: 'title-desc', label: 'Z → A' },
+                  { divider: true },
+                  { value: 'duration-desc', label: 'Longest' },
+                  { value: 'duration-asc', label: 'Shortest' },
+                ]}
+                durationValue={durationFilter}
+                onDurationChange={setDurationFilter}
+                durationOptions={[
+                  { value: 'all', label: 'All' },
+                  { value: '0-30', label: '0-30 min' },
+                  { value: '30-60', label: '30-60 min' },
+                  { value: 'over60', label: 'Over 60 min' },
+                ]}
+              />
+            </div>
+
+            {/* Collapsible Search */}
+            <CollapsibleSearch
               value={searchInput}
               onChange={setSearchInput}
               placeholder="Search videos..."
-              className="w-full sm:w-[180px]"
+              desktopWidth="sm:w-[180px]"
             />
           </div>
 
-          {/* RIGHT: Controls */}
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            {!isMobile && (
-              <Pagination
-                currentPage={currentPage}
-                totalItems={sortedVideos.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-              />
-            )}
-
+          {/* RIGHT: Sort (desktop) + Pagination */}
+          <div className="hidden sm:flex items-center gap-2">
             <SortDropdown
               value={sort}
               onChange={setSort}
@@ -286,19 +313,12 @@ export default function Playlist() {
               ]}
             />
 
-            <button
-              onClick={() => {
-                setEditMode(!editMode);
-                setSelectedVideos([]);
-              }}
-              className={`filter-btn ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"></path>
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-              </svg>
-              <span>{editMode ? 'Done' : 'Edit'}</span>
-            </button>
+            <Pagination
+              currentPage={currentPage}
+              totalItems={sortedVideos.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </div>
       </StickyBar>

@@ -14,7 +14,7 @@ import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import api from '../api/client';
-import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 
 export default function ChannelLibrary() {
@@ -585,7 +585,66 @@ export default function ChannelLibrary() {
               )}
             </div>
 
-            {/* Sort Dropdown */}
+            {/* Edit Button - Only in library mode */}
+            {isLibraryMode && contentFilter !== 'playlists' && (
+              <button
+                onClick={() => {
+                  setEditMode(!editMode);
+                  setSelectedVideos([]);
+                }}
+                title={editMode ? "Exit selection mode" : "Select videos for bulk actions"}
+                className={`filter-btn show-label ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
+              >
+                <span>{editMode ? 'Done' : 'Edit'}</span>
+              </button>
+            )}
+
+            {/* Desktop: Search input here */}
+            <div className="hidden sm:block">
+              <SearchInput
+                value={searchInput}
+                onChange={handleSearchChange}
+                placeholder="Search videos..."
+                className="w-[200px]"
+              />
+            </div>
+
+            {/* Mobile only: Sort then Search icon */}
+            <div className="sm:hidden flex items-center gap-1.5">
+              <SortDropdown
+                value={sort}
+                onChange={(value) => {
+                  handleSort(value);
+                }}
+                options={[
+                  { value: 'date-desc', label: 'Newest' },
+                  { value: 'date-asc', label: 'Oldest' },
+                  { divider: true },
+                  { value: 'title-asc', label: 'A → Z' },
+                  { value: 'title-desc', label: 'Z → A' },
+                  { divider: true },
+                  { value: 'duration-desc', label: 'Longest' },
+                  { value: 'duration-asc', label: 'Shortest' },
+                ]}
+                durationValue={durationFilter}
+                onDurationChange={handleDurationChange}
+                durationOptions={[
+                  { value: 'all', label: 'All' },
+                  { value: '0-30', label: '0-30 min' },
+                  { value: '30-60', label: '30-60 min' },
+                  { value: 'over60', label: 'Over 60 min' },
+                ]}
+              />
+              <CollapsibleSearch
+                value={searchInput}
+                onChange={handleSearchChange}
+                placeholder="Search videos..."
+              />
+            </div>
+          </div>
+
+          {/* Right: Sort (desktop) + Pagination */}
+          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
             <SortDropdown
               value={sort}
               onChange={(value) => {
@@ -610,38 +669,12 @@ export default function ChannelLibrary() {
                 { value: 'over60', label: 'Over 60 min' },
               ]}
             />
-
-            {/* Edit Button - Only in library mode */}
-            {isLibraryMode && contentFilter !== 'playlists' && (
-              <button
-                onClick={() => {
-                  setEditMode(!editMode);
-                  setSelectedVideos([]);
-                }}
-                title={editMode ? "Exit selection mode" : "Select videos for bulk actions"}
-                className={`filter-btn show-label ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
-              >
-                <span>{editMode ? 'Done' : 'Edit'}</span>
-              </button>
-            )}
-          </div>
-
-          {/* Right: Search + Pagination */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <SearchInput
-              value={searchInput}
-              onChange={handleSearchChange}
-              placeholder="Search videos..."
-              className="flex-1 sm:flex-none sm:w-[200px]"
+            <Pagination
+              currentPage={currentPage}
+              totalItems={sortedVideos.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
             />
-            {!isMobile && (
-              <Pagination
-                currentPage={currentPage}
-                totalItems={sortedVideos.length}
-                itemsPerPage={itemsPerPage}
-                onPageChange={setCurrentPage}
-              />
-            )}
           </div>
         </div>
       </StickyBar>

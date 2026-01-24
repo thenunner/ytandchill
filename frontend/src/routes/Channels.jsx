@@ -205,6 +205,33 @@ export default function Channels() {
     }
   };
 
+  const handleBulkDeleteChannels = async () => {
+    if (selectedChannels.length === 0) return;
+
+    const count = selectedChannels.length;
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (const channelId of selectedChannels) {
+      try {
+        await deleteChannel.mutateAsync(channelId);
+        successCount++;
+      } catch (error) {
+        console.error(`Failed to delete channel ${channelId}:`, error);
+        errorCount++;
+      }
+    }
+
+    if (errorCount === 0) {
+      showNotification(`${successCount} channel${successCount > 1 ? 's' : ''} deleted`, 'success');
+    } else {
+      showNotification(`${successCount} deleted, ${errorCount} failed`, 'warning');
+    }
+
+    setSelectedChannels([]);
+    setDeleteConfirm(null);
+  };
+
   const handleUpdateFilters = async (channel) => {
     try {
       await updateChannel.mutateAsync({
@@ -511,12 +538,12 @@ export default function Channels() {
   }, [filteredAndSortedChannels, currentPage, itemsPerPage, loadedPages, isMobile]);
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-2 animate-fade-in">
       <StickyBar>
         {/* Desktop: single row, Mobile: two rows */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
           {/* Left: Add + Scan + Category + Edit + CardSize */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <button
               onClick={() => setShowAddForm(!showAddForm)}
               className={`h-9 w-9 p-0 flex items-center justify-center border rounded-lg transition-all flex-shrink-0 ${
@@ -539,8 +566,21 @@ export default function Channels() {
               )}
             </button>
 
+            {/* Browse button - quick video grabs without subscribing */}
+            <button
+              onClick={() => navigate('/videos')}
+              className="h-9 px-3 flex items-center gap-1.5 border rounded-lg transition-all flex-shrink-0 bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary text-sm font-medium"
+              title="Browse and grab videos without subscribing to a channel"
+            >
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+              <span className="hidden sm:inline">Browse</span>
+            </button>
+
             {/* Unified Scan Button Group */}
-            <div className="flex items-center gap-1.5 px-2 py-1.5 bg-dark-secondary border border-dark-border rounded-lg">
+            <div className="flex items-center gap-1.5 px-2 h-9 bg-dark-secondary border border-dark-border rounded-lg">
               {/* Spinning Icon */}
               <svg
                 className={`w-4 h-4 flex-shrink-0 transition-colors ${
@@ -615,7 +655,7 @@ export default function Channels() {
 
             {/* Category Filter/Assign Dropdown */}
             {showCategoryFilter && (
-              <div className="absolute left-0 sm:left-auto sm:right-0 mt-2 w-64 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
+              <div className="absolute right-0 mt-2 w-64 max-w-[calc(100vw-1.5rem)] bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 z-[100]">
                 <div className="px-3 py-2 text-xs font-semibold text-text-secondary uppercase flex justify-between items-center">
                   <span>
                     {selectedChannels.length > 0
@@ -756,6 +796,27 @@ export default function Channels() {
             )}
           </div>
 
+            {/* Sort Dropdown - mobile only, next to Edit */}
+            <div className="sm:hidden">
+              <SortDropdown
+                value={sortBy}
+                onChange={(value) => {
+                  setSortBy(value);
+                  localStorage.setItem('channels_sortBy', value);
+                }}
+                options={[
+                  { value: 'title-asc', label: 'A → Z' },
+                  { value: 'title-desc', label: 'Z → A' },
+                  { divider: true },
+                  { value: 'scan-desc', label: 'Last Scanned (Newest)' },
+                  { value: 'scan-asc', label: 'Last Scanned (Oldest)' },
+                  { divider: true },
+                  { value: 'count-desc', label: 'Most Downloaded' },
+                  { value: 'count-asc', label: 'Least Downloaded' },
+                ]}
+              />
+            </div>
+
             {/* Edit/Done Button */}
             <button
               onClick={() => {
@@ -777,7 +838,8 @@ export default function Channels() {
               className="flex-1 sm:flex-none sm:w-[200px]"
             />
 
-          {/* Sort Dropdown */}
+          {/* Sort Dropdown - desktop only */}
+          <div className="hidden sm:block">
           <SortDropdown
             value={sortBy}
             onChange={(value) => {
@@ -795,6 +857,7 @@ export default function Channels() {
               { value: 'count-asc', label: 'Least Downloaded' },
             ]}
           />
+          </div>
 
             {/* Pagination - desktop only */}
             {!isMobile && (
@@ -823,13 +886,14 @@ export default function Channels() {
         actions={[
           {
             label: 'Assign Category',
-            icon: (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
-            ),
             onClick: () => setShowCategoryFilter(true),
-            primary: true
+            variant: 'default'
+          },
+          {
+            label: 'Delete',
+            onClick: () => setDeleteConfirm({ bulk: true, count: selectedChannels.length }),
+            disabled: selectedChannels.length === 0,
+            variant: 'primary'
           }
         ]}
       />
@@ -1187,7 +1251,7 @@ export default function Channels() {
 
                   {/* Lower Left: AUTO Badge - Attached to border like upper badges */}
                   {channel.auto_download && (
-                    <div className="absolute bottom-0 left-0 bg-green-500 text-white font-bold text-xs px-1.5 py-0.5 rounded-bl-xl rounded-tr-lg z-10">
+                    <div className="absolute bottom-0 left-0 bg-green-500 text-white font-bold text-xs px-1.5 py-0.5 rounded-bl-xl group-hover:rounded-bl-none rounded-tr-lg z-10">
                       AUTO
                     </div>
                   )}
@@ -1283,12 +1347,17 @@ export default function Channels() {
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
           <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
-            <h3 className="text-xl font-bold text-text-primary mb-3">Delete Channel?</h3>
+            <h3 className="text-xl font-bold text-text-primary mb-3">
+              {deleteConfirm.bulk ? `Delete ${deleteConfirm.count} Channel${deleteConfirm.count > 1 ? 's' : ''}?` : 'Delete Channel?'}
+            </h3>
             <p className="text-text-secondary mb-4">
-              Are you sure you want to delete "<span className="text-text-primary font-semibold">{deleteConfirm.title}</span>"?
+              {deleteConfirm.bulk
+                ? `Are you sure you want to delete ${deleteConfirm.count} selected channel${deleteConfirm.count > 1 ? 's' : ''}?`
+                : <>Are you sure you want to delete "<span className="text-text-primary font-semibold">{deleteConfirm.title}</span>"?</>
+              }
             </p>
             <p className="text-sm text-text-muted mb-6">
-              This will remove the channel from your subscriptions and clear any pending/discovered videos. Downloaded videos will remain in your library.
+              This will remove the channel{deleteConfirm.bulk && deleteConfirm.count > 1 ? 's' : ''} from your subscriptions and clear any pending/discovered videos. Downloaded videos will remain in your library.
             </p>
             <div className="flex gap-3">
               <button
@@ -1298,7 +1367,7 @@ export default function Channels() {
                 Cancel
               </button>
               <button
-                onClick={() => handleDeleteChannel(deleteConfirm.id)}
+                onClick={() => deleteConfirm.bulk ? handleBulkDeleteChannels() : handleDeleteChannel(deleteConfirm.id)}
                 disabled={deleteChannel.isPending}
                 className="btn btn-danger flex-1"
               >
