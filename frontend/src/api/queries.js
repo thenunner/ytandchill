@@ -62,6 +62,16 @@ export function useDeleteChannel() {
   });
 }
 
+export function useMarkChannelVisited() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.markChannelVisited(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
+    },
+  });
+}
+
 export function useScanChannel() {
   const queryClient = useQueryClient();
   return useMutation({

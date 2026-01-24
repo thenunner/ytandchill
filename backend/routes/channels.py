@@ -283,6 +283,21 @@ def delete_channel(channel_id):
         return '', 204
 
 
+@channels_bp.route('/api/channels/<int:channel_id>/visited', methods=['POST'])
+def mark_channel_visited(channel_id):
+    """Mark channel as visited (for new videos badge in Library)"""
+    with get_session(_session_factory) as session:
+        channel = session.query(Channel).filter(Channel.id == channel_id).first()
+
+        if not channel:
+            return jsonify({'error': 'Channel not found'}), 404
+
+        channel.last_visited_at = datetime.now(timezone.utc)
+        session.commit()
+
+        return jsonify({'success': True})
+
+
 @channels_bp.route('/api/channels/<int:channel_id>/refresh-thumbnail', methods=['POST'])
 def refresh_channel_thumbnail(channel_id):
     """Refresh a channel's thumbnail from YouTube API"""

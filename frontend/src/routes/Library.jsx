@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings } from '../api/queries';
+import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings, useChannels } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
@@ -131,6 +131,9 @@ export default function Library() {
     status: 'library',
   });
 
+  // Fetch channels data for new_video_count (new videos since last visit)
+  const { data: channelsData } = useChannels();
+
   // Fetch all playlists
   const { data: playlists, isLoading: playlistsLoading } = usePlaylists();
 
@@ -182,17 +185,26 @@ export default function Library() {
 
   // Apply random thumbnail selection using stable seed
   const allChannelsList = useMemo(() => {
+    // Create a lookup map for channels data (for new_video_count)
+    const channelsMap = (channelsData || []).reduce((acc, ch) => {
+      acc[ch.id] = ch;
+      return acc;
+    }, {});
+
     return channelFolders.map((folder, index) => {
       // Combine seed with folder index for unique random per folder
       const randomIndex = Math.floor((randomSeedRef.current * (index + 1) * 9999) % folder.videos.length);
       const randomVideo = folder.videos[randomIndex];
+      // Get new_video_count from channels data (only for actual channels, not playlist folders)
+      const channelData = !folder.isPlaylistFolder ? channelsMap[folder.id] : null;
       return {
         ...folder,
         thumbnail: randomVideo?.thumb_url,
         allWatched: folder.watchedCount === folder.videoCount,
+        newVideoCount: channelData?.new_video_count || 0,
       };
     });
-  }, [channelFolders]);
+  }, [channelFolders, channelsData]);
 
   // Filter and sort channels based on search input (only actual channel folders, not singles)
   const channelsList = useMemo(() => {
@@ -829,6 +841,12 @@ export default function Library() {
                     <svg className="w-10 h-10 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                     </svg>
+                  </div>
+                )}
+                {/* New Videos Badge */}
+                {channel.newVideoCount > 0 && (
+                  <div className="absolute top-2 left-2 bg-accent text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                    {channel.newVideoCount > 99 ? '99+' : channel.newVideoCount}
                   </div>
                 )}
                 {/* Last Added Badge */}

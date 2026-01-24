@@ -69,6 +69,12 @@ class APIClient {
     });
   }
 
+  markChannelVisited(id) {
+    return this.request(`/channels/${id}/visited`, {
+      method: 'POST',
+    });
+  }
+
   scanChannel(id, forceFull = false, isBatchStart = false, isAutoScan = false, batchLabel = '') {
     return this.request(`/channels/${id}/scan`, {
       method: 'POST',
