@@ -19,13 +19,13 @@ function ToastItem({ toast, onDismiss }) {
 
   // Style mapping for different toast types
   const typeStyles = {
-    success: 'bg-green-600 border-green-500',
-    error: 'bg-red-600 border-red-500',
-    warning: 'bg-orange-600 border-orange-500',
-    info: 'bg-blue-600 border-blue-500',
+    success: 'bg-emerald-500 border-emerald-400',
+    error: 'bg-rose-500 border-rose-400',
+    warning: 'bg-amber-500 border-amber-400',
+    info: 'bg-sky-500 border-sky-400',
     scanning: 'bg-accent/90 border-accent',
-    paused: 'bg-orange-600 border-orange-500',
-    delay: 'bg-orange-600 border-orange-500',
+    paused: 'bg-amber-500 border-amber-400',
+    delay: 'bg-amber-500 border-amber-400',
     progress: 'bg-dark-secondary border-dark-border',
   };
 

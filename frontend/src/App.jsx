@@ -322,6 +322,14 @@ function App() {
         : 'text-text-secondary hover:bg-dark-hover hover:text-text-primary'
     }`;
 
+    // Handle click - if already in this section, navigate to main page
+    const handleClick = (e) => {
+      if (isActive && location.pathname !== to) {
+        e.preventDefault();
+        navigate(to);
+      }
+    };
+
     if (isButton) {
       return (
         <button onClick={onClick} className={baseClasses} title={label}>
@@ -332,7 +340,7 @@ function App() {
     }
 
     return (
-      <Link to={to} className={baseClasses} title={label}>
+      <Link to={to} className={baseClasses} title={label} onClick={handleClick}>
         {icon}
         {!sidebarCollapsed && (
           <>
