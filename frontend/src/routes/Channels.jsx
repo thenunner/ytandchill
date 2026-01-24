@@ -547,11 +547,11 @@ export default function Channels() {
             <button
               onClick={() => setShowAddForm(!showAddForm)}
               className={`h-9 w-9 p-0 flex items-center justify-center border rounded-lg transition-all flex-shrink-0 ${
-                filteredAndSortedChannels.length === 0 && !showAddForm
+                !isLoading && filteredAndSortedChannels.length === 0 && !showAddForm
                   ? 'bg-green-600 hover:bg-green-700 border-green-500 text-white shadow-lg shadow-green-500/50 animate-pulse'
                   : 'bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary'
               }`}
-              title={showAddForm ? 'Cancel' : filteredAndSortedChannels.length === 0 ? 'Add Your First Channel!' : 'Add Channel'}
+              title={showAddForm ? 'Cancel' : (!isLoading && filteredAndSortedChannels.length === 0) ? 'Add Your First Channel!' : 'Add Channel'}
             >
               {showAddForm ? (
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
