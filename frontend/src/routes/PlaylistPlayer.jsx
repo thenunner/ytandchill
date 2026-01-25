@@ -48,7 +48,7 @@ export default function PlaylistPlayer() {
     queries: categoryPlaylists.map(pl => ({
       queryKey: ['playlist', pl.id],
       queryFn: async () => {
-        const response = await fetch(`/api/playlists/${pl.id}`);
+        const response = await fetch(`/api/playlists/${pl.id}`, { credentials: 'include' });
         if (!response.ok) throw new Error('Failed to fetch playlist');
         return response.json();
       },
