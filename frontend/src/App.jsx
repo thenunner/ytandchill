@@ -34,15 +34,15 @@ function App() {
   const { isConnected: sseConnected } = useQueueSSE();
   const { data: queueData } = useQueue({ sseConnected });
   const { data: channelsData } = useChannels();
-  const { data: favoriteChannelsRaw } = useFavoriteChannels();
+  const { data: favoriteLibrariesRaw } = useFavoriteChannels();
   const { data: settings } = useSettings();
   const { data: health } = useHealth();
 
-  // Filter favorites based on hide_empty_channels setting
-  const hideEmptyChannels = settings?.hide_empty_channels === 'true';
-  const favoriteChannels = (favoriteChannelsRaw || []).filter(ch => {
-    // When hide_empty_channels is ON, filter out channels with 0 videos
-    if (hideEmptyChannels && (ch.downloaded_count || 0) === 0) {
+  // Filter favorites based on hide_empty_libraries setting
+  const hideEmptyLibraries = settings?.hide_empty_libraries === 'true';
+  const favoriteLibraries = (favoriteLibrariesRaw || []).filter(ch => {
+    // When hide_empty_libraries is ON, filter out libraries with 0 videos
+    if (hideEmptyLibraries && (ch.downloaded_count || 0) === 0) {
       return false;
     }
     return true;
@@ -422,15 +422,15 @@ function App() {
           <SidebarNavLink to="/queue" icon={<QueueIcon />} label="Queue" badge={queueCount} />
 
           {/* Favorites Section */}
-          {favoriteChannels && favoriteChannels.length > 0 && (
+          {favoriteLibraries && favoriteLibraries.length > 0 && (
             <div className="pt-3 mt-3 border-t border-dark-border">
               {!sidebarCollapsed ? (
                 <>
                   <div className="px-3 py-1.5">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Favorites</span>
+                    <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Favorite Libraries</span>
                   </div>
                   <div className="mt-1 space-y-0.5">
-                    {favoriteChannels.slice(0, 10).map(channel => (
+                    {favoriteLibraries.slice(0, 10).map(channel => (
                       <Link
                         key={channel.id}
                         to={`/channel/${channel.id}/library`}
@@ -463,10 +463,10 @@ function App() {
                 <Link
                   to="/library?tab=channels"
                   className="relative p-2 rounded-lg block text-text-secondary hover:bg-dark-hover transition-colors"
-                  title="Favorites"
+                  title="Favorite Libraries"
                 >
                   <HeartIcon className="w-5 h-5" />
-                  {favoriteChannels.some(ch => ch.has_new_videos) && (
+                  {favoriteLibraries.some(ch => ch.has_new_videos) && (
                     <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-dark-secondary" />
                   )}
                 </Link>
@@ -516,7 +516,7 @@ function App() {
         <MobileBottomNavWrapper
           queueCount={queueCount}
           reviewCount={reviewCount}
-          hasFavoritesWithNew={favoriteChannels?.some(ch => ch.has_new_videos) || false}
+          hasFavoritesWithNew={favoriteLibraries?.some(ch => ch.has_new_videos) || false}
         />
       </div>
 
