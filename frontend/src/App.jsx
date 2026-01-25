@@ -40,9 +40,13 @@ function App() {
 
   // Filter favorites based on hide_empty_channels setting
   const hideEmptyChannels = settings?.hide_empty_channels === 'true';
-  const favoriteChannels = favoriteChannelsRaw?.filter(ch =>
-    !hideEmptyChannels || ch.downloaded_count > 0
-  ) || [];
+  const favoriteChannels = (favoriteChannelsRaw || []).filter(ch => {
+    // When hide_empty_channels is ON, filter out channels with 0 videos
+    if (hideEmptyChannels && (ch.downloaded_count || 0) === 0) {
+      return false;
+    }
+    return true;
+  });
   const { showNotification, removeToast } = useNotification();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const clearingCookieWarningRef = useRef(false);
