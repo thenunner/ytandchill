@@ -185,8 +185,8 @@ export default function Library() {
   // Store random seed per mount - changes only on navigation, not on data refetch
   const randomSeedRef = useRef(Math.random());
 
-  // Check if we should show empty channels
-  const hideEmptyChannels = settings?.hide_empty_channels === 'true';
+  // Check if we should show empty libraries
+  const hideEmptyLibraries = settings?.hide_empty_libraries === 'true';
 
   // Apply random thumbnail selection using stable seed
   const allChannelsList = useMemo(() => {
@@ -219,8 +219,8 @@ export default function Library() {
       };
     });
 
-    // If hide_empty_channels is OFF, add channels that have no videos
-    if (!hideEmptyChannels && channelsData) {
+    // If hide_empty_libraries is OFF, add libraries that have no videos
+    if (!hideEmptyLibraries && channelsData) {
       const emptyChannels = channelsData
         .filter(ch => !channelIdsWithVideos.has(ch.id))
         .map(ch => ({
@@ -241,7 +241,7 @@ export default function Library() {
     }
 
     return foldersWithVideos;
-  }, [channelFolders, channelsData, hideEmptyChannels]);
+  }, [channelFolders, channelsData, hideEmptyLibraries]);
 
   // Filter and sort channels based on search input (only actual channel folders, not singles)
   const channelsList = useMemo(() => {

@@ -9,15 +9,15 @@ import { HeartIcon } from '../components/icons';
 export default function Favs() {
   const [selectedChannelId, setSelectedChannelId] = useState(null);
 
-  const { data: favoriteChannelsRaw, isLoading: channelsLoading } = useFavoriteChannels();
+  const { data: favoriteLibrariesRaw, isLoading: channelsLoading } = useFavoriteChannels();
   const { data: favoriteVideos, isLoading: videosLoading } = useFavoriteVideos(selectedChannelId);
   const { data: settings } = useSettings();
   const markVisited = useMarkChannelVisited();
 
-  // Filter favorites based on hide_empty_channels setting
-  const hideEmptyChannels = settings?.hide_empty_channels === 'true';
-  const favoriteChannels = (favoriteChannelsRaw || []).filter(ch => {
-    if (hideEmptyChannels && (ch.downloaded_count || 0) === 0) {
+  // Filter favorites based on hide_empty_libraries setting
+  const hideEmptyLibraries = settings?.hide_empty_libraries === 'true';
+  const favoriteLibraries = (favoriteLibrariesRaw || []).filter(ch => {
+    if (hideEmptyLibraries && (ch.downloaded_count || 0) === 0) {
       return false;
     }
     return true;
@@ -46,14 +46,14 @@ export default function Favs() {
   }
 
   // No favorites yet
-  if (!favoriteChannels || favoriteChannels.length === 0) {
+  if (!favoriteLibraries || favoriteLibraries.length === 0) {
     return (
       <div className="p-4">
-        <h1 className="text-xl font-bold text-text-primary mb-2">Favorites</h1>
+        <h1 className="text-xl font-bold text-text-primary mb-2">Favorite Libraries</h1>
         <EmptyState
           icon={<HeartIcon className="w-12 h-12" />}
-          title="No favorites yet"
-          description="Heart channels in Library to add them to your favorites"
+          title="No favorite libraries yet"
+          description="Heart libraries in Library to add them to your favorites"
         />
       </div>
     );
@@ -73,7 +73,7 @@ export default function Favs() {
             WebkitOverflowScrolling: 'touch'
           }}
         >
-          {favoriteChannels.map(channel => (
+          {favoriteLibraries.map(channel => (
             <button
               key={channel.id}
               onClick={() => handleChannelClick(channel.id)}
