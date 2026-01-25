@@ -329,7 +329,9 @@ function App() {
     const isActive = location.pathname === to ||
       (to === '/' && location.pathname.startsWith('/channel/') && !location.pathname.endsWith('/library')) ||
       (to === '/library' && (location.pathname.startsWith('/playlist/') || location.pathname.endsWith('/library')));
-    const baseClasses = `relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+    const baseClasses = `relative flex items-center rounded-lg transition-colors ${
+      sidebarCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5'
+    } ${
       isActive
         ? 'bg-accent/20 text-accent-text'
         : 'text-text-secondary hover:bg-dark-hover hover:text-text-primary'
@@ -402,84 +404,118 @@ function App() {
         }`}
       >
         {/* Sidebar Header */}
-        <div className="flex items-center justify-between p-2 border-b border-dark-border">
+        <div className={sidebarCollapsed
+          ? "flex flex-col items-center py-2 border-b border-dark-border"
+          : "flex items-center justify-between p-2 border-b border-dark-border"
+        }>
           {!sidebarCollapsed && (
             <img src="/logo.png" alt="YTandChill" className="h-10 w-28" />
           )}
           <button
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="p-2 rounded-lg hover:bg-dark-hover transition-colors text-text-secondary"
+            className="flex items-center justify-center p-2 rounded-lg hover:bg-dark-hover transition-colors text-text-secondary"
             title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {sidebarCollapsed ? <MenuIcon className="w-6 h-6" /> : <CollapseIcon className="w-6 h-6" />}
+            {sidebarCollapsed ? <MenuIcon className="w-5 h-5" /> : <CollapseIcon className="w-5 h-5" />}
           </button>
         </div>
 
         {/* Nav Links */}
-        <div className="flex-1 p-2 space-y-1 overflow-y-auto">
-          <SidebarNavLink to="/" icon={<ChannelsIcon />} label="Channels" badge={reviewCount} />
-          <SidebarNavLink to="/library" icon={<LibraryIcon />} label="Library" />
-          <SidebarNavLink to="/queue" icon={<QueueIcon />} label="Queue" badge={queueCount} />
+        {sidebarCollapsed ? (
+          /* Collapsed: flat structure, everything directly in flex container */
+          <div className="flex-1 flex flex-col items-center gap-1 py-2 overflow-y-auto">
+            <SidebarNavLink to="/" icon={<ChannelsIcon className="w-5 h-5" />} label="Channels" badge={reviewCount} />
+            <SidebarNavLink to="/library" icon={<LibraryIcon className="w-5 h-5" />} label="Library" />
+            <SidebarNavLink to="/queue" icon={<QueueIcon className="w-5 h-5" />} label="Queue" badge={queueCount} />
 
-          {/* Favorites Section */}
-          {favoriteLibraries && favoriteLibraries.length > 0 && (
-            <div className="pt-3 mt-3 border-t border-dark-border">
-              {!sidebarCollapsed ? (
-                <>
-                  <div className="px-3 py-1.5">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Favorite Libraries</span>
-                  </div>
-                  <div className="mt-1 space-y-0.5">
-                    {favoriteLibraries.slice(0, 10).map(channel => (
-                      <Link
-                        key={channel.id}
-                        to={`/channel/${channel.id}/library`}
-                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-dark-hover transition-colors"
-                      >
-                        <div className="w-7 h-7 flex-shrink-0 rounded-full overflow-hidden border-2 border-dark-border">
-                          {channel.thumbnail ? (
-                            <img src={channel.thumbnail} className="w-full h-full object-cover" alt="" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-dark-tertiary">
-                              <span className="text-[10px] font-bold text-text-muted">
-                                {channel.title?.substring(0, 2).toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <span className={`text-sm truncate flex-1 ${channel.has_new_videos ? 'text-text-primary' : 'text-text-secondary'}`}>
-                          {channel.title}
-                        </span>
-                        {/* Dot indicator for new videos */}
-                        {channel.has_new_videos && (
-                          <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
-                        )}
-                      </Link>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                /* Collapsed state: Heart icon with dot if any favorite has new videos */
-                <Link
-                  to="/library?tab=channels"
-                  className="relative flex items-center px-3 py-2.5 rounded-lg text-text-secondary hover:bg-dark-hover transition-colors"
-                  title="Favorite Libraries"
-                >
+            {/* Favorites - flat, no wrapper */}
+            {favoriteLibraries && favoriteLibraries.length > 0 && (
+              <>
+                <div className="w-8 border-t border-dark-border my-1" />
+                {/* Heart icon - not clickable, just a section indicator */}
+                <div className="p-2 text-text-muted" title="Favorite Libraries">
                   <HeartIcon className="w-5 h-5" />
-                  {favoriteLibraries.some(ch => ch.has_new_videos) && (
-                    <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-accent border-2 border-dark-secondary" />
-                  )}
-                </Link>
-              )}
-            </div>
-          )}
-        </div>
+                </div>
+                {favoriteLibraries.slice(0, 10).map(channel => (
+                  <Link
+                    key={channel.id}
+                    to={`/channel/${channel.id}/library`}
+                    className="flex items-center justify-center p-2 rounded-lg hover:bg-dark-hover transition-colors"
+                    title={channel.title}
+                  >
+                    <div className="w-5 h-5 rounded-full overflow-hidden">
+                      {channel.thumbnail ? (
+                        <img src={channel.thumbnail} className="w-full h-full object-cover" alt="" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-dark-tertiary">
+                          <span className="text-[8px] font-bold text-text-muted">
+                            {channel.title?.substring(0, 2).toUpperCase()}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </>
+            )}
+          </div>
+        ) : (
+          /* Expanded: normal nested structure */
+          <div className="flex-1 p-2 space-y-1 overflow-y-auto">
+            <SidebarNavLink to="/" icon={<ChannelsIcon className="w-5 h-5" />} label="Channels" badge={reviewCount} />
+            <SidebarNavLink to="/library" icon={<LibraryIcon className="w-5 h-5" />} label="Library" />
+            <SidebarNavLink to="/queue" icon={<QueueIcon className="w-5 h-5" />} label="Queue" badge={queueCount} />
+
+            {favoriteLibraries && favoriteLibraries.length > 0 && (
+              <div className="pt-3 mt-3 border-t border-dark-border">
+                <div className="px-3 py-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Favorite Libraries</span>
+                </div>
+                <div className="mt-1 space-y-0.5">
+                  {favoriteLibraries.slice(0, 10).map(channel => (
+                    <Link
+                      key={channel.id}
+                      to={`/channel/${channel.id}/library`}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-dark-hover transition-colors"
+                      title={channel.title}
+                    >
+                      <div className="w-7 h-7 flex-shrink-0 rounded-full overflow-hidden border-2 border-dark-border">
+                        {channel.thumbnail ? (
+                          <img src={channel.thumbnail} className="w-full h-full object-cover" alt="" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-dark-tertiary">
+                            <span className="text-[10px] font-bold text-text-muted">
+                              {channel.title?.substring(0, 2).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      <span className={`text-sm truncate flex-1 ${channel.has_new_videos ? 'text-text-primary' : 'text-text-secondary'}`}>
+                        {channel.title}
+                      </span>
+                      {channel.has_new_videos && (
+                        <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
+                      )}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Bottom Links */}
-        <div className="p-2 border-t border-dark-border space-y-1">
-          <SidebarNavLink to="/settings" icon={<SettingsIcon />} label="Settings" />
-          <SidebarNavLink isButton onClick={handleLogout} icon={<LogoutIcon />} label="Logout" />
-        </div>
+        {sidebarCollapsed ? (
+          <div className="flex flex-col items-center gap-1 py-2 border-t border-dark-border">
+            <SidebarNavLink to="/settings" icon={<SettingsIcon className="w-5 h-5" />} label="Settings" />
+            <SidebarNavLink isButton onClick={handleLogout} icon={<LogoutIcon className="w-5 h-5" />} label="Logout" />
+          </div>
+        ) : (
+          <div className="p-2 border-t border-dark-border space-y-1">
+            <SidebarNavLink to="/settings" icon={<SettingsIcon className="w-5 h-5" />} label="Settings" />
+            <SidebarNavLink isButton onClick={handleLogout} icon={<LogoutIcon className="w-5 h-5" />} label="Logout" />
+          </div>
+        )}
       </nav>
 
       {/* Main Content Area */}
