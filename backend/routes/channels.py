@@ -19,6 +19,7 @@ from database import Channel, Video, Playlist, ChannelCategory, get_session
 from utils import download_thumbnail, sanitize_folder_name
 from scanner import resolve_channel_from_url, get_channel_info
 from youtube_api import fetch_channel_thumbnail
+from events import queue_events
 
 logger = logging.getLogger(__name__)
 
@@ -295,6 +296,9 @@ def mark_channel_visited(channel_id):
         channel.last_visited_at = datetime.now(timezone.utc)
         session.commit()
 
+        # Emit SSE event to sync all browser tabs
+        queue_events.emit('channels:changed')
+
         return jsonify({'success': True})
 
 
@@ -315,6 +319,9 @@ def toggle_channel_favorite(channel_id):
         session.commit()
 
         logger.info(f"Channel '{channel.title}' favorite toggled to {channel.is_favorite}")
+
+        # Emit SSE event to sync all browser tabs
+        queue_events.emit('channels:changed')
 
         return jsonify({
             'success': True,
