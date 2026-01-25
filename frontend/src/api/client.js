@@ -358,6 +358,14 @@ class APIClient {
     });
   }
 
+  // Toast sync (cross-device dismissal)
+  dismissToast(toastId) {
+    return this.request('/toast/dismiss', {
+      method: 'POST',
+      body: JSON.stringify({ id: toastId }),
+    });
+  }
+
   // Settings
   getSettings() {
     return this.request('/settings');

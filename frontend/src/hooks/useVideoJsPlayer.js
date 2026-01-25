@@ -360,8 +360,8 @@ export function useVideoJsPlayer({
             const duration = player.duration();
 
             // Restore saved progress position or start at beginning
-            const startTime = (video.progress_sec && video.progress_sec > 0 && video.progress_sec < duration * 0.95)
-              ? video.progress_sec
+            const startTime = (video.playback_seconds && video.playback_seconds > 0 && video.playback_seconds < duration * 0.95)
+              ? video.playback_seconds
               : 0;
 
             player.currentTime(startTime);
@@ -535,13 +535,16 @@ export function useVideoJsPlayer({
       console.error('User-facing error:', userMessage);
     });
 
-    // Progress saving (if enabled)
-    if (saveProgress && updateVideoRef.current) {
-      // Save immediately when playback starts (updates last_watched_at for watch history)
+    // Always update last_watched_at when playback starts (for watch history)
+    // This runs regardless of saveProgress setting so playlist videos also appear in history
+    if (updateVideoRef.current) {
       player.on('play', () => {
-        saveProgressNow();
+        setTimeout(() => saveProgressNow(), 500);
       });
+    }
 
+    // Additional progress saving (only if enabled - not for playlists)
+    if (saveProgress && updateVideoRef.current) {
       // Save immediately after any seek operation completes
       player.on('seeked', () => {
         saveProgressNow();
@@ -572,22 +575,9 @@ export function useVideoJsPlayer({
       player.on('pause', () => {
         saveProgressNow();
       });
-
-      // Restore saved position
-      player.on('loadedmetadata', () => {
-        const duration = player.duration();
-        const savedPosition = video.playback_seconds || 0;
-
-        if (savedPosition > 0 && savedPosition < duration - 5) {
-          player.currentTime(savedPosition);
-        }
-      });
-    } else {
-      // Playlist mode - always start from beginning
-      player.on('loadedmetadata', () => {
-        player.currentTime(0);
-      });
     }
+    // Note: Position restoration is handled by player.one('loadedmetadata') above
+    // Playlist mode starts at 0 because video.playback_seconds is 0 for playlist videos
 
     // Watched threshold detection
     player.on('timeupdate', () => {

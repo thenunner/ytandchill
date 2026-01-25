@@ -1,5 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNotification } from '../contexts/NotificationContext';
 
 /**
  * Hook for receiving real-time queue updates via Server-Sent Events.
@@ -8,6 +9,7 @@ import { useQueryClient } from '@tanstack/react-query';
  */
 export function useQueueSSE() {
   const queryClient = useQueryClient();
+  const { removeToast } = useNotification();
   const eventSourceRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -89,6 +91,18 @@ export function useQueueSSE() {
         queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
       });
 
+      // Listen for toast dismissal events (sync across devices)
+      eventSource.addEventListener('toast', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.action === 'dismiss' && data.id) {
+            removeToast(data.id);
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse toast SSE data:', parseError);
+        }
+      });
+
       eventSource.onerror = () => {
         setIsConnected(false);
         eventSource.close();
@@ -112,7 +126,7 @@ export function useQueueSSE() {
       console.error('Failed to create EventSource:', error);
       // SSE not supported - will fall back to polling
     }
-  }, [queryClient]);
+  }, [queryClient, removeToast]);
 
   useEffect(() => {
     connect();

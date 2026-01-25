@@ -1,11 +1,20 @@
-import { Link, useLocation } from 'react-router-dom';
-import { ChannelsIcon, LibraryIcon, QueueIcon, SettingsIcon, HeartIcon } from './icons';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { ChannelsIcon, LibraryIcon, QueueIcon, SettingsIcon, HeartIcon, HistoryIcon } from './icons';
+
+// User/Me icon
+const UserIcon = ({ className = "w-5 h-5" }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </svg>
+);
 
 /**
  * Shared mobile bottom navigation component
  * Used across all mobile pages for consistent navigation
  *
- * Tabs: Channels, Library, Favs, Queue (with badge), Settings
+ * Tabs: Channels, Library, Favs, Queue (with badge), Me (popup with Settings/Watch History)
  *
  * @param {number} queueCount - Optional queue count for badge
  * @param {number} reviewCount - Optional review count for Channels badge
@@ -13,6 +22,33 @@ import { ChannelsIcon, LibraryIcon, QueueIcon, SettingsIcon, HeartIcon } from '.
  */
 export default function MobileBottomNav({ queueCount = 0, reviewCount = 0, hasFavoritesWithNew = false }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showMePopup, setShowMePopup] = useState(false);
+  const popupRef = useRef(null);
+
+  // Close popup when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (popupRef.current && !popupRef.current.contains(e.target)) {
+        setShowMePopup(false);
+      }
+    };
+
+    if (showMePopup) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showMePopup]);
+
+  // Close popup on navigation
+  useEffect(() => {
+    setShowMePopup(false);
+  }, [location.pathname]);
 
   const navItems = [
     {
@@ -20,21 +56,19 @@ export default function MobileBottomNav({ queueCount = 0, reviewCount = 0, hasFa
       icon: ChannelsIcon,
       label: 'Channels',
       badge: reviewCount,
-      // /channel/:id/library is part of Library, not Channels
       isActive: location.pathname === '/' || (location.pathname.startsWith('/channel/') && !location.pathname.endsWith('/library'))
     },
     {
       to: '/library',
       icon: LibraryIcon,
       label: 'Library',
-      // Include /channel/:id/library as part of Library
       isActive: location.pathname === '/library' || location.pathname.startsWith('/playlist/') || location.pathname.endsWith('/library')
     },
     {
       to: '/favs',
       icon: HeartIcon,
       label: 'Favs',
-      hasDot: hasFavoritesWithNew, // Dot indicator (not number badge)
+      hasDot: hasFavoritesWithNew,
       isActive: location.pathname === '/favs'
     },
     {
@@ -43,14 +77,10 @@ export default function MobileBottomNav({ queueCount = 0, reviewCount = 0, hasFa
       label: 'Queue',
       badge: queueCount,
       isActive: location.pathname === '/queue'
-    },
-    {
-      to: '/settings',
-      icon: SettingsIcon,
-      label: 'Settings',
-      isActive: location.pathname === '/settings'
     }
   ];
+
+  const isMeActive = location.pathname === '/settings' || location.pathname === '/history';
 
   return (
     <nav className="flex items-center justify-around py-2 px-1 border-t border-dark-border bg-dark-secondary safe-area-bottom">
@@ -64,18 +94,63 @@ export default function MobileBottomNav({ queueCount = 0, reviewCount = 0, hasFa
         >
           <Icon className="w-5 h-5" filled={isActive && label === 'Favs'} />
           <span className="text-[10px] font-medium">{label}</span>
-          {/* Number badge for queue/channels */}
           {badge > 0 && (
             <span className="absolute top-0 right-0.5 bg-accent text-dark-primary text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
               {badge > 99 ? '99+' : badge}
             </span>
           )}
-          {/* Dot indicator for favs */}
           {hasDot && (
             <span className="absolute top-0.5 right-2 w-2 h-2 bg-accent rounded-full" />
           )}
         </Link>
       ))}
+
+      {/* Me button with popup */}
+      <div className="relative" ref={popupRef}>
+        <button
+          onClick={() => setShowMePopup(!showMePopup)}
+          className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg relative min-w-[52px] ${
+            isMeActive ? 'text-accent-text' : 'text-text-secondary'
+          }`}
+        >
+          <UserIcon className="w-5 h-5" />
+          <span className="text-[10px] font-medium">Me</span>
+        </button>
+
+        {/* Popup menu */}
+        {showMePopup && (
+          <div className="absolute bottom-full right-0 mb-2 w-40 bg-dark-secondary border border-dark-border rounded-lg shadow-lg overflow-hidden z-50">
+            <button
+              onClick={() => {
+                navigate('/settings');
+                setShowMePopup(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                location.pathname === '/settings'
+                  ? 'bg-accent/20 text-accent-text'
+                  : 'text-text-primary hover:bg-dark-hover'
+              }`}
+            >
+              <SettingsIcon className="w-5 h-5" />
+              <span className="text-sm font-medium">Settings</span>
+            </button>
+            <button
+              onClick={() => {
+                navigate('/history');
+                setShowMePopup(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors ${
+                location.pathname === '/history'
+                  ? 'bg-accent/20 text-accent-text'
+                  : 'text-text-primary hover:bg-dark-hover'
+              }`}
+            >
+              <HistoryIcon className="w-5 h-5" />
+              <span className="text-sm font-medium">Watch History</span>
+            </button>
+          </div>
+        )}
+      </div>
     </nav>
   );
 }

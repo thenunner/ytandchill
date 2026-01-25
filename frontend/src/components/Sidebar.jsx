@@ -18,7 +18,7 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
 
   // Fetch queue count for badge
   const { data: queueData } = useQueue({});
-  const queueCount = queueData?.queue?.length || 0;
+  const queueCount = queueData?.queue_items?.length || 0;
 
   // Fetch favorite channels and settings for filtering
   const { data: favoriteLibrariesRaw } = useFavoriteChannels();
@@ -138,14 +138,11 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
           {favoriteLibraries && favoriteLibraries.length > 0 && (
             <>
               <div className="w-8 border-t border-dark-border my-1" />
-              <div className="p-2 text-text-muted" title="Favorite Libraries">
-                <HeartIcon className="w-7 h-7" />
-              </div>
               {favoriteLibraries.slice(0, 10).map(channel => (
                 <Link
                   key={channel.id}
                   to={`/channel/${channel.id}/library`}
-                  className="flex items-center justify-center p-2 rounded-lg hover:bg-dark-hover transition-colors"
+                  className="relative flex items-center justify-center p-2 rounded-lg hover:bg-dark-hover transition-colors"
                   title={channel.title}
                 >
                   <div className="w-7 h-7 rounded-full overflow-hidden bg-dark-tertiary flex items-center justify-center">
@@ -161,6 +158,9 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
                       </span>
                     )}
                   </div>
+                  {channel.has_new_videos && (
+                    <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
+                  )}
                 </Link>
               ))}
             </>
@@ -205,7 +205,12 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
                         </span>
                       )}
                     </div>
-                    <span className="text-sm truncate">{channel.title}</span>
+                    <span className={`text-sm truncate flex-1 ${channel.has_new_videos ? 'text-text-primary' : ''}`}>
+                      {channel.title}
+                    </span>
+                    {channel.has_new_videos && (
+                      <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
+                    )}
                   </Link>
                 ))}
               </div>
