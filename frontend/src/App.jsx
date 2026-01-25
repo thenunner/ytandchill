@@ -419,7 +419,7 @@ function App() {
                     <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Favorites</span>
                   </div>
                   <div className="mt-1 space-y-0.5">
-                    {favoriteChannels.slice(0, 5).map(channel => (
+                    {favoriteChannels.slice(0, 10).map(channel => (
                       <Link
                         key={channel.id}
                         to={`/channel/${channel.id}/library`}
