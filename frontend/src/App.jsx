@@ -75,6 +75,9 @@ function App() {
   const prevIsPausedRef = useRef(false);
   const prevDownloadRef = useRef(null);
 
+  // Track user-dismissed toasts - don't re-show until condition resets
+  const dismissedToastsRef = useRef(new Set());
+
   // Update latest version from health API (populated by backend scan operations)
   useEffect(() => {
     if (health?.latest_version) {
@@ -132,10 +135,18 @@ function App() {
   // Active scanning toast - depend on message specifically to catch updates
   useEffect(() => {
     if (currentOperation?.type === 'scanning' && currentOperation?.message) {
-      showNotification(currentOperation.message, 'scanning', { id: 'scanning', persistent: true });
+      // Only show if user hasn't dismissed it
+      if (!dismissedToastsRef.current.has('scanning')) {
+        showNotification(currentOperation.message, 'scanning', {
+          id: 'scanning',
+          persistent: true,
+          onDismiss: () => dismissedToastsRef.current.add('scanning')
+        });
+      }
     } else {
       // Always remove scanning toast when not actively scanning
       removeToast('scanning');
+      dismissedToastsRef.current.delete('scanning');
     }
   }, [currentOperation?.type, currentOperation?.message, showNotification, removeToast]);
 
@@ -180,9 +191,18 @@ function App() {
   useEffect(() => {
     const queueLog = queue?.find(item => item.log)?.log || null;
     if (isPaused && !prevIsPausedRef.current && queue.length > 0) {
-      showNotification(queueLog || 'Queue paused', 'paused', { id: 'paused', persistent: true });
+      // Only show if user hasn't dismissed it
+      if (!dismissedToastsRef.current.has('paused')) {
+        showNotification(queueLog || 'Queue paused', 'paused', {
+          id: 'paused',
+          persistent: true,
+          onDismiss: () => dismissedToastsRef.current.add('paused')
+        });
+      }
     } else if (!isPaused && prevIsPausedRef.current) {
       removeToast('paused');
+      // Clear dismissed state so it can show again next time
+      dismissedToastsRef.current.delete('paused');
     }
     prevIsPausedRef.current = isPaused;
   }, [isPaused, queue, showNotification, removeToast]);
@@ -190,9 +210,17 @@ function App() {
   // Delay info toast
   useEffect(() => {
     if (delayInfo && delayInfo !== prevDelayInfoRef.current) {
-      showNotification(delayInfo, 'delay', { id: 'delay', persistent: true });
+      // Only show if user hasn't dismissed it
+      if (!dismissedToastsRef.current.has('delay')) {
+        showNotification(delayInfo, 'delay', {
+          id: 'delay',
+          persistent: true,
+          onDismiss: () => dismissedToastsRef.current.add('delay')
+        });
+      }
     } else if (!delayInfo && prevDelayInfoRef.current) {
       removeToast('delay');
+      dismissedToastsRef.current.delete('delay');
       // Show notification that queue has resumed after delay
       showNotification('Queue resumed', 'success');
     }
@@ -202,8 +230,14 @@ function App() {
   // Download progress toast
   useEffect(() => {
     if (currentDownload && !isPaused) {
+      // Only show if user hasn't dismissed it
+      if (dismissedToastsRef.current.has('download-progress')) {
+        return;
+      }
+
       // Check if in postprocessing phase (SponsorBlock re-encoding)
       const isPostprocessing = currentDownload.phase === 'postprocessing';
+      const onDismiss = () => dismissedToastsRef.current.add('download-progress');
 
       if (isPostprocessing) {
         // Show elapsed time for postprocessing
@@ -216,6 +250,7 @@ function App() {
           {
             id: 'download-progress',
             persistent: true,
+            onDismiss,
             progress: {
               isPostprocessing: true,
               elapsed: elapsedStr,
@@ -239,12 +274,14 @@ function App() {
           {
             id: 'download-progress',
             persistent: true,
+            onDismiss,
             progress: { speed, eta, percent }
           }
         );
       }
     } else if (!currentDownload && prevDownloadRef.current) {
       removeToast('download-progress');
+      dismissedToastsRef.current.delete('download-progress');
       // Show download complete notification with the previous download's title
       const completedTitle = prevDownloadRef.current.video?.title || 'Video';
       showNotification(`Downloaded: ${completedTitle}`, 'success', { duration: 15000 });
