@@ -9,7 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { TrashIcon, HistoryIcon } from '../components/icons';
+import { TrashIcon } from '../components/icons';
 import { formatDuration, formatFileSize } from '../utils/formatters';
 import { getNumericSetting } from '../utils/settingsUtils';
 import Pagination from '../components/Pagination';
@@ -106,10 +106,7 @@ export default function WatchHistory() {
         <div className="flex items-center gap-2">
           {/* Left: Title + Channel Filter + Clear button */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center gap-2 text-text-primary">
-              <HistoryIcon className="w-5 h-5" />
-              <h1 className="text-lg font-semibold hidden sm:block">Watch History</h1>
-            </div>
+            <h1 className="text-lg font-semibold hidden sm:block text-text-primary">Watch History</h1>
 
             {/* Channel Filter - next to title */}
             {libraryChannels.length > 0 && (
@@ -224,12 +221,6 @@ export default function WatchHistory() {
                       </div>
                     )}
 
-                    {/* Last watched badge */}
-                    <div className="absolute top-1 right-1 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded flex items-center gap-1">
-                      <HistoryIcon className="w-3 h-3" />
-                      {formatLastWatched(video.last_watched_at)}
-                    </div>
-
                     {/* Progress bar if partially watched */}
                     {video.playback_seconds > 0 && video.duration_sec > 0 && !video.watched && (
                       <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/50">
@@ -246,9 +237,15 @@ export default function WatchHistory() {
                     <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 mb-1`} title={video.title}>
                       {video.title}
                     </h3>
-                    <div className={`${textSizes.metadata} text-text-secondary`}>
+                    <div className={`${textSizes.metadata} text-text-secondary flex items-center gap-1`}>
                       {video.channel_title && (
                         <span className="truncate">{video.channel_title}</span>
+                      )}
+                      {video.channel_title && video.last_watched_at && (
+                        <span className="text-text-muted">•</span>
+                      )}
+                      {video.last_watched_at && (
+                        <span className="text-text-muted whitespace-nowrap">{formatLastWatched(video.last_watched_at)}</span>
                       )}
                     </div>
                   </div>
