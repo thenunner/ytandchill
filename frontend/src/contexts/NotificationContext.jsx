@@ -34,18 +34,25 @@ export function NotificationProvider({ children }) {
 
     const toastDuration = persistent ? null : (duration ?? defaultDurations[type] ?? 5000);
     const toastIdToUse = id || generateId();
+    const isPersistent = persistent || !toastDuration;
 
     setToasts(prev => {
       // If this ID already exists, update it
       const existingIndex = prev.findIndex(t => t.id === toastIdToUse);
       if (existingIndex !== -1) {
         const updated = [...prev];
-        updated[existingIndex] = { ...updated[existingIndex], message, type, progress, noDismiss };
+        updated[existingIndex] = { ...updated[existingIndex], message, type, progress, persistent: isPersistent };
         return updated;
       }
-      // Otherwise add new toast (max 5 toasts)
-      const newToast = { id: toastIdToUse, message, type, progress, noDismiss };
-      return [...prev.slice(-4), newToast];
+
+      // Add new toast - preserve persistent toasts, limit non-persistent to max 3
+      const newToast = { id: toastIdToUse, message, type, progress, persistent: isPersistent };
+      const persistentToasts = prev.filter(t => t.persistent);
+      const nonPersistentToasts = prev.filter(t => !t.persistent);
+
+      // Keep all persistent toasts + last 2 non-persistent + new toast
+      const trimmedNonPersistent = nonPersistentToasts.slice(-2);
+      return [...persistentToasts, ...trimmedNonPersistent, newToast];
     });
 
     // Clear existing timeout for this ID
