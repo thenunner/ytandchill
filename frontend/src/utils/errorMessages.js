@@ -1,8 +1,13 @@
 /**
  * Maps technical error messages to user-friendly messages with actionable advice
+ * @param {string} errorMessage - The raw error message
+ * @param {string} context - Optional context for fallback (e.g., 'delete video', 'save settings')
  */
-export function getUserFriendlyError(errorMessage) {
-  if (!errorMessage) return 'An unknown error occurred';
+export function getUserFriendlyError(errorMessage, context = null) {
+  // If no error message, use context-specific fallback or generic message
+  if (!errorMessage) {
+    return context ? `Failed to ${context}. Please try again.` : 'An unknown error occurred';
+  }
 
   const lowerError = errorMessage.toLowerCase();
 
@@ -75,7 +80,10 @@ export function getUserFriendlyError(errorMessage) {
     return 'Invalid URL. Make sure you\'re using the correct channel URL format.';
   }
 
-  // Fallback: return original error if no match
+  // Fallback: use context if available, otherwise return original error
+  if (context) {
+    return `Failed to ${context}. Please try again.`;
+  }
   return errorMessage;
 }
 

@@ -509,7 +509,15 @@ export default function Videos() {
           <EmptyState
             icon={<path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />}
             title="Paste a URL to get started"
-            message="Paste a YT video, playlist, or channel URL above. Select which videos to download as singles without subscribing to the full channel."
+            message={
+              <div className="space-y-3">
+                <p>Paste a YT video, playlist, or channel URL above. Select which videos to download as singles without subscribing to the full channel.</p>
+                <div className="text-center space-y-1.5 text-sm">
+                  <p><span className="font-semibold text-text-primary">Scan New</span> – Checks the URL and shows only video(s) not already in your library</p>
+                  <p><span className="font-semibold text-text-primary">Scan All</span> – Checks the URL and shows all video(s), including ones already in your library</p>
+                </div>
+              </div>
+            }
           />
         </div>
       )}

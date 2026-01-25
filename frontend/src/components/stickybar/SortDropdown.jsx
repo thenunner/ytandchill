@@ -46,12 +46,12 @@ export default function SortDropdown({
     <div className={`relative ${className}`} ref={menuRef}>
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className={`filter-btn ${showMenu ? 'active' : ''}`}
+        className={`h-[35px] px-2.5 sm:px-3 rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 bg-dark-tertiary border border-dark-border-light text-text-primary hover:bg-dark-hover ${showMenu ? 'bg-dark-hover' : ''}`}
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M3 6h18M7 12h10M10 18h4" />
         </svg>
-        <span>{buttonLabel}</span>
+        <span className="hidden sm:inline">{buttonLabel}</span>
         {hasDurationFilter && (
           <span className="bg-accent text-white text-xs px-1.5 py-0.5 rounded-full">
             {selectedDuration?.label}

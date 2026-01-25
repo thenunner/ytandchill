@@ -47,10 +47,15 @@ export default function ConfirmModal({
       />
 
       {/* Modal */}
-      <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-[90vw] sm:max-w-md w-full animate-slide-up">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
+        className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-[90vw] sm:max-w-md w-full animate-slide-up"
+      >
         {/* Header */}
         <div className="px-6 py-4 border-b border-dark-border">
-          <h3 className={`text-lg font-semibold ${isLightTheme ? 'text-black' : 'text-text-primary'}`}>
+          <h3 id="confirm-modal-title" className={`text-lg font-semibold ${isLightTheme ? 'text-black' : 'text-text-primary'}`}>
             {title}
           </h3>
         </div>

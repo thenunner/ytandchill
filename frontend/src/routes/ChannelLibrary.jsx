@@ -1,21 +1,22 @@
-import { useState, useRef, useMemo, useEffect } from 'react';
-import { useParams, useSearchParams, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState, useMemo, useEffect } from 'react';
+import { useParams, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
 import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel, useSettings, useMarkChannelVisited } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { getBooleanSetting, getNumericSetting, getStringSetting } from '../utils/settingsUtils';
 import VideoCard from '../components/VideoCard';
-import SortDropdown from '../components/stickybar/SortDropdown';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import api from '../api/client';
-import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch, BackButton, EditButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
+import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
 
 export default function ChannelLibrary() {
   const { channelId } = useParams();
@@ -67,7 +68,6 @@ export default function ChannelLibrary() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [showDurationSettings, setShowDurationSettings] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -76,7 +76,6 @@ export default function ChannelLibrary() {
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
   const [deleteVideosConfirm, setDeleteVideosConfirm] = useState(null); // { count: number }
-  const menuRef = useRef(null);
 
   const channel = channels?.find(c => c.id === Number(channelId));
 
@@ -300,9 +299,10 @@ export default function ChannelLibrary() {
     setLoadedPages(1); // Reset mobile infinite scroll
   }, [searchInput, sort, durationFilter, contentFilter]);
 
-  // Clear selection when switching between to-review and ignored tabs
+  // Clear selection and exit edit mode when switching tabs
   useEffect(() => {
     setSelectedVideos([]);
+    setEditMode(false);
   }, [contentFilter]);
 
   // Adjust page if current page is now empty (after bulk delete/ignore)
@@ -347,7 +347,7 @@ export default function ChannelLibrary() {
       await addToQueue.mutateAsync(videoId);
       showNotification('Added to queue', 'success');
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'add to queue'), 'error');
     }
   };
 
@@ -392,7 +392,7 @@ export default function ChannelLibrary() {
       }
       setSelectedVideos([]);
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'complete action'), 'error');
     }
   };
 
@@ -406,7 +406,7 @@ export default function ChannelLibrary() {
       setEditMode(false);
       setDeleteVideosConfirm(null);
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'delete videos'), 'error');
     }
   };
 
@@ -470,7 +470,7 @@ export default function ChannelLibrary() {
 
       // Backend handles completion message via toast notification
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'scan channel'), 'error');
     }
   };
 
@@ -481,7 +481,7 @@ export default function ChannelLibrary() {
       setDeleteConfirm(null);
       navigate('/');
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'delete channel'), 'error');
     }
   };
 
@@ -498,150 +498,198 @@ export default function ChannelLibrary() {
       setShowDurationSettings(false);
       showNotification('Filters updated', 'success');
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'update filters'), 'error');
     }
   };
 
-  // Click outside to close menu
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
-    };
-
-    if (menuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [menuOpen]);
-
   return (
     <div className="space-y-4 animate-fade-in">
-      {/* Sticky Header - Desktop: single row, Mobile: 2 rows */}
+      {/* Sticky Header */}
       <StickyBar className="md:-mx-8 md:px-8 mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-          {/* Left: Back + Tabs + Filters + Edit + CardSize */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Back Arrow */}
-            <Link
+        <div className="flex items-center gap-2">
+          {/* Left: Back + Tabs + Edit/Manage */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <BackButton
               to={isLibraryMode ? "/library" : "/"}
-              className="flex items-center justify-center w-[35px] h-[35px] rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
               title={isLibraryMode ? "Back to Library" : "Back to Channels"}
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </Link>
+            />
 
             {/* Tabs */}
-            <div className="flex gap-1 sm:gap-2">
-              {isLibraryMode ? (
-                <>
-                  <button
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.delete('filter');
-                      setSearchParams(newParams);
-                    }}
-                    className={`h-[35px] px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center ${
-                      contentFilter === 'videos'
-                        ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                        : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                    }`}
-                  >
-                    Videos
-                  </button>
-                  <button
-                    onClick={() => navigate('/library?tab=playlists')}
-                    className="h-[35px] px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary"
-                  >
-                    Playlists
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.delete('filter');
-                      setSearchParams(newParams);
-                    }}
-                    className={`h-[35px] px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center ${
-                      contentFilter === 'to-review'
-                        ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                        : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                    }`}
-                  >
-                    To Review
-                  </button>
-                  <button
-                    onClick={() => {
-                      const newParams = new URLSearchParams(searchParams);
-                      newParams.set('filter', 'ignored');
-                      setSearchParams(newParams);
-                    }}
-                    className={`h-[35px] px-3 sm:px-4 rounded-lg text-xs sm:text-sm font-medium transition-colors flex items-center ${
-                      contentFilter === 'ignored'
-                        ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                        : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                    }`}
-                  >
-                    Ignored
-                  </button>
-                </>
-              )}
-            </div>
+            {isLibraryMode ? (
+              <TabGroup
+                tabs={[
+                  { id: 'videos', label: 'Videos' },
+                  { id: 'playlists', label: 'Playlists' },
+                ]}
+                active={contentFilter}
+                onChange={(tabId) => {
+                  if (tabId === 'playlists') {
+                    navigate('/library?tab=playlists');
+                  } else {
+                    const newParams = new URLSearchParams(searchParams);
+                    newParams.delete('filter');
+                    setSearchParams(newParams);
+                  }
+                }}
+                showCountOnActive={false}
+              />
+            ) : (
+              <TabGroup
+                tabs={[
+                  { id: 'to-review', label: 'Review', count: channel?.video_count },
+                  { id: 'ignored', label: 'Ignored', count: channel?.ignored_count },
+                ]}
+                active={contentFilter}
+                onChange={(tabId) => {
+                  const newParams = new URLSearchParams(searchParams);
+                  if (tabId === 'ignored') {
+                    newParams.set('filter', 'ignored');
+                  } else {
+                    newParams.delete('filter');
+                  }
+                  setSearchParams(newParams);
+                }}
+                showCountOnActive={true}
+                hideCountOnMobile={true}
+              />
+            )}
 
             {/* Edit Button - Only in library mode */}
             {isLibraryMode && contentFilter !== 'playlists' && (
-              <button
-                onClick={() => {
+              <EditButton
+                active={editMode}
+                onToggle={() => {
                   setEditMode(!editMode);
                   setSelectedVideos([]);
                 }}
-                title={editMode ? "Exit selection mode" : "Select videos for bulk actions"}
-                className={`filter-btn show-label ${editMode ? 'bg-dark-tertiary text-text-primary border-dark-border-light' : ''}`}
-              >
-                <span>{editMode ? 'Done' : 'Edit'}</span>
-              </button>
+              />
             )}
 
-            {/* Desktop: Search input here */}
-            <div className="hidden sm:block">
-              <SearchInput
-                value={searchInput}
-                onChange={handleSearchChange}
-                placeholder="Search videos..."
-                className="w-[200px]"
-              />
-            </div>
-
-            {/* Mobile only: Sort then Search icon */}
-            <div className="sm:hidden flex items-center gap-1.5">
-              <SortDropdown
-                value={sort}
-                onChange={(value) => {
-                  handleSort(value);
-                }}
-                options={[
-                  { value: 'date-desc', label: 'Newest' },
-                  { value: 'date-asc', label: 'Oldest' },
+            {/* Manage Dropdown - Only in discovery mode */}
+            {!isLibraryMode && channel && (
+              <ActionDropdown
+                label="Manage"
+                variant="secondary"
+                mobileIcon={
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="4" y1="21" x2="4" y2="14"/>
+                    <line x1="4" y1="10" x2="4" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12" y2="3"/>
+                    <line x1="20" y1="21" x2="20" y2="16"/>
+                    <line x1="20" y1="12" x2="20" y2="3"/>
+                    <line x1="1" y1="14" x2="7" y2="14"/>
+                    <line x1="9" y1="8" x2="15" y2="8"/>
+                    <line x1="17" y1="16" x2="23" y2="16"/>
+                  </svg>
+                }
+                items={[
+                  {
+                    label: 'Scan New Videos',
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="23 4 23 10 17 10" />
+                        <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10" />
+                      </svg>
+                    ),
+                    onClick: () => handleScanChannel(false),
+                    disabled: isScanRunning,
+                  },
+                  {
+                    label: 'Scan All Videos',
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="23 4 23 10 17 10" />
+                        <polyline points="1 20 1 14 7 14" />
+                        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                      </svg>
+                    ),
+                    onClick: () => handleScanChannel(true),
+                    disabled: isScanRunning,
+                  },
                   { divider: true },
-                  { value: 'title-asc', label: 'A → Z' },
-                  { value: 'title-desc', label: 'Z → A' },
+                  {
+                    label: 'Duration Settings',
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                    ),
+                    onClick: () => {
+                      setShowDurationSettings(true);
+                      setEditingChannel(channel);
+                    },
+                  },
+                  {
+                    label: channel.auto_download ? 'Auto-Download ✓' : 'Auto-Download',
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    ),
+                    onClick: () => {
+                      const newValue = !channel.auto_download;
+                      updateChannel.mutate({
+                        id: channel.id,
+                        data: { auto_download: newValue }
+                      }, {
+                        onSuccess: () => {
+                          showNotification(
+                            newValue
+                              ? `Auto-download enabled for ${channel.title}`
+                              : `Auto-download disabled for ${channel.title}`,
+                            'success'
+                          );
+                        }
+                      });
+                    },
+                  },
                   { divider: true },
-                  { value: 'duration-desc', label: 'Longest' },
-                  { value: 'duration-asc', label: 'Shortest' },
+                  {
+                    label: 'Delete Channel',
+                    icon: (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                      </svg>
+                    ),
+                    onClick: () => setDeleteConfirm({ id: channel.id, title: channel.title }),
+                    variant: 'danger',
+                  },
                 ]}
+              />
+            )}
+          </div>
+
+          {/* Center: Search (desktop only, fills available space) */}
+          <div className="hidden sm:block flex-1 max-w-md mx-4">
+            <SearchInput
+              value={searchInput}
+              onChange={handleSearchChange}
+              placeholder="Search videos..."
+              className="w-full"
+            />
+          </div>
+
+          {/* Right: Mobile (Sort + Search) / Desktop (Sort + Pagination) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto">
+            {/* Mobile only: Sort + Search */}
+            <div className="sm:hidden flex items-center gap-1.5">
+              <StickyBarRightSection
+                sortValue={sort}
+                onSortChange={handleSort}
+                sortOptions={SORT_OPTIONS.videos}
                 durationValue={durationFilter}
                 onDurationChange={handleDurationChange}
-                durationOptions={[
-                  { value: 'all', label: 'All' },
-                  { value: '0-30', label: '0-30 min' },
-                  { value: '30-60', label: '30-60 min' },
-                  { value: 'over60', label: 'Over 60 min' },
-                ]}
+                durationOptions={DURATION_OPTIONS}
+                currentPage={currentPage}
+                totalItems={sortedVideos.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                showMobileSort={true}
               />
               <CollapsibleSearch
                 value={searchInput}
@@ -649,39 +697,20 @@ export default function ChannelLibrary() {
                 placeholder="Search videos..."
               />
             </div>
-          </div>
 
-          {/* Right: Sort (desktop) + Pagination */}
-          <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-            <SortDropdown
-              value={sort}
-              onChange={(value) => {
-                handleSort(value);
-              }}
-              options={[
-                { value: 'date-desc', label: 'Newest' },
-                { value: 'date-asc', label: 'Oldest' },
-                { divider: true },
-                { value: 'title-asc', label: 'A → Z' },
-                { value: 'title-desc', label: 'Z → A' },
-                { divider: true },
-                { value: 'duration-desc', label: 'Longest' },
-                { value: 'duration-asc', label: 'Shortest' },
-              ]}
+            {/* Desktop: Sort + Pagination */}
+            <StickyBarRightSection
+              sortValue={sort}
+              onSortChange={handleSort}
+              sortOptions={SORT_OPTIONS.videos}
               durationValue={durationFilter}
               onDurationChange={handleDurationChange}
-              durationOptions={[
-                { value: 'all', label: 'All' },
-                { value: '0-30', label: '0-30 min' },
-                { value: '30-60', label: '30-60 min' },
-                { value: 'over60', label: 'Over 60 min' },
-              ]}
-            />
-            <Pagination
+              durationOptions={DURATION_OPTIONS}
               currentPage={currentPage}
               totalItems={sortedVideos.length}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
+              showMobileSort={false}
             />
           </div>
         </div>
@@ -745,232 +774,78 @@ export default function ChannelLibrary() {
 
       {/* Channel Header - Only show in discovery mode for videos, not in library mode or playlists */}
       {channel && contentFilter !== 'playlists' && !isLibraryMode && (
-        <div className="relative flex items-center gap-6 mb-4">
+        <div className="flex items-center gap-4 mb-4">
           {channel.thumbnail && (
             <img
               src={channel.thumbnail}
               alt={channel.title}
-              className="w-16 h-16 rounded-full border-4 border-white"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-dark-border"
             />
           )}
           <div>
-            <h2 className="text-base md:text-2xl font-bold text-text-primary">{channel.title}</h2>
+            <h2 className="text-base sm:text-xl font-bold text-text-primary">{channel.title}</h2>
             <p className="text-text-secondary text-sm">{sortedVideos.length} videos</p>
           </div>
+        </div>
+      )}
 
-          {/* 3-Dot Menu Button */}
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setMenuOpen(!menuOpen);
-              }}
-              className="p-1.5 rounded-full bg-gray-600 hover:bg-gray-500 transition-colors"
-            >
-              <svg className="w-4 h-4 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="5" r="1"></circle>
-                <circle cx="12" cy="12" r="1"></circle>
-                <circle cx="12" cy="19" r="1"></circle>
-              </svg>
-            </button>
-
-            {/* Dropdown Menu */}
-            {menuOpen && (
-              <div className="absolute top-full left-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 w-[200px] animate-scale-in">
-                <div className="py-1">
-                  {/* Scan New */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleScanChannel(false);
-                      setMenuOpen(false);
-                    }}
-                    disabled={isScanRunning}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex flex-col disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={isScanRunning ? "Scan in progress..." : "Scan for new videos since last scan"}
-                  >
-                    <span className="font-medium">Scan</span>
-                    {channel.last_scan_at && (
-                      <span className="text-xs text-text-secondary mt-0.5">
-                        Since {new Date(channel.last_scan_at).toLocaleDateString()} video
-                      </span>
-                    )}
-                  </button>
-
-                  {/* Scan All */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleScanChannel(true);
-                      setMenuOpen(false);
-                    }}
-                    disabled={isScanRunning}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={isScanRunning ? "Scan in progress..." : "Full scan - rescan all videos"}
-                  >
-                    <span className="font-medium">Scan All</span>
-                  </button>
-
-                  {/* Duration Settings */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowDurationSettings(!showDurationSettings);
-                      setEditingChannel(channel);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
-                  >
-                    <span className="font-medium">Duration Settings</span>
-                  </button>
-
-                  {/* Auto-Download Toggle */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      const newValue = !channel.auto_download;
-                      updateChannel.mutate({
-                        id: channel.id,
-                        data: { auto_download: newValue }
-                      }, {
-                        onSuccess: () => {
-                          showNotification(
-                            newValue
-                              ? `Auto-download enabled for ${channel.title}`
-                              : `Auto-download disabled for ${channel.title}`,
-                            'success'
-                          );
-                        }
-                      });
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                    title="If checked, will automatically download any new video that is found via scan (manual or automated)"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={channel.auto_download || false}
-                      readOnly
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
-                    />
-                    <span className="font-medium">Auto-Download</span>
-                  </button>
-
-                  {/* Delete Channel */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setDeleteConfirm({ id: channel.id, title: channel.title });
-                      setMenuOpen(false);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-900/30 transition-colors border-t border-dark-border"
-                  >
-                    <span className="font-medium">Delete Channel</span>
-                  </button>
-                </div>
+      {/* Duration Settings Modal */}
+      {showDurationSettings && editingChannel && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-dark-secondary rounded-lg max-w-sm w-full p-6 shadow-2xl border border-dark-border">
+            <h3 className="text-lg font-bold text-text-primary mb-4">Duration Settings</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  Min Minutes
+                </label>
+                <input
+                  type="number"
+                  value={editingChannel.min_minutes}
+                  onChange={(e) => setEditingChannel({
+                    ...editingChannel,
+                    min_minutes: Number(e.target.value)
+                  })}
+                  className="input w-full"
+                  min="0"
+                  placeholder="0 = no minimum"
+                />
               </div>
-            )}
-
-            {/* Duration Settings Slide-out Panel */}
-            {showDurationSettings && editingChannel && (
-              <div className="absolute top-full left-[210px] mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl z-50 w-[280px] p-4 animate-scale-in">
-                <h4 className="text-sm font-bold text-text-primary mb-3">Duration Settings</h4>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-1">
-                      Min Minutes
-                    </label>
-                    <input
-                      type="number"
-                      value={editingChannel.min_minutes}
-                      onChange={(e) => setEditingChannel({
-                        ...editingChannel,
-                        min_minutes: Number(e.target.value)
-                      })}
-                      className="input text-sm py-1.5 w-full"
-                      min="0"
-                      title="Minimum video duration in minutes. Only videos longer than this will be found. Use 0 for no minimum."
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-medium text-text-secondary mb-1">
-                      Max Minutes
-                    </label>
-                    <input
-                      type="number"
-                      value={editingChannel.max_minutes}
-                      onChange={(e) => setEditingChannel({
-                        ...editingChannel,
-                        max_minutes: Number(e.target.value)
-                      })}
-                      className="input text-sm py-1.5 w-full"
-                      min="0"
-                      title="Maximum video duration in minutes. Only videos shorter than this will be found. Use 0 for no maximum."
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-2">
-                    <button
-                      onClick={() => {
-                        setShowDurationSettings(false);
-                        setEditingChannel(null);
-                      }}
-                      className="btn btn-secondary btn-sm flex-1"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={handleUpdateFilters}
-                      className="btn btn-primary btn-sm flex-1"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-text-secondary mb-1">
+                  Max Minutes
+                </label>
+                <input
+                  type="number"
+                  value={editingChannel.max_minutes}
+                  onChange={(e) => setEditingChannel({
+                    ...editingChannel,
+                    max_minutes: Number(e.target.value)
+                  })}
+                  className="input w-full"
+                  min="0"
+                  placeholder="0 = no maximum"
+                />
               </div>
-            )}
-          </div>
-
-          {/* Stats Bar - Only in discovery mode */}
-          {!isLibraryMode && (
-            <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-2">
-              {/* Auto indicator */}
-              {channel.auto_download && (
-                <span className="text-green-500 text-[10px] font-bold tracking-wide mr-1" title="Auto-download enabled">AUTO</span>
-              )}
-
-              {/* Downloaded */}
-              <div className="flex items-center gap-1 text-sm font-semibold text-accent" title="Downloaded videos">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                  <polyline points="7 10 12 15 17 10"></polyline>
-                  <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span className="font-mono">{channel.downloaded_count || 0}</span>
-              </div>
-
-              {/* Discovered */}
-              <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="To Review">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <circle cx="12" cy="12" r="1"></circle>
-                </svg>
-                <span className="font-mono">{channel.video_count || 0}</span>
-              </div>
-
-              {/* Ignored */}
-              <div className="flex items-center gap-1 text-sm font-semibold text-gray-400" title="Ignored videos">
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10"></circle>
-                  <line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line>
-                </svg>
-                <span className="font-mono">{channel.ignored_count || 0}</span>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    setShowDurationSettings(false);
+                    setEditingChannel(null);
+                  }}
+                  className="btn btn-secondary flex-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleUpdateFilters}
+                  className="btn btn-primary flex-1"
+                >
+                  Save
+                </button>
               </div>
             </div>
-          )}
+          </div>
         </div>
       )}
 

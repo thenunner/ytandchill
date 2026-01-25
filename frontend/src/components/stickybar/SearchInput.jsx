@@ -12,7 +12,7 @@ export default function SearchInput({
   };
 
   return (
-    <div className={`relative flex-1 max-w-md ${className}`}>
+    <div className={`relative ${className}`}>
       <input
         type="text"
         value={value}

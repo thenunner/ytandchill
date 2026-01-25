@@ -3,3 +3,8 @@ export { default as SearchInput } from './SearchInput';
 export { default as CollapsibleSearch } from './CollapsibleSearch';
 export { default as SortDropdown } from './SortDropdown';
 export { default as SelectionBar } from './SelectionBar';
+export { default as BackButton } from './BackButton';
+export { default as EditButton } from './EditButton';
+export { default as TabGroup } from './TabGroup';
+export { default as ActionDropdown } from './ActionDropdown';
+export { default as StickyBarRightSection } from './StickyBarRightSection';

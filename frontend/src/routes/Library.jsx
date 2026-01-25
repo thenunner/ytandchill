@@ -2,19 +2,20 @@ import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings, useChannels } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import { useCardSize } from '../contexts/CardSizeContext';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
-import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch, TabGroup, EditButton, StickyBarRightSection } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
-import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, UploadIcon } from '../components/icons';
-import SortDropdown from '../components/stickybar/SortDropdown';
+import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon } from '../components/icons';
 import { formatFileSize } from '../utils/formatters';
 import { getNumericSetting } from '../utils/settingsUtils';
+import { SORT_OPTIONS } from '../constants/stickyBarOptions';
 
 export default function Library() {
   const [searchParams] = useSearchParams();
@@ -248,6 +249,12 @@ export default function Library() {
     setLoadedPages(1); // Reset mobile infinite scroll
   }, [searchInput, channelSortBy, playlistSortBy, activeTab]);
 
+  // Clear edit mode and selections when switching tabs
+  useEffect(() => {
+    setEditMode(false);
+    setSelectedPlaylists([]);
+  }, [activeTab]);
+
   // Paginate channels list (mobile: infinite scroll, desktop: pagination)
   const paginatedChannelsList = useMemo(() => {
     if (isMobile) {
@@ -380,7 +387,7 @@ export default function Library() {
       setRenamePlaylistId(null);
       setRenameValue('');
     } catch (error) {
-      showNotification(error.message || 'Failed to rename playlist', 'error');
+      showNotification(getUserFriendlyError(error.message, 'rename playlist'), 'error');
     }
   };
 
@@ -419,7 +426,7 @@ export default function Library() {
       setShowCreateCategoryModal(false);
       setNewCategoryName('');
     } catch (error) {
-      showNotification(error.message || 'Failed to create category', 'error');
+      showNotification(getUserFriendlyError(error.message, 'create category'), 'error');
     }
   };
 
@@ -440,7 +447,7 @@ export default function Library() {
       setRenameCategoryValue('');
       setActiveCategoryMenuId(null);
     } catch (error) {
-      showNotification(error.message || 'Failed to rename category', 'error');
+      showNotification(getUserFriendlyError(error.message, 'rename category'), 'error');
     }
   };
 
@@ -477,7 +484,7 @@ export default function Library() {
       }
       setConfirmAction(null);
     } catch (error) {
-      showNotification(error.message || 'Failed to complete action', 'error');
+      showNotification(getUserFriendlyError(error.message, 'delete category'), 'error');
     }
   };
 
@@ -517,7 +524,7 @@ export default function Library() {
         setNewCategoryInSelector('');
       }
     } catch (error) {
-      showNotification(error.message || 'Failed to update category', 'error');
+      showNotification(getUserFriendlyError(error.message, 'update category'), 'error');
     }
   };
 
@@ -527,199 +534,91 @@ export default function Library() {
 
       {/* Header */}
       <StickyBar>
-        {activeTab === 'channels' ? (
-          /* Channels Tab: Desktop = single row, Mobile = 2 rows */
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-            {/* Left: Tabs + Sort + Search (mobile) */}
-            <div className="flex items-center justify-between sm:justify-start gap-2">
-              {/* Tabs */}
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setActiveTab('channels')}
-                  className={`h-[35px] px-3 rounded-lg text-sm font-medium transition-colors flex items-center ${
-                    activeTab === 'channels'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  Channels
-                </button>
-                <button
-                  onClick={() => setActiveTab('playlists')}
-                  className={`h-[35px] px-3 rounded-lg text-sm font-medium transition-colors flex items-center ${
-                    activeTab === 'playlists'
-                      ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                      : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                  }`}
-                >
-                  Playlists
-                </button>
-                <Link
-                  to="/import"
-                  className="hidden sm:flex h-10 px-3 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
-                >
-                  <UploadIcon className="w-4 h-4" />
-                  <span>Import</span>
-                </Link>
-              </div>
+        <div className="flex items-center gap-2">
+          {/* Left: Tabs + Edit */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <TabGroup
+              tabs={[
+                { id: 'channels', label: 'Channels' },
+                { id: 'playlists', label: 'Playlists' },
+              ]}
+              active={activeTab}
+              onChange={setActiveTab}
+              showCountOnActive={false}
+            />
 
-              {/* Sort + Search - right side on mobile */}
-              <div className="flex items-center gap-1.5">
-                {/* Sort Dropdown - mobile only here */}
-                <div className="sm:hidden">
-                  <SortDropdown
-                    value={channelSortBy}
-                    onChange={(value) => {
-                      setChannelSortBy(value);
-                      localStorage.setItem('library_channelSortBy', value);
-                    }}
-                    options={[
-                      { value: 'title-asc', label: 'A → Z' },
-                      { value: 'title-desc', label: 'Z → A' },
-                      { divider: true },
-                      { value: 'count-desc', label: 'Most Videos' },
-                      { value: 'count-asc', label: 'Least Videos' },
-                      { divider: true },
-                      { value: 'date-desc', label: 'Newest' },
-                      { value: 'date-asc', label: 'Oldest' },
-                    ]}
-                  />
-                </div>
-
-                {/* Collapsible Search */}
-                <CollapsibleSearch
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  placeholder="Search..."
-                  desktopWidth="sm:w-[160px]"
-                />
-              </div>
-            </div>
-
-            {/* Right: Sort (desktop) + Pagination */}
-            <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-              {/* Sort Dropdown - desktop only */}
-              <SortDropdown
-                value={channelSortBy}
-                onChange={(value) => {
-                  setChannelSortBy(value);
-                  localStorage.setItem('library_channelSortBy', value);
+            {/* Edit Button - only on playlists tab */}
+            {activeTab === 'playlists' && (
+              <EditButton
+                active={editMode}
+                onToggle={() => {
+                  setEditMode(!editMode);
+                  setSelectedPlaylists([]);
                 }}
-                options={[
-                  { value: 'title-asc', label: 'A → Z' },
-                  { value: 'title-desc', label: 'Z → A' },
-                  { divider: true },
-                  { value: 'count-desc', label: 'Most Videos' },
-                  { value: 'count-asc', label: 'Least Videos' },
-                  { divider: true },
-                  { value: 'date-desc', label: 'Newest' },
-                  { value: 'date-asc', label: 'Oldest' },
-                ]}
               />
+            )}
+          </div>
 
-              <Pagination
+          {/* Center: Search (desktop only, fills available space) */}
+          <div className="hidden sm:block flex-1 max-w-md mx-4">
+            <SearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder={activeTab === 'channels' ? 'Search channels...' : 'Search playlists...'}
+              className="w-full"
+            />
+          </div>
+
+          {/* Right: Mobile (Sort + Search) / Desktop (Sort + Pagination) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto">
+            {/* Mobile: Sort + Search */}
+            <div className="sm:hidden flex items-center gap-1.5">
+              <StickyBarRightSection
+                sortValue={activeTab === 'channels' ? channelSortBy : playlistSortBy}
+                onSortChange={(value) => {
+                  if (activeTab === 'channels') {
+                    setChannelSortBy(value);
+                    localStorage.setItem('library_channelSortBy', value);
+                  } else {
+                    setPlaylistSortBy(value);
+                    localStorage.setItem('library_playlistSortBy', value);
+                  }
+                }}
+                sortOptions={activeTab === 'channels' ? SORT_OPTIONS.libraryChannels : SORT_OPTIONS.playlists}
                 currentPage={currentPage}
-                totalItems={channelsList.length}
+                totalItems={activeTab === 'channels' ? channelsList.length : filteredPlaylists.length}
                 itemsPerPage={itemsPerPage}
                 onPageChange={setCurrentPage}
+                showMobileSort={true}
+              />
+              <CollapsibleSearch
+                value={searchInput}
+                onChange={setSearchInput}
+                placeholder={activeTab === 'channels' ? 'Search channels...' : 'Search playlists...'}
               />
             </div>
-          </div>
-        ) : (
-          /* Playlists Tab: Single row with all controls */
-          <div className="flex items-center justify-between gap-2">
-            {/* Left: Tabs + Category */}
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setActiveTab('channels')}
-                className={`h-[35px] px-3 rounded-lg text-sm font-medium transition-colors flex items-center ${
-                  activeTab === 'channels'
-                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                }`}
-              >
-                Channels
-              </button>
-              <button
-                onClick={() => setActiveTab('playlists')}
-                className={`h-[35px] px-3 rounded-lg text-sm font-medium transition-colors flex items-center ${
-                  activeTab === 'playlists'
-                    ? 'bg-dark-tertiary text-text-primary border border-dark-border-light'
-                    : 'bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary'
-                }`}
-              >
-                Playlists
-              </button>
-              <Link
-                to="/import"
-                className="hidden sm:flex h-10 px-3 rounded-lg text-sm font-medium transition-colors bg-dark-primary/95 border border-dark-border text-text-secondary hover:bg-dark-tertiary/50 hover:text-text-primary items-center gap-2"
-              >
-                <UploadIcon className="w-4 h-4" />
-                <span>Import</span>
-              </Link>
 
-              {/* Edit Button - desktop only */}
-              <button
-                onClick={() => {
-                  setEditMode(!editMode);
-                  setSelectedPlaylists([]);
-                }}
-                className={`hidden sm:flex filter-btn show-label ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
-              >
-                <span>{editMode ? 'Done' : 'Edit'}</span>
-              </button>
-
-              {/* Search - desktop only here, next to Edit */}
-              <div className="hidden sm:block">
-                <SearchInput
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  placeholder="Search playlists..."
-                  className="w-[200px]"
-                />
-              </div>
-            </div>
-
-            {/* Right: Edit (mobile) + Sort + Search (mobile) */}
-            <div className="flex items-center gap-1.5">
-              {/* Edit Button - mobile only */}
-              <button
-                onClick={() => {
-                  setEditMode(!editMode);
-                  setSelectedPlaylists([]);
-                }}
-                className={`sm:hidden filter-btn show-label ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
-              >
-                <span>{editMode ? 'Done' : 'Edit'}</span>
-              </button>
-
-              {/* Sort Dropdown */}
-              <SortDropdown
-                value={playlistSortBy}
-                onChange={(value) => {
+            {/* Desktop: Sort + Pagination */}
+            <StickyBarRightSection
+              sortValue={activeTab === 'channels' ? channelSortBy : playlistSortBy}
+              onSortChange={(value) => {
+                if (activeTab === 'channels') {
+                  setChannelSortBy(value);
+                  localStorage.setItem('library_channelSortBy', value);
+                } else {
                   setPlaylistSortBy(value);
                   localStorage.setItem('library_playlistSortBy', value);
-                }}
-                options={[
-                  { value: 'title-asc', label: 'A → Z' },
-                  { value: 'title-desc', label: 'Z → A' },
-                  { divider: true },
-                  { value: 'count-desc', label: 'Most Videos' },
-                  { value: 'count-asc', label: 'Least Videos' },
-                ]}
-              />
-
-              {/* Collapsible Search - mobile only */}
-              <div className="sm:hidden">
-                <CollapsibleSearch
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  placeholder="Search..."
-                />
-              </div>
-            </div>
+                }
+              }}
+              sortOptions={activeTab === 'channels' ? SORT_OPTIONS.libraryChannels : SORT_OPTIONS.playlists}
+              currentPage={currentPage}
+              totalItems={activeTab === 'channels' ? channelsList.length : filteredPlaylists.length}
+              itemsPerPage={itemsPerPage}
+              onPageChange={setCurrentPage}
+              showMobileSort={false}
+            />
           </div>
-        )}
+        </div>
       </StickyBar>
 
       {/* Floating Selection Bar for Playlists Edit Mode */}
@@ -941,6 +840,7 @@ export default function Library() {
                             setActiveCategoryMenuId(activeCategoryMenuId === categoryId ? null : categoryId);
                           }}
                           className="p-2 rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary transition-colors"
+                          aria-label="Category options"
                         >
                           <ThreeDotsIcon />
                         </button>
@@ -1248,6 +1148,7 @@ export default function Library() {
                                     setActiveMenuId(activeMenuId === playlist.id ? null : playlist.id);
                                   }}
                                   className="bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
+                                  aria-label="Playlist options"
                                 >
                                   <ThreeDotsIcon />
                                 </button>
@@ -1588,7 +1489,7 @@ export default function Library() {
                       setShowCreateInSelector(false);
                       setNewCategoryInSelector('');
                     } catch (error) {
-                      showNotification(error.message, 'error');
+                      showNotification(getUserFriendlyError(error.message, 'create category'), 'error');
                     }
                   }}
                   className="space-y-2"

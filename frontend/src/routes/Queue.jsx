@@ -1,6 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import { useTheme } from '../contexts/ThemeContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -211,7 +212,7 @@ export default function Queue() {
       await resumeQueue.mutateAsync();
       showNotification('Queue resumed', 'success');
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'resume queue'), 'error');
     }
   };
 
@@ -221,7 +222,7 @@ export default function Queue() {
       showNotification(result.message || 'Queue cleared', 'success');
       setShowClearConfirm(false);
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'clear queue'), 'error');
     }
   };
 
@@ -230,7 +231,7 @@ export default function Queue() {
       await cancelCurrent.mutateAsync();
       showNotification('Download cancelled', 'success');
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'cancel download'), 'error');
     }
   };
 
@@ -239,7 +240,7 @@ export default function Queue() {
       await removeFromQueue.mutateAsync(itemId);
       showNotification('Removed from queue', 'success');
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'remove from queue'), 'error');
     }
   };
 
@@ -255,7 +256,7 @@ export default function Queue() {
       // Reset flags on error
       preserveScrollRef.current = false;
       scrollPositionRef.current = null;
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'reorder queue'), 'error');
     }
   };
 
@@ -271,7 +272,7 @@ export default function Queue() {
       // Reset flags on error
       preserveScrollRef.current = false;
       scrollPositionRef.current = null;
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'reorder queue'), 'error');
     }
   };
 
@@ -296,7 +297,7 @@ export default function Queue() {
     try {
       await reorderQueue.mutateAsync({ itemId: active.id, newPosition });
     } catch (error) {
-      showNotification(error.message || 'Failed to reorder queue', 'error');
+      showNotification(getUserFriendlyError(error.message, 'reorder queue'), 'error');
     }
   };
 

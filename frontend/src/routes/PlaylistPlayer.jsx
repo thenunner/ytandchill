@@ -4,6 +4,7 @@ import { useQueries } from '@tanstack/react-query';
 import 'video.js/dist/video-js.css';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
@@ -284,7 +285,7 @@ export default function PlaylistPlayer() {
         navigate(-1);
       }
     } catch (error) {
-      showNotification(error.message || 'Failed to delete video', 'error');
+      showNotification(getUserFriendlyError(error.message, 'delete video'), 'error');
     }
   }, [currentVideo, deleteVideo, showNotification, goToNext, videos.length, navigate]);
 
@@ -300,7 +301,7 @@ export default function PlaylistPlayer() {
         'success'
       );
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'update video'), 'error');
     }
   }, [currentVideo, updateVideo, showNotification]);
 

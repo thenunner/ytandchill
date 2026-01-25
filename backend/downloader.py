@@ -37,8 +37,9 @@ class YtDlpLogger:
 
 class DownloadWorker:
     # Timeout constants
-    PROGRESS_TIMEOUT = 120   # 2 minutes of no progress triggers timeout (file not growing)
-    HARD_TIMEOUT = 14400     # 4 hours maximum download time
+    PROGRESS_TIMEOUT = 120           # 2 minutes of no progress during download
+    POSTPROCESS_TIMEOUT = 900        # 15 minutes for postprocessing (SponsorBlock re-encoding)
+    HARD_TIMEOUT = 14400             # 4 hours maximum download time
 
     # Inter-download delay range (seconds) - prevents rate limiting
     DELAY_MIN = 45           # Minimum delay between downloads
@@ -168,6 +169,14 @@ class DownloadWorker:
         except Exception as e:
             logger.warning(f"Error killing FFmpeg processes: {e}")
 
+    # Known postprocessors (must match frontend Toast.jsx mapping)
+    KNOWN_POSTPROCESSORS = {
+        'SponsorBlock', 'ModifyChapters', 'FFmpegMerger', 'FFmpegMetadata',
+        'FFmpegExtractAudio', 'FFmpegEmbedSubtitle', 'FFmpegVideoConvertor',
+        'FFmpegFixupM3u8', 'FFmpegFixupM4a', 'FFmpegFixupDuplicateMoov',
+        'FFmpegFixupStretchedPP', 'FFmpegFixupTimestamp', 'MoveFiles'
+    }
+
     def _postprocessor_hook(self, d):
         """
         Track postprocessor progress to prevent timeout during re-encoding.
@@ -187,12 +196,17 @@ class DownloadWorker:
                 # Update progress tracking to prevent timeout
                 self.current_download['last_progress_time'] = time.time()
                 self.current_download['phase'] = 'postprocessing'
-                self.current_download['postprocessor'] = d.get('postprocessor', 'unknown')
+                postprocessor_name = d.get('postprocessor', 'unknown')
+                self.current_download['postprocessor'] = postprocessor_name
+
+                # Log warning for unmapped postprocessors
+                if postprocessor_name not in self.KNOWN_POSTPROCESSORS:
+                    logger.warning(f"Unknown postprocessor (add to frontend mapping): {postprocessor_name}")
 
                 # Track when postprocessing started for elapsed time display
                 if 'postprocess_start_time' not in self.current_download:
                     self.current_download['postprocess_start_time'] = time.time()
-                    logger.info(f"Postprocessing started: {d.get('postprocessor', 'unknown')}")
+                    logger.info(f"Postprocessing started: {postprocessor_name}")
 
     def _set_discoveries_flag(self, session):
         """Set the new discoveries flag using the existing session to avoid database locks."""
@@ -326,6 +340,7 @@ class DownloadWorker:
         """
         Monitors download progress and sets timeout flag if download stalls.
         Runs in a separate thread parallel to the download.
+        Uses longer timeout during postprocessing (SponsorBlock re-encoding).
         """
         while True:
             with self._download_lock:
@@ -345,8 +360,13 @@ class DownloadWorker:
                     break
 
                 # Soft timeout: No progress for too long
-                if time_since_progress > self.PROGRESS_TIMEOUT:
-                    logger.warning(f'TIMEOUT: No progress for {self.PROGRESS_TIMEOUT:.0f} seconds - {video_title[:50]}')
+                # Use longer timeout during postprocessing (FFmpeg re-encoding can be slow)
+                is_postprocessing = download.get('phase') == 'postprocessing'
+                timeout = self.POSTPROCESS_TIMEOUT if is_postprocessing else self.PROGRESS_TIMEOUT
+
+                if time_since_progress > timeout:
+                    phase_name = 'postprocessing' if is_postprocessing else 'download'
+                    logger.warning(f'TIMEOUT: No {phase_name} progress for {timeout:.0f} seconds - {video_title[:50]}')
                     logger.warning(f'Last progress: {time_since_progress:.0f} seconds ago')
                     download['timed_out'] = True
                     break

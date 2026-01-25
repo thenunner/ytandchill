@@ -14,12 +14,15 @@ export default function ConfirmDialog({ isOpen, onClose, onConfirm, title, messa
       onClick={onClose}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-dialog-title"
         className="bg-dark-secondary rounded-xl border border-dark-border w-full max-w-md animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="px-6 py-4 border-b border-dark-border">
-          <h2 className="text-lg font-medium text-text-primary">{title}</h2>
+          <h2 id="confirm-dialog-title" className="text-lg font-medium text-text-primary">{title}</h2>
         </div>
 
         {/* Message */}

@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
-import { StickyBar, SearchInput, SortDropdown, SelectionBar } from '../components/stickybar';
+import { StickyBar, SearchInput, SortDropdown, SelectionBar, EditButton, ActionDropdown, CollapsibleSearch } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
@@ -14,6 +14,7 @@ import LoadMore from '../components/LoadMore';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
 import { getNumericSetting } from '../utils/settingsUtils';
+import { SORT_OPTIONS } from '../constants/stickyBarOptions';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -163,7 +164,7 @@ export default function Channels() {
         showNotification('Channel added successfully', 'success');
       }
     } catch (error) {
-      showNotification(getUserFriendlyError(error.message), 'error');
+      showNotification(getUserFriendlyError(error.message, 'add channel'), 'error');
     }
   };
 
@@ -191,7 +192,7 @@ export default function Channels() {
         showNotification('Scan already queued for this channel', 'info');
       }
     } catch (error) {
-      showNotification(getUserFriendlyError(error.message), 'error');
+      showNotification(getUserFriendlyError(error.message, 'scan channel'), 'error');
     }
   };
 
@@ -201,7 +202,7 @@ export default function Channels() {
       showNotification('Channel deleted', 'success');
       setDeleteConfirm(null);
     } catch (error) {
-      showNotification(getUserFriendlyError(error.message), 'error');
+      showNotification(getUserFriendlyError(error.message, 'delete channel'), 'error');
     }
   };
 
@@ -244,7 +245,7 @@ export default function Channels() {
       setEditingChannel(null);
       showNotification('Filters updated', 'success');
     } catch (error) {
-      showNotification(getUserFriendlyError(error.message), 'error');
+      showNotification(getUserFriendlyError(error.message, 'update filters'), 'error');
     }
   };
 
@@ -544,173 +545,140 @@ export default function Channels() {
   return (
     <div className="space-y-2 animate-fade-in">
       <StickyBar>
-        {/* Desktop: single row, Mobile: two rows */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
-          {/* Left: Add + Scan + Category + Edit + CardSize */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <button
-              onClick={() => setShowAddForm(!showAddForm)}
-              className={`h-[35px] w-[35px] p-0 flex items-center justify-center border rounded-lg transition-all flex-shrink-0 ${
-                !isLoading && filteredAndSortedChannels.length === 0 && !showAddForm
-                  ? 'bg-green-600 hover:bg-green-700 border-green-500 text-white shadow-lg shadow-green-500/50 animate-pulse'
-                  : 'bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary'
-              }`}
-              title={showAddForm ? 'Cancel' : (!isLoading && filteredAndSortedChannels.length === 0) ? 'Add Your First Channel!' : 'Add Channel'}
-            >
-              {showAddForm ? (
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              ) : (
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19"></line>
-                  <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-              )}
-            </button>
+        {/* Single row on all screen sizes */}
+        <div className="flex items-center gap-2">
+          {/* Left: Add + Scan + Edit */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            {/* Add Dropdown - Primary */}
+            <ActionDropdown
+              label="Add"
+              variant="primary"
+              items={[
+                {
+                  label: 'Follow Channel',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+                      <circle cx="8.5" cy="7" r="4" />
+                      <line x1="20" y1="8" x2="20" y2="14" />
+                      <line x1="23" y1="11" x2="17" y2="11" />
+                    </svg>
+                  ),
+                  onClick: () => setShowAddForm(true),
+                },
+                { divider: true },
+                {
+                  label: 'Add Once',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="23 7 16 12 23 17 23 7" />
+                      <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                    </svg>
+                  ),
+                  onClick: () => navigate('/videos'),
+                },
+                {
+                  label: 'Import Existing',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  ),
+                  onClick: () => navigate('/import'),
+                },
+              ]}
+            />
 
-            {/* Browse button - quick video grabs without subscribing */}
-            <button
-              onClick={() => navigate('/videos')}
-              className="h-[35px] px-3 flex items-center gap-1.5 border rounded-lg transition-all flex-shrink-0 bg-dark-hover hover:bg-dark-tertiary border-dark-border-light text-text-primary text-sm font-medium"
-              title="Browse and grab videos without subscribing to a channel"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8"></circle>
-                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-              </svg>
-              <span className="hidden sm:inline">Browse</span>
-            </button>
+            {/* Scan Dropdown - Secondary */}
+            <ActionDropdown
+              label={isScanRunning ? 'Scanning...' : 'Scan'}
+              variant="secondary"
+              disabled={!channels || channels.length === 0 || isScanRunning}
+              items={[
+                {
+                  label: selectedChannels.length > 0 ? 'Scan Selected (New)' : 'Scan New Videos',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="23 4 23 10 17 10" />
+                      <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10" />
+                    </svg>
+                  ),
+                  onClick: () => handleScanAllChannels(false),
+                },
+                {
+                  label: selectedChannels.length > 0 ? 'Scan Selected (All)' : 'Scan All Videos',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="23 4 23 10 17 10" />
+                      <polyline points="1 20 1 14 7 14" />
+                      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+                    </svg>
+                  ),
+                  onClick: () => handleScanAllChannels(true),
+                },
+              ]}
+            />
 
-            {/* Unified Scan Button Group */}
-            <div className="flex items-center gap-1.5 px-2 h-[35px] bg-dark-secondary border border-dark-border rounded-lg">
-              {/* Spinning Icon */}
-              <svg
-                className={`w-4 h-4 flex-shrink-0 transition-colors ${
-                  isScanRunning ? 'animate-spin text-accent' : 'text-text-secondary'
-                }`}
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <path d="M20.49 15a9 9 0 01-2.12 3.36 9 9 0 01-11.58 1.47A9 9 0 013 12a9 9 0 011.79-5.37A9 9 0 0112 3a9 9 0 018.5 6.5L23 10"></path>
-              </svg>
+            {/* Edit Button */}
+            <EditButton
+              active={editMode}
+              onToggle={() => {
+                setEditMode(!editMode);
+                setSelectedChannels([]);
+              }}
+            />
+          </div>
 
-              {/* Scan Label */}
-              <span className="text-sm text-text-primary hidden sm:inline">Scan</span>
+          {/* Center: Search (desktop only, fills available space) */}
+          <div className="hidden sm:block flex-1 max-w-md mx-4">
+            <SearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder="Search channels..."
+              className="w-full"
+            />
+          </div>
 
-              {/* New Button */}
-              <button
-                onClick={() => handleScanAllChannels(false)}
-                disabled={!channels || channels.length === 0 || isScanRunning}
-                className={`px-2.5 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
-                  isScanRunning && lastScanType === 'new'
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
-                } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
-                title={isScanRunning
-                  ? "Scan in progress..."
-                  : selectedChannels.length > 0
-                    ? "Scan selected channels for new videos since last scan"
-                    : "Scan all channels for new videos since last scan"}
-              >
-                New
-              </button>
-
-              {/* All Button */}
-              <button
-                onClick={() => handleScanAllChannels(true)}
-                disabled={!channels || channels.length === 0 || isScanRunning}
-                className={`px-2.5 py-1 text-sm rounded transition-colors disabled:cursor-not-allowed ${
-                  isScanRunning && lastScanType === 'all'
-                    ? 'bg-accent text-white'
-                    : 'bg-dark-tertiary text-text-primary hover:bg-dark-hover'
-                } ${!channels || channels.length === 0 ? 'disabled:opacity-50' : ''}`}
-                title={isScanRunning
-                  ? "Scan in progress..."
-                  : selectedChannels.length > 0
-                    ? "Rescan selected channels for all videos"
-                    : "Rescan all channels for all videos"}
-              >
-                All
-              </button>
-            </div>
-
-            {/* Sort Dropdown - mobile only, next to Edit */}
-            <div className="sm:hidden">
+          {/* Right: Mobile (Sort + Search) / Desktop (Sort + Pagination) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto">
+            {/* Mobile: Sort + Search */}
+            <div className="sm:hidden flex items-center gap-1">
               <SortDropdown
                 value={sortBy}
                 onChange={(value) => {
                   setSortBy(value);
                   localStorage.setItem('channels_sortBy', value);
                 }}
-                options={[
-                  { value: 'title-asc', label: 'A → Z' },
-                  { value: 'title-desc', label: 'Z → A' },
-                  { divider: true },
-                  { value: 'scan-desc', label: 'Last Scanned (Newest)' },
-                  { value: 'scan-asc', label: 'Last Scanned (Oldest)' },
-                  { divider: true },
-                  { value: 'count-desc', label: 'Most Downloaded' },
-                  { value: 'count-asc', label: 'Least Downloaded' },
-                ]}
+                options={SORT_OPTIONS.channels}
+              />
+              <CollapsibleSearch
+                value={searchInput}
+                onChange={setSearchInput}
+                placeholder="Search channels..."
               />
             </div>
 
-            {/* Edit/Done Button */}
-            <button
-              onClick={() => {
-                setEditMode(!editMode);
-                setSelectedChannels([]);
-              }}
-              className={`filter-btn show-label ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
-            >
-              <span>{editMode ? 'Done' : 'Edit'}</span>
-            </button>
-          </div>
-
-          {/* Right: Search + Sort */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <SearchInput
-              value={searchInput}
-              onChange={setSearchInput}
-              placeholder="Search channels..."
-              className="flex-1 sm:flex-none sm:w-[200px]"
-            />
-
-          {/* Sort Dropdown - desktop only */}
-          <div className="hidden sm:block">
-          <SortDropdown
-            value={sortBy}
-            onChange={(value) => {
-              setSortBy(value);
-              localStorage.setItem('channels_sortBy', value);
-            }}
-            options={[
-              { value: 'title-asc', label: 'A → Z' },
-              { value: 'title-desc', label: 'Z → A' },
-              { divider: true },
-              { value: 'scan-desc', label: 'Last Scanned (Newest)' },
-              { value: 'scan-asc', label: 'Last Scanned (Oldest)' },
-              { divider: true },
-              { value: 'count-desc', label: 'Most Downloaded' },
-              { value: 'count-asc', label: 'Least Downloaded' },
-            ]}
-          />
-          </div>
-
-            {/* Pagination - desktop only */}
-            {!isMobile && (
+            {/* Desktop: Sort + Pagination */}
+            <div className="hidden sm:block">
+              <SortDropdown
+                value={sortBy}
+                onChange={(value) => {
+                  setSortBy(value);
+                  localStorage.setItem('channels_sortBy', value);
+                }}
+                options={SORT_OPTIONS.channels}
+              />
+            </div>
+            <div className="hidden sm:block">
               <Pagination
                 currentPage={currentPage}
                 totalItems={filteredAndSortedChannels.length}
                 itemsPerPage={itemsPerPage}
                 onPageChange={setCurrentPage}
               />
-            )}
+            </div>
           </div>
         </div>
       </StickyBar>
@@ -1220,6 +1188,7 @@ export default function Channels() {
                             setMenuOpen(menuOpen === channel.id ? null : channel.id);
                           }}
                           className="p-1 rounded hover:bg-dark-hover transition-colors"
+                          aria-label="Channel options"
                         >
                           <svg className="w-5 h-5 text-text-secondary" viewBox="0 0 24 24" fill="currentColor">
                             <circle cx="12" cy="5" r="2"></circle>
@@ -1405,7 +1374,7 @@ export default function Channels() {
                   setNewCategoryName('');
                   showNotification('Category created', 'success');
                 } catch (error) {
-                  showNotification(getUserFriendlyError(error.message), 'error');
+                  showNotification(getUserFriendlyError(error.message, 'create category'), 'error');
                 }
               }}
               className="flex gap-2 mb-4"
@@ -1446,7 +1415,7 @@ export default function Channels() {
                           setEditingCategory(null);
                           showNotification('Category renamed', 'success');
                         } catch (error) {
-                          showNotification(getUserFriendlyError(error.message), 'error');
+                          showNotification(getUserFriendlyError(error.message, 'rename category'), 'error');
                         }
                       }}
                       className="flex gap-2 flex-1"
@@ -1540,7 +1509,7 @@ export default function Channels() {
                     setDeleteCategoryConfirm(null);
                     showNotification('Category deleted', 'success');
                   } catch (error) {
-                    showNotification(getUserFriendlyError(error.message), 'error');
+                    showNotification(getUserFriendlyError(error.message, 'delete category'), 'error');
                   }
                 }}
                 disabled={deleteCategoryMutation.isPending}

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCreatePlaylist, useUpdatePlaylist, usePlaylists } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 
 export default function PlaylistModal({ playlist, onClose }) {
   const [name, setName] = useState(playlist?.name || '');
@@ -43,7 +44,7 @@ export default function PlaylistModal({ playlist, onClose }) {
       }
       onClose();
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, isEdit ? 'update playlist' : 'create playlist'), 'error');
     }
   };
 
