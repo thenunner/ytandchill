@@ -203,6 +203,9 @@ def queue_stream():
                     elif event['type'] == 'video:changed':
                         # Notify clients to refetch videos (status changed)
                         yield f"event: videos\ndata: {json.dumps({'changed': True})}\n\n"
+                    elif event['type'] == 'channels:changed':
+                        # Notify clients to refetch channels (visited, favorited, etc.)
+                        yield f"event: channels\ndata: {json.dumps({'changed': True})}\n\n"
                 except Empty:
                     # Send heartbeat comment to keep connection alive
                     yield ": heartbeat\n\n"
