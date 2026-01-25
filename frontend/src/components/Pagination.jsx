@@ -10,7 +10,7 @@ export default function Pagination({
   if (totalItems === 0) return null;
 
   return (
-    <div className="flex items-center h-[35px] bg-dark-tertiary border border-dark-border-light rounded-lg">
+    <div className="flex items-center h-[35px] bg-dark-secondary border border-dark-border rounded-lg">
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage === 1}

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modal System Showcase</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --dark-primary: #12141a;
+      --dark-secondary: #1a1d24;
+      --dark-tertiary: #22262f;
+      --dark-border: #2a2f3a;
+      --dark-hover: #333842;
+      --accent: #f59e0b;
+      --accent-hover: #d97706;
+      --accent-glow: rgba(245, 158, 11, 0.15);
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --danger-glow: rgba(239, 68, 68, 0.15);
+      --success: #22c55e;
+      --text-primary: #ffffff;
+      --text-secondary: #9ca3af;
+      --text-muted: #6b7280;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      background: var(--dark-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .showcase-container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .showcase-header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .showcase-header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      background: linear-gradient(135deg, var(--text-primary) 0%, var(--text-secondary) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .showcase-header p {
+      color: var(--text-secondary);
+      font-size: 1.1rem;
+    }
+
+    .modal-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+      gap: 40px;
+    }
+
+    .modal-preview {
+      background: var(--dark-secondary);
+      border: 1px solid var(--dark-border);
+      border-radius: 16px;
+      padding: 24px;
+    }
+
+    .modal-preview-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .modal-preview-label::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    /* Modal Base Styles */
+    .modal-backdrop {
+      background: rgba(18, 20, 26, 0.85);
+      backdrop-filter: blur(8px);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+    }
+
+    .modal {
+      background: var(--dark-secondary);
+      border: 1px solid var(--dark-border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.03),
+        0 20px 50px -12px rgba(0, 0, 0, 0.5),
+        0 0 80px -20px var(--accent-glow);
+      animation: modalSlideUp 0.3s ease-out;
+    }
+
+    @keyframes modalSlideUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .modal-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--dark-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .modal-title {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s ease;
+    }
+
+    .modal-close:hover {
+      background: var(--dark-hover);
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 20px 24px;
+    }
+
+    .modal-footer {
+      padding: 16px 24px 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      border-top: 1px solid var(--dark-border);
+    }
+
+    /* Button Styles */
+    .btn {
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-secondary {
+      background: var(--dark-tertiary);
+      color: var(--text-secondary);
+      border: 1px solid var(--dark-border);
+    }
+
+    .btn-secondary:hover {
+      background: var(--dark-hover);
+      color: var(--text-primary);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: var(--dark-primary);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .btn-outline-danger {
+      background: var(--danger-glow);
+      color: var(--danger);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-outline-danger:hover {
+      background: rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 0.8125rem;
+    }
+
+    /* Input Styles */
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+
+    .input {
+      width: 100%;
+      background: var(--dark-tertiary);
+      border: 1px solid var(--dark-border);
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      color: var(--text-primary);
+      transition: all 0.15s ease;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .input-error {
+      border-color: var(--danger);
+    }
+
+    .error-message {
+      font-size: 0.8125rem;
+      color: var(--danger);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Info Row Styles */
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--dark-border);
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+    }
+
+    .info-value {
+      font-size: 0.875rem;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 400;
+    }
+
+    .info-value.truncate {
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Action Item Styles */
+    .action-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      background: var(--dark-tertiary);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      border: 1px solid var(--dark-border);
+      transition: all 0.15s ease;
+    }
+
+    .action-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .action-item:hover {
+      border-color: var(--dark-hover);
+    }
+
+    .action-content {
+      flex: 1;
+      margin-right: 16px;
+    }
+
+    .action-title {
+      font-size: 0.9375rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .action-description {
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    .action-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 8px;
+      border-radius: 6px;
+      margin-left: 8px;
+    }
+
+    .badge-warning {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--accent);
+    }
+
+    .badge-danger {
+      background: var(--danger-glow);
+      color: var(--danger);
+    }
+
+    /* Duration Input Group */
+    .duration-inputs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .input-number {
+      text-align: center;
+    }
+
+    .input-suffix {
+      position: relative;
+    }
+
+    .input-suffix .input {
+      padding-right: 50px;
+    }
+
+    .input-suffix::after {
+      content: 'min';
+      position: absolute;
+      right: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+    }
+
+    /* Confirm Modal Message */
+    .confirm-message {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .confirm-message strong {
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* Icon Styles */
+    .icon {
+      width: 20px;
+      height: 20px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .icon-warning {
+      color: var(--accent);
+    }
+
+    .icon-danger {
+      color: var(--danger);
+    }
+
+    /* Responsive */
+    @media (max-width: 480px) {
+      .modal-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .modal-footer {
+        flex-direction: column;
+      }
+
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* Variant indicator */
+    .variant-label {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 4px 8px;
+      border-radius: 4px;
+      background: var(--dark-tertiary);
+      color: var(--text-muted);
+    }
+
+    .variant-label.danger {
+      background: var(--danger-glow);
+      color: var(--danger);
+    }
+
+    .variant-label.primary {
+      background: var(--accent-glow);
+      color: var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <div class="showcase-container">
+    <header class="showcase-header">
+      <h1>Modal System Showcase</h1>
+      <p>Unified modal components with consistent styling and behavior</p>
+    </header>
+
+    <div class="modal-grid">
+      <!-- Confirm Modal - Danger Variant -->
+      <div class="modal-preview">
+        <div class="modal-preview-label">
+          ConfirmModal <span class="variant-label danger">Danger</span>
+        </div>
+        <div class="modal-backdrop">
+          <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Delete Video</h2>
+              <button class="modal-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p class="confirm-message">
+                Are you sure you want to delete <strong>"How to Build a Second Brain"</strong>?
+                This will permanently remove the video file from your library.
+              </p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Cancel</button>
+              <button class="btn btn-danger">Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirm Modal - Primary Variant -->
+      <div class="modal-preview">
+        <div class="modal-preview-label">
+          ConfirmModal <span class="variant-label primary">Primary</span>
+        </div>
+        <div class="modal-backdrop">
+          <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Clear Queue</h2>
+              <button class="modal-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p class="confirm-message">
+                Clear all <strong>24 pending items</strong> from the queue?
+                Currently downloading video will not be affected.
+              </p>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Cancel</button>
+              <button class="btn btn-primary">Clear Queue</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playlist Modal -->
+      <div class="modal-preview">
+        <div class="modal-preview-label">PlaylistModal</div>
+        <div class="modal-backdrop">
+          <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Create Playlist</h2>
+              <button class="modal-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="input-group">
+                <label class="input-label">Playlist Name</label>
+                <input type="text" class="input" placeholder="Enter playlist name..." value="Watch Later">
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Cancel</button>
+              <button class="btn btn-primary">Create</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Playlist Modal with Error -->
+      <div class="modal-preview">
+        <div class="modal-preview-label">PlaylistModal <span class="variant-label danger">Error State</span></div>
+        <div class="modal-backdrop">
+          <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Rename Playlist</h2>
+              <button class="modal-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="input-group">
+                <label class="input-label">Playlist Name</label>
+                <input type="text" class="input input-error" value="Favorites">
+                <div class="error-message">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 8v4m0 4h.01"/>
+                  </svg>
+                  A playlist with this name already exists
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Cancel</button>
+              <button class="btn btn-primary" style="opacity: 0.5; cursor: not-allowed;">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Settings Repair Modal -->
+      <div class="modal-preview">
+        <div class="modal-preview-label">Settings Repair Modal</div>
+        <div class="modal-backdrop">
+          <div class="modal" style="max-width: 500px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Database Maintenance</h2>
+              <button class="modal-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="action-item">
+                <div class="action-content">
+                  <div class="action-title">
+                    Unavailable Videos
+                    <span class="action-badge badge-warning">12 found</span>
+                  </div>
+                  <div class="action-description">Remove videos that are no longer playable or have missing files</div>
+                </div>
+                <button class="btn btn-outline-danger btn-sm">Remove</button>
+              </div>
+
+              <div class="action-item">
+                <div class="action-content">
+                  <div class="action-title">
+                    Purge Channels
+                    <span class="action-badge badge-danger">3 orphaned</span>
+                  </div>
+                  <div class="action-description">Delete channels that have been removed and their video records</div>
+                </div>
+                <button class="btn btn-outline-danger btn-sm">Purge</button>
+              </div>
+
+              <div class="action-item">
+                <div class="action-content">
+                  <div class="action-title">Repair Metadata</div>
+                  <div class="action-description">Fix missing thumbnails, upload dates, and other video metadata</div>
+                </div>
+                <button class="btn btn-secondary btn-sm">Repair</button>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel Info Modal -->
+      <div class="modal-preview">
+        <div class="modal-preview-label">Channel Info Modal</div>
+        <div class="modal-backdrop">
+          <div class="modal" style="max-width: 480px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Channel Details</h2>
+              <button class="modal-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="info-row">
+                <span class="info-label">YouTube ID</span>
+                <span class="info-value">UC_x5XG1OV2P6uZZ5FSM9Ttw</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Title</span>
+                <span class="info-value">Google Developers</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Thumbnail URL</span>
+                <span class="info-value truncate">https://yt3.ggpht.com/ytc/...</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Folder Name</span>
+                <span class="info-value">Google_Developers</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Last Scan</span>
+                <span class="info-value">Jan 25, 2026 at 3:42 PM</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Created</span>
+                <span class="info-value">Dec 15, 2025 at 10:30 AM</span>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Duration Settings Modal -->
+      <div class="modal-preview">
+        <div class="modal-preview-label">Duration Settings Modal</div>
+        <div class="modal-backdrop">
+          <div class="modal" style="max-width: 400px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Duration Filter</h2>
+              <button class="modal-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body">
+              <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 20px;">
+                Only download videos within this duration range
+              </p>
+              <div class="duration-inputs">
+                <div class="input-group">
+                  <label class="input-label">Minimum</label>
+                  <div class="input-suffix">
+                    <input type="number" class="input input-number" value="5" min="0">
+                  </div>
+                </div>
+                <div class="input-group">
+                  <label class="input-label">Maximum</label>
+                  <div class="input-suffix">
+                    <input type="number" class="input input-number" value="60" min="0">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary">Cancel</button>
+              <button class="btn btn-primary">Save</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add to Playlist Menu -->
+      <div class="modal-preview">
+        <div class="modal-preview-label">Add to Playlist Menu</div>
+        <div class="modal-backdrop">
+          <div class="modal" style="max-width: 360px;">
+            <div class="modal-header">
+              <h2 class="modal-title">Save to playlist</h2>
+              <button class="modal-close">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="modal-body" style="padding: 8px 0;">
+              <div style="max-height: 240px; overflow-y: auto; padding: 0 24px;">
+                <label style="display: flex; align-items: center; padding: 12px 0; cursor: pointer; border-bottom: 1px solid var(--dark-border);">
+                  <input type="checkbox" checked style="width: 18px; height: 18px; accent-color: var(--accent); margin-right: 12px;">
+                  <span style="font-size: 0.9375rem;">Watch Later</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 12px 0; cursor: pointer; border-bottom: 1px solid var(--dark-border);">
+                  <input type="checkbox" style="width: 18px; height: 18px; accent-color: var(--accent); margin-right: 12px;">
+                  <span style="font-size: 0.9375rem;">Favorites</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 12px 0; cursor: pointer; border-bottom: 1px solid var(--dark-border);">
+                  <input type="checkbox" style="width: 18px; height: 18px; accent-color: var(--accent); margin-right: 12px;">
+                  <span style="font-size: 0.9375rem;">Programming Tutorials</span>
+                </label>
+                <label style="display: flex; align-items: center; padding: 12px 0; cursor: pointer;">
+                  <input type="checkbox" style="width: 18px; height: 18px; accent-color: var(--accent); margin-right: 12px;">
+                  <span style="font-size: 0.9375rem;">Music</span>
+                </label>
+              </div>
+              <div style="padding: 12px 24px; border-top: 1px solid var(--dark-border);">
+                <button style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px; background: var(--dark-tertiary); border: 1px dashed var(--dark-border); border-radius: 8px; color: var(--text-secondary); font-size: 0.875rem; cursor: pointer; transition: all 0.15s ease;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14m-7-7h14"/>
+                  </svg>
+                  Create new playlist
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
