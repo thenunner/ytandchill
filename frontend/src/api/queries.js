@@ -150,6 +150,8 @@ export function useDeleteVideo() {
       queryClient.invalidateQueries({ queryKey: ['videos'] });
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['channels'] }); // Update channel video counts
+      queryClient.invalidateQueries({ queryKey: ['favorite-channels'] }); // Update favorite libraries
+      queryClient.invalidateQueries({ queryKey: ['favorite-videos'] }); // Update mobile Favs
     },
   });
 }
