@@ -38,25 +38,18 @@ export default function WatchHistory() {
     search: searchInput || null,
   });
 
-  // Fetch channels for filter dropdown
+  // Fetch channels for filter dropdown (only channels with library videos)
   const { data: channelsData } = useChannels();
 
   const clearHistory = useClearWatchHistory();
 
-  // Get unique channels from watch history for filter
-  const channelsInHistory = useMemo(() => {
-    if (!historyVideos) return [];
-    const channelMap = new Map();
-    historyVideos.forEach(video => {
-      if (video.channel_id && video.channel_title && !channelMap.has(video.channel_id)) {
-        channelMap.set(video.channel_id, {
-          id: video.channel_id,
-          title: video.channel_title,
-        });
-      }
-    });
-    return Array.from(channelMap.values()).sort((a, b) => a.title.localeCompare(b.title));
-  }, [historyVideos]);
+  // Get channels that have downloaded videos (from Library), including Singles
+  const libraryChannels = useMemo(() => {
+    if (!channelsData) return [];
+    return channelsData
+      .filter(ch => (ch.downloaded_count || 0) > 0)
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [channelsData]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -111,12 +104,29 @@ export default function WatchHistory() {
       {/* Header */}
       <StickyBar>
         <div className="flex items-center gap-2">
-          {/* Left: Title + Clear button */}
+          {/* Left: Title + Channel Filter + Clear button */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <div className="flex items-center gap-2 text-text-primary">
               <HistoryIcon className="w-5 h-5" />
               <h1 className="text-lg font-semibold hidden sm:block">Watch History</h1>
             </div>
+
+            {/* Channel Filter - next to title */}
+            {libraryChannels.length > 0 && (
+              <select
+                value={channelFilter}
+                onChange={(e) => setChannelFilter(e.target.value)}
+                className="bg-dark-tertiary border border-dark-border rounded-lg px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent max-w-[140px] sm:max-w-[200px]"
+                style={{ maxHeight: '300px' }}
+              >
+                <option value="">All Channels</option>
+                {libraryChannels.map(channel => (
+                  <option key={channel.id} value={channel.id}>
+                    {channel.title}
+                  </option>
+                ))}
+              </select>
+            )}
 
             {historyVideos && historyVideos.length > 0 && (
               <button
@@ -140,23 +150,8 @@ export default function WatchHistory() {
             />
           </div>
 
-          {/* Right: Channel Filter + Mobile Search */}
+          {/* Right: Mobile Search + Pagination */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto">
-            {/* Channel Filter */}
-            {channelsInHistory.length > 0 && (
-              <select
-                value={channelFilter}
-                onChange={(e) => setChannelFilter(e.target.value)}
-                className="bg-dark-tertiary border border-dark-border rounded-lg px-2 py-1.5 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-accent max-w-[120px] sm:max-w-[180px]"
-              >
-                <option value="">All Channels</option>
-                {channelsInHistory.map(channel => (
-                  <option key={channel.id} value={channel.id}>
-                    {channel.title}
-                  </option>
-                ))}
-              </select>
-            )}
 
             {/* Mobile Search */}
             <div className="sm:hidden">

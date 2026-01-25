@@ -94,7 +94,50 @@ export function useToggleChannelFavorite() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id) => api.toggleChannelFavorite(id),
-    onSuccess: () => {
+    // Optimistic update for instant UI response
+    onMutate: async (id) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['channels'] });
+      await queryClient.cancelQueries({ queryKey: ['favorite-channels'] });
+
+      // Snapshot previous values
+      const previousChannels = queryClient.getQueryData(['channels']);
+      const previousFavorites = queryClient.getQueryData(['favorite-channels']);
+
+      // Optimistically update channels
+      queryClient.setQueryData(['channels'], (old) => {
+        if (!old) return old;
+        return old.map(ch => ch.id === id ? { ...ch, is_favorite: !ch.is_favorite } : ch);
+      });
+
+      // Optimistically update favorites list
+      queryClient.setQueryData(['favorite-channels'], (old) => {
+        if (!old) return old;
+        const channel = previousChannels?.find(ch => ch.id === id);
+        if (!channel) return old;
+
+        if (channel.is_favorite) {
+          // Removing from favorites
+          return old.filter(ch => ch.id !== id);
+        } else {
+          // Adding to favorites
+          return [...old, { ...channel, is_favorite: true }];
+        }
+      });
+
+      return { previousChannels, previousFavorites };
+    },
+    onError: (err, id, context) => {
+      // Rollback on error
+      if (context?.previousChannels) {
+        queryClient.setQueryData(['channels'], context.previousChannels);
+      }
+      if (context?.previousFavorites) {
+        queryClient.setQueryData(['favorite-channels'], context.previousFavorites);
+      }
+    },
+    onSettled: () => {
+      // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['channels'] });
       queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
     },

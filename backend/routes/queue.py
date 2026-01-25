@@ -206,6 +206,9 @@ def queue_stream():
                     elif event['type'] == 'channels:changed':
                         # Notify clients to refetch channels (visited, favorited, etc.)
                         yield f"event: channels\ndata: {json.dumps({'changed': True})}\n\n"
+                    elif event['type'] == 'toast:dismissed':
+                        # Broadcast toast dismissal to all clients for cross-device sync
+                        yield f"event: toast\ndata: {json.dumps({'action': 'dismiss', 'id': event.get('data', {}).get('id')})}\n\n"
                 except Empty:
                     # Send heartbeat comment to keep connection alive
                     yield ": heartbeat\n\n"
@@ -225,6 +228,19 @@ def queue_stream():
             'X-Accel-Buffering': 'no'
         }
     )
+
+
+@queue_bp.route('/api/toast/dismiss', methods=['POST'])
+def dismiss_toast():
+    """Broadcast toast dismissal to all SSE clients for cross-device sync."""
+    data = request.json
+    toast_id = data.get('id')
+    if not toast_id:
+        return jsonify({'error': 'Toast ID required'}), 400
+
+    # Broadcast dismissal to all connected clients
+    queue_events.emit('toast:dismissed', {'id': toast_id})
+    return jsonify({'dismissed': toast_id}), 200
 
 
 @queue_bp.route('/api/queue', methods=['POST'])
@@ -262,8 +278,9 @@ def add_to_queue():
             _download_worker.resume()
             logger.info("Auto-resumed download worker after adding video to queue")
 
-        # Emit SSE event for real-time UI updates
+        # Emit SSE events for real-time UI updates
         queue_events.emit('video:changed')
+        queue_events.emit('queue:changed')  # Update queue count badges
 
         return jsonify(result), 201
 
@@ -322,9 +339,10 @@ def add_to_queue_bulk():
             _download_worker.resume()
             logger.info("Auto-resumed download worker after bulk add to queue")
 
-        # Emit SSE event for real-time UI updates
+        # Emit SSE events for real-time UI updates
         if added_count > 0:
             queue_events.emit('video:changed')
+            queue_events.emit('queue:changed')  # Update queue count badges
 
         response = {
             'added_count': added_count,
@@ -378,8 +396,9 @@ def remove_from_queue(item_id):
         session.delete(item)
         session.commit()
 
-        # Emit SSE event for real-time UI updates
+        # Emit SSE events for real-time UI updates
         queue_events.emit('video:changed')
+        queue_events.emit('queue:changed')  # Update queue count badges
 
         return '', 204
 

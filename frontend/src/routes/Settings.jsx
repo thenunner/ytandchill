@@ -1345,7 +1345,7 @@ export default function Settings() {
                   .then(() => window.location.replace('/login'))
                   .catch(() => window.location.replace('/login'));
               }}
-              className="md:hidden ml-auto mr-2 px-2.5 py-1 text-sm font-semibold text-red-500 bg-dark-tertiary border border-dark-border rounded-md hover:bg-dark-hover hover:border-red-500/50 transition-all"
+              className="md:hidden ml-auto mr-2 px-4 py-1.5 text-sm font-semibold text-white bg-accent rounded-lg hover:bg-accent-hover transition-all"
             >
               Logout
             </button>

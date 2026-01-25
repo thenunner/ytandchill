@@ -1,9 +1,22 @@
 import { useNotification } from '../contexts/NotificationContext';
+import api from '../api/client';
+
+// Toast IDs that should sync dismissal across devices
+const SYNC_TOAST_IDS = ['paused', 'delay', 'scanning', 'download-progress', 'cookie-warning'];
 
 export default function Toast() {
   const { toasts, removeToast } = useNotification();
 
   if (!toasts || toasts.length === 0) return null;
+
+  const handleDismiss = (toastId) => {
+    // Remove locally
+    removeToast(toastId);
+    // Broadcast to other devices if this is a syncable toast
+    if (SYNC_TOAST_IDS.includes(toastId)) {
+      api.dismissToast(toastId).catch(() => {});
+    }
+  };
 
   return (
     <div
@@ -13,7 +26,7 @@ export default function Toast() {
       aria-atomic="true"
     >
       {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onDismiss={() => removeToast(toast.id)} />
+        <ToastItem key={toast.id} toast={toast} onDismiss={() => handleDismiss(toast.id)} />
       ))}
     </div>
   );

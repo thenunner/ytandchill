@@ -754,7 +754,7 @@ export default function ChannelLibrary() {
           onDone={clearSelection}
           actions={contentFilter === 'to-review' ? [
             {
-              label: 'Add to Queue',
+              label: 'Download',
               onClick: () => handleBulkAction('queue'),
               primary: true
             },
@@ -764,7 +764,7 @@ export default function ChannelLibrary() {
             }
           ] : [
             {
-              label: 'Add to Queue',
+              label: 'Download',
               onClick: () => handleBulkAction('unignore'),
               primary: true
             }
