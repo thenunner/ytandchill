@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited } from '../api/queries';
+import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited, useSettings } from '../api/queries';
 import VideoCard from '../components/VideoCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
@@ -9,9 +9,19 @@ import { HeartIcon } from '../components/icons';
 export default function Favs() {
   const [selectedChannelId, setSelectedChannelId] = useState(null);
 
-  const { data: favoriteChannels, isLoading: channelsLoading } = useFavoriteChannels();
+  const { data: favoriteChannelsRaw, isLoading: channelsLoading } = useFavoriteChannels();
   const { data: favoriteVideos, isLoading: videosLoading } = useFavoriteVideos(selectedChannelId);
+  const { data: settings } = useSettings();
   const markVisited = useMarkChannelVisited();
+
+  // Filter favorites based on hide_empty_channels setting
+  const hideEmptyChannels = settings?.hide_empty_channels === 'true';
+  const favoriteChannels = (favoriteChannelsRaw || []).filter(ch => {
+    if (hideEmptyChannels && (ch.downloaded_count || 0) === 0) {
+      return false;
+    }
+    return true;
+  });
 
   // Handle channel avatar click - toggle filter
   const handleChannelClick = (channelId) => {
@@ -25,11 +35,6 @@ export default function Favs() {
     }
   };
 
-  // Get selected channel info for filter banner
-  const selectedChannel = useMemo(() => {
-    if (!selectedChannelId || !favoriteChannels) return null;
-    return favoriteChannels.find(ch => ch.id === selectedChannelId);
-  }, [selectedChannelId, favoriteChannels]);
 
   // Loading state
   if (channelsLoading) {
@@ -109,21 +114,6 @@ export default function Favs() {
         </div>
       </div>
 
-      {/* Filter Banner (shows when channel selected) */}
-      {selectedChannel && (
-        <div className="flex items-center justify-between px-4 py-2 bg-accent/15 border-b border-accent/30 flex-shrink-0">
-          <span className="text-sm font-medium text-accent">
-            Showing: {selectedChannel.title}
-          </span>
-          <button
-            onClick={() => setSelectedChannelId(null)}
-            className="text-xs font-medium px-2 py-1 rounded bg-accent text-white"
-          >
-            Clear
-          </button>
-        </div>
-      )}
-
       {/* Video List */}
       <div className="flex-1 overflow-y-auto p-4 pb-20">
         {videosLoading ? (
@@ -134,8 +124,8 @@ export default function Favs() {
           <EmptyState
             title="No videos yet"
             description={selectedChannelId
-              ? "No videos from this channel in the last 30 days"
-              : "No videos from your favorites in the last 30 days"
+              ? "No videos from this channel"
+              : "No videos from your favorites"
             }
           />
         ) : (
