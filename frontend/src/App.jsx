@@ -462,12 +462,12 @@ function App() {
                 /* Collapsed state: Heart icon with dot if any favorite has new videos */
                 <Link
                   to="/library?tab=channels"
-                  className="relative p-2 rounded-lg block text-text-secondary hover:bg-dark-hover transition-colors"
+                  className="relative flex items-center px-3 py-2.5 rounded-lg text-text-secondary hover:bg-dark-hover transition-colors"
                   title="Favorite Libraries"
                 >
                   <HeartIcon className="w-5 h-5" />
                   {favoriteLibraries.some(ch => ch.has_new_videos) && (
-                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-dark-secondary" />
+                    <div className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-accent border-2 border-dark-secondary" />
                   )}
                 </Link>
               )}
