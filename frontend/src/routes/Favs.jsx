@@ -58,14 +58,10 @@ export default function Favs() {
     <div className="flex flex-col h-full">
       {/* Sticky Header with Channel Bar */}
       <div className="sticky top-0 z-10 bg-dark-secondary border-b border-dark-border flex-shrink-0">
-        <div className="px-4 pt-3 pb-2">
-          <h1 className="text-lg font-bold text-text-primary">Favorites</h1>
-          <p className="text-xs text-text-muted">Videos from the last 30 days</p>
-        </div>
 
         {/* Horizontal Channel Scroll Bar */}
         <div
-          className="flex gap-3 px-4 pb-3 overflow-x-auto"
+          className="flex gap-3 px-4 pt-3 pb-3 overflow-x-auto"
           style={{
             scrollbarWidth: 'none',
             msOverflowStyle: 'none',

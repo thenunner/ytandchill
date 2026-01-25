@@ -385,12 +385,22 @@ def get_favorite_videos():
         result = []
         for video in videos:
             channel = video.channel
+
+            # Convert thumb_url to proper URL (same logic as serialize_video in app.py)
+            thumb_url = None
+            if video.thumb_url:
+                if video.thumb_url.startswith('http'):
+                    thumb_url = video.thumb_url
+                else:
+                    normalized_path = video.thumb_url.replace('\\', '/')
+                    thumb_url = f"/api/media/{normalized_path}"
+
             result.append({
                 'id': video.id,
                 'yt_id': video.yt_id,
                 'title': video.title,
                 'duration_sec': video.duration_sec,
-                'thumb_url': video.thumb_url,
+                'thumb_url': thumb_url,
                 'file_path': video.file_path,
                 'file_size_bytes': video.file_size_bytes,
                 'downloaded_at': video.downloaded_at.isoformat() if video.downloaded_at else None,
