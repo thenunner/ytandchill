@@ -179,6 +179,26 @@ export function useBulkDeleteVideos() {
   });
 }
 
+// Watch History
+export function useWatchHistory(params = {}) {
+  return useQuery({
+    queryKey: ['watch-history', params],
+    queryFn: () => api.getWatchHistory(params),
+    staleTime: 30000,
+  });
+}
+
+export function useClearWatchHistory() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.clearWatchHistory(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watch-history'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+    },
+  });
+}
+
 // Categories
 export function useCategories() {
   return useQuery({

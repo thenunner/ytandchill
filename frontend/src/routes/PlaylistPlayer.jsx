@@ -2,7 +2,7 @@ import { useParams, useNavigate, useSearchParams, Link, useLocation } from 'reac
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import 'video.js/dist/video-js.css';
-import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
+import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
@@ -14,10 +14,8 @@ import {
   formatDuration,
   getVideoSource,
 } from '../utils/videoPlayerUtils';
-import {
-  ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon, SettingsIcon,
-  ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon
-} from '../components/icons';
+import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/icons';
+import Sidebar from '../components/Sidebar';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 export default function PlaylistPlayer() {
@@ -26,10 +24,6 @@ export default function PlaylistPlayer() {
   const navigate = useNavigate();
   const location = useLocation();
   const { showNotification } = useNotification();
-  const { data: queueData } = useQueue({});
-
-  // Queue count for sidebar badge
-  const queueCount = queueData?.queue?.length || 0;
 
   // Get starting video from URL if provided
   const startVideoId = searchParams.get('v');
@@ -378,25 +372,6 @@ export default function PlaylistPlayer() {
     }
   }, [isTheaterMode]);
 
-  // Toggle sidebar
-  const toggleSidebar = useCallback(() => {
-    setSidebarCollapsed(prev => !prev);
-  }, []);
-
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      window.location.replace('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      window.location.replace('/login');
-    }
-  };
-
   // Update goToNextRef
   useEffect(() => {
     goToNextRef.current = goToNext;
@@ -561,86 +536,18 @@ export default function PlaylistPlayer() {
     );
   }
 
-  // Sidebar nav item component
-  const NavLink = ({ to, icon, label, badge, onClick, isButton = false }) => {
-    const isActive = location.pathname === to;
-    const baseClasses = `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-      isActive
-        ? 'bg-accent/20 text-accent-text'
-        : 'text-text-secondary hover:bg-dark-hover hover:text-text-primary'
-    }`;
-
-    if (isButton) {
-      return (
-        <button onClick={onClick} className={baseClasses} title={label}>
-          {icon}
-          {!sidebarCollapsed && <span className="text-sm font-medium">{label}</span>}
-        </button>
-      );
-    }
-
-    return (
-      <Link to={to} className={baseClasses} title={label}>
-        {icon}
-        {!sidebarCollapsed && (
-          <>
-            <span className="text-sm font-medium">{label}</span>
-            {badge > 0 && (
-              <span className="ml-auto bg-accent text-dark-primary text-xs font-bold px-2 py-0.5 rounded-full">
-                {badge}
-              </span>
-            )}
-          </>
-        )}
-        {sidebarCollapsed && badge > 0 && (
-          <span className="absolute -top-1 -right-1 bg-accent text-dark-primary text-xs font-bold w-5 h-5 flex items-center justify-center rounded-full">
-            {badge}
-          </span>
-        )}
-      </Link>
-    );
-  };
-
   // Desktop layout with sidebar
   if (!isMobile) {
     return (
       <div className="flex h-screen overflow-hidden animate-fade-in">
         {/* Sidebar Navigation */}
-        <nav
-          className={`flex flex-col bg-dark-secondary border-r border-dark-border transition-all duration-200 ${
-            sidebarCollapsed ? 'w-16' : 'w-44'
-          }`}
-        >
-          {/* Sidebar Header - Toggle Button */}
-          <div className="flex items-center justify-between p-3 border-b border-dark-border">
-            {!sidebarCollapsed && (
-              <span className="text-sm font-medium text-text-secondary">YTandChill</span>
-            )}
-            <button
-              onClick={toggleSidebar}
-              className="p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors"
-              title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {sidebarCollapsed ? <MenuIcon /> : <CollapseIcon />}
-            </button>
-          </div>
-
-          {/* Nav Links */}
-          <div className="flex-1 p-2 space-y-1">
-            <NavLink to="/" icon={<ChannelsIcon />} label="Channels" />
-            <NavLink to="/library" icon={<LibraryIcon />} label="Library" />
-            <NavLink to="/queue" icon={<QueueIcon />} label="Queue" badge={queueCount} />
-          </div>
-
-          {/* Bottom Links */}
-          <div className="p-2 border-t border-dark-border space-y-1">
-            <NavLink to="/settings" icon={<SettingsIcon />} label="Settings" />
-            <NavLink isButton onClick={handleLogout} icon={<LogoutIcon />} label="Logout" />
-          </div>
-        </nav>
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed(prev => !prev)}
+        />
 
         {/* Main Content Area */}
-        <div className="flex-1 bg-dark-primary min-h-0 overflow-y-auto">
+        <div className="flex-1 bg-dark-primary min-h-0 overflow-y-auto pl-4">
           {/* ===== THEATER MODE ===== */}
           {isTheaterMode && (
             <div>

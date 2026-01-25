@@ -369,9 +369,8 @@ export function useVideoJsPlayer({
             // On desktop: ensure video frame shows (no poster to remove since we didn't set one)
             // On mobile: poster will show until user taps play (iOS/mobile behavior)
             if (!isMobile) {
-              // Load video to show first frame on desktop
-              player.load();
               // Mark as started to ensure video frame is visible
+              // Don't call player.load() as it resets the video and can cause play/pause issues
               setTimeout(() => {
                 try {
                   player.hasStarted(true);
@@ -538,6 +537,11 @@ export function useVideoJsPlayer({
 
     // Progress saving (if enabled)
     if (saveProgress && updateVideoRef.current) {
+      // Save immediately when playback starts (updates last_watched_at for watch history)
+      player.on('play', () => {
+        saveProgressNow();
+      });
+
       // Save immediately after any seek operation completes
       player.on('seeked', () => {
         saveProgressNow();

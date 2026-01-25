@@ -18,13 +18,12 @@ import Setup from './routes/Setup';
 import Login from './routes/Login';
 import Import from './routes/Import';
 import Favs from './routes/Favs';
+import WatchHistory from './routes/WatchHistory';
 import ErrorBoundary from './components/ErrorBoundary';
 import UpdateBanner from './components/UpdateBanner';
 import Toast from './components/Toast';
 import MobileBottomNav from './components/MobileBottomNav';
-import {
-  SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon, HeartIcon
-} from './components/icons';
+import Sidebar from './components/Sidebar';
 import { version as APP_VERSION } from '../package.json';
 
 function App() {
@@ -48,8 +47,16 @@ function App() {
     return true;
   });
   const { showNotification, removeToast } = useNotification();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    const saved = localStorage.getItem('sidebarCollapsed');
+    return saved === 'true';
+  });
   const clearingCookieWarningRef = useRef(false);
+
+  // Persist sidebar collapsed state
+  useEffect(() => {
+    localStorage.setItem('sidebarCollapsed', sidebarCollapsed);
+  }, [sidebarCollapsed]);
 
   // Update state
   const [latestVersion, setLatestVersion] = useState(null);
@@ -309,73 +316,6 @@ function App() {
   const isPlayerPage = location.pathname.startsWith('/player/') ||
     location.pathname.startsWith('/play/');
 
-  // Handle logout
-  const handleLogout = async () => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-      });
-      window.location.replace('/login');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      window.location.replace('/login');
-    }
-  };
-
-  // Sidebar nav item component
-  const SidebarNavLink = ({ to, icon, label, badge, onClick, isButton = false }) => {
-    // /channel/:id/library is part of Library, not Channels
-    const isActive = location.pathname === to ||
-      (to === '/' && location.pathname.startsWith('/channel/') && !location.pathname.endsWith('/library')) ||
-      (to === '/library' && (location.pathname.startsWith('/playlist/') || location.pathname.endsWith('/library')));
-    const baseClasses = `relative flex items-center rounded-lg transition-colors ${
-      sidebarCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5'
-    } ${
-      isActive
-        ? 'bg-accent/20 text-accent-text'
-        : 'text-text-secondary hover:bg-dark-hover hover:text-text-primary'
-    }`;
-
-    // Handle click - if already in this section, navigate to main page
-    const handleClick = (e) => {
-      if (isActive && location.pathname !== to) {
-        e.preventDefault();
-        navigate(to);
-      }
-    };
-
-    if (isButton) {
-      return (
-        <button onClick={onClick} className={baseClasses} title={label}>
-          {icon}
-          {!sidebarCollapsed && <span className="text-sm font-medium">{label}</span>}
-        </button>
-      );
-    }
-
-    return (
-      <Link to={to} className={baseClasses} title={label} onClick={handleClick}>
-        {icon}
-        {!sidebarCollapsed && (
-          <>
-            <span className="text-sm font-medium">{label}</span>
-            {badge > 0 && (
-              <span className="bg-accent text-dark-primary text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
-                {badge > 99 ? '99+' : badge}
-              </span>
-            )}
-          </>
-        )}
-        {sidebarCollapsed && badge > 0 && (
-          <span className="absolute -top-1 -right-1 bg-accent text-dark-primary text-[10px] font-bold min-w-[18px] h-[18px] flex items-center justify-center rounded-full px-1">
-            {badge > 99 ? '99+' : badge}
-          </span>
-        )}
-      </Link>
-    );
-  };
-
   // Auth pages and player pages get their own layouts
   if (isAuthPage || isPlayerPage) {
     return (
@@ -398,125 +338,11 @@ function App() {
   return (
     <div className="flex h-screen overflow-hidden bg-dark-primary">
       {/* Sidebar Navigation */}
-      <nav
-        className={`hidden md:flex flex-col bg-dark-secondary border-r border-dark-border transition-all duration-200 ${
-          sidebarCollapsed ? 'w-16' : 'w-40'
-        }`}
-      >
-        {/* Sidebar Header */}
-        <div className={sidebarCollapsed
-          ? "flex flex-col items-center py-2 border-b border-dark-border"
-          : "flex items-center justify-between p-2 border-b border-dark-border"
-        }>
-          {!sidebarCollapsed && (
-            <img src="/logo.png" alt="YTandChill" className="h-10 w-28" />
-          )}
-          <button
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="flex items-center justify-center p-2 rounded-lg hover:bg-dark-hover transition-colors text-text-secondary"
-            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {sidebarCollapsed ? <MenuIcon className="w-5 h-5" /> : <CollapseIcon className="w-5 h-5" />}
-          </button>
-        </div>
-
-        {/* Nav Links */}
-        {sidebarCollapsed ? (
-          /* Collapsed: flat structure, everything directly in flex container */
-          <div className="flex-1 flex flex-col items-center gap-1 py-2 overflow-y-auto">
-            <SidebarNavLink to="/" icon={<ChannelsIcon className="w-5 h-5" />} label="Channels" badge={reviewCount} />
-            <SidebarNavLink to="/library" icon={<LibraryIcon className="w-5 h-5" />} label="Library" />
-            <SidebarNavLink to="/queue" icon={<QueueIcon className="w-5 h-5" />} label="Queue" badge={queueCount} />
-
-            {/* Favorites - flat, no wrapper */}
-            {favoriteLibraries && favoriteLibraries.length > 0 && (
-              <>
-                <div className="w-8 border-t border-dark-border my-1" />
-                {/* Heart icon - not clickable, just a section indicator */}
-                <div className="p-2 text-text-muted" title="Favorite Libraries">
-                  <HeartIcon className="w-5 h-5" />
-                </div>
-                {favoriteLibraries.slice(0, 10).map(channel => (
-                  <Link
-                    key={channel.id}
-                    to={`/channel/${channel.id}/library`}
-                    className="flex items-center justify-center p-2 rounded-lg hover:bg-dark-hover transition-colors"
-                    title={channel.title}
-                  >
-                    <div className="w-5 h-5 rounded-full overflow-hidden">
-                      {channel.thumbnail ? (
-                        <img src={channel.thumbnail} className="w-full h-full object-cover" alt="" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-dark-tertiary">
-                          <span className="text-[8px] font-bold text-text-muted">
-                            {channel.title?.substring(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                ))}
-              </>
-            )}
-          </div>
-        ) : (
-          /* Expanded: normal nested structure */
-          <div className="flex-1 p-2 space-y-1 overflow-y-auto">
-            <SidebarNavLink to="/" icon={<ChannelsIcon className="w-5 h-5" />} label="Channels" badge={reviewCount} />
-            <SidebarNavLink to="/library" icon={<LibraryIcon className="w-5 h-5" />} label="Library" />
-            <SidebarNavLink to="/queue" icon={<QueueIcon className="w-5 h-5" />} label="Queue" badge={queueCount} />
-
-            {favoriteLibraries && favoriteLibraries.length > 0 && (
-              <div className="pt-3 mt-3 border-t border-dark-border">
-                <div className="px-3 py-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Favorite Libraries</span>
-                </div>
-                <div className="mt-1 space-y-0.5">
-                  {favoriteLibraries.slice(0, 10).map(channel => (
-                    <Link
-                      key={channel.id}
-                      to={`/channel/${channel.id}/library`}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-dark-hover transition-colors"
-                      title={channel.title}
-                    >
-                      <div className="w-7 h-7 flex-shrink-0 rounded-full overflow-hidden border-2 border-dark-border">
-                        {channel.thumbnail ? (
-                          <img src={channel.thumbnail} className="w-full h-full object-cover" alt="" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-dark-tertiary">
-                            <span className="text-[10px] font-bold text-text-muted">
-                              {channel.title?.substring(0, 2).toUpperCase()}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <span className={`text-sm truncate flex-1 ${channel.has_new_videos ? 'text-text-primary' : 'text-text-secondary'}`}>
-                        {channel.title}
-                      </span>
-                      {channel.has_new_videos && (
-                        <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Bottom Links */}
-        {sidebarCollapsed ? (
-          <div className="flex flex-col items-center gap-1 py-2 border-t border-dark-border">
-            <SidebarNavLink to="/settings" icon={<SettingsIcon className="w-5 h-5" />} label="Settings" />
-            <SidebarNavLink isButton onClick={handleLogout} icon={<LogoutIcon className="w-5 h-5" />} label="Logout" />
-          </div>
-        ) : (
-          <div className="p-2 border-t border-dark-border space-y-1">
-            <SidebarNavLink to="/settings" icon={<SettingsIcon className="w-5 h-5" />} label="Settings" />
-            <SidebarNavLink isButton onClick={handleLogout} icon={<LogoutIcon className="w-5 h-5" />} label="Logout" />
-          </div>
-        )}
-      </nav>
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        reviewCount={reviewCount}
+      />
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
@@ -543,6 +369,7 @@ function App() {
               <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
               <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
               <Route path="/favs" element={isAuthenticated ? <Favs /> : <Navigate to="/login" replace />} />
+              <Route path="/history" element={isAuthenticated ? <WatchHistory /> : <Navigate to="/login" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ErrorBoundary>
