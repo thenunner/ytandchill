@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels } from '../api/queries';
 import api from '../api/client';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import { useTheme, themes } from '../contexts/ThemeContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -408,7 +409,7 @@ export default function Settings() {
       // Update server state tracking
       setServerAutoRefresh(autoRefresh);
     } catch (error) {
-      showNotification(error.message || 'Failed to save auto-scan settings', 'error');
+      showNotification(getUserFriendlyError(error.message, 'save settings'), 'error');
     }
   };
 
@@ -1515,7 +1516,7 @@ export default function Settings() {
                             await updateSettings.mutateAsync({ log_level: level });
                             showNotification(`Log level changed to ${level}`, 'success');
                           } catch (error) {
-                            showNotification(error.message || 'Failed to save log level', 'error');
+                            showNotification(getUserFriendlyError(error.message, 'save settings'), 'error');
                           }
                         }}
                         className={`settings-toggle-btn ${logLevel === level ? 'active' : ''}`}

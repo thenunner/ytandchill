@@ -98,7 +98,7 @@ export default function CollapsibleSearch({
           /* Collapsed - Icon button */
           <button
             onClick={() => setIsExpanded(true)}
-            className={`filter-btn flex-shrink-0 ${value ? 'bg-accent/20 border-accent/40 text-accent' : ''}`}
+            className={`h-[35px] w-[35px] rounded-lg text-sm font-medium transition-colors flex items-center justify-center bg-dark-tertiary border border-dark-border-light text-text-primary hover:bg-dark-hover flex-shrink-0 ${value ? 'bg-accent/20 border-accent/40 text-accent' : ''}`}
             title="Search"
           >
             <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

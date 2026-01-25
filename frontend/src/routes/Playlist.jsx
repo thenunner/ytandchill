@@ -1,19 +1,20 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings } from '../api/queries';
+import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings, useDeletePlaylist, useUpdatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { getBooleanSetting, getNumericSetting } from '../utils/settingsUtils';
 import VideoCard from '../components/VideoCard';
-import SortDropdown from '../components/stickybar/SortDropdown';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import ConfirmModal from '../components/ui/ConfirmModal';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch } from '../components/stickybar';
+import { StickyBar, SelectionBar, SearchInput, CollapsibleSearch, BackButton, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
+import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
 
 export default function Playlist() {
   const { id } = useParams();
@@ -24,6 +25,8 @@ export default function Playlist() {
   const removeVideo = useRemoveVideoFromPlaylist();
   const deleteVideo = useDeleteVideo();
   const bulkUpdateVideos = useBulkUpdateVideos();
+  const deletePlaylist = useDeletePlaylist();
+  const updatePlaylist = useUpdatePlaylist();
   const { showNotification } = useNotification();
   const { cardSize, setCardSize } = useCardSize('library');
   const gridColumns = useGridColumns(cardSize);
@@ -40,7 +43,9 @@ export default function Playlist() {
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
-  const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete', count: number }
+  const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete' | 'deletePlaylist', count: number }
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
 
 
   useEffect(() => {
@@ -101,7 +106,7 @@ export default function Playlist() {
       }
       setSelectedVideos([]);
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'complete action'), 'error');
     }
   };
 
@@ -119,11 +124,14 @@ export default function Playlist() {
           await deleteVideo.mutateAsync(videoId);
         }
         showNotification(`${selectedVideos.length} videos deleted from library`, 'success');
+      } else if (confirmAction.type === 'deletePlaylist') {
+        await handleDeletePlaylist();
+        return; // handleDeletePlaylist navigates away
       }
       setSelectedVideos([]);
       setConfirmAction(null);
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'complete action'), 'error');
     }
   };
 
@@ -196,6 +204,42 @@ export default function Playlist() {
     return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedVideos, currentPage, itemsPerPage, loadedPages, isMobile]);
 
+  // Playlist action handlers
+  const handlePlayAll = () => {
+    if (sortedVideos.length > 0) {
+      navigate(`/video/${sortedVideos[0].id}`, { state: { playlistId: id, playlistVideos: sortedVideos.map(v => v.id) } });
+    }
+  };
+
+  const handleShuffle = () => {
+    if (sortedVideos.length > 0) {
+      const shuffled = [...sortedVideos].sort(() => Math.random() - 0.5);
+      navigate(`/video/${shuffled[0].id}`, { state: { playlistId: id, playlistVideos: shuffled.map(v => v.id), shuffle: true } });
+    }
+  };
+
+  const handleRenamePlaylist = async () => {
+    if (!renameValue.trim()) return;
+    try {
+      await updatePlaylist.mutateAsync({ id, data: { name: renameValue.trim() } });
+      showNotification('Playlist renamed', 'success');
+      setShowRenameModal(false);
+      setRenameValue('');
+    } catch (error) {
+      showNotification(getUserFriendlyError(error.message, 'rename playlist'), 'error');
+    }
+  };
+
+  const handleDeletePlaylist = async () => {
+    try {
+      await deletePlaylist.mutateAsync(id);
+      showNotification('Playlist deleted', 'success');
+      navigate('/library?tab=playlists');
+    } catch (error) {
+      showNotification(getUserFriendlyError(error.message, 'delete playlist'), 'error');
+    }
+  };
+
   if (isLoading) {
     return <div className="text-center py-20 text-text-secondary">Loading playlist...</div>;
   }
@@ -218,102 +262,149 @@ export default function Playlist() {
     <div className="space-y-4 animate-fade-in">
       {/* Sticky Header Row */}
       <StickyBar className="-mx-8 px-8 mb-4">
-        <div className="flex items-center justify-between gap-2">
-          {/* LEFT: Back, Title, Edit, Sort, Search */}
-          <div className="flex items-center gap-2 flex-wrap">
-            {/* Back Arrow */}
-            <button
-              onClick={() => {
-                navigate(location.state?.from || '/library?tab=playlists');
-              }}
-              className="flex items-center justify-center w-[35px] h-[35px] rounded-lg bg-dark-tertiary hover:bg-dark-hover border border-dark-border text-text-secondary hover:text-text-primary transition-colors flex-shrink-0"
+        <div className="flex items-center gap-2">
+          {/* LEFT: Back, Title, Options */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <BackButton
+              onClick={() => navigate(location.state?.from || '/library?tab=playlists')}
               title="Back"
-            >
-              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <polyline points="15 18 9 12 15 6"></polyline>
-              </svg>
-            </button>
+            />
 
             {/* Playlist Title */}
-            <h2 className="text-lg font-semibold text-text-primary">{playlist.name}</h2>
-            <span className="text-sm text-text-secondary">({sortedVideos.length} videos)</span>
+            <h2 className="text-sm sm:text-lg font-semibold text-text-primary truncate max-w-[100px] sm:max-w-none">{playlist.name}</h2>
+            <span className="text-xs sm:text-sm text-text-secondary whitespace-nowrap">({sortedVideos.length})</span>
 
-            {/* Edit Button */}
-            <button
-              onClick={() => {
-                setEditMode(!editMode);
-                setSelectedVideos([]);
-              }}
-              className={`filter-btn show-label ${editMode ? 'bg-accent/10 text-accent border-accent/40' : ''}`}
-            >
-              <span>{editMode ? 'Done' : 'Edit'}</span>
-            </button>
-
-            {/* Sort Dropdown - Mobile only here */}
-            <div className="sm:hidden">
-              <SortDropdown
-                value={sort}
-                onChange={setSort}
-                options={[
-                  { value: 'date-desc', label: 'Newest' },
-                  { value: 'date-asc', label: 'Oldest' },
-                  { divider: true },
-                  { value: 'title-asc', label: 'A → Z' },
-                  { value: 'title-desc', label: 'Z → A' },
-                  { divider: true },
-                  { value: 'duration-desc', label: 'Longest' },
-                  { value: 'duration-asc', label: 'Shortest' },
-                ]}
-                durationValue={durationFilter}
-                onDurationChange={setDurationFilter}
-                durationOptions={[
-                  { value: 'all', label: 'All' },
-                  { value: '0-30', label: '0-30 min' },
-                  { value: '30-60', label: '30-60 min' },
-                  { value: 'over60', label: 'Over 60 min' },
-                ]}
-              />
-            </div>
-
-            {/* Collapsible Search */}
-            <CollapsibleSearch
-              value={searchInput}
-              onChange={setSearchInput}
-              placeholder="Search videos..."
-              desktopWidth="sm:w-[180px]"
+            {/* Options Dropdown */}
+            <ActionDropdown
+              label="Options"
+              variant="secondary"
+              mobileIcon={
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="4" y1="21" x2="4" y2="14"/>
+                  <line x1="4" y1="10" x2="4" y2="3"/>
+                  <line x1="12" y1="21" x2="12" y2="12"/>
+                  <line x1="12" y1="8" x2="12" y2="3"/>
+                  <line x1="20" y1="21" x2="20" y2="16"/>
+                  <line x1="20" y1="12" x2="20" y2="3"/>
+                  <line x1="1" y1="14" x2="7" y2="14"/>
+                  <line x1="9" y1="8" x2="15" y2="8"/>
+                  <line x1="17" y1="16" x2="23" y2="16"/>
+                </svg>
+              }
+              items={[
+                {
+                  label: 'Play All',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                  ),
+                  onClick: handlePlayAll,
+                  disabled: sortedVideos.length === 0,
+                },
+                {
+                  label: 'Shuffle',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="16 3 21 3 21 8" />
+                      <line x1="4" y1="20" x2="21" y2="3" />
+                      <polyline points="21 16 21 21 16 21" />
+                      <line x1="15" y1="15" x2="21" y2="21" />
+                      <line x1="4" y1="4" x2="9" y2="9" />
+                    </svg>
+                  ),
+                  onClick: handleShuffle,
+                  disabled: sortedVideos.length === 0,
+                },
+                { divider: true },
+                {
+                  label: 'Edit',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                  ),
+                  onClick: () => {
+                    setEditMode(!editMode);
+                    setSelectedVideos([]);
+                  },
+                },
+                {
+                  label: 'Rename',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 3a2.828 2.828 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                    </svg>
+                  ),
+                  onClick: () => {
+                    setRenameValue(playlist.name);
+                    setShowRenameModal(true);
+                  },
+                },
+                { divider: true },
+                {
+                  label: 'Delete Playlist',
+                  icon: (
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                    </svg>
+                  ),
+                  onClick: () => setConfirmAction({ type: 'deletePlaylist' }),
+                  variant: 'danger',
+                },
+              ]}
             />
           </div>
 
-          {/* RIGHT: Sort (desktop) + Pagination */}
-          <div className="hidden sm:flex items-center gap-2">
-            <SortDropdown
-              value={sort}
-              onChange={setSort}
-              options={[
-                { value: 'date-desc', label: 'Newest' },
-                { value: 'date-asc', label: 'Oldest' },
-                { divider: true },
-                { value: 'title-asc', label: 'A → Z' },
-                { value: 'title-desc', label: 'Z → A' },
-                { divider: true },
-                { value: 'duration-desc', label: 'Longest' },
-                { value: 'duration-asc', label: 'Shortest' },
-              ]}
+          {/* CENTER: Search (desktop only, fills available space) */}
+          <div className="hidden sm:block flex-1 max-w-md mx-4">
+            <SearchInput
+              value={searchInput}
+              onChange={setSearchInput}
+              placeholder="Search videos..."
+              className="w-full"
+            />
+          </div>
+
+          {/* RIGHT: Mobile (Sort + Search) / Desktop (Sort + Pagination) */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto">
+            {/* Mobile: Sort + Search */}
+            <div className="sm:hidden flex items-center gap-1.5">
+              <StickyBarRightSection
+                sortValue={sort}
+                onSortChange={setSort}
+                sortOptions={SORT_OPTIONS.videos}
+                durationValue={durationFilter}
+                onDurationChange={setDurationFilter}
+                durationOptions={DURATION_OPTIONS}
+                currentPage={currentPage}
+                totalItems={sortedVideos.length}
+                itemsPerPage={itemsPerPage}
+                onPageChange={setCurrentPage}
+                showMobileSort={true}
+              />
+              <CollapsibleSearch
+                value={searchInput}
+                onChange={setSearchInput}
+                placeholder="Search videos..."
+              />
+            </div>
+
+            {/* Desktop: Sort + Pagination */}
+            <StickyBarRightSection
+              sortValue={sort}
+              onSortChange={setSort}
+              sortOptions={SORT_OPTIONS.videos}
               durationValue={durationFilter}
               onDurationChange={setDurationFilter}
-              durationOptions={[
-                { value: 'all', label: 'All' },
-                { value: '0-30', label: '0-30 min' },
-                { value: '30-60', label: '30-60 min' },
-                { value: 'over60', label: 'Over 60 min' },
-              ]}
-            />
-
-            <Pagination
+              durationOptions={DURATION_OPTIONS}
               currentPage={currentPage}
               totalItems={sortedVideos.length}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
+              showMobileSort={false}
             />
           </div>
         </div>
@@ -421,6 +512,44 @@ export default function Playlist() {
         confirmStyle="danger"
         onConfirm={handleConfirmAction}
         onCancel={() => setConfirmAction(null)}
+      />
+
+      <ConfirmModal
+        isOpen={confirmAction?.type === 'deletePlaylist'}
+        title="Delete Playlist"
+        message={
+          <>
+            Delete playlist <span className="font-semibold">{playlist?.name}</span>?
+            The videos will remain in your library.
+          </>
+        }
+        confirmText="Delete"
+        confirmStyle="danger"
+        onConfirm={handleConfirmAction}
+        onCancel={() => setConfirmAction(null)}
+      />
+
+      {/* Rename Modal */}
+      <ConfirmModal
+        isOpen={showRenameModal}
+        title="Rename Playlist"
+        message={
+          <input
+            type="text"
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleRenamePlaylist()}
+            className="w-full px-3 py-2 bg-dark-tertiary border border-dark-border rounded-lg text-text-primary focus:outline-none focus:border-accent"
+            placeholder="Playlist name"
+            autoFocus
+          />
+        }
+        confirmText="Rename"
+        onConfirm={handleRenamePlaylist}
+        onCancel={() => {
+          setShowRenameModal(false);
+          setRenameValue('');
+        }}
       />
 
       {/* Bulk Playlist Options Menu */}

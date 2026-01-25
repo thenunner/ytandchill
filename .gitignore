@@ -79,5 +79,7 @@ frontend/.backups/
 
 # OS
 Thumbs.db
+
+# Claude Code context files (local only)
 CLAUDE.md
-update.sh
+STRUCTURE.md

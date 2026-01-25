@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import 'video.js/dist/video-js.css';
 import { useVideo, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -178,7 +179,7 @@ export default function Player() {
       setShowDeleteConfirm(false);
       navigate(-1);
     } catch (error) {
-      showNotification(error.message || 'Failed to delete video', 'error');
+      showNotification(getUserFriendlyError(error.message, 'delete video'), 'error');
     }
   };
 
@@ -198,7 +199,7 @@ export default function Player() {
         'success'
       );
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'update video'), 'error');
     }
   };
 

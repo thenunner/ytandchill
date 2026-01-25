@@ -6,7 +6,12 @@ export default function Toast() {
   if (!toasts || toasts.length === 0) return null;
 
   return (
-    <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3 max-w-sm">
+    <div
+      className="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] flex flex-col gap-3 max-w-sm"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+    >
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onDismiss={() => removeToast(toast.id)} />
       ))}
@@ -78,10 +83,30 @@ function ToastItem({ toast, onDismiss }) {
     ),
   };
 
+  // Postprocessor name to friendly description mapping
+  const postprocessorDescriptions = {
+    SponsorBlock: 'Fetching segments',
+    ModifyChapters: 'Removing segments',
+    FFmpegMerger: 'Combining audio/video',
+    FFmpegMetadata: 'Adding metadata',
+    FFmpegExtractAudio: 'Extracting audio',
+    FFmpegEmbedSubtitle: 'Embedding subtitles',
+    FFmpegVideoConvertor: 'Converting video',
+    FFmpegFixupM3u8: 'Fixing stream',
+    FFmpegFixupM4a: 'Fixing audio',
+    FFmpegFixupDuplicateMoov: 'Fixing metadata',
+    FFmpegFixupStretchedPP: 'Fixing aspect ratio',
+    FFmpegFixupTimestamp: 'Fixing timestamps',
+    MoveFiles: 'Finalizing',
+  };
+
   // Progress toast has a special layout
   if (type === 'progress' && progress) {
     // Postprocessing mode (SponsorBlock re-encoding)
     if (progress.isPostprocessing) {
+      const postprocessorName = progress.postprocessor || 'Processing';
+      const description = postprocessorDescriptions[postprocessorName] || 'Processing';
+
       return (
         <div
           onClick={onDismiss}
@@ -92,8 +117,12 @@ function ToastItem({ toast, onDismiss }) {
             <div className="w-5 h-5 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
             <div className="flex-1 min-w-0">
               <div className="text-sm font-medium text-text-primary truncate">{message}</div>
-              <div className="flex items-center gap-3 text-xs text-text-secondary mt-1">
-                <span className="text-accent font-medium">Processing ({progress.elapsed})</span>
+              <div className="text-xs text-text-secondary mt-1">
+                <span className="text-accent">{postprocessorName}</span>
+                <span className="mx-1.5 text-text-muted">•</span>
+                <span>{description}</span>
+                <span className="mx-1.5 text-text-muted">•</span>
+                <span className="text-text-muted">{progress.elapsed}</span>
               </div>
             </div>
           </div>

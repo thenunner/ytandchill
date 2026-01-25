@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePlaylists, useAddVideoToPlaylist, useAddVideosToPlaylistBulk, useRemoveVideoFromPlaylist, useCreatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 
 export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, triggerRef }) {
   const { data: playlists } = usePlaylists();
@@ -99,7 +100,7 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
         }
       }
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'update playlist'), 'error');
     }
   };
 
@@ -125,7 +126,7 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
 
       onClose();
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'add to playlist'), 'error');
       onClose();
     }
   };
@@ -152,7 +153,7 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
 
       onClose();
     } catch (error) {
-      showNotification(error.message, 'error');
+      showNotification(getUserFriendlyError(error.message, 'create playlist'), 'error');
       onClose();
     }
   };

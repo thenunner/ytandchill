@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import {
   useScanImportFolder,
   useImportState,
@@ -206,7 +207,7 @@ export default function Import() {
         setCurrentPendingIdx(0);
       }
     } catch (error) {
-      showNotification(`Error: ${error.message}`, 'error');
+      showNotification(getUserFriendlyError(error.message, 'scan import folder'), 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -238,7 +239,7 @@ export default function Import() {
       setSelectedVideoId(null);
       showNotification('Video matched and imported', 'success');
     } catch (error) {
-      showNotification(`Error: ${error.message}`, 'error');
+      showNotification(getUserFriendlyError(error.message, 'import video'), 'error');
     } finally {
       setIsProcessing(false);
     }
@@ -254,7 +255,7 @@ export default function Import() {
       setSelectedVideoId(null);
       showNotification('File skipped', 'info');
     } catch (error) {
-      showNotification(`Error: ${error.message}`, 'error');
+      showNotification(getUserFriendlyError(error.message, 'skip file'), 'error');
     }
   };
 

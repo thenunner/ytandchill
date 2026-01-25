@@ -252,10 +252,17 @@ scan_total_channels = 0
 scan_current_channel = 0
 scan_last_queue_time = 0  # Timestamp of last queue operation
 scan_batch_in_progress = False  # Global batch lock
-scan_batch_lock = threading.Lock()  # Thread-safe lock
+scan_batch_lock = threading.Lock()  # Thread-safe lock for batch coordination
+scan_queue_lock = threading.Lock()  # Thread-safe lock for queue check-and-add
 scan_pending_auto_scan = False  # Auto-scan queued flag
 scan_batch_stats = {'new': 0, 'ignored': 0, 'auto_queued': 0, 'channels': 0}  # Track batch results
 scan_batch_label = ''  # Label for the batch (e.g., "Scan New", "Auto-Scan", "Channel: xyz")
+
+# Scan limits
+SCAN_MAX_VIDEOS_FULL = 999999          # Full scan: get all videos
+SCAN_MAX_VIDEOS_AUTO = 50              # Auto-scan: limit for API quota
+SCAN_MAX_VIDEOS_MANUAL = 250           # Manual scan: balance between speed and coverage
+SCAN_QUEUE_RESET_DELAY = 3             # Seconds before treating new queue add as new batch
 
 def acquire_scan_batch_lock(is_auto_scan=False, batch_label=''):
     """
@@ -590,114 +597,89 @@ def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
         return f"{month}/{day}"
     return "None"
 
-def _execute_channel_scan(session, channel, force_full=False, current_num=0, total_num=0):
+# =============================================================================
+# Channel Scan Helper Functions
+# =============================================================================
+
+def _fetch_videos_for_scan(channel, force_full):
     """
-    Execute a channel scan. This function contains the core scan logic.
-    Used by both the scan endpoint and the scan worker thread.
+    Fetch videos from YouTube using the appropriate method based on scan type.
 
     Args:
-        session: SQLAlchemy session
         channel: Channel object to scan
         force_full: Boolean, if True does full scan, otherwise incremental
-        current_num: Current channel number in batch (for progress display)
-        total_num: Total channels in batch (for progress display)
 
     Returns:
-        dict with 'new_videos' and 'ignored_videos' counts
+        tuple: (videos, all_video_ids, use_api_for_dates)
+            - videos: List of video data dicts
+            - all_video_ids: Set of all video IDs found (for not_found detection)
+            - use_api_for_dates: Boolean, whether to fetch dates via API later
     """
-    scan_type = "full" if force_full else "incremental"
-    logger.info(f"Starting scan for channel: {channel.title} (id: {channel.id})")
-
-    # Get last video date for status message
-    last_video_date = None
-    if channel.videos:
-        videos_with_dates = [v for v in channel.videos if v.upload_date]
-        if videos_with_dates:
-            most_recent = max(videos_with_dates, key=lambda v: v.upload_date)
-            last_video_date = most_recent.upload_date
-
-    # Format status message with last scan and last video info
-    last_scan_str = format_scan_status_date(datetime_obj=channel.last_scan_time)
-    last_video_str = format_scan_status_date(yyyymmdd_string=last_video_date)
-
-    # Note: Per-channel status updates removed - too fast for frontend polling
-    # Batch-level status is set when scan batch starts
-
-    # Scan videos using yt-dlp
-    # Strategy depends on scan type:
-    #   - Full scan (new channel, scan all): Use flat-playlist (fast) + YouTube API for dates
-    #   - Incremental scan (auto-scan, scan new): Use full extraction (slower but has upload_date)
-    logger.debug(f"Scanning channel: {channel.title}")
-
-    # Build channel URL from stored channel ID
     channel_url = f'https://youtube.com/channel/{channel.yt_id}'
 
     if force_full:
         # Full scan: Use fast flat-playlist, API will fill in dates later
-        max_results = 999999
+        max_results = SCAN_MAX_VIDEOS_FULL
         logger.debug(f"Full scan using flat-playlist for {channel.title}")
         channel_info, videos, all_video_ids = scan_channel_videos(channel_url, max_results=max_results)
-        use_api_for_dates = True
-    else:
-        # Incremental scan: Try YouTube API first (fast), fall back to yt-dlp
-        auto_scan_enabled = settings_manager.get_bool('auto_refresh_enabled')
-        max_results = 50 if auto_scan_enabled else 250
+        return videos, all_video_ids, True
 
-        api_key = settings_manager.get('youtube_api_key')
-        if api_key:
-            # Try YouTube API (much faster - ~1 second vs minutes)
-            logger.debug(f"Incremental scan using YouTube API for {channel.title} (max: {max_results})")
-            api_videos, api_error = scan_channel_videos_api(channel.yt_id, api_key, max_results=max_results)
+    # Incremental scan: Try YouTube API first (fast), fall back to yt-dlp
+    auto_scan_enabled = settings_manager.get_bool('auto_refresh_enabled')
+    max_results = SCAN_MAX_VIDEOS_AUTO if auto_scan_enabled else SCAN_MAX_VIDEOS_MANUAL
 
-            if api_videos and not api_error:
-                # API success - use API results
-                videos = api_videos
-                all_video_ids = set(v['id'] for v in videos)
-                channel_info = {'id': channel.yt_id, 'title': channel.title, 'thumbnail': None}
-                use_api_for_dates = False  # API already has dates
-                logger.info(f"YouTube API scan complete: {len(videos)} videos for {channel.title}")
-            else:
-                # API failed - fall back to yt-dlp
-                logger.warning(f"YouTube API failed for {channel.title}: {api_error}, falling back to yt-dlp")
-                channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results)
-                use_api_for_dates = False
-        else:
-            # No API key - use yt-dlp (slower)
-            logger.debug(f"Incremental scan using yt-dlp for {channel.title} (no API key)")
-            channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results)
-            use_api_for_dates = False
+    api_key = settings_manager.get('youtube_api_key')
+    if api_key:
+        # Try YouTube API (much faster - ~1 second vs minutes)
+        logger.debug(f"Incremental scan using YouTube API for {channel.title} (max: {max_results})")
+        api_videos, api_error = scan_channel_videos_api(channel.yt_id, api_key, max_results=max_results)
 
-    logger.debug(f"Fetched up to {max_results} videos for channel: {channel.title}")
+        if api_videos and not api_error:
+            # API success - use API results
+            all_video_ids = set(v['id'] for v in api_videos)
+            logger.info(f"YouTube API scan complete: {len(api_videos)} videos for {channel.title}")
+            return api_videos, all_video_ids, False
 
-    if channel_info is None and len(all_video_ids) == 0:
-        logger.error(f"Failed to scan channel: {channel.title}")
-        clear_operation()
-        raise ValueError(f"Failed to scan channel: {channel.title}")
+        # API failed - fall back to yt-dlp
+        logger.warning(f"YouTube API failed for {channel.title}: {api_error}, falling back to yt-dlp")
 
-    logger.debug(f"Found {len(videos)} total videos for channel: {channel.title}")
+    # No API key or API failed - use yt-dlp (slower)
+    logger.debug(f"Incremental scan using yt-dlp for {channel.title} (no API key)")
+    channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results)
+    return videos, all_video_ids, False
 
-    # Scan channel's /shorts tab to identify shorts
-    shorts_ids = scan_channel_shorts(channel.yt_id)
-    logger.debug(f"Found {len(shorts_ids)} shorts for channel: {channel.title}")
 
-    new_count = 0
-    ignored_count = 0
-    shorts_count = 0
-    existing_count = 0
-    auto_queued_count = 0
-    latest_upload_date = None
+def _process_scanned_videos(session, channel, videos, shorts_ids):
+    """
+    Process scanned videos: check existing, apply filters, add to DB, auto-queue.
+
+    Args:
+        session: SQLAlchemy session
+        channel: Channel object
+        videos: List of video data dicts from scan
+        shorts_ids: Set of video IDs that are shorts
+
+    Returns:
+        dict with counts: new, ignored, shorts, existing, auto_queued, latest_upload_date
+    """
+    counts = {
+        'new': 0,
+        'ignored': 0,
+        'shorts': 0,
+        'existing': 0,
+        'auto_queued': 0,
+        'latest_upload_date': None
+    }
 
     total_videos = len(videos)
     logger.debug(f"Processing {total_videos} videos for channel '{channel.title}'")
 
     for idx, video_data in enumerate(videos, 1):
-        # Note: Per-video progress updates removed - too fast for frontend polling
-
         # Track the latest upload date found
         if video_data['upload_date']:
             upload_dt = datetime.strptime(video_data['upload_date'], '%Y%m%d')
-            if latest_upload_date is None or upload_dt > latest_upload_date:
-                latest_upload_date = upload_dt
+            if counts['latest_upload_date'] is None or upload_dt > counts['latest_upload_date']:
+                counts['latest_upload_date'] = upload_dt
 
         # Check if video already exists in database
         existing = session.query(Video).filter(Video.yt_id == video_data['id']).first()
@@ -706,32 +688,18 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
             if video_data['id'] in shorts_ids and existing.status != 'shorts':
                 old_status = existing.status
                 existing.status = 'shorts'
-                shorts_count += 1
+                counts['shorts'] += 1
                 logger.info(f"[{idx}/{total_videos}] Updated to shorts: '{video_data['title']}' (was: {old_status})")
             else:
-                existing_count += 1
+                counts['existing'] += 1
                 logger.debug(f"[{idx}/{total_videos}] Already tracked: '{video_data['title']}'")
             continue
 
         # Log new video found
         logger.info(f"[{idx}/{total_videos}] New video found: '{video_data['title']}'")
 
-        duration_min = video_data['duration_sec'] / 60
-
         # Determine status: check if it's a short first, then duration filters
-        status = 'discovered'
-        if video_data['id'] in shorts_ids:
-            status = 'shorts'
-            shorts_count += 1
-            logger.debug(f"[{idx}/{total_videos}] Short: '{video_data['title']}'")
-        elif channel.min_minutes > 0 and duration_min < channel.min_minutes:
-            status = 'ignored'
-            logger.info(f"[{idx}/{total_videos}] Ignored (too short): '{video_data['title']}' - {duration_min:.1f}m < {channel.min_minutes}m minimum")
-        elif channel.max_minutes > 0 and duration_min > channel.max_minutes:
-            status = 'ignored'
-            logger.info(f"[{idx}/{total_videos}] Ignored (too long): '{video_data['title']}' - {duration_min:.1f}m > {channel.max_minutes}m maximum")
-        else:
-            logger.debug(f"[{idx}/{total_videos}] Discovered: '{video_data['title']}' - {duration_min:.1f}m duration")
+        status = _determine_video_status(channel, video_data, shorts_ids, idx, total_videos)
 
         video = Video(
             yt_id=video_data['id'],
@@ -746,72 +714,172 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         session.flush()  # Get video.id for queue item
 
         # Auto-queue if channel has auto_download enabled and video passed filters
-        logger.debug(f"[{idx}/{total_videos}] Auto-queue check for '{video.title}': status={status}, auto_download={channel.auto_download}")
-        if status == 'discovered' and channel.auto_download:
-            video.status = 'queued'
-            max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
-            queue_item = QueueItem(video_id=video.id, queue_position=max_pos + 1, prior_status='discovered')
-            session.add(queue_item)
-            auto_queued_count += 1
-            logger.info(f"[{idx}/{total_videos}] Auto-queued: '{video.title}' (position {max_pos + 1})")
-        elif status == 'discovered' and not channel.auto_download:
-            logger.debug(f"[{idx}/{total_videos}] NOT auto-queued (auto_download=False): '{video.title}'")
+        if _maybe_auto_queue_video(session, channel, video, status, idx, total_videos):
+            counts['auto_queued'] += 1
 
+        # Update counts
         if status == 'ignored':
-            ignored_count += 1
-        elif status != 'shorts':  # shorts already counted above
-            new_count += 1
-
-    logger.debug(f"Scan results for '{channel.title}': {new_count} new, {ignored_count} ignored, {shorts_count} shorts, {existing_count} already in database")
-
-    # Fetch upload dates via YouTube API for videos missing them (only for full scans)
-    # Always check for missing dates, even if no new videos found (existing videos may be missing dates)
-    if use_api_for_dates:
-        api_key = settings_manager.get('youtube_api_key')
-        if api_key:
-            # Find all videos for this channel that are missing upload_date
-            videos_needing_dates = session.query(Video).filter(
-                Video.channel_id == channel.id,
-                Video.upload_date.is_(None)
-            ).all()
-
-            if videos_needing_dates:
-                logger.info(f"Fetching upload dates for {len(videos_needing_dates)} videos via YouTube API")
-                video_ids = [v.yt_id for v in videos_needing_dates]
-                dates = fetch_video_dates(video_ids, api_key)
-
-                updated_count = 0
-                for video in videos_needing_dates:
-                    if video.yt_id in dates:
-                        video.upload_date = dates[video.yt_id]
-                        updated_count += 1
-
-                        # Update latest_upload_date if this is newer
-                        upload_dt = datetime.strptime(dates[video.yt_id], '%Y%m%d')
-                        if latest_upload_date is None or upload_dt > latest_upload_date:
-                            latest_upload_date = upload_dt
-
-                logger.info(f"Updated upload dates for {updated_count}/{len(videos_needing_dates)} videos")
+            counts['ignored'] += 1
+        elif status == 'shorts':
+            counts['shorts'] += 1
         else:
-            logger.debug("No YouTube API key configured, skipping date fetch")
+            counts['new'] += 1
 
-    # Clean up videos removed from YouTube (only on full scans)
+    logger.debug(f"Scan results for '{channel.title}': {counts['new']} new, {counts['ignored']} ignored, "
+                 f"{counts['shorts']} shorts, {counts['existing']} already in database")
+
+    return counts
+
+
+def _determine_video_status(channel, video_data, shorts_ids, idx, total_videos):
+    """
+    Determine the status for a new video based on shorts detection and duration filters.
+
+    Args:
+        channel: Channel object with min_minutes/max_minutes settings
+        video_data: Video data dict from scan
+        shorts_ids: Set of video IDs that are shorts
+        idx: Current video index (for logging)
+        total_videos: Total videos count (for logging)
+
+    Returns:
+        str: Video status ('discovered', 'shorts', or 'ignored')
+    """
+    duration_min = video_data['duration_sec'] / 60
+
+    if video_data['id'] in shorts_ids:
+        logger.debug(f"[{idx}/{total_videos}] Short: '{video_data['title']}'")
+        return 'shorts'
+
+    if channel.min_minutes > 0 and duration_min < channel.min_minutes:
+        logger.info(f"[{idx}/{total_videos}] Ignored (too short): '{video_data['title']}' - "
+                    f"{duration_min:.1f}m < {channel.min_minutes}m minimum")
+        return 'ignored'
+
+    if channel.max_minutes > 0 and duration_min > channel.max_minutes:
+        logger.info(f"[{idx}/{total_videos}] Ignored (too long): '{video_data['title']}' - "
+                    f"{duration_min:.1f}m > {channel.max_minutes}m maximum")
+        return 'ignored'
+
+    logger.debug(f"[{idx}/{total_videos}] Discovered: '{video_data['title']}' - {duration_min:.1f}m duration")
+    return 'discovered'
+
+
+def _maybe_auto_queue_video(session, channel, video, status, idx, total_videos):
+    """
+    Auto-queue a video if channel has auto_download enabled and video passed filters.
+
+    Args:
+        session: SQLAlchemy session
+        channel: Channel object
+        video: Video object (already added to session)
+        status: Video status
+        idx: Current video index (for logging)
+        total_videos: Total videos count (for logging)
+
+    Returns:
+        bool: True if video was auto-queued, False otherwise
+    """
+    logger.debug(f"[{idx}/{total_videos}] Auto-queue check for '{video.title}': "
+                 f"status={status}, auto_download={channel.auto_download}")
+
+    if status == 'discovered' and channel.auto_download:
+        video.status = 'queued'
+        max_pos = session.query(func.max(QueueItem.queue_position)).scalar() or 0
+        queue_item = QueueItem(video_id=video.id, queue_position=max_pos + 1, prior_status='discovered')
+        session.add(queue_item)
+        logger.info(f"[{idx}/{total_videos}] Auto-queued: '{video.title}' (position {max_pos + 1})")
+        return True
+
+    if status == 'discovered' and not channel.auto_download:
+        logger.debug(f"[{idx}/{total_videos}] NOT auto-queued (auto_download=False): '{video.title}'")
+
+    return False
+
+
+def _fetch_missing_upload_dates(session, channel, latest_upload_date):
+    """
+    Fetch upload dates via YouTube API for videos missing them.
+
+    Args:
+        session: SQLAlchemy session
+        channel: Channel object
+        latest_upload_date: Current latest upload date (may be updated)
+
+    Returns:
+        datetime or None: Updated latest_upload_date if newer dates found
+    """
+    api_key = settings_manager.get('youtube_api_key')
+    if not api_key:
+        logger.debug("No YouTube API key configured, skipping date fetch")
+        return latest_upload_date
+
+    # Find all videos for this channel that are missing upload_date
+    videos_needing_dates = session.query(Video).filter(
+        Video.channel_id == channel.id,
+        Video.upload_date.is_(None)
+    ).all()
+
+    if not videos_needing_dates:
+        return latest_upload_date
+
+    logger.info(f"Fetching upload dates for {len(videos_needing_dates)} videos via YouTube API")
+    video_ids = [v.yt_id for v in videos_needing_dates]
+    dates = fetch_video_dates(video_ids, api_key)
+
+    updated_count = 0
+    for video in videos_needing_dates:
+        if video.yt_id in dates:
+            video.upload_date = dates[video.yt_id]
+            updated_count += 1
+
+            # Update latest_upload_date if this is newer
+            upload_dt = datetime.strptime(dates[video.yt_id], '%Y%m%d')
+            if latest_upload_date is None or upload_dt > latest_upload_date:
+                latest_upload_date = upload_dt
+
+    logger.info(f"Updated upload dates for {updated_count}/{len(videos_needing_dates)} videos")
+    return latest_upload_date
+
+
+def _mark_removed_videos(session, channel, all_video_ids):
+    """
+    Mark videos not found in scan as 'not_found' (removed from YouTube).
+    Only applies to full scans.
+
+    Args:
+        session: SQLAlchemy session
+        channel: Channel object
+        all_video_ids: Set of all video IDs found in scan
+
+    Returns:
+        int: Number of videos marked as not_found
+    """
+    db_videos = session.query(Video).filter(Video.channel_id == channel.id).all()
+
     not_found_count = 0
-    if force_full:
-        # Find all videos for this channel in DB
-        db_videos = session.query(Video).filter(Video.channel_id == channel.id).all()
-
-        # Mark videos not found in scan as 'not_found' (except library videos)
+    for db_video in db_videos:
+        # Don't mark library videos as not_found (user has the file)
         # Uses all_video_ids which includes shorts, so we don't incorrectly mark shorts as not_found
-        for db_video in db_videos:
-            if db_video.yt_id not in all_video_ids and db_video.status != 'library':
-                db_video.status = 'not_found'
-                not_found_count += 1
-                logger.info(f"Marked as not found (removed from YouTube): '{db_video.title}'")
+        if db_video.yt_id not in all_video_ids and db_video.status != 'library':
+            db_video.status = 'not_found'
+            not_found_count += 1
+            logger.info(f"Marked as not found (removed from YouTube): '{db_video.title}'")
 
-        if not_found_count > 0:
-            logger.info(f"Marked {not_found_count} video(s) as 'not_found' (removed from YouTube)")
+    if not_found_count > 0:
+        logger.info(f"Marked {not_found_count} video(s) as 'not_found' (removed from YouTube)")
 
+    return not_found_count
+
+
+def _update_channel_timestamps(channel, latest_upload_date):
+    """
+    Update channel's last_scan_at and last_scan_time timestamps.
+
+    Args:
+        channel: Channel object
+        latest_upload_date: datetime of most recent video upload found
+    """
     # Update last scan time to the latest video upload date found
     # This ensures the next scan picks up from the last video, not the scan time
     if latest_upload_date:
@@ -826,6 +894,17 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
     channel.last_scan_time = datetime.now(timezone.utc)
     logger.debug(f"Updated last_scan_time for '{channel.title}' to now")
 
+
+def _finalize_scan(session, new_count, ignored_count, auto_queued_count):
+    """
+    Finalize scan: set discovery flag, emit SSE event, auto-resume downloader.
+
+    Args:
+        session: SQLAlchemy session
+        new_count: Number of new videos discovered
+        ignored_count: Number of videos ignored
+        auto_queued_count: Number of videos auto-queued
+    """
     # Log scan summary at INFO level
     if new_count == 0 and ignored_count == 0 and auto_queued_count == 0:
         logger.info("Scan complete. No new videos found")
@@ -834,14 +913,12 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
 
     # Set flag to notify frontend about new discovered videos (trigger auto-sort)
     if new_count > 0:
-        # Use existing session to avoid database locking issues
         setting = session.query(Setting).filter(Setting.key == 'new_discoveries_flag').first()
         if setting:
             setting.value = 'true'
         else:
             setting = Setting(key='new_discoveries_flag', value='true')
             session.add(setting)
-        # Don't commit here - the outer context manager will handle it
         logger.debug(f"Set new_discoveries_flag due to {new_count} discovered videos")
 
     # Emit SSE event to refresh videos/channels in real-time
@@ -853,10 +930,65 @@ def _execute_channel_scan(session, channel, force_full=False, current_num=0, tot
         download_worker.resume()
         logger.info(f"Auto-resumed download worker after auto-queueing {auto_queued_count} video(s) from scan")
 
+
+# =============================================================================
+# Main Channel Scan Function
+# =============================================================================
+
+def _execute_channel_scan(session, channel, force_full=False, current_num=0, total_num=0):
+    """
+    Execute a channel scan. Orchestrates the scan workflow using helper functions.
+
+    Args:
+        session: SQLAlchemy session
+        channel: Channel object to scan
+        force_full: Boolean, if True does full scan, otherwise incremental
+        current_num: Current channel number in batch (for progress display)
+        total_num: Total channels in batch (for progress display)
+
+    Returns:
+        dict with 'new_videos', 'ignored_videos', and 'auto_queued' counts
+    """
+    logger.info(f"Starting scan for channel: {channel.title} (id: {channel.id})")
+
+    # Step 1: Fetch videos from YouTube
+    videos, all_video_ids, use_api_for_dates = _fetch_videos_for_scan(channel, force_full)
+
+    if not videos and not all_video_ids:
+        logger.error(f"Failed to scan channel: {channel.title}")
+        clear_operation()
+        raise ValueError(f"Failed to scan channel: {channel.title}")
+
+    logger.debug(f"Found {len(videos)} total videos for channel: {channel.title}")
+
+    # Step 2: Scan channel's /shorts tab to identify shorts
+    # (API scans return all videos including shorts; we filter them here)
+    shorts_ids = scan_channel_shorts(channel.yt_id)
+    logger.debug(f"Found {len(shorts_ids)} shorts for channel: {channel.title}")
+
+    # Step 3: Process videos (check existing, apply filters, add to DB, auto-queue)
+    counts = _process_scanned_videos(session, channel, videos, shorts_ids)
+
+    # Step 4: Fetch missing upload dates via API (only for full scans using flat-playlist)
+    if use_api_for_dates:
+        counts['latest_upload_date'] = _fetch_missing_upload_dates(
+            session, channel, counts['latest_upload_date']
+        )
+
+    # Step 5: Mark removed videos as not_found (only for full scans)
+    if force_full:
+        _mark_removed_videos(session, channel, all_video_ids)
+
+    # Step 6: Update channel timestamps
+    _update_channel_timestamps(channel, counts['latest_upload_date'])
+
+    # Step 7: Finalize (set flags, emit events, auto-resume)
+    _finalize_scan(session, counts['new'], counts['ignored'], counts['auto_queued'])
+
     return {
-        'new_videos': new_count,
-        'ignored_videos': ignored_count,
-        'auto_queued': auto_queued_count
+        'new_videos': counts['new'],
+        'ignored_videos': counts['ignored'],
+        'auto_queued': counts['auto_queued']
     }
 
 def queue_channel_scan(channel_id, force_full=False, reset_counters=False, is_batch_start=False, is_auto_scan=False, batch_label=''):
@@ -877,42 +1009,45 @@ def queue_channel_scan(channel_id, force_full=False, reset_counters=False, is_ba
     global scan_total_channels, scan_current_channel, scan_last_queue_time
     import time
 
-    # Check if already in queue by examining all pending items
-    queue_items = list(scan_queue.queue)
-    for item in queue_items:
-        if item['channel_id'] == channel_id:
-            logger.debug(f"Channel {channel_id} already in scan queue, skipping")
-            return False
+    # Use lock to prevent race condition where two threads both check queue,
+    # both see channel is not queued, and both add it (resulting in duplicate scan)
+    with scan_queue_lock:
+        # Check if already in queue by examining all pending items
+        queue_items = list(scan_queue.queue)
+        for item in queue_items:
+            if item['channel_id'] == channel_id:
+                logger.debug(f"Channel {channel_id} already in scan queue, skipping")
+                return False
 
-    # Try to acquire batch lock if this is the start of a batch
-    if is_batch_start:
-        lock_result = acquire_scan_batch_lock(is_auto_scan, batch_label)
-        if lock_result != True:
-            return lock_result  # Returns 'pending' or False
+        # Try to acquire batch lock if this is the start of a batch
+        if is_batch_start:
+            lock_result = acquire_scan_batch_lock(is_auto_scan, batch_label)
+            if lock_result != True:
+                return lock_result  # Returns 'pending' or False
 
-    current_time = time.time()
-    time_since_last_queue = current_time - scan_last_queue_time
+        current_time = time.time()
+        time_since_last_queue = current_time - scan_last_queue_time
 
-    # Reset counters if:
-    # 1. Explicitly requested, OR
-    # 2. Queue is empty AND it's been >3 seconds since last queue (new batch, not rapid queueing)
-    should_reset = reset_counters or (scan_queue.empty() and time_since_last_queue > 3)
+        # Reset counters if:
+        # 1. Explicitly requested, OR
+        # 2. Queue is empty AND it's been >3 seconds since last queue (new batch, not rapid queueing)
+        should_reset = reset_counters or (scan_queue.empty() and time_since_last_queue > SCAN_QUEUE_RESET_DELAY)
 
-    if should_reset:
-        if scan_total_channels > 0 or scan_current_channel > 0:
-            logger.debug(f"Resetting scan counters (was {scan_current_channel}/{scan_total_channels})")
-        scan_total_channels = 0
-        scan_current_channel = 0
+        if should_reset:
+            if scan_total_channels > 0 or scan_current_channel > 0:
+                logger.debug(f"Resetting scan counters (was {scan_current_channel}/{scan_total_channels})")
+            scan_total_channels = 0
+            scan_current_channel = 0
 
-    # Add to queue and increment total
-    scan_queue.put({
-        'channel_id': channel_id,
-        'force_full': force_full
-    })
-    scan_total_channels += 1
-    scan_last_queue_time = current_time
-    logger.debug(f"Added channel {channel_id} to scan queue (force_full={force_full}) - Total queued: {scan_total_channels}")
-    return True
+        # Add to queue and increment total
+        scan_queue.put({
+            'channel_id': channel_id,
+            'force_full': force_full
+        })
+        scan_total_channels += 1
+        scan_last_queue_time = current_time
+        logger.debug(f"Added channel {channel_id} to scan queue (force_full={force_full}) - Total queued: {scan_total_channels}")
+        return True
 
 # Initialize scheduler with operation tracking callbacks and scan queue function
 scheduler = AutoRefreshScheduler(session_factory, download_worker, settings_manager, set_operation, clear_operation, queue_channel_scan)

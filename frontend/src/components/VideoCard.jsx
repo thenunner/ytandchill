@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDeleteVideo, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
+import { getUserFriendlyError } from '../utils/errorMessages';
 import { getTextSizes } from '../utils/gridUtils';
 import { formatDuration } from '../utils/videoPlayerUtils';
 import { formatDate, formatDateTime, formatFileSize } from '../utils/formatters';
@@ -46,7 +47,7 @@ export default function VideoCard({
       setShowMenu(false);
       setShowDeleteConfirm(false);
     } catch (error) {
-      showNotification(error.message || 'Failed to delete video', 'error');
+      showNotification(getUserFriendlyError(error.message, 'delete video'), 'error');
     }
   };
 
@@ -327,27 +328,12 @@ export default function VideoCard({
           </>
         )}
 
-        {/* Selection Checkbox - Top Right */}
-        {/* In edit mode: always show circular badge (empty when not selected, check when selected) */}
-        {/* Otherwise: only show checkmark when selected */}
-        {editMode ? (
-          <div className={`absolute top-2 right-2 rounded-full p-1.5 shadow-lg z-10 transition-colors ${
-            isSelected
-              ? 'bg-accent'
-              : 'bg-black/60 border-2 border-white/50'
-          }`}>
-            {isSelected ? (
-              <CheckmarkIcon className="w-4 h-4 text-white" strokeWidth="3" />
-            ) : (
-              <div className="w-4 h-4" />
-            )}
+        {/* Selection Indicator - Top Right */}
+        {/* Only show when selected (accent background with checkmark) */}
+        {isSelected && onToggleSelect && (
+          <div className="absolute top-2 right-2 bg-accent rounded-full p-1.5 shadow-lg z-10">
+            <CheckmarkIcon className="w-4 h-4 text-white" strokeWidth="3" />
           </div>
-        ) : (
-          isSelected && onToggleSelect && (
-            <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
-              <CheckmarkIcon className="w-4 h-4 text-accent-text" strokeWidth="3" />
-            </div>
-          )
         )}
 
         {/* Status Badge - For non-library videos (channels view) */}
@@ -369,19 +355,6 @@ export default function VideoCard({
           </div>
         )}
 
-        {/* WATCHED badge - top left overlay (library videos only) */}
-        {isDownloaded && video.watched && (
-          <div className={`absolute top-2 left-2 bg-black/80 text-white px-2 py-0.5 rounded ${textSizes.badge} font-semibold`}>
-            WATCHED
-          </div>
-        )}
-
-        {/* PLAYLIST badge - bottom left overlay (when video is in playlists) */}
-        {video.playlist_ids && video.playlist_ids.length > 0 && (
-          <div className={`absolute bottom-1 left-1 bg-green-600/90 text-white px-1.5 py-0.5 rounded ${textSizes.badge} font-semibold`}>
-            PLAYLIST
-          </div>
-        )}
       </div>
 
       {/* Content */}
@@ -472,8 +445,8 @@ export default function VideoCard({
 
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
-          // Library view: date (uploaded or downloaded based on setting) • size
-          <div className={`${textSizes.metadata} text-text-secondary font-medium`}>
+          // Library view: date (uploaded or downloaded based on setting) • size • badges
+          <div className={`${textSizes.metadata} text-text-secondary font-medium flex items-center gap-1 flex-wrap`}>
             <span>
               {(() => {
                 const dateDisplay = getStringSetting(settings, 'library_date_display', 'downloaded');
@@ -481,8 +454,22 @@ export default function VideoCard({
                   return formatDate(video.upload_date);
                 }
                 return formatDateTime(video.downloaded_at);
-              })()} • {formatFileSize(video.file_size_bytes)}
+              })()}
             </span>
+            <span>•</span>
+            <span>{formatFileSize(video.file_size_bytes)}</span>
+            {video.watched && (
+              <>
+                <span>•</span>
+                <span className="text-text-muted uppercase">Watched</span>
+              </>
+            )}
+            {video.playlist_ids && video.playlist_ids.length > 0 && (
+              <>
+                <span>•</span>
+                <span className="text-green-500 uppercase">Playlist</span>
+              </>
+            )}
           </div>
         ) : (
           // Channel view: just upload date (duration is now with title)
