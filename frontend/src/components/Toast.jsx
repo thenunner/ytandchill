@@ -9,12 +9,16 @@ export default function Toast() {
 
   if (!toasts || toasts.length === 0) return null;
 
-  const handleDismiss = (toastId) => {
+  const handleDismiss = (toast) => {
+    // Call onDismiss callback if provided (for tracking user dismissals)
+    if (toast.onDismiss) {
+      toast.onDismiss(toast.id);
+    }
     // Remove locally
-    removeToast(toastId);
+    removeToast(toast.id);
     // Broadcast to other devices if this is a syncable toast
-    if (SYNC_TOAST_IDS.includes(toastId)) {
-      api.dismissToast(toastId).catch(() => {});
+    if (SYNC_TOAST_IDS.includes(toast.id)) {
+      api.dismissToast(toast.id).catch(() => {});
     }
   };
 
@@ -26,7 +30,7 @@ export default function Toast() {
       aria-atomic="true"
     >
       {toasts.map((toast) => (
-        <ToastItem key={toast.id} toast={toast} onDismiss={() => handleDismiss(toast.id)} />
+        <ToastItem key={toast.id} toast={toast} onDismiss={() => handleDismiss(toast)} />
       ))}
     </div>
   );

@@ -17,7 +17,7 @@ export function NotificationProvider({ children }) {
       duration = null, // Custom duration in ms
       id = null, // Optional ID for updates (e.g., progress)
       progress = null, // Progress data for download toasts
-      noDismiss = false, // If true, toast cannot be manually dismissed (only programmatically)
+      onDismiss = null, // Callback when user dismisses this toast
     } = options;
 
     // Default durations by type
@@ -41,12 +41,12 @@ export function NotificationProvider({ children }) {
       const existingIndex = prev.findIndex(t => t.id === toastIdToUse);
       if (existingIndex !== -1) {
         const updated = [...prev];
-        updated[existingIndex] = { ...updated[existingIndex], message, type, progress, persistent: isPersistent };
+        updated[existingIndex] = { ...updated[existingIndex], message, type, progress, persistent: isPersistent, onDismiss };
         return updated;
       }
 
       // Add new toast - preserve persistent toasts, limit non-persistent to max 3
-      const newToast = { id: toastIdToUse, message, type, progress, persistent: isPersistent };
+      const newToast = { id: toastIdToUse, message, type, progress, persistent: isPersistent, onDismiss };
       const persistentToasts = prev.filter(t => t.persistent);
       const nonPersistentToasts = prev.filter(t => !t.persistent);
 
