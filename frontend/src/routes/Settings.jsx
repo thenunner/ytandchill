@@ -150,6 +150,7 @@ export default function Settings() {
   // Global hide settings (synced to backend)
   const [hideWatched, setHideWatched] = useState(false);
   const [hidePlaylisted, setHidePlaylisted] = useState(false);
+  const [hideEmptyChannels, setHideEmptyChannels] = useState(false);
 
   // Default playback speed
   const [defaultPlaybackSpeed, setDefaultPlaybackSpeed] = useState('1');
@@ -277,6 +278,7 @@ export default function Settings() {
       // Synced user preferences
       setHideWatched(settings.hide_watched === 'true');
       setHidePlaylisted(settings.hide_playlisted === 'true');
+      setHideEmptyChannels(settings.hide_empty_channels === 'true');
       setLibraryDateDisplay(settings.library_date_display || 'downloaded');
       setGlobalItemsPerPage(Number(settings.items_per_page) || 50);
     }
@@ -1092,6 +1094,33 @@ export default function Settings() {
                     showNotification(newValue ? 'Playlisted videos will be hidden' : 'Playlisted videos will be shown', 'success');
                   } catch {
                     setHidePlaylisted(!newValue);
+                    showNotification('Failed to save setting', 'error');
+                  }
+                }}
+              />
+              <span className="toggle-slider" />
+            </label>
+          </div>
+
+          <div className="setting-row">
+            <div className="setting-label">
+              <div>
+                <div className="setting-name">Hide Empty Channels</div>
+                <div className="setting-desc">Hide channels with no library videos from sidebar favorites</div>
+              </div>
+            </div>
+            <label className="toggle-switch">
+              <input
+                type="checkbox"
+                checked={hideEmptyChannels}
+                onChange={async (e) => {
+                  const newValue = e.target.checked;
+                  setHideEmptyChannels(newValue);
+                  try {
+                    await updateSettings.mutateAsync({ hide_empty_channels: newValue ? 'true' : 'false' });
+                    showNotification(newValue ? 'Empty channels will be hidden from favorites' : 'Empty channels will be shown in favorites', 'success');
+                  } catch {
+                    setHideEmptyChannels(!newValue);
                     showNotification('Failed to save setting', 'error');
                   }
                 }}
