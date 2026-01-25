@@ -48,6 +48,7 @@ export function useVideoJsPlayer({
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
   const lastVideoElementRef = useRef(null); // Track the actual DOM element
+  const sponsorBlockSkipCooldownRef = useRef(0); // Prevent rapid re-skipping
 
   // Keep refs up to date
   useEffect(() => {
@@ -595,6 +596,31 @@ export function useVideoJsPlayer({
         hasMarkedWatchedRef.current = true;
         if (onWatched) {
           onWatched();
+        }
+      }
+    });
+
+    // SponsorBlock segment skipping during playback
+    player.on('timeupdate', () => {
+      if (!player || player.seeking() || player.paused()) return;
+
+      const sponsorSegments = videoDataRef.current?.sponsorblock_segments || [];
+      if (sponsorSegments.length === 0) return;
+
+      const currentTime = player.currentTime();
+      const now = Date.now();
+
+      // Skip cooldown: don't skip again within 2 seconds of last skip
+      if (now - sponsorBlockSkipCooldownRef.current < 2000) return;
+
+      // Check if we're inside any sponsor segment
+      for (const segment of sponsorSegments) {
+        // Skip if we're past the start and before (end - 0.5s buffer)
+        if (currentTime >= segment.start && currentTime < segment.end - 0.5) {
+          console.log(`[SponsorBlock] Skipping ${segment.category}: ${segment.start.toFixed(1)}s -> ${segment.end.toFixed(1)}s`);
+          player.currentTime(segment.end);
+          sponsorBlockSkipCooldownRef.current = now;
+          break;
         }
       }
     });

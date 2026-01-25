@@ -566,9 +566,12 @@ def serialize_channel(channel):
         'downloaded_count': downloaded_count,
         'ignored_count': ignored_count,
         'new_video_count': new_video_count,
+        'newVideoCount': new_video_count,  # Alias for frontend consistency
+        'has_new_videos': new_video_count > 0,  # Boolean for favorites sidebar
         'last_visited_at': channel.last_visited_at.replace(tzinfo=timezone.utc).isoformat() if channel.last_visited_at else None,
         'category_id': channel.category_id,
-        'category_name': channel.category.name if channel.category else None
+        'category_name': channel.category.name if channel.category else None,
+        'is_favorite': channel.is_favorite or False
     }
 
 def format_scan_status_date(datetime_obj=None, yyyymmdd_string=None):
@@ -1079,6 +1082,15 @@ def serialize_video(video):
         local_path = f"{folder}/{video.yt_id}.jpg"
         thumb_url = f"/api/media/{local_path}"
 
+    # Parse SponsorBlock segments from JSON
+    sponsorblock_segments = []
+    if video.sponsorblock_segments:
+        try:
+            import json
+            sponsorblock_segments = json.loads(video.sponsorblock_segments)
+        except:
+            pass
+
     return {
         'id': video.id,
         'yt_id': video.yt_id,
@@ -1098,7 +1110,8 @@ def serialize_video(video):
         'downloaded_at': video.downloaded_at.isoformat() if video.downloaded_at else None,
         'playlist_names': playlist_names,  # List of playlist names this video belongs to
         'playlist_ids': playlist_ids,  # List of playlist IDs this video belongs to
-        'playlist_name': playlist_names[0] if playlist_names else None  # First playlist name for backward compatibility
+        'playlist_name': playlist_names[0] if playlist_names else None,  # First playlist name for backward compatibility
+        'sponsorblock_segments': sponsorblock_segments,  # Segments to skip during playback
     }
 
 def serialize_category(category):

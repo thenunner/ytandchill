@@ -274,6 +274,52 @@ class DownloadWorker:
             session.add(setting)
         # Don't commit here - let the caller handle the transaction
 
+    def _fetch_sponsorblock_segments(self, video_yt_id, categories):
+        """
+        Fetch SponsorBlock segments from API for playback-time skipping.
+
+        Args:
+            video_yt_id: YouTube video ID
+            categories: List of categories to fetch (e.g., ['sponsor', 'selfpromo'])
+
+        Returns:
+            List of segment dicts with start, end, category keys, or empty list
+        """
+        import requests
+        import json
+
+        if not categories:
+            return []
+
+        try:
+            # SponsorBlock API endpoint
+            url = f"https://sponsor.ajay.app/api/skipSegments?videoID={video_yt_id}&categories={json.dumps(categories)}"
+            response = requests.get(url, timeout=10)
+
+            if response.status_code == 200:
+                segments = response.json()
+                # Convert to simplified format
+                result = [
+                    {
+                        "start": seg["segment"][0],
+                        "end": seg["segment"][1],
+                        "category": seg["category"]
+                    }
+                    for seg in segments
+                ]
+                logger.info(f'Fetched {len(result)} SponsorBlock segments for {video_yt_id}')
+                return result
+            elif response.status_code == 404:
+                # No segments for this video (common case)
+                logger.debug(f'No SponsorBlock segments found for {video_yt_id}')
+                return []
+            else:
+                logger.warning(f'SponsorBlock API returned {response.status_code} for {video_yt_id}')
+                return []
+        except Exception as e:
+            logger.warning(f'Failed to fetch SponsorBlock segments for {video_yt_id}: {e}')
+            return []
+
     def _cleanup_failed_video(self, session, video, queue_item, channel_dir, reason):
         """
         Cleanup files and set video to removed status (permanent error).
@@ -712,36 +758,9 @@ class DownloadWorker:
             # Fallback for unknown values (shouldn't happen)
             logger.warning(f'Unknown cookie_source: {cookie_source}, using anonymous access')
 
-        # Add SponsorBlock if enabled
-        # Note: Must add postprocessors explicitly when using yt-dlp Python API
-        # The sponsorblock_remove option alone doesn't work - need SponsorBlock PP to fetch
-        # segment data, then ModifyChapters PP to remove them
-        try:
-            sponsorblock_categories = self.settings_manager.get_sponsorblock_categories()
-
-            # Check if we should skip SponsorBlock for long videos (60+ minutes)
-            skip_long = self.settings_manager.get('sponsorblock_skip_long', 'false') == 'true'
-            is_long_video = video_duration_sec and video_duration_sec >= 3600  # 60 minutes
-
-            if sponsorblock_categories and skip_long and is_long_video:
-                logger.info(f'SponsorBlock disabled for this video ({video_duration_sec // 60}min) - skip_long setting enabled')
-            elif sponsorblock_categories:
-                # Add SponsorBlock postprocessor to fetch segment data from API
-                ydl_opts['postprocessors'].append({
-                    'key': 'SponsorBlock',
-                    'categories': sponsorblock_categories,
-                    'api': 'https://sponsor.ajay.app',
-                })
-                # Add ModifyChapters postprocessor to remove the segments
-                # force_keyframes ensures re-encoding at cut points for proper A/V sync
-                ydl_opts['postprocessors'].append({
-                    'key': 'ModifyChapters',
-                    'remove_sponsor_segments': sponsorblock_categories,
-                    'force_keyframes': True,
-                })
-                logger.info(f'SponsorBlock enabled - removing categories: {", ".join(sponsorblock_categories)}')
-        except Exception as sb_error:
-            logger.warning(f'Failed to load SponsorBlock settings: {sb_error}')
+        # SponsorBlock: We fetch segments from API after download (not during)
+        # Segments are stored in the database and skipped during playback
+        # This avoids re-encoding which caused A/V desync issues
 
         # Add subtitles if enabled
         if self.settings_manager.get('download_subtitles', 'false') == 'true':
@@ -993,6 +1012,18 @@ class DownloadWorker:
             folder_display = channel.folder_name if channel else f"Singles/{video.folder_name or 'Uncategorized'}"
             logger.info(f'Download complete: {video.title[:50]} ({size_mb:.1f} MB) - saved to {folder_display}/')
             logger.debug(f'File path: {video_file_path}')
+
+            # Fetch and store SponsorBlock segments for playback-time skipping
+            try:
+                sponsorblock_categories = self.settings_manager.get_sponsorblock_categories()
+                if sponsorblock_categories:
+                    import json
+                    segments = self._fetch_sponsorblock_segments(video.yt_id, sponsorblock_categories)
+                    if segments:
+                        video.sponsorblock_segments = json.dumps(segments)
+                        logger.info(f'Stored {len(segments)} SponsorBlock segments for playback skipping')
+            except Exception as sb_error:
+                logger.warning(f'Failed to fetch SponsorBlock segments: {sb_error}')
 
             # Delete queue item - download complete (with explicit error handling to prevent orphans)
             try:

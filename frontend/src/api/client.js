@@ -75,6 +75,21 @@ class APIClient {
     });
   }
 
+  toggleChannelFavorite(id) {
+    return this.request(`/channels/${id}/favorite`, {
+      method: 'POST',
+    });
+  }
+
+  getFavoriteChannels() {
+    return this.request('/channels/favorites');
+  }
+
+  getFavoriteVideos(channelId = null) {
+    const params = channelId ? `?channel_id=${channelId}` : '';
+    return this.request(`/channels/favorites/videos${params}`);
+  }
+
   scanChannel(id, forceFull = false, isBatchStart = false, isAutoScan = false, batchLabel = '') {
     return this.request(`/channels/${id}/scan`, {
       method: 'POST',
