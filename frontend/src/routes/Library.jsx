@@ -185,6 +185,9 @@ export default function Library() {
   // Store random seed per mount - changes only on navigation, not on data refetch
   const randomSeedRef = useRef(Math.random());
 
+  // Check if we should show empty channels
+  const hideEmptyChannels = settings?.hide_empty_channels === 'true';
+
   // Apply random thumbnail selection using stable seed
   const allChannelsList = useMemo(() => {
     // Create a lookup map for channels data (for new_video_count)
@@ -193,7 +196,15 @@ export default function Library() {
       return acc;
     }, {});
 
-    return channelFolders.map((folder, index) => {
+    // Track which channel IDs have videos
+    const channelIdsWithVideos = new Set(
+      channelFolders
+        .filter(f => !f.isPlaylistFolder)
+        .map(f => f.id)
+    );
+
+    // Process channels that have videos
+    const foldersWithVideos = channelFolders.map((folder, index) => {
       // Combine seed with folder index for unique random per folder
       const randomIndex = Math.floor((randomSeedRef.current * (index + 1) * 9999) % folder.videos.length);
       const randomVideo = folder.videos[randomIndex];
@@ -207,7 +218,30 @@ export default function Library() {
         is_favorite: channelData?.is_favorite || false,
       };
     });
-  }, [channelFolders, channelsData]);
+
+    // If hide_empty_channels is OFF, add channels that have no videos
+    if (!hideEmptyChannels && channelsData) {
+      const emptyChannels = channelsData
+        .filter(ch => !channelIdsWithVideos.has(ch.id))
+        .map(ch => ({
+          id: ch.id,
+          title: ch.title,
+          isPlaylistFolder: false,
+          videoCount: 0,
+          totalSizeBytes: 0,
+          videos: [],
+          watchedCount: 0,
+          lastAddedAt: null,
+          thumbnail: ch.thumbnail,  // Use channel thumbnail
+          allWatched: true,  // No videos = all watched
+          newVideoCount: ch.new_video_count || 0,
+          is_favorite: ch.is_favorite || false,
+        }));
+      return [...foldersWithVideos, ...emptyChannels];
+    }
+
+    return foldersWithVideos;
+  }, [channelFolders, channelsData, hideEmptyChannels]);
 
   // Filter and sort channels based on search input (only actual channel folders, not singles)
   const channelsList = useMemo(() => {
