@@ -439,7 +439,7 @@ def fetch_channel_videos_ytdlp(channel_url):
     }
 
     # Add cookies if configured
-    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'cookies.txt')
     if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
         ydl_opts['cookiefile'] = cookies_path
 
@@ -567,7 +567,7 @@ def identify_video_by_id(video_id):
     }
 
     # Add cookies if available
-    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'cookies.txt')
     if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
         ydl_opts['cookiefile'] = cookies_path
 
@@ -607,7 +607,7 @@ def _execute_youtube_search(search_query, num_results=20):
     }
 
     # Add cookies if available
-    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'backend', 'cookies.txt')
+    cookies_path = os.path.join(os.environ.get('DATA_DIR', '/appdata/data'), 'cookies.txt')
     if os.path.exists(cookies_path) and os.path.getsize(cookies_path) > 0:
         ydl_opts['cookiefile'] = cookies_path
 
