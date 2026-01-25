@@ -13,6 +13,7 @@ Handles:
 from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
 from sqlalchemy import or_, and_
+from datetime import datetime, timezone
 import logging
 import os
 
@@ -41,6 +42,68 @@ def init_video_tools_routes(session_factory, limiter, serialize_video):
 # =============================================================================
 # Video Endpoints
 # =============================================================================
+
+@video_tools_bp.route('/api/videos/watch-history', methods=['GET'])
+def get_watch_history():
+    """Get videos sorted by last_watched_at (most recent first)"""
+    with get_session(_session_factory) as session:
+        # Parse query parameters
+        channel_id = request.args.get('channel_id', type=int)
+        search = request.args.get('search')
+
+        # Import PlaylistVideo for joinedload
+        from database import PlaylistVideo, Playlist
+        from sqlalchemy.orm import outerjoin
+
+        query = session.query(Video).options(
+            joinedload(Video.channel),
+            joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
+        )
+
+        # Only include videos with last_watched_at set and library status
+        query = query.filter(
+            Video.last_watched_at.isnot(None),
+            Video.status == 'library'
+        )
+
+        # Use outer join to include videos even if channel is missing
+        # Filter out videos from deleted channels (but keep videos with no channel or active channel)
+        query = query.outerjoin(Channel, Video.channel_id == Channel.id)
+        query = query.filter(
+            or_(
+                Video.channel_id.is_(None),  # No channel (shouldn't happen but safe)
+                Channel.deleted_at.is_(None)  # Channel not deleted
+            )
+        )
+
+        if channel_id:
+            query = query.filter(Video.channel_id == channel_id)
+
+        if search:
+            search_terms = search.lower().split()
+            for term in search_terms:
+                query = query.filter(Video.title.ilike(f'%{term}%'))
+
+        videos = query.order_by(Video.last_watched_at.desc()).all()
+        result = [_serialize_video(v) for v in videos]
+
+        return jsonify(result)
+
+
+@video_tools_bp.route('/api/videos/watch-history/clear', methods=['POST'])
+def clear_watch_history():
+    """Clear all watch history by setting last_watched_at to NULL"""
+    with get_session(_session_factory) as session:
+        # Update all videos to clear last_watched_at
+        updated = session.query(Video).filter(
+            Video.last_watched_at.isnot(None)
+        ).update({Video.last_watched_at: None}, synchronize_session=False)
+
+        session.commit()
+        logger.info(f"Cleared watch history for {updated} videos")
+
+        return jsonify({'cleared': updated})
+
 
 @video_tools_bp.route('/api/videos', methods=['GET'])
 def get_videos():
@@ -158,9 +221,16 @@ def update_video(video_id):
         if 'watched' in data:
             video.watched = data['watched']
             changes.append(f"watched={data['watched']}")
+            # Update last_watched_at when marking as watched (for watch history)
+            if data['watched']:
+                video.last_watched_at = datetime.now(timezone.utc)
+                changes.append("last_watched_at updated")
         if 'playback_seconds' in data:
             video.playback_seconds = data['playback_seconds']
             changes.append(f"playback={data['playback_seconds']}s")
+            # Update last_watched_at whenever playback position is saved
+            video.last_watched_at = datetime.now(timezone.utc)
+            changes.append("last_watched_at updated")
         if 'status' in data:
             old_status = video.status
             video.status = data['status']

@@ -1112,6 +1112,7 @@ def serialize_video(video):
         'playlist_ids': playlist_ids,  # List of playlist IDs this video belongs to
         'playlist_name': playlist_names[0] if playlist_names else None,  # First playlist name for backward compatibility
         'sponsorblock_segments': sponsorblock_segments,  # Segments to skip during playback
+        'last_watched_at': video.last_watched_at.isoformat() if video.last_watched_at else None,
     }
 
 def serialize_category(category):

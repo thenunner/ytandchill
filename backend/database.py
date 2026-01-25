@@ -47,6 +47,7 @@ class Video(Base):
     status = Column(String(20), default='discovered', index=True)  # discovered, queued, downloading, library, ignored, geoblocked, shorts, not_found
     watched = Column(Boolean, default=False, index=True)
     playback_seconds = Column(Integer, default=0)
+    last_watched_at = Column(DateTime, nullable=True, index=True)  # When video was last played
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     downloaded_at = Column(DateTime)
     folder_name = Column(String(200), nullable=True)  # For playlist videos (when channel_id is NULL)
@@ -155,6 +156,11 @@ def init_db(database_url=None):
         video_columns = [row[1] for row in result]
         if 'sponsorblock_segments' not in video_columns:
             conn.execute(text("ALTER TABLE videos ADD COLUMN sponsorblock_segments TEXT"))
+            conn.commit()
+
+        # Add last_watched_at column for watch history
+        if 'last_watched_at' not in video_columns:
+            conn.execute(text("ALTER TABLE videos ADD COLUMN last_watched_at DATETIME"))
             conn.commit()
 
     # Initialize default settings including auth credentials

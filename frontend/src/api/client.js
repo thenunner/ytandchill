@@ -146,6 +146,24 @@ class APIClient {
     });
   }
 
+  // Watch History
+  getWatchHistory(params = {}) {
+    const filteredParams = Object.entries(params).reduce((acc, [key, value]) => {
+      if (value !== null && value !== undefined && value !== '') {
+        acc[key] = value;
+      }
+      return acc;
+    }, {});
+    const query = new URLSearchParams(filteredParams).toString();
+    return this.request(`/videos/watch-history${query ? `?${query}` : ''}`);
+  }
+
+  clearWatchHistory() {
+    return this.request('/videos/watch-history/clear', {
+      method: 'POST',
+    });
+  }
+
   // Categories
   getCategories() {
     return this.request('/categories');
