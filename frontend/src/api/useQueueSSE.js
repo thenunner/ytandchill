@@ -80,6 +80,13 @@ export function useQueueSSE() {
         // Channels need refresh too since they include video counts (needs_review, pending, etc.)
         queryClient.invalidateQueries({ queryKey: ['videos'] });
         queryClient.invalidateQueries({ queryKey: ['channels'] });
+        queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
+      });
+
+      // Listen for channel changes (visited, favorite toggle, etc.)
+      eventSource.addEventListener('channels', (event) => {
+        queryClient.invalidateQueries({ queryKey: ['channels'] });
+        queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
       });
 
       eventSource.onerror = () => {
