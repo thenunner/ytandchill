@@ -136,7 +136,6 @@ export default function Settings() {
   const [removeSponsor, setRemoveSponsor] = useState(false);
   const [removeSelfpromo, setRemoveSelfpromo] = useState(false);
   const [removeInteraction, setRemoveInteraction] = useState(false);
-  const [sponsorblockSkipLong, setSponsorblockSkipLong] = useState(false);
 
   // Library date display preference (synced to backend)
   const [libraryDateDisplay, setLibraryDateDisplay] = useState('downloaded');
@@ -269,7 +268,6 @@ export default function Settings() {
       setRemoveSponsor(settings.sponsorblock_remove_sponsor === 'true');
       setRemoveSelfpromo(settings.sponsorblock_remove_selfpromo === 'true');
       setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
-      setSponsorblockSkipLong(settings.sponsorblock_skip_long === 'true');
       setCookieSource(settings.cookie_source || 'file');
       setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
       setDownloadSubtitles(settings.download_subtitles === 'true');
@@ -839,32 +837,8 @@ export default function Settings() {
           </div>
 
           <div className="setting-row mobile-stack">
-            <div className="setting-label flex items-center gap-2 max-md:w-full">
+            <div className="setting-label">
               <div className="setting-name">SponsorBlock</div>
-              <div className="flex items-center gap-2 max-md:ml-auto">
-              <Tooltip text="Skip SponsorBlock for videos 60 minutes or longer to avoid long re-encoding times">
-                <button
-                  onClick={async () => {
-                    const newValue = !sponsorblockSkipLong;
-                    setSponsorblockSkipLong(newValue);
-                    try {
-                      await updateSettings.mutateAsync({ sponsorblock_skip_long: newValue ? 'true' : 'false' });
-                      showNotification(newValue ? 'SponsorBlock disabled for 60min+ videos' : 'SponsorBlock enabled for all videos', 'success');
-                    } catch {
-                      setSponsorblockSkipLong(!newValue);
-                    }
-                  }}
-                  className={`px-2 py-1 text-xs font-medium rounded border transition-colors ${
-                    sponsorblockSkipLong
-                      ? 'bg-orange-600 border-orange-500 text-white'
-                      : 'bg-dark-primary border-dark-border text-text-muted hover:bg-dark-hover'
-                  }`}
-                >
-                  Disable
-                </button>
-              </Tooltip>
-              <span className="text-xs text-text-muted">60min+ videos</span>
-              </div>
             </div>
             <div className="settings-toggle-group">
               <Tooltip text="Paid promotions and sponsored segments">
