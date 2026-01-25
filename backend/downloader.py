@@ -18,18 +18,42 @@ logger = logging.getLogger(__name__)
 class YtDlpLogger:
     """Custom logger for yt-dlp that routes output to our logging system."""
 
+    # Postprocessor indicators in log messages
+    POSTPROCESS_INDICATORS = [
+        '[Merger]', '[ModifyChapters]', '[SponsorBlock]', '[FFmpegMetadata]',
+        '[FFmpegVideoRemuxer]', '[FFmpegExtractAudio]', '[FFmpegEmbedSubtitle]',
+        '[MoveFiles]', 'Deleting original file', 'Merging formats', 'Re-encoding',
+        'Removing chapters', 'Adding metadata'
+    ]
+
+    def __init__(self, activity_callback=None):
+        """
+        Args:
+            activity_callback: Optional callback(is_postprocessing) called on log activity
+        """
+        self.activity_callback = activity_callback
+
+    def _check_activity(self, msg):
+        """Notify callback of activity, detecting if it's postprocessing."""
+        if self.activity_callback:
+            is_postprocessing = any(indicator in msg for indicator in self.POSTPROCESS_INDICATORS)
+            self.activity_callback(is_postprocessing)
+
     def debug(self, msg):
         # yt-dlp sends most info as debug, log at INFO for visibility
         if msg.startswith('[debug]'):
             logger.debug(f'[yt-dlp] {msg}')
         else:
             logger.info(f'[yt-dlp] {msg}')
+            self._check_activity(msg)
 
     def info(self, msg):
         logger.info(f'[yt-dlp] {msg}')
+        self._check_activity(msg)
 
     def warning(self, msg):
         logger.warning(f'[yt-dlp] {msg}')
+        self._check_activity(msg)
 
     def error(self, msg):
         logger.error(f'[yt-dlp] {msg}')
@@ -37,9 +61,11 @@ class YtDlpLogger:
 
 class DownloadWorker:
     # Timeout constants
-    PROGRESS_TIMEOUT = 120           # 2 minutes of no progress during download
-    POSTPROCESS_TIMEOUT = 900        # 15 minutes for postprocessing (SponsorBlock re-encoding)
+    DOWNLOAD_PROGRESS_TIMEOUT = 120  # 2 minutes of no progress hooks → start file size checking
+    DOWNLOAD_FILESIZE_TIMEOUT = 180  # 3 minutes of no file size change during download → timeout
+    POSTPROCESS_FILESIZE_TIMEOUT = 300  # 5 minutes of no file size change during postprocessing → timeout
     HARD_TIMEOUT = 14400             # 4 hours maximum download time
+    FILESIZE_CHECK_INTERVAL = 30     # Check file size every 30 seconds
 
     # Inter-download delay range (seconds) - prevents rate limiting
     DELAY_MIN = 45           # Minimum delay between downloads
@@ -158,6 +184,17 @@ class DownloadWorker:
                 if self.current_download.get('phase') == 'postprocessing':
                     self._kill_ffmpeg_processes()
 
+    def _on_ytdlp_activity(self, is_postprocessing):
+        """
+        Called by YtDlpLogger when yt-dlp outputs a message.
+        Updates last_progress_time to prevent timeout during active processing.
+        """
+        with self._download_lock:
+            if self.current_download:
+                self.current_download['last_progress_time'] = time.time()
+                if is_postprocessing:
+                    self.current_download['phase'] = 'postprocessing'
+
     def _kill_ffmpeg_processes(self):
         """Kill any FFmpeg child processes (used when cancelling during postprocessing)."""
         try:
@@ -177,6 +214,17 @@ class DownloadWorker:
         'FFmpegFixupStretchedPP', 'FFmpegFixupTimestamp', 'MoveFiles'
     }
 
+    # Map postprocessor names to user-friendly display names
+    POSTPROCESSOR_DISPLAY_NAMES = {
+        'ModifyChapters': 'SponsorBlock Encoding',  # The slow re-encoding step
+        'SponsorBlock': 'SponsorBlock',             # Quick API fetch
+        'Merger': 'Merging',
+        'FFmpegMerger': 'Merging',
+        'FFmpegMetadata': 'Metadata',
+        'FFmpegVideoRemuxer': 'Processing',
+        'MoveFiles': 'Finalizing',
+    }
+
     def _postprocessor_hook(self, d):
         """
         Track postprocessor progress to prevent timeout during re-encoding.
@@ -189,15 +237,23 @@ class DownloadWorker:
                     self._kill_ffmpeg_processes()
                     raise Exception('Download cancelled by user')
 
-                if self.current_download.get('timed_out'):
-                    self._kill_ffmpeg_processes()
-                    raise Exception('Download timed out')
-
-                # Update progress tracking to prevent timeout
+                # IMPORTANT: Update progress tracking BEFORE checking timeout
+                # This ensures phase is set correctly for the watchdog
                 self.current_download['last_progress_time'] = time.time()
+                self.current_download['last_file_size_change'] = time.time()  # Also reset file size timer
                 self.current_download['phase'] = 'postprocessing'
+
                 postprocessor_name = d.get('postprocessor', 'unknown')
-                self.current_download['postprocessor'] = postprocessor_name
+                # Use friendly display name if available
+                display_name = self.POSTPROCESSOR_DISPLAY_NAMES.get(postprocessor_name, postprocessor_name)
+                self.current_download['postprocessor'] = display_name
+
+                # Now check for timeout (after phase is set)
+                # Don't raise during postprocessing - let it complete since file may be usable
+                if self.current_download.get('timed_out'):
+                    logger.warning(f'Timeout flag set during {display_name}, but allowing postprocessing to continue')
+                    # Clear timeout flag since we're making progress
+                    self.current_download['timed_out'] = False
 
                 # Log warning for unmapped postprocessors
                 if postprocessor_name not in self.KNOWN_POSTPROCESSORS:
@@ -206,7 +262,7 @@ class DownloadWorker:
                 # Track when postprocessing started for elapsed time display
                 if 'postprocess_start_time' not in self.current_download:
                     self.current_download['postprocess_start_time'] = time.time()
-                    logger.info(f"Postprocessing started: {postprocessor_name}")
+                    logger.info(f"Postprocessing started: {display_name}")
 
     def _set_discoveries_flag(self, session):
         """Set the new discoveries flag using the existing session to avoid database locks."""
@@ -322,13 +378,16 @@ class DownloadWorker:
                         logger.info(f"Found queued video: {queue_item.video.yt_id} - {queue_item.video.title}")
                         self._download_video(session, queue_item)
                     else:
-                        # Queue is empty - clear delay info (no point showing delay with empty queue)
+                        # Queue is empty - clear delay info and rate limit message
+                        had_status = self.delay_info or self.rate_limit_message
                         if self.delay_info:
                             self.delay_info = None
-                        # Clear rate limit message
                         if self.rate_limit_message:
                             logger.info("Queue empty - clearing rate limit message")
                             self.rate_limit_message = None
+                        # Emit SSE update if we cleared any status
+                        if had_status:
+                            self._emit_queue_update(force=True)
                         logger.debug("No queued videos found, sleeping...")
                         time.sleep(2)  # Wait before checking again
             except Exception as e:
@@ -336,11 +395,31 @@ class DownloadWorker:
 
             time.sleep(0.5)
 
+    def _get_download_file_size(self, channel_dir, video_yt_id):
+        """Get the current size of download files (including partial files)."""
+        total_size = 0
+        patterns = [
+            f'{video_yt_id}.mp4',
+            f'{video_yt_id}.mp4.part',
+            f'{video_yt_id}.f*.mp4',      # Format-specific files during download
+            f'{video_yt_id}.f*.m4a',
+            f'{video_yt_id}.f*.part',
+        ]
+        for pattern in patterns:
+            for filepath in glob.glob(os.path.join(channel_dir, pattern)):
+                try:
+                    total_size += os.path.getsize(filepath)
+                except OSError:
+                    pass
+        return total_size
+
     def _watchdog_timer(self, video_id, video_title):
         """
         Monitors download progress and sets timeout flag if download stalls.
         Runs in a separate thread parallel to the download.
-        Uses longer timeout during postprocessing (SponsorBlock re-encoding).
+
+        Download phase: Uses progress hooks, falls back to file size monitoring.
+        Postprocessing phase: Uses file size monitoring only.
         """
         while True:
             with self._download_lock:
@@ -352,27 +431,51 @@ class DownloadWorker:
                 elapsed_total = current_time - download.get('start_time', current_time)
                 time_since_progress = current_time - download.get('last_progress_time', current_time)
 
+                channel_dir = download.get('channel_dir')
+                video_yt_id = download.get('video_yt_id')
+                is_postprocessing = download.get('phase') == 'postprocessing'
+
                 # Hard timeout: Maximum download duration exceeded
                 if elapsed_total > self.HARD_TIMEOUT:
                     logger.warning(f'TIMEOUT: Download exceeded {self.HARD_TIMEOUT/3600:.1f} hour limit - {video_title[:50]}')
-                    logger.warning(f'Total time: {elapsed_total/3600:.2f} hours')
                     download['timed_out'] = True
                     break
 
-                # Soft timeout: No progress for too long
-                # Use longer timeout during postprocessing (FFmpeg re-encoding can be slow)
-                is_postprocessing = download.get('phase') == 'postprocessing'
-                timeout = self.POSTPROCESS_TIMEOUT if is_postprocessing else self.PROGRESS_TIMEOUT
+                # Check file size for activity detection
+                if channel_dir and video_yt_id:
+                    current_file_size = self._get_download_file_size(channel_dir, video_yt_id)
+                    last_file_size = download.get('last_file_size', 0)
 
-                if time_since_progress > timeout:
-                    phase_name = 'postprocessing' if is_postprocessing else 'download'
-                    logger.warning(f'TIMEOUT: No {phase_name} progress for {timeout:.0f} seconds - {video_title[:50]}')
-                    logger.warning(f'Last progress: {time_since_progress:.0f} seconds ago')
-                    download['timed_out'] = True
-                    break
+                    if current_file_size != last_file_size:
+                        # File size changed - activity detected
+                        download['last_file_size'] = current_file_size
+                        download['last_file_size_change'] = current_time
+                        # Also reset progress time since we have activity
+                        download['last_progress_time'] = current_time
 
-            # Check every 10 seconds (outside lock to not block other threads)
-            time.sleep(10)
+                    time_since_file_change = current_time - download.get('last_file_size_change', current_time)
+                else:
+                    time_since_file_change = 0  # Can't check, don't timeout on file size
+
+                if is_postprocessing:
+                    # Postprocessing: Use file size monitoring with 5 min timeout
+                    if time_since_file_change > self.POSTPROCESS_FILESIZE_TIMEOUT:
+                        logger.warning(f'TIMEOUT: No file activity for {self.POSTPROCESS_FILESIZE_TIMEOUT:.0f}s during postprocessing - {video_title[:50]}')
+                        download['timed_out'] = True
+                        break
+                else:
+                    # Download phase: Primary is progress hooks, fallback is file size
+                    if time_since_progress > self.DOWNLOAD_PROGRESS_TIMEOUT:
+                        # No progress hooks for 2 min - check file size as fallback
+                        if time_since_file_change > self.DOWNLOAD_FILESIZE_TIMEOUT:
+                            logger.warning(f'TIMEOUT: No progress or file activity for {self.DOWNLOAD_FILESIZE_TIMEOUT:.0f}s - {video_title[:50]}')
+                            download['timed_out'] = True
+                            break
+                        elif time_since_progress > self.DOWNLOAD_PROGRESS_TIMEOUT + 10:  # Log once after threshold
+                            logger.debug(f'No progress hooks for {time_since_progress:.0f}s, but file size changing - continuing')
+
+            # Check every 30 seconds (file size check interval)
+            time.sleep(self.FILESIZE_CHECK_INTERVAL)
 
         logger.debug(f'Watchdog timer exiting for {video_id}')
 
@@ -422,7 +525,7 @@ class DownloadWorker:
 
         return video, channel, video_dir
 
-    def _setup_progress_tracking(self, queue_item, video):
+    def _setup_progress_tracking(self, queue_item, video, channel_dir):
         """
         Setup progress tracking and watchdog timer.
 
@@ -437,7 +540,11 @@ class DownloadWorker:
                 'last_progress_time': time.time(),
                 'start_time': time.time(),
                 'timed_out': False,
-                'phase': 'downloading'  # Track phase: downloading or postprocessing
+                'phase': 'downloading',  # Track phase: downloading or postprocessing
+                'channel_dir': channel_dir,
+                'video_yt_id': video.yt_id,
+                'last_file_size': 0,
+                'last_file_size_change': time.time(),
             }
 
         # Start watchdog timer thread
@@ -535,7 +642,7 @@ class DownloadWorker:
             'quiet': False,  # Enable output for logging
             'verbose': True,  # Verbose output for debugging
             'no_warnings': False,  # Show warnings
-            'logger': YtDlpLogger(),  # Custom logger to route to our logging system
+            'logger': YtDlpLogger(activity_callback=self._on_ytdlp_activity),  # Custom logger with activity tracking
             'progress_hooks': [progress_hook],
             'nocheckcertificate': True,
             'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
@@ -674,6 +781,12 @@ class DownloadWorker:
         while attempt <= max_attempts and not download_success:
             try:
                 current_ydl_opts = ydl_opts.copy()
+
+                # Reset timeout flag for each attempt (prevents false failures on retry)
+                with self._download_lock:
+                    if self.current_download:
+                        self.current_download['timed_out'] = False
+                        self.current_download['last_progress_time'] = time.time()
 
                 # On 3rd attempt, try without cookies as last resort
                 if attempt == 3 and cookies_path and 'cookiefile' in ydl_opts:
@@ -825,6 +938,15 @@ class DownloadWorker:
             logger.debug(f'Download already handled for {video.yt_id}, skipping finalize')
             return
 
+        # Check if file exists even on timeout/failure (postprocessing may have completed)
+        if (timed_out or not download_success) and not cancelled:
+            expected_file = os.path.join(channel_dir, f'{video.yt_id}.mp4')
+            if os.path.exists(expected_file) and os.path.getsize(expected_file) > 1024 * 1024:  # > 1MB
+                logger.info(f'Download reported {"timeout" if timed_out else "failure"} but file exists for {video.yt_id}, treating as success')
+                download_success = True
+                timed_out = False
+                ext = 'mp4'
+
         if cancelled:
             # Cancelled - reset to discovered and delete queue item
             logger.info(f'Download cancelled for {video.yt_id}, resetting to discovered')
@@ -833,7 +955,7 @@ class DownloadWorker:
             # Set flag to notify frontend about kicked back videos (trigger auto-sort)
             self._set_discoveries_flag(session)
         elif timed_out:
-            # Timeout - reset to discovered and delete queue item (same as cancelled)
+            # Timeout and no file - reset to discovered and delete queue item
             logger.warning(f'Download timed out for {video.yt_id}, resetting to discovered')
             video.status = 'discovered'
             session.delete(queue_item)
@@ -917,9 +1039,13 @@ class DownloadWorker:
 
         if remaining <= 1:
             # Delay already passed (or less than 1 sec remaining - not worth showing)
+            had_delay = self.delay_info is not None
             self.delay_info = None
             self.last_download_time = None
             self.next_download_delay = 0
+            # Emit SSE update to clear delay indicator from UI
+            if had_delay:
+                self._emit_queue_update(force=True)
             return False
 
         # Still in delay period - update status and wait
@@ -947,7 +1073,7 @@ class DownloadWorker:
             return
 
         # 2. Setup progress tracking and watchdog
-        watchdog_thread, progress_hook = self._setup_progress_tracking(queue_item, video)
+        watchdog_thread, progress_hook = self._setup_progress_tracking(queue_item, video, channel_dir)
 
         # 3. Download thumbnail
         self._download_thumbnail(video, channel_dir)

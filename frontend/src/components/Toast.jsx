@@ -84,8 +84,16 @@ function ToastItem({ toast, onDismiss }) {
   };
 
   // Postprocessor name to friendly description mapping
+  // Note: Backend now sends user-friendly names for common postprocessors
   const postprocessorDescriptions = {
-    SponsorBlock: 'Fetching segments',
+    // Backend-friendly names (new)
+    'SponsorBlock Encoding': 'Removing sponsor segments',
+    'SponsorBlock': 'Fetching segments',
+    'Merging': 'Combining audio/video',
+    'Metadata': 'Adding metadata',
+    'Processing': 'Processing video',
+    'Finalizing': 'Finishing up',
+    // Legacy raw names (fallback)
     ModifyChapters: 'Removing segments',
     FFmpegMerger: 'Combining audio/video',
     FFmpegMetadata: 'Adding metadata',
