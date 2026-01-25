@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels } from './api/queries';
+import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels, useFavoriteChannels } from './api/queries';
 import { useQueueSSE } from './api/useQueueSSE';
 import { useNotification } from './contexts/NotificationContext';
 import { SelectionBarProvider, useSelectionBar } from './contexts/SelectionBarContext';
@@ -17,12 +17,13 @@ import PlaylistPlayer from './routes/PlaylistPlayer';
 import Setup from './routes/Setup';
 import Login from './routes/Login';
 import Import from './routes/Import';
+import Favs from './routes/Favs';
 import ErrorBoundary from './components/ErrorBoundary';
 import UpdateBanner from './components/UpdateBanner';
 import Toast from './components/Toast';
 import MobileBottomNav from './components/MobileBottomNav';
 import {
-  SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon
+  SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon, MenuIcon, CollapseIcon, HeartIcon
 } from './components/icons';
 import { version as APP_VERSION } from '../package.json';
 
@@ -33,6 +34,7 @@ function App() {
   const { isConnected: sseConnected } = useQueueSSE();
   const { data: queueData } = useQueue({ sseConnected });
   const { data: channelsData } = useChannels();
+  const { data: favoriteChannels } = useFavoriteChannels();
   const { data: health } = useHealth();
   const { showNotification, removeToast } = useNotification();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -403,10 +405,63 @@ function App() {
         </div>
 
         {/* Nav Links */}
-        <div className="flex-1 p-2 space-y-1">
+        <div className="flex-1 p-2 space-y-1 overflow-y-auto">
           <SidebarNavLink to="/" icon={<ChannelsIcon />} label="Channels" badge={reviewCount} />
           <SidebarNavLink to="/library" icon={<LibraryIcon />} label="Library" />
           <SidebarNavLink to="/queue" icon={<QueueIcon />} label="Queue" badge={queueCount} />
+
+          {/* Favorites Section */}
+          {favoriteChannels && favoriteChannels.length > 0 && (
+            <div className="pt-3 mt-3 border-t border-dark-border">
+              {!sidebarCollapsed ? (
+                <>
+                  <div className="px-3 py-1.5">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-text-muted">Favorites</span>
+                  </div>
+                  <div className="mt-1 space-y-0.5">
+                    {favoriteChannels.slice(0, 5).map(channel => (
+                      <Link
+                        key={channel.id}
+                        to={`/channel/${channel.id}/library`}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-dark-hover transition-colors"
+                      >
+                        <div className="w-7 h-7 flex-shrink-0 rounded-full overflow-hidden border-2 border-dark-border">
+                          {channel.thumbnail ? (
+                            <img src={channel.thumbnail} className="w-full h-full object-cover" alt="" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-dark-tertiary">
+                              <span className="text-[10px] font-bold text-text-muted">
+                                {channel.title?.substring(0, 2).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <span className={`text-sm truncate flex-1 ${channel.has_new_videos ? 'text-text-primary' : 'text-text-secondary'}`}>
+                          {channel.title}
+                        </span>
+                        {/* Dot indicator for new videos */}
+                        {channel.has_new_videos && (
+                          <div className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                /* Collapsed state: Heart icon with dot if any favorite has new videos */
+                <Link
+                  to="/library?tab=channels"
+                  className="relative p-2 rounded-lg block text-text-secondary hover:bg-dark-hover transition-colors"
+                  title="Favorites"
+                >
+                  <HeartIcon className="w-5 h-5" />
+                  {favoriteChannels.some(ch => ch.has_new_videos) && (
+                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-accent border-2 border-dark-secondary" />
+                  )}
+                </Link>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Bottom Links */}
@@ -440,13 +495,18 @@ function App() {
               <Route path="/import" element={isAuthenticated ? <Import /> : <Navigate to="/login" replace />} />
               <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
               <Route path="/settings" element={isAuthenticated ? <Settings /> : <Navigate to="/login" replace />} />
+              <Route path="/favs" element={isAuthenticated ? <Favs /> : <Navigate to="/login" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </ErrorBoundary>
         </main>
 
         {/* Mobile Bottom Navigation - hidden when SelectionBar is visible */}
-        <MobileBottomNavWrapper queueCount={queueCount} reviewCount={reviewCount} />
+        <MobileBottomNavWrapper
+          queueCount={queueCount}
+          reviewCount={reviewCount}
+          hasFavoritesWithNew={favoriteChannels?.some(ch => ch.has_new_videos) || false}
+        />
       </div>
 
       {/* Toast Notifications */}
@@ -456,14 +516,14 @@ function App() {
 }
 
 // Wrapper component for MobileBottomNav that hides when SelectionBar is visible
-function MobileBottomNavWrapper({ queueCount, reviewCount }) {
+function MobileBottomNavWrapper({ queueCount, reviewCount, hasFavoritesWithNew }) {
   const { isSelectionBarVisible } = useSelectionBar();
 
   if (isSelectionBarVisible) return null;
 
   return (
     <div className="md:hidden">
-      <MobileBottomNav queueCount={queueCount} reviewCount={reviewCount} />
+      <MobileBottomNav queueCount={queueCount} reviewCount={reviewCount} hasFavoritesWithNew={hasFavoritesWithNew} />
     </div>
   );
 }

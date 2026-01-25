@@ -68,6 +68,35 @@ export function useMarkChannelVisited() {
     mutationFn: (id) => api.markChannelVisited(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['channels'] });
+      queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
+    },
+  });
+}
+
+// Favorites
+export function useFavoriteChannels() {
+  return useQuery({
+    queryKey: ['favorite-channels'],
+    queryFn: () => api.getFavoriteChannels(),
+    staleTime: 30000,
+  });
+}
+
+export function useFavoriteVideos(channelId = null) {
+  return useQuery({
+    queryKey: ['favorite-videos', channelId],
+    queryFn: () => api.getFavoriteVideos(channelId),
+    staleTime: 30000,
+  });
+}
+
+export function useToggleChannelFavorite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => api.toggleChannelFavorite(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
+      queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
     },
   });
 }

@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings, useChannels } from '../api/queries';
+import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings, useChannels, useToggleChannelFavorite } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useCardSize } from '../contexts/CardSizeContext';
@@ -12,7 +12,7 @@ import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridU
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
-import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon } from '../components/icons';
+import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, HeartIcon } from '../components/icons';
 import { formatFileSize } from '../utils/formatters';
 import { getNumericSetting } from '../utils/settingsUtils';
 import { SORT_OPTIONS } from '../constants/stickyBarOptions';
@@ -57,6 +57,7 @@ export default function Library() {
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
   const bulkAssignCategory = useBulkAssignCategory();
+  const toggleFavorite = useToggleChannelFavorite();
 
   const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -196,13 +197,14 @@ export default function Library() {
       // Combine seed with folder index for unique random per folder
       const randomIndex = Math.floor((randomSeedRef.current * (index + 1) * 9999) % folder.videos.length);
       const randomVideo = folder.videos[randomIndex];
-      // Get new_video_count from channels data (only for actual channels, not playlist folders)
+      // Get new_video_count and is_favorite from channels data (only for actual channels, not playlist folders)
       const channelData = !folder.isPlaylistFolder ? channelsMap[folder.id] : null;
       return {
         ...folder,
         thumbnail: randomVideo?.thumb_url,
         allWatched: folder.watchedCount === folder.videoCount,
         newVideoCount: channelData?.new_video_count || 0,
+        is_favorite: channelData?.is_favorite || false,
       };
     });
   }, [channelFolders, channelsData]);
@@ -758,9 +760,27 @@ export default function Library() {
 
               {/* Channel Info */}
               <div className="p-3 rounded-b-xl transition-colors group-hover:bg-dark-tertiary">
-                <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 mb-1`} title={channel.title}>
-                  {channel.title}
-                </h3>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 mb-1 flex-1`} title={channel.title}>
+                    {channel.title}
+                  </h3>
+                  {/* Heart/Favorite Button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleFavorite.mutate(channel.id);
+                    }}
+                    className={`p-1.5 -mr-1.5 -mt-0.5 rounded-lg flex-shrink-0 transition-all hover:scale-110 active:scale-95 ${
+                      channel.is_favorite
+                        ? 'text-accent'
+                        : 'text-text-muted hover:text-accent/60'
+                    }`}
+                    title={channel.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    <HeartIcon className="w-5 h-5" filled={channel.is_favorite} />
+                  </button>
+                </div>
                 <div className="text-sm text-text-secondary font-medium">
                   <span>{channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''} • {formatFileSize(channel.totalSizeBytes)}</span>
                 </div>

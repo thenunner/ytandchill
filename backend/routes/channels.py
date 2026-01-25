@@ -298,6 +298,105 @@ def mark_channel_visited(channel_id):
         return jsonify({'success': True})
 
 
+@channels_bp.route('/api/channels/<int:channel_id>/favorite', methods=['POST'])
+def toggle_channel_favorite(channel_id):
+    """Toggle favorite status for a channel"""
+    with get_session(_session_factory) as session:
+        channel = session.query(Channel).filter(Channel.id == channel_id).first()
+
+        if not channel:
+            return jsonify({'error': 'Channel not found'}), 404
+
+        if channel.deleted_at is not None:
+            return jsonify({'error': 'Cannot favorite deleted channel'}), 400
+
+        # Toggle the favorite status
+        channel.is_favorite = not channel.is_favorite
+        session.commit()
+
+        logger.info(f"Channel '{channel.title}' favorite toggled to {channel.is_favorite}")
+
+        return jsonify({
+            'success': True,
+            'is_favorite': channel.is_favorite
+        })
+
+
+@channels_bp.route('/api/channels/favorites', methods=['GET'])
+def get_favorite_channels():
+    """Get favorite channels sorted by new video status for sidebar"""
+    with get_session(_session_factory) as session:
+        # Get all favorite channels that aren't deleted
+        channels = session.query(Channel).options(
+            joinedload(Channel.videos)
+        ).filter(
+            Channel.is_favorite == True,
+            Channel.deleted_at.is_(None)
+        ).all()
+
+        result = []
+        for channel in channels:
+            serialized = _serialize_channel(channel)
+            result.append(serialized)
+
+        # Sort: channels with new videos first (by newVideoCount desc), then by title
+        result.sort(key=lambda c: (-c.get('newVideoCount', 0), c.get('title', '').lower()))
+
+        return jsonify(result)
+
+
+@channels_bp.route('/api/channels/favorites/videos', methods=['GET'])
+def get_favorite_videos():
+    """Get videos from favorite channels (last 30 days) for mobile Favs screen"""
+    from datetime import timedelta
+
+    # Optional channel filter
+    channel_id = request.args.get('channel_id', type=int)
+
+    with get_session(_session_factory) as session:
+        # Calculate 30 days ago
+        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+
+        # Build query for videos from favorite channels
+        query = session.query(Video).join(Channel).filter(
+            Channel.is_favorite == True,
+            Channel.deleted_at.is_(None),
+            Video.status == 'library',
+            Video.downloaded_at >= thirty_days_ago
+        )
+
+        # Apply channel filter if provided
+        if channel_id:
+            query = query.filter(Video.channel_id == channel_id)
+
+        # Order by downloaded_at descending (newest first)
+        videos = query.order_by(Video.downloaded_at.desc()).all()
+
+        # Serialize videos
+        result = []
+        for video in videos:
+            channel = video.channel
+            result.append({
+                'id': video.id,
+                'yt_id': video.yt_id,
+                'title': video.title,
+                'duration_sec': video.duration_sec,
+                'thumb_url': video.thumb_url,
+                'file_path': video.file_path,
+                'file_size_bytes': video.file_size_bytes,
+                'downloaded_at': video.downloaded_at.isoformat() if video.downloaded_at else None,
+                'upload_date': video.upload_date,
+                'watched': video.watched,
+                'channel': {
+                    'id': channel.id,
+                    'title': channel.title,
+                    'thumbnail': channel.thumbnail
+                } if channel else None
+            })
+
+        return jsonify(result)
+
+
 @channels_bp.route('/api/channels/<int:channel_id>/refresh-thumbnail', methods=['POST'])
 def refresh_channel_thumbnail(channel_id):
     """Refresh a channel's thumbnail from YouTube API"""

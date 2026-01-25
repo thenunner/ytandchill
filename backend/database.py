@@ -26,6 +26,7 @@ class Channel(Base):
     deleted_at = Column(DateTime, nullable=True, index=True)  # Soft delete: NULL = active, set = deleted
     last_visited_at = Column(DateTime, nullable=True)  # Last time user visited this channel in Library
     category_id = Column(Integer, ForeignKey('channel_categories.id'), nullable=True, index=True)
+    is_favorite = Column(Boolean, default=False, index=True)  # User-marked favorite channel
 
     videos = relationship('Video', back_populates='channel')
     playlists = relationship('Playlist', back_populates='channel', cascade='all, delete-orphan')
@@ -49,6 +50,7 @@ class Video(Base):
     discovered_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     downloaded_at = Column(DateTime)
     folder_name = Column(String(200), nullable=True)  # For playlist videos (when channel_id is NULL)
+    sponsorblock_segments = Column(Text, nullable=True)  # JSON array of segments to skip during playback
 
     channel = relationship('Channel', back_populates='videos')
     queue_items = relationship('QueueItem', back_populates='video', cascade='all, delete-orphan')
@@ -141,6 +143,18 @@ def init_db(database_url=None):
         columns = [row[1] for row in result]
         if 'last_visited_at' not in columns:
             conn.execute(text("ALTER TABLE channels ADD COLUMN last_visited_at DATETIME"))
+            conn.commit()
+
+        # Add is_favorite column for favorites feature
+        if 'is_favorite' not in columns:
+            conn.execute(text("ALTER TABLE channels ADD COLUMN is_favorite BOOLEAN DEFAULT 0"))
+            conn.commit()
+
+        # Check videos table for sponsorblock_segments column
+        result = conn.execute(text("PRAGMA table_info(videos)"))
+        video_columns = [row[1] for row in result]
+        if 'sponsorblock_segments' not in video_columns:
+            conn.execute(text("ALTER TABLE videos ADD COLUMN sponsorblock_segments TEXT"))
             conn.commit()
 
     # Initialize default settings including auth credentials
