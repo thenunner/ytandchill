@@ -100,7 +100,7 @@ export default function Channels() {
   useEffect(() => {
     const checkDiscoveriesFlag = async () => {
       try {
-        const response = await fetch('/api/settings/discoveries-flag');
+        const response = await fetch('/api/settings/discoveries-flag', { credentials: 'include' });
         const data = await response.json();
 
         if (data.new_discoveries) {
@@ -109,7 +109,7 @@ export default function Channels() {
           localStorage.setItem('channels_sortBy', 'most_to_review');
 
           // Clear the flag so it doesn't trigger again
-          await fetch('/api/settings/discoveries-flag', { method: 'DELETE' });
+          await fetch('/api/settings/discoveries-flag', { method: 'DELETE', credentials: 'include' });
         }
       } catch (error) {
         console.error('Error checking discoveries flag:', error);

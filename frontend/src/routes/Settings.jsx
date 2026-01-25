@@ -94,7 +94,7 @@ export default function Settings() {
   const [stats, setStats] = useState({ discovered: 0, ignored: 0, library: 0 });
 
   useEffect(() => {
-    fetch('/api/stats')
+    fetch('/api/stats', { credentials: 'include' })
       .then(res => res.json())
       .then(data => setStats(data))
       .catch(err => console.error('Failed to fetch stats:', err));
@@ -419,8 +419,8 @@ export default function Settings() {
     try {
       // Fetch repair data and missing metadata count in parallel
       const [repairResponse, metadataResponse] = await Promise.all([
-        fetch('/api/queue/check-orphaned'),
-        fetch('/api/settings/missing-metadata')
+        fetch('/api/queue/check-orphaned', { credentials: 'include' }),
+        fetch('/api/settings/missing-metadata', { credentials: 'include' })
       ]);
 
       const data = await repairResponse.json();
@@ -431,7 +431,7 @@ export default function Settings() {
         return;
       }
 
-      fetch('/api/stats')
+      fetch('/api/stats', { credentials: 'include' })
         .then(res => res.json())
         .then(data => setStats(data))
         .catch(err => console.error('Failed to fetch stats:', err));
@@ -457,7 +457,8 @@ export default function Settings() {
       const response = await fetch('/api/queue/remove-not-found', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video_ids: selectedNotFoundVideos })
+        body: JSON.stringify({ video_ids: selectedNotFoundVideos }),
+        credentials: 'include'
       });
       const data = await response.json();
 
@@ -489,7 +490,8 @@ export default function Settings() {
       const response = await fetch('/api/queue/purge-channels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel_ids: selectedChannels })
+        body: JSON.stringify({ channel_ids: selectedChannels }),
+        credentials: 'include'
       });
       const data = await response.json();
 
@@ -515,7 +517,8 @@ export default function Settings() {
     try {
       const response = await fetch('/api/settings/fix-upload-dates', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
       });
       const data = await response.json();
 
@@ -578,6 +581,7 @@ export default function Settings() {
           current_password: currentPassword,
           new_password: newPassword,
         }),
+        credentials: 'include'
       });
 
       const data = await response.json();
@@ -604,6 +608,7 @@ export default function Settings() {
     try {
       const response = await fetch('/api/auth/reset', {
         method: 'POST',
+        credentials: 'include'
       });
 
       if (response.ok) {
