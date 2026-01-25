@@ -324,18 +324,15 @@ def toggle_channel_favorite(channel_id):
 
 @channels_bp.route('/api/channels/favorites', methods=['GET'])
 def get_favorite_channels():
-    """Get favorite channels sorted by new video status for sidebar.
+    """Get all favorite channels for sidebar.
+
+    Returns all favorited channels - frontend handles filtering based on
+    hide_empty_channels setting.
 
     Sorting priority:
     1. Channels with new (unwatched) videos first
     2. Then by total library video count (most videos first)
-
-    Filtering:
-    - If hide_empty_channels setting is true, excludes channels with 0 library videos
     """
-    # Check if we should hide empty channels
-    hide_empty = _settings_manager.get('hide_empty_channels', 'false') == 'true' if _settings_manager else False
-
     with get_session(_session_factory) as session:
         # Get all favorite channels that aren't deleted
         channels = session.query(Channel).options(
@@ -345,15 +342,7 @@ def get_favorite_channels():
             Channel.deleted_at.is_(None)
         ).all()
 
-        result = []
-        for channel in channels:
-            serialized = _serialize_channel(channel)
-
-            # Filter out empty channels if setting is enabled
-            if hide_empty and serialized.get('downloaded_count', 0) == 0:
-                continue
-
-            result.append(serialized)
+        result = [_serialize_channel(channel) for channel in channels]
 
         # Sort: channels with new videos first, then by downloaded_count (most videos)
         result.sort(key=lambda c: (
