@@ -140,7 +140,7 @@ export default function Favs() {
                   {/* Thumbnail */}
                   <div className="relative aspect-video bg-dark-tertiary">
                     {video.thumb_url && (
-                      <img src={video.thumb_url} className="w-full h-full object-cover" alt="" />
+                      <img src={video.thumb_url} className="w-full h-full object-cover" alt="" loading="lazy" />
                     )}
                     {/* Duration badge */}
                     {video.duration_sec && (
