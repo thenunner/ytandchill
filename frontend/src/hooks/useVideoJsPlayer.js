@@ -29,6 +29,7 @@ let theaterButtonRegistered = false;
  * @param {boolean} options.isTheaterMode - Current theater mode state
  * @param {Function} options.setIsTheaterMode - Function to update theater mode state
  * @param {boolean} options.persistPlayer - If true, player persists across video changes (for playlists)
+ * @param {boolean} options.autoplay - If true, video plays automatically on load (desktop only)
  * @returns {React.RefObject} Player reference
  */
 export function useVideoJsPlayer({
@@ -41,6 +42,7 @@ export function useVideoJsPlayer({
   isTheaterMode = false,
   setIsTheaterMode = null,
   persistPlayer = false,
+  autoplay = false,
 }) {
   const playerRef = useRef(null);
   const saveProgressTimeout = useRef(null);
@@ -106,8 +108,9 @@ export function useVideoJsPlayer({
     const player = videojs(videoRef.current, {
       controls: true,
       fill: true,  // Fill the container (respects our CSS sizing)
-      preload: 'metadata', // Load metadata for seeking optimization
+      preload: (autoplay && !isMobile) ? 'auto' : 'metadata', // Preload more when autoplay enabled
       poster: isMobile ? (video.thumb_url || '') : '', // Only show poster on mobile devices
+      autoplay: false, // Don't use built-in autoplay - we handle it manually after source is set
       // Device-specific inactivity timeout for auto-hiding controls
       // Mobile: 0 = never auto-hide (controls always visible, except fullscreen)
       // Desktop/Tablet: 2000ms = hide after 2 seconds of inactivity
@@ -360,47 +363,66 @@ export function useVideoJsPlayer({
             const duration = player.duration();
 
             // Restore saved progress position or start at beginning
-            const startTime = (video.playback_seconds && video.playback_seconds > 0 && video.playback_seconds < duration * 0.95)
+            // Only resume if: position >= 5 seconds AND position < 95% of duration
+            const startTime = (video.playback_seconds &&
+                               video.playback_seconds >= 5 &&
+                               video.playback_seconds < duration * 0.95)
               ? video.playback_seconds
               : 0;
 
-            player.currentTime(startTime);
-
-            // On desktop: ensure video frame shows (no poster to remove since we didn't set one)
-            // On mobile: poster will show until user taps play (iOS/mobile behavior)
-            if (!isMobile) {
-              // Mark as started to ensure video frame is visible
-              // Don't call player.load() as it resets the video and can cause play/pause issues
-              setTimeout(() => {
+            // Function to start playback (called after seek completes)
+            const startPlayback = () => {
+              if (!isMobile) {
                 try {
                   player.hasStarted(true);
-                  // Ensure controls are visible after init (especially after theater mode switch)
                   player.userActive(true);
                 } catch (err) {
                   console.warn('[useVideoJsPlayer] Failed to mark as started:', err);
                 }
-              }, 100);
+                // Autoplay on desktop if enabled
+                if (autoplay) {
+                  player.play().catch(() => {
+                    // Browser blocked autoplay - user will need to click play
+                  });
+                }
+              }
+            };
+
+            if (startTime > 0) {
+              // Seek first, then wait for seek to complete and frame to render
+              player.currentTime(startTime);
+              player.one('seeked', () => {
+                // Use requestAnimationFrame to ensure video frame is rendered
+                requestAnimationFrame(() => {
+                  startPlayback();
+                });
+              });
+            } else {
+              // No seek needed, start immediately
+              startPlayback();
             }
           } catch (err) {
             console.warn('[useVideoJsPlayer] Failed to restore progress:', err);
           }
         });
 
-        // Check for and add subtitle track (VTT format)
-        const subtitleUrl = videoSrc.replace(/\.[^.]+$/, '.en.vtt');
-        fetch(subtitleUrl, { method: 'HEAD', credentials: 'include' })
-          .then(res => {
-            if (res.ok && player && !player.isDisposed()) {
-              player.addRemoteTextTrack({
-                kind: 'subtitles',
-                srclang: 'en',
-                label: 'English',
-                src: subtitleUrl,
-                default: false
-              }, false);
-            }
-          })
-          .catch(() => {}); // Silently ignore if no subtitles
+        // Check for and add subtitle track (VTT format) - defer to not compete with video load
+        setTimeout(() => {
+          const subtitleUrl = videoSrc.replace(/\.[^.]+$/, '.en.vtt');
+          fetch(subtitleUrl, { method: 'HEAD', credentials: 'include' })
+            .then(res => {
+              if (res.ok && player && !player.isDisposed()) {
+                player.addRemoteTextTrack({
+                  kind: 'subtitles',
+                  srclang: 'en',
+                  label: 'English',
+                  src: subtitleUrl,
+                  default: false
+                }, false);
+              }
+            })
+            .catch(() => {}); // Silently ignore if no subtitles
+        }, 1000); // Delay subtitle check to prioritize video playback
       } else {
         console.warn('[useVideoJsPlayer] No video source found for:', video.file_path);
       }

@@ -81,6 +81,7 @@ export default function Player() {
     updateVideoMutation: updateVideo,
     isTheaterMode: isTheaterMode,
     setIsTheaterMode: setIsTheaterMode,
+    autoplay: true, // Auto-play on desktop when entering player
   });
 
   // Set video source when player is ready
