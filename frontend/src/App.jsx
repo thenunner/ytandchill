@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels, useFavoriteChannels } from './api/queries';
+import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels, useFavoriteChannels, useSettings } from './api/queries';
 import { useQueueSSE } from './api/useQueueSSE';
 import { useNotification } from './contexts/NotificationContext';
 import { SelectionBarProvider, useSelectionBar } from './contexts/SelectionBarContext';
@@ -34,8 +34,15 @@ function App() {
   const { isConnected: sseConnected } = useQueueSSE();
   const { data: queueData } = useQueue({ sseConnected });
   const { data: channelsData } = useChannels();
-  const { data: favoriteChannels } = useFavoriteChannels();
+  const { data: favoriteChannelsRaw } = useFavoriteChannels();
+  const { data: settings } = useSettings();
   const { data: health } = useHealth();
+
+  // Filter favorites based on hide_empty_channels setting
+  const hideEmptyChannels = settings?.hide_empty_channels === 'true';
+  const favoriteChannels = favoriteChannelsRaw?.filter(ch =>
+    !hideEmptyChannels || ch.downloaded_count > 0
+  ) || [];
   const { showNotification, removeToast } = useNotification();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const clearingCookieWarningRef = useRef(false);
