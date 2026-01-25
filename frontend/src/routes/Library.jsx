@@ -816,7 +816,10 @@ export default function Library() {
                   </button>
                 </div>
                 <div className="text-sm text-text-secondary font-medium">
-                  <span>{channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''} • {formatFileSize(channel.totalSizeBytes)}</span>
+                  <span>
+                    {channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''}
+                    {channel.videoCount > 0 && ` • ${formatFileSize(channel.totalSizeBytes)}`}
+                  </span>
                 </div>
               </div>
             </Link>
