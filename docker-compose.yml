@@ -25,8 +25,7 @@ services:
       - /mnt/user/data/media/youtube/ytandchill:/app/downloads
       # Logs
       - /mnt/user/appdata/ytandchill/logs:/app/logs
-      # Cookies file for age-restricted content (manual export)
-      - /mnt/user/appdata/ytandchill/cookies.txt:/app/cookies.txt
+      # NOTE: cookies.txt goes inside your data folder (e.g., /mnt/user/appdata/ytandchill/data/cookies.txt)
       # Firefox profile for automatic cookie extraction (optional)
       # Linux: /home/USERNAME/.mozilla/firefox | macOS: /Users/USERNAME/Library/Application Support/Firefox/Profiles
       # - /home/YOUR_USERNAME/.mozilla/firefox:/firefox_profile:ro
