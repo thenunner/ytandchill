@@ -4,6 +4,12 @@ setlocal enabledelayedexpansion
 REM ==========================================
 REM YT and Chill - Unified Windows Launcher
 REM ==========================================
+REM
+REM NOTE: If upgrading from a version earlier than v7.3.6,
+REM please run Initial Setup (option 3) again to install
+REM required dependencies (certifi for SSL certificates).
+REM
+REM ==========================================
 
 :menu
 cls

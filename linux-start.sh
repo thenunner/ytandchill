@@ -3,6 +3,12 @@
 # ==========================================
 # YT and Chill - Unified Linux/macOS Launcher
 # ==========================================
+#
+# NOTE: If upgrading from a version earlier than v7.3.6,
+# please run Initial Setup (option 3) again to install
+# required dependencies (ca-certificates, certifi).
+#
+# ==========================================
 
 set -e
 
