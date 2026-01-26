@@ -7,6 +7,7 @@ import { getTextSizes } from '../utils/gridUtils';
 import { formatDuration } from '../utils/videoPlayerUtils';
 import { formatDate, formatDateTime, formatFileSize } from '../utils/formatters';
 import { getStringSetting } from '../utils/settingsUtils';
+import { usePrefetchImage } from '../hooks/usePrefetchImage';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import ConfirmDialog from './ConfirmDialog';
 import { ThreeDotsIcon, CheckmarkIcon, TrashIcon, PlusIcon } from './icons';
@@ -39,6 +40,9 @@ export default function VideoCard({
   const videoPreviewRef = useRef(null);
   const previewTimeoutRef = useRef(null);
   const progressAnimationRef = useRef(null);
+
+  // Prefetch thumbnail 500px before it becomes visible
+  const prefetchRef = usePrefetchImage(video.thumb_url);
 
   const handleDelete = async () => {
     try {
@@ -221,6 +225,7 @@ export default function VideoCard({
 
   return (
     <div
+      ref={prefetchRef}
       className="group cursor-pointer transition-colors rounded"
       onClick={handleCardClick}
     >
