@@ -46,22 +46,28 @@ This guide provides detailed platform-specific instructions for running YT and C
    windows-start.bat
    ```
 
-5. From the menu, select option **3 (Setup)** on first run. This will:
+5. The launcher menu provides these options:
+   - **[1] Start Server** - Launch the application
+   - **[2] Update** - Pull latest code and rebuild (git pull + npm install + build)
+   - **[3] Initial Setup** - First-time setup (install dependencies, build frontend)
+   - **[4] Exit** - Close the launcher
+
+6. On first run, select option **3 (Initial Setup)**. This will:
    - Check for Python, Node.js, and ffmpeg
    - Create required directories (data, downloads, logs)
    - Install Python dependencies
    - Install Node.js dependencies
    - Build the frontend
 
-6. After setup completes, select option **1 (Start)** to launch the application
+7. After setup completes, select option **1 (Start Server)** to launch
 
-7. Open your browser to: http://localhost:4099
+8. Open your browser to the URL shown in the console
 
 ### Windows-Specific Notes
 
 - **Running in Background**: The app runs in a console window - close the window to stop
 - **Auto-start on Boot**: Use Task Scheduler to run `windows-start.bat`
-- **Updating**: Run `windows-start.bat` and select option 4 (Update)
+- **Updating**: Run `windows-start.bat` and select option 2 (Update)
 - **Data Location**:
   - Database: `C:\ytandchill\data\`
   - Downloads: `C:\ytandchill\downloads\`
@@ -135,22 +141,29 @@ ffmpeg -version
    ./linux-start.sh
    ```
 
-3. From the menu, select option **3 (Setup)** on first run. This will:
+3. The launcher menu provides these options:
+   - **[1] Start Server** - Launch the application (foreground or background)
+   - **[2] Update** - Pull latest code and rebuild (git pull + npm install + build)
+   - **[3] Initial Setup** - First-time setup (install dependencies, build frontend)
+   - **[4] Stop Server** - Stop the background server if running
+   - **[5] Exit** - Close the launcher
+
+4. On first run, select option **3 (Initial Setup)**. This will:
    - Check for Python, Node.js, and ffmpeg
    - Create required directories
    - Install Python dependencies
    - Install Node.js dependencies
    - Build the frontend
 
-4. After setup completes, select option **1 (Start)** to launch
+5. After setup completes, select option **1 (Start Server)** to launch
 
-5. Open your browser to: http://localhost:4099
+6. Open your browser to the URL shown in the console
 
 ### Linux-Specific Notes
 
 - **Auto-start on Boot**: Create a systemd service (see below)
 
-- **Updating**: Run `./linux-start.sh` and select option 4 (Update)
+- **Updating**: Run `./linux-start.sh` and select option 2 (Update)
 
 - **Data Location**:
   - Database: `~/ytandchill/data/`
@@ -252,17 +265,19 @@ ffmpeg -version
    ./linux-start.sh
    ```
 
-3. From the menu, select option **3 (Setup)** on first run
+3. The launcher menu is the same as Linux (see [Linux Setup](#linux-setup) for menu options)
 
-4. After setup completes, select option **1 (Start)** to launch
+4. On first run, select option **3 (Initial Setup)**
 
-5. Open your browser to: http://localhost:4099
+5. After setup completes, select option **1 (Start Server)** to launch
+
+6. Open your browser to the URL shown in the console
 
 ### macOS-Specific Notes
 
 - **Auto-start**: Create a LaunchAgent (see below)
 
-- **Updating**: Run `./linux-start.sh` and select option 4 (Update)
+- **Updating**: Run `./linux-start.sh` and select option 2 (Update)
 
 - **Data Location**:
   - Database: `~/Documents/ytandchill/data/`
@@ -534,25 +549,24 @@ Recreate the container.
 **Windows:**
 - Database: `C:\ytandchill\data\youtube_downloader.db`
 - Downloads: `C:\ytandchill\downloads\`
-- Cookies: `C:\ytandchill\cookies.txt`
+- Cookies: `C:\ytandchill\data\cookies.txt`
 
 **Linux/macOS:**
 - Database: `~/ytandchill/data/youtube_downloader.db`
 - Downloads: `~/ytandchill/downloads/`
-- Cookies: `~/ytandchill/cookies.txt`
+- Cookies: `~/ytandchill/data/cookies.txt`
 
 **Unraid:**
 - Database: `/mnt/user/appdata/ytandchill/data/youtube_downloader.db`
 - Downloads: `/mnt/user/data/media/youtube/ytandchill/`
-- Cookies: `/mnt/user/appdata/ytandchill/cookies.txt`
+- Cookies: `/mnt/user/appdata/ytandchill/data/cookies.txt`
 
 ### Migrating Between Platforms
 
 1. Stop the application on the old platform
-2. Copy the `data/` directory to the new location
+2. Copy the `data/` directory to the new location (includes database and cookies.txt)
 3. Copy the `downloads/` directory to the new location
-4. Copy `cookies.txt` if using age-restricted downloads
-5. Install and start on the new platform
+4. Install and start on the new platform
 
 ---
 
