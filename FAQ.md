@@ -192,7 +192,7 @@ Practical limits depend on your scanning schedule and network bandwidth rather t
 
 Videos are stored in the `downloads/` directory by default:
 - **Native install:** `ytandchill/downloads/`
-- **Docker/Unraid:** The path you mapped to `/app/downloads` (e.g., `/mnt/user/data/media/youtube/ytandchill/`)
+- **Docker/Unraid:** The path you mapped to `/app/downloads` (e.g., `/mnt/user/downloads/ytandchill/`)
 
 Each channel gets its own subdirectory organized by channel name.
 
