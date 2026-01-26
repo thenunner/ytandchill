@@ -44,7 +44,7 @@
 
 3. **Port Mappings:**
    - Container Port: 4099
-   - Host Port: 4099
+   - Host Port: Your choice (default: 4099)
    - Type: TCP
 
 4. **Path Mappings:**
@@ -53,8 +53,9 @@
    | `/app/data` | `/mnt/user/appdata/ytandchill/data` | Read/Write |
    | `/app/downloads` | `/mnt/user/data/media/youtube/ytandchill` | Read/Write |
    | `/app/logs` | `/mnt/user/appdata/ytandchill/logs` | Read/Write |
-   | `/app/backend/cookies.txt` | `/mnt/user/appdata/ytandchill/cookies.txt` | Read/Write (Optional) |
    | `/firefox_profile` | `/mnt/user/appdata/firefox/.mozilla/firefox` | Read Only (Optional) |
+
+   > **Note:** Place `cookies.txt` in your data folder (`/mnt/user/appdata/ytandchill/data/cookies.txt`). No separate mount needed.
 
 5. **Environment Variables (Optional):**
    - `PORT=4099`
