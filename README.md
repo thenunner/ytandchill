@@ -35,21 +35,21 @@ YouTube channel downloader and video library manager. Monitor channels, queue do
 
 ## Screenshots
 
-| Channels | Ignored Videos |
+| Channels | Library |
 |:---:|:---:|
-| ![Channels](images/Channels.png) | ![Ignored](images/ignored.png) |
+| ![Channels](images/Channels.png) | ![Library](images/library.png) |
 
-| Library | Playlist |
+| Playlist | Playlist Player |
 |:---:|:---:|
-| ![Library](images/library.png) | ![Playlist](images/playlist.png) |
+| ![Playlist](images/playlist.png) | ![Playlist Player](images/playlist-player.png) |
 
-| Playlist Player | Import |
+| Import | Settings |
 |:---:|:---:|
-| ![Playlist Player](images/playlist-player.png) | ![Import](images/import.png) |
+| ![Import](images/import.png) | ![Settings](images/settings.png) |
 
-| Settings | Mobile |
-|:---:|:---:|
-| ![Settings](images/settings.png) | ![Mobile](images/mobile.jpg) |
+| Mobile |
+|:---:|
+| ![Mobile](images/mobile.jpg) |
 
 ## Quick Start
 
