@@ -17,6 +17,7 @@ import api from '../api/client';
 import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch, BackButton, EditButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
+import DurationSettingsModal from '../components/DurationSettingsModal';
 
 export default function ChannelLibrary() {
   const { channelId } = useParams();
@@ -485,13 +486,14 @@ export default function ChannelLibrary() {
     }
   };
 
-  const handleUpdateFilters = async () => {
+  const handleUpdateFilters = async (updatedChannel) => {
+    const channelToUpdate = updatedChannel || editingChannel;
     try {
       await updateChannel.mutateAsync({
         id: Number(channelId),
         data: {
-          min_minutes: editingChannel.min_minutes,
-          max_minutes: editingChannel.max_minutes,
+          min_minutes: channelToUpdate.min_minutes,
+          max_minutes: channelToUpdate.max_minutes,
         },
       });
       setEditingChannel(null);
@@ -622,7 +624,7 @@ export default function ChannelLibrary() {
                     },
                   },
                   {
-                    label: channel.auto_download ? 'Auto-Download ✓' : 'Auto-Download',
+                    label: channel.auto_download ? 'Auto-Download: ON' : 'Auto-Download: OFF',
                     icon: (
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -646,6 +648,7 @@ export default function ChannelLibrary() {
                         }
                       });
                     },
+                    variant: channel.auto_download ? 'success' : 'danger',
                   },
                   { divider: true },
                   {
@@ -789,65 +792,17 @@ export default function ChannelLibrary() {
         </div>
       )}
 
-      {/* Duration Settings Modal */}
-      {showDurationSettings && editingChannel && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-secondary rounded-lg max-w-sm w-full p-6 shadow-2xl border border-dark-border">
-            <h3 className="text-lg font-bold text-text-primary mb-4">Duration Settings</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  Min Minutes
-                </label>
-                <input
-                  type="number"
-                  value={editingChannel.min_minutes}
-                  onChange={(e) => setEditingChannel({
-                    ...editingChannel,
-                    min_minutes: Number(e.target.value)
-                  })}
-                  className="input w-full"
-                  min="0"
-                  placeholder="0 = no minimum"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-text-secondary mb-1">
-                  Max Minutes
-                </label>
-                <input
-                  type="number"
-                  value={editingChannel.max_minutes}
-                  onChange={(e) => setEditingChannel({
-                    ...editingChannel,
-                    max_minutes: Number(e.target.value)
-                  })}
-                  className="input w-full"
-                  min="0"
-                  placeholder="0 = no maximum"
-                />
-              </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  onClick={() => {
-                    setShowDurationSettings(false);
-                    setEditingChannel(null);
-                  }}
-                  className="btn btn-secondary flex-1"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleUpdateFilters}
-                  className="btn btn-primary flex-1"
-                >
-                  Save
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Duration Settings Modal - Shared Component */}
+      <DurationSettingsModal
+        channel={showDurationSettings ? editingChannel : null}
+        onSave={(updatedChannel) => {
+          handleUpdateFilters(updatedChannel);
+        }}
+        onClose={() => {
+          setShowDurationSettings(false);
+          setEditingChannel(null);
+        }}
+      />
 
       {/* Videos Grid */}
       {isLoading ? (
