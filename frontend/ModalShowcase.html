@@ -6,7 +6,6 @@
   <title>Modal System - Design Reference</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* Theme variables matching your app */
     :root {
       --bg-primary: 222 14% 8%;
       --bg-secondary: 222 13% 12%;
@@ -19,8 +18,6 @@
       --text-muted: 220 8% 46%;
       --accent: 38 92% 50%;
       --accent-hover: 32 95% 44%;
-      --accent-text: 0 0% 0%;
-      --btn-primary-text: 0 0% 0%;
     }
   </style>
   <script>
@@ -28,7 +25,7 @@
       theme: {
         extend: {
           colors: {
-            accent: { DEFAULT: 'hsl(var(--accent))', hover: 'hsl(var(--accent-hover))', text: 'hsl(var(--accent-text))' },
+            accent: { DEFAULT: 'hsl(var(--accent))', hover: 'hsl(var(--accent-hover))' },
             dark: {
               primary: 'hsl(var(--bg-primary))',
               secondary: 'hsl(var(--bg-secondary))',
@@ -48,23 +45,28 @@
     }
   </script>
 </head>
-<body class="bg-dark-primary text-text-primary min-h-screen p-6">
+<body class="bg-dark-primary text-text-primary min-h-screen p-4 md:p-6">
 
-  <div class="max-w-6xl mx-auto">
+  <div class="max-w-7xl mx-auto">
     <h1 class="text-2xl font-semibold mb-2">Modal Design Reference</h1>
-    <p class="text-text-secondary mb-8">Using existing theme classes</p>
+    <p class="text-text-secondary mb-8">Desktop & Mobile variants using existing theme</p>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
 
-      <!-- Confirm Modal - Danger -->
+      <!-- ==================== CONFIRM MODALS ==================== -->
+
+      <!-- Confirm Modal - Danger (Desktop) -->
       <div class="space-y-3">
-        <div class="text-xs font-medium text-accent uppercase tracking-wide">Confirm Modal (Danger)</div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Confirm Modal (Danger)</span>
+          <span class="text-xs px-2 py-0.5 bg-dark-tertiary rounded text-text-muted">Desktop</span>
+        </div>
         <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="bg-dark-secondary border border-dark-border rounded-xl max-w-sm mx-auto overflow-hidden animate-[slideUp_0.2s_ease-out]">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg max-w-sm mx-auto overflow-hidden">
             <div class="p-5">
               <h2 class="text-lg font-semibold mb-2">Delete Video</h2>
               <p class="text-text-secondary text-sm leading-relaxed">
-                Are you sure you want to delete <span class="text-text-primary">"How to Build a Second Brain"</span>? This cannot be undone.
+                Are you sure you want to delete <span class="text-text-primary">"How to Build a Second Brain"</span>? This will permanently remove the video file from your system.
               </p>
             </div>
             <div class="flex gap-3 p-4 pt-0">
@@ -79,11 +81,40 @@
         </div>
       </div>
 
-      <!-- Confirm Modal - Primary -->
+      <!-- Confirm Modal - Danger (Mobile) -->
       <div class="space-y-3">
-        <div class="text-xs font-medium text-accent uppercase tracking-wide">Confirm Modal (Primary)</div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Confirm Modal (Danger)</span>
+          <span class="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">Mobile</span>
+        </div>
+        <div class="bg-black/60 backdrop-blur-sm rounded-xl p-4">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg w-full max-w-[320px] mx-auto overflow-hidden">
+            <div class="p-4">
+              <h2 class="text-base font-semibold mb-2">Delete Video</h2>
+              <p class="text-text-secondary text-sm leading-relaxed">
+                Delete <span class="text-text-primary">"How to Build a Second Brain"</span>?
+              </p>
+            </div>
+            <div class="flex gap-2 p-3 pt-0">
+              <button class="flex-1 px-3 py-3 bg-dark-tertiary border border-dark-border rounded-lg text-sm font-medium">
+                Cancel
+              </button>
+              <button class="flex-1 px-3 py-3 bg-red-500 text-white rounded-lg text-sm font-medium">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirm Modal - Primary (Desktop) -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Confirm Modal (Primary)</span>
+          <span class="text-xs px-2 py-0.5 bg-dark-tertiary rounded text-text-muted">Desktop</span>
+        </div>
         <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="bg-dark-secondary border border-dark-border rounded-xl max-w-sm mx-auto overflow-hidden">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg max-w-sm mx-auto overflow-hidden">
             <div class="p-5">
               <h2 class="text-lg font-semibold mb-2">Clear Queue</h2>
               <p class="text-text-secondary text-sm leading-relaxed">
@@ -102,11 +133,42 @@
         </div>
       </div>
 
-      <!-- Playlist Modal -->
+      <!-- Confirm Modal - Primary (Mobile) -->
       <div class="space-y-3">
-        <div class="text-xs font-medium text-accent uppercase tracking-wide">Playlist Modal</div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Confirm Modal (Primary)</span>
+          <span class="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">Mobile</span>
+        </div>
+        <div class="bg-black/60 backdrop-blur-sm rounded-xl p-4">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg w-full max-w-[320px] mx-auto overflow-hidden">
+            <div class="p-4">
+              <h2 class="text-base font-semibold mb-2">Clear Queue</h2>
+              <p class="text-text-secondary text-sm">
+                Clear all <span class="text-text-primary">24 pending items</span>?
+              </p>
+            </div>
+            <div class="flex gap-2 p-3 pt-0">
+              <button class="flex-1 px-3 py-3 bg-dark-tertiary border border-dark-border rounded-lg text-sm font-medium">
+                Cancel
+              </button>
+              <button class="flex-1 px-3 py-3 bg-accent text-black rounded-lg text-sm font-medium">
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== PLAYLIST MODAL ==================== -->
+
+      <!-- Playlist Modal (Desktop) -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Playlist Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-dark-tertiary rounded text-text-muted">Desktop</span>
+        </div>
         <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="bg-dark-secondary border border-dark-border rounded-xl max-w-sm mx-auto overflow-hidden">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg max-w-sm mx-auto overflow-hidden">
             <div class="flex items-center justify-between p-4 border-b border-dark-border">
               <h2 class="text-base font-semibold">Create Playlist</h2>
               <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
@@ -129,11 +191,14 @@
         </div>
       </div>
 
-      <!-- Playlist Modal with Error -->
+      <!-- Playlist Modal with Error (Desktop) -->
       <div class="space-y-3">
-        <div class="text-xs font-medium text-accent uppercase tracking-wide">Playlist Modal (Error)</div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Playlist Modal (Error)</span>
+          <span class="text-xs px-2 py-0.5 bg-dark-tertiary rounded text-text-muted">Desktop</span>
+        </div>
         <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="bg-dark-secondary border border-dark-border rounded-xl max-w-sm mx-auto overflow-hidden">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg max-w-sm mx-auto overflow-hidden">
             <div class="flex items-center justify-between p-4 border-b border-dark-border">
               <h2 class="text-base font-semibold">Rename Playlist</h2>
               <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
@@ -157,109 +222,220 @@
         </div>
       </div>
 
-      <!-- Video Info Modal -->
+      <!-- ==================== CHANNEL INFO MODAL ==================== -->
+      <!-- Matches actual implementation from Channels.jsx -->
+
+      <!-- Channel Info Modal (Desktop) -->
       <div class="space-y-3">
-        <div class="text-xs font-medium text-accent uppercase tracking-wide">Video Info Modal</div>
-        <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="bg-dark-secondary border border-dark-border rounded-xl max-w-md mx-auto overflow-hidden">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Channel Info Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-dark-tertiary rounded text-text-muted">Desktop</span>
+        </div>
+        <div class="bg-black/70 backdrop-blur-sm rounded-xl p-6 flex items-center justify-center">
+          <div class="bg-dark-secondary rounded-lg max-w-lg w-full shadow-2xl border border-dark-border">
             <div class="flex items-center justify-between p-4 border-b border-dark-border">
-              <h2 class="text-base font-semibold">Video Details</h2>
-              <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              <h3 class="text-lg font-semibold text-text-primary">Channel Info</h3>
+              <button class="text-text-secondary hover:text-text-primary transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
               </button>
             </div>
-            <div class="p-4 space-y-3 text-sm max-h-80 overflow-y-auto">
+            <div class="p-4 space-y-1 text-sm font-mono">
+              <div class="flex">
+                <span class="text-text-secondary w-24 flex-shrink-0">YT ID:</span>
+                <span class="text-text-primary">UC_x5XG1OV2P6uZZ5FSM9Ttw</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-24 flex-shrink-0">Title:</span>
+                <span class="text-text-primary">Google Developers</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-24 flex-shrink-0">Thumbnail:</span>
+                <span class="text-text-primary truncate" title="https://yt3.ggpht.com/ytc/AIdro...">
+                  https://yt3.ggpht.com/ytc/AIdro...
+                </span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-24 flex-shrink-0">Folder:</span>
+                <span class="text-text-primary">Google_Developers</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-24 flex-shrink-0">Last Scan:</span>
+                <span class="text-text-primary">Jan 25, 2026, 3:42 PM</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-24 flex-shrink-0">Created:</span>
+                <span class="text-text-primary">Dec 15, 2025, 10:30 AM</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Channel Info Modal (Mobile) -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Channel Info Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">Mobile</span>
+        </div>
+        <div class="bg-black/70 backdrop-blur-sm rounded-xl p-4 flex items-center justify-center">
+          <div class="bg-dark-secondary rounded-lg w-full max-w-[320px] shadow-2xl border border-dark-border">
+            <div class="flex items-center justify-between p-3 border-b border-dark-border">
+              <h3 class="text-base font-semibold text-text-primary">Channel Info</h3>
+              <button class="text-text-secondary hover:text-text-primary transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="p-3 space-y-2 text-xs font-mono">
               <div>
-                <div class="text-text-muted text-xs mb-1">Title</div>
+                <div class="text-text-muted mb-0.5">YT ID</div>
+                <div class="text-text-primary break-all">UC_x5XG1OV2P6uZZ5FSM9Ttw</div>
+              </div>
+              <div>
+                <div class="text-text-muted mb-0.5">Title</div>
+                <div class="text-text-primary">Google Developers</div>
+              </div>
+              <div>
+                <div class="text-text-muted mb-0.5">Folder</div>
+                <div class="text-text-primary">Google_Developers</div>
+              </div>
+              <div class="flex gap-4">
+                <div class="flex-1">
+                  <div class="text-text-muted mb-0.5">Last Scan</div>
+                  <div class="text-text-primary">Jan 25, 3:42 PM</div>
+                </div>
+                <div class="flex-1">
+                  <div class="text-text-muted mb-0.5">Created</div>
+                  <div class="text-text-primary">Dec 15, 2025</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== VIDEO INFO MODAL ==================== -->
+      <!-- Based on video object fields: title, channel_title, duration_sec, upload_date, file_path, file_size_bytes, downloaded_at -->
+
+      <!-- Video Info Modal (Desktop) -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Video Info Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-dark-tertiary rounded text-text-muted">Desktop</span>
+        </div>
+        <div class="bg-black/70 backdrop-blur-sm rounded-xl p-6 flex items-center justify-center">
+          <div class="bg-dark-secondary rounded-lg max-w-lg w-full shadow-2xl border border-dark-border">
+            <div class="flex items-center justify-between p-4 border-b border-dark-border">
+              <h3 class="text-lg font-semibold text-text-primary">Video Info</h3>
+              <button class="text-text-secondary hover:text-text-primary transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="p-4 space-y-1 text-sm font-mono">
+              <div class="flex">
+                <span class="text-text-secondary w-28 flex-shrink-0">Title:</span>
+                <span class="text-text-primary">How to Build a Second Brain - Full Workshop</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-28 flex-shrink-0">Channel:</span>
+                <span class="text-text-primary">Tiago Forte</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-28 flex-shrink-0">Duration:</span>
+                <span class="text-text-primary">1:24:36</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-28 flex-shrink-0">Upload Date:</span>
+                <span class="text-text-primary">Jan 15, 2026</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-28 flex-shrink-0">File Size:</span>
+                <span class="text-text-primary">1.24 GB</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-28 flex-shrink-0">Downloaded:</span>
+                <span class="text-text-primary">Jan 20, 2026, 2:15 PM</span>
+              </div>
+              <div class="flex">
+                <span class="text-text-secondary w-28 flex-shrink-0">File Path:</span>
+                <span class="text-text-primary truncate" title="Tiago_Forte/How_to_Build_a_Second_Brain.mp4">
+                  Tiago_Forte/How_to_Build_a_Second_Brain.mp4
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Video Info Modal (Mobile) -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Video Info Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">Mobile</span>
+        </div>
+        <div class="bg-black/70 backdrop-blur-sm rounded-xl p-4 flex items-center justify-center">
+          <div class="bg-dark-secondary rounded-lg w-full max-w-[320px] shadow-2xl border border-dark-border">
+            <div class="flex items-center justify-between p-3 border-b border-dark-border">
+              <h3 class="text-base font-semibold text-text-primary">Video Info</h3>
+              <button class="text-text-secondary hover:text-text-primary transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="p-3 space-y-2 text-xs font-mono">
+              <div>
+                <div class="text-text-muted mb-0.5">Title</div>
                 <div class="text-text-primary">How to Build a Second Brain - Full Workshop</div>
               </div>
               <div>
-                <div class="text-text-muted text-xs mb-1">Channel</div>
+                <div class="text-text-muted mb-0.5">Channel</div>
                 <div class="text-text-primary">Tiago Forte</div>
               </div>
-              <div class="flex gap-6">
-                <div>
-                  <div class="text-text-muted text-xs mb-1">Duration</div>
+              <div class="flex gap-4">
+                <div class="flex-1">
+                  <div class="text-text-muted mb-0.5">Duration</div>
                   <div class="text-text-primary">1:24:36</div>
                 </div>
-                <div>
-                  <div class="text-text-muted text-xs mb-1">Resolution</div>
-                  <div class="text-text-primary">1080p</div>
-                </div>
-                <div>
-                  <div class="text-text-muted text-xs mb-1">Size</div>
-                  <div class="text-text-primary">1.2 GB</div>
+                <div class="flex-1">
+                  <div class="text-text-muted mb-0.5">Size</div>
+                  <div class="text-text-primary">1.24 GB</div>
                 </div>
               </div>
-              <div>
-                <div class="text-text-muted text-xs mb-1">Upload Date</div>
-                <div class="text-text-primary">Jan 15, 2026</div>
+              <div class="flex gap-4">
+                <div class="flex-1">
+                  <div class="text-text-muted mb-0.5">Uploaded</div>
+                  <div class="text-text-primary">Jan 15, 2026</div>
+                </div>
+                <div class="flex-1">
+                  <div class="text-text-muted mb-0.5">Downloaded</div>
+                  <div class="text-text-primary">Jan 20, 2026</div>
+                </div>
               </div>
               <div>
-                <div class="text-text-muted text-xs mb-1">Description</div>
-                <div class="text-text-secondary line-clamp-3">Learn how to build your personal knowledge management system. This comprehensive workshop covers...</div>
+                <div class="text-text-muted mb-0.5">File Path</div>
+                <div class="text-text-primary break-all text-[10px]">Tiago_Forte/How_to_Build_a_Second_Brain.mp4</div>
               </div>
-              <div>
-                <div class="text-text-muted text-xs mb-1">File Path</div>
-                <div class="text-text-secondary font-mono text-xs break-all">/videos/Tiago_Forte/How_to_Build_a_Second_Brain.mp4</div>
-              </div>
-            </div>
-            <div class="p-4 pt-0">
-              <button class="w-full px-4 py-2.5 bg-dark-tertiary hover:bg-dark-hover border border-dark-border rounded-lg text-sm font-medium transition-colors">
-                Close
-              </button>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Channel Info Modal -->
-      <div class="space-y-3">
-        <div class="text-xs font-medium text-accent uppercase tracking-wide">Channel Info Modal</div>
-        <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="bg-dark-secondary border border-dark-border rounded-xl max-w-md mx-auto overflow-hidden">
-            <div class="flex items-center justify-between p-4 border-b border-dark-border">
-              <h2 class="text-base font-semibold">Channel Details</h2>
-              <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-              </button>
-            </div>
-            <div class="p-4 space-y-3 text-sm">
-              <div class="flex justify-between py-2 border-b border-dark-border">
-                <span class="text-text-secondary">YouTube ID</span>
-                <span class="text-text-primary font-mono text-xs">UC_x5XG1OV2P6uZZ5FSM9Ttw</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-dark-border">
-                <span class="text-text-secondary">Title</span>
-                <span class="text-text-primary">Google Developers</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-dark-border">
-                <span class="text-text-secondary">Folder Name</span>
-                <span class="text-text-primary font-mono text-xs">Google_Developers</span>
-              </div>
-              <div class="flex justify-between py-2 border-b border-dark-border">
-                <span class="text-text-secondary">Last Scan</span>
-                <span class="text-text-primary">Jan 25, 2026 3:42 PM</span>
-              </div>
-              <div class="flex justify-between py-2">
-                <span class="text-text-secondary">Created</span>
-                <span class="text-text-primary">Dec 15, 2025</span>
-              </div>
-            </div>
-            <div class="p-4 pt-0">
-              <button class="w-full px-4 py-2.5 bg-dark-tertiary hover:bg-dark-hover border border-dark-border rounded-lg text-sm font-medium transition-colors">
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <!-- ==================== DURATION SETTINGS MODAL ==================== -->
 
-      <!-- Duration Settings Modal -->
+      <!-- Duration Settings Modal (Desktop) -->
       <div class="space-y-3">
-        <div class="text-xs font-medium text-accent uppercase tracking-wide">Duration Settings Modal</div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Duration Settings Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-dark-tertiary rounded text-text-muted">Desktop</span>
+        </div>
         <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="bg-dark-secondary border border-dark-border rounded-xl max-w-sm mx-auto overflow-hidden">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg max-w-sm mx-auto overflow-hidden">
             <div class="flex items-center justify-between p-4 border-b border-dark-border">
               <h2 class="text-base font-semibold">Duration Filter</h2>
               <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
@@ -291,11 +467,54 @@
         </div>
       </div>
 
-      <!-- Settings Repair Modal -->
+      <!-- Duration Settings Modal (Mobile) -->
       <div class="space-y-3">
-        <div class="text-xs font-medium text-accent uppercase tracking-wide">Settings Repair Modal</div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Duration Settings Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">Mobile</span>
+        </div>
+        <div class="bg-black/60 backdrop-blur-sm rounded-xl p-4">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg w-full max-w-[320px] mx-auto overflow-hidden">
+            <div class="flex items-center justify-between p-3 border-b border-dark-border">
+              <h2 class="text-base font-semibold">Duration Filter</h2>
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-tertiary text-text-secondary">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="p-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs text-text-secondary mb-1.5">Min (min)</label>
+                  <input type="number" value="5" class="w-full px-3 py-3 bg-dark-primary border border-dark-border rounded-lg text-sm text-center">
+                </div>
+                <div>
+                  <label class="block text-xs text-text-secondary mb-1.5">Max (min)</label>
+                  <input type="number" value="60" class="w-full px-3 py-3 bg-dark-primary border border-dark-border rounded-lg text-sm text-center">
+                </div>
+              </div>
+            </div>
+            <div class="flex gap-2 p-3 pt-0">
+              <button class="flex-1 px-3 py-3 bg-dark-tertiary border border-dark-border rounded-lg text-sm font-medium">
+                Cancel
+              </button>
+              <button class="flex-1 px-3 py-3 bg-accent text-black rounded-lg text-sm font-medium">
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== SETTINGS REPAIR MODAL ==================== -->
+
+      <!-- Settings Repair Modal (Desktop) -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Settings Repair Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-dark-tertiary rounded text-text-muted">Desktop</span>
+        </div>
         <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="bg-dark-secondary border border-dark-border rounded-xl max-w-md mx-auto overflow-hidden">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg max-w-md mx-auto overflow-hidden">
             <div class="flex items-center justify-between p-4 border-b border-dark-border">
               <h2 class="text-base font-semibold">Database Repair</h2>
               <button class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
@@ -340,83 +559,142 @@
         </div>
       </div>
 
-      <!-- Add to Playlist Menu -->
-      <div class="space-y-3 lg:col-span-2">
+      <!-- Settings Repair Modal (Mobile) -->
+      <div class="space-y-3">
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-medium text-accent uppercase tracking-wide">Settings Repair Modal</span>
+          <span class="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded">Mobile</span>
+        </div>
+        <div class="bg-black/60 backdrop-blur-sm rounded-xl p-4">
+          <div class="bg-dark-secondary border border-dark-border rounded-lg w-full max-w-[320px] mx-auto overflow-hidden">
+            <div class="flex items-center justify-between p-3 border-b border-dark-border">
+              <h2 class="text-base font-semibold">Database Repair</h2>
+              <button class="w-8 h-8 flex items-center justify-center rounded-lg text-text-secondary">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+            </div>
+            <div class="p-3 space-y-2">
+              <div class="p-3 bg-dark-tertiary rounded-lg border border-dark-border">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-medium text-sm">Unavailable Videos</span>
+                  <span class="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded">12</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-text-secondary text-xs">Remove unplayable</span>
+                  <button class="px-3 py-1.5 bg-red-500/10 text-red-400 rounded text-xs font-medium">Remove</button>
+                </div>
+              </div>
+              <div class="p-3 bg-dark-tertiary rounded-lg border border-dark-border">
+                <div class="flex items-center justify-between mb-1">
+                  <span class="font-medium text-sm">Purge Channels</span>
+                  <span class="text-xs px-2 py-0.5 bg-red-500/20 text-red-400 rounded">3</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-text-secondary text-xs">Delete orphaned</span>
+                  <button class="px-3 py-1.5 bg-red-500/10 text-red-400 rounded text-xs font-medium">Purge</button>
+                </div>
+              </div>
+              <div class="p-3 bg-dark-tertiary rounded-lg border border-dark-border">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <div class="font-medium text-sm">Repair Metadata</div>
+                    <div class="text-text-secondary text-xs">Fix thumbnails & dates</div>
+                  </div>
+                  <button class="px-3 py-1.5 bg-dark-hover text-text-primary rounded text-xs font-medium">Repair</button>
+                </div>
+              </div>
+            </div>
+            <div class="p-3 pt-0">
+              <button class="w-full px-4 py-3 bg-dark-tertiary border border-dark-border rounded-lg text-sm font-medium">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== ADD TO PLAYLIST MENU ==================== -->
+
+      <!-- Add to Playlist Menu (Desktop & Mobile side by side) -->
+      <div class="space-y-3 xl:col-span-2">
         <div class="text-xs font-medium text-accent uppercase tracking-wide">Add to Playlist Menu</div>
         <div class="bg-black/60 backdrop-blur-sm rounded-xl p-6">
-          <div class="flex justify-center gap-8">
-            <!-- Positioned version -->
-            <div class="bg-dark-secondary border border-dark-border rounded-xl w-72 overflow-hidden shadow-xl">
-              <div class="flex items-center justify-between p-3 border-b border-dark-border">
-                <span class="font-medium text-sm">Save to playlist</span>
-                <button class="w-6 h-6 flex items-center justify-center rounded hover:bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+          <div class="flex flex-col md:flex-row justify-center gap-8">
+            <!-- Desktop -->
+            <div>
+              <div class="text-xs text-text-muted mb-3 text-center">Desktop</div>
+              <div class="bg-dark-secondary border border-dark-border rounded-lg w-72 overflow-hidden shadow-xl">
+                <div class="flex items-center justify-between p-3 border-b border-dark-border">
+                  <span class="font-medium text-sm">Save to playlist</span>
+                  <button class="w-6 h-6 flex items-center justify-center rounded hover:bg-dark-tertiary text-text-secondary hover:text-text-primary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+                <div class="max-h-52 overflow-y-auto">
+                  <label class="flex items-center gap-3 px-4 py-3 hover:bg-dark-tertiary cursor-pointer border-b border-dark-border transition-colors">
+                    <input type="checkbox" checked class="w-4 h-4 rounded border-dark-border accent-accent">
+                    <span class="text-sm flex-1">Watch Later</span>
+                    <svg class="w-4 h-4 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                  </label>
+                  <label class="flex items-center gap-3 px-4 py-3 hover:bg-dark-tertiary cursor-pointer border-b border-dark-border transition-colors">
+                    <input type="checkbox" class="w-4 h-4 rounded border-dark-border accent-accent">
+                    <span class="text-sm">Favorites</span>
+                  </label>
+                  <label class="flex items-center gap-3 px-4 py-3 hover:bg-dark-tertiary cursor-pointer border-b border-dark-border transition-colors">
+                    <input type="checkbox" class="w-4 h-4 rounded border-dark-border accent-accent">
+                    <span class="text-sm">Programming Tutorials</span>
+                  </label>
+                  <label class="flex items-center gap-3 px-4 py-3 hover:bg-dark-tertiary cursor-pointer transition-colors">
+                    <input type="checkbox" class="w-4 h-4 rounded border-dark-border accent-accent">
+                    <span class="text-sm">Music</span>
+                  </label>
+                </div>
+                <div class="p-3 border-t border-dark-border">
+                  <button class="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-dark-border-light hover:border-accent hover:text-accent rounded-lg text-sm text-text-secondary transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Create new playlist
+                  </button>
+                </div>
               </div>
-              <div class="max-h-52 overflow-y-auto">
-                <label class="flex items-center gap-3 px-4 py-3 hover:bg-dark-tertiary cursor-pointer border-b border-dark-border transition-colors">
-                  <input type="checkbox" checked class="w-4 h-4 rounded border-dark-border accent-accent">
-                  <span class="text-sm">Watch Later</span>
-                  <svg class="w-4 h-4 ml-auto text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
-                </label>
-                <label class="flex items-center gap-3 px-4 py-3 hover:bg-dark-tertiary cursor-pointer border-b border-dark-border transition-colors">
-                  <input type="checkbox" class="w-4 h-4 rounded border-dark-border accent-accent">
-                  <span class="text-sm">Favorites</span>
-                </label>
-                <label class="flex items-center gap-3 px-4 py-3 hover:bg-dark-tertiary cursor-pointer border-b border-dark-border transition-colors">
-                  <input type="checkbox" class="w-4 h-4 rounded border-dark-border accent-accent">
-                  <span class="text-sm">Programming Tutorials</span>
-                </label>
-                <label class="flex items-center gap-3 px-4 py-3 hover:bg-dark-tertiary cursor-pointer transition-colors">
-                  <input type="checkbox" class="w-4 h-4 rounded border-dark-border accent-accent">
-                  <span class="text-sm">Music</span>
-                </label>
-              </div>
-              <div class="p-3 border-t border-dark-border">
-                <button class="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-dark-border-light hover:border-accent hover:text-accent rounded-lg text-sm text-text-secondary transition-colors">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-                  Create new playlist
-                </button>
+            </div>
+
+            <!-- Mobile -->
+            <div>
+              <div class="text-xs text-text-muted mb-3 text-center">Mobile</div>
+              <div class="bg-dark-secondary border border-dark-border rounded-lg w-[280px] overflow-hidden shadow-xl">
+                <div class="flex items-center justify-between p-3 border-b border-dark-border">
+                  <span class="font-medium text-sm">Save to playlist</span>
+                  <button class="w-8 h-8 flex items-center justify-center rounded text-text-secondary">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  </button>
+                </div>
+                <div class="max-h-60 overflow-y-auto">
+                  <label class="flex items-center gap-3 px-4 py-3.5 border-b border-dark-border">
+                    <input type="checkbox" checked class="w-5 h-5 rounded accent-accent">
+                    <span class="text-sm flex-1">Watch Later</span>
+                    <svg class="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                  </label>
+                  <label class="flex items-center gap-3 px-4 py-3.5 border-b border-dark-border">
+                    <input type="checkbox" class="w-5 h-5 rounded accent-accent">
+                    <span class="text-sm">Favorites</span>
+                  </label>
+                  <label class="flex items-center gap-3 px-4 py-3.5 border-b border-dark-border">
+                    <input type="checkbox" class="w-5 h-5 rounded accent-accent">
+                    <span class="text-sm">Programming</span>
+                  </label>
+                </div>
+                <div class="p-3 border-t border-dark-border">
+                  <button class="w-full flex items-center justify-center gap-2 px-3 py-3 border border-dashed border-dark-border-light rounded-lg text-sm text-text-secondary">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    Create new
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-    </div>
-
-    <!-- Design Notes -->
-    <div class="mt-12 p-6 bg-dark-secondary border border-dark-border rounded-xl">
-      <h2 class="text-lg font-semibold mb-4">Design Patterns</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-sm">
-        <div>
-          <h3 class="text-accent font-medium mb-2">Backgrounds</h3>
-          <ul class="text-text-secondary space-y-1">
-            <li>• Backdrop: <code class="text-text-muted">bg-black/60 backdrop-blur-sm</code></li>
-            <li>• Modal: <code class="text-text-muted">bg-dark-secondary</code></li>
-            <li>• Inputs: <code class="text-text-muted">bg-dark-primary</code></li>
-            <li>• Cards: <code class="text-text-muted">bg-dark-tertiary</code></li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="text-accent font-medium mb-2">Borders</h3>
-          <ul class="text-text-secondary space-y-1">
-            <li>• Default: <code class="text-text-muted">border-dark-border</code></li>
-            <li>• Focus: <code class="text-text-muted">border-accent</code></li>
-            <li>• Error: <code class="text-text-muted">border-red-500</code></li>
-            <li>• Radius: <code class="text-text-muted">rounded-xl</code> (modal), <code class="text-text-muted">rounded-lg</code> (buttons)</li>
-          </ul>
-        </div>
-        <div>
-          <h3 class="text-accent font-medium mb-2">Buttons</h3>
-          <ul class="text-text-secondary space-y-1">
-            <li>• Primary: <code class="text-text-muted">bg-accent text-black</code></li>
-            <li>• Secondary: <code class="text-text-muted">bg-dark-tertiary border-dark-border</code></li>
-            <li>• Danger: <code class="text-text-muted">bg-red-500 text-white</code></li>
-            <li>• Ghost danger: <code class="text-text-muted">bg-red-500/10 text-red-400</code></li>
-          </ul>
-        </div>
-      </div>
     </div>
   </div>
 
