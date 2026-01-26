@@ -6,7 +6,7 @@
 
 The most common causes of download failures are:
 
-1. **Missing or expired cookies** - YouTube has implemented aggressive bot detection as of 2024. See [YouTube Cookies](#youtube-cookies-and-authentication) below.
+1. **Missing or expired cookies** - YouTube has implemented aggressive bot detection. See [YouTube Cookies](#youtube-cookies-and-authentication) below.
 2. **Outdated yt-dlp** - YouTube frequently changes their systems. Keep yt-dlp updated.
 3. **Network issues** - Check your internet connection and firewall settings.
 4. **Age-restricted or private videos** - These require valid authentication cookies.
@@ -25,7 +25,7 @@ The most common causes of download failures are:
 
 ### Why do I need cookies.txt?
 
-As of 2024, YouTube cookies are essentially required for reliable downloads. According to [yt-dlp's FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp), YouTube has implemented increasingly aggressive bot detection that makes downloads fail without authentication cookies.
+YouTube cookies are essentially required for reliable downloads. According to [yt-dlp's FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp), YouTube has implemented increasingly aggressive bot detection that makes downloads fail without authentication cookies.
 
 Without cookies, you may experience:
 - Bot detection errors (`Sign in to confirm you're not a bot`)
@@ -40,7 +40,7 @@ YouTube cookies typically expire every few weeks to months. Signs that your cook
 - "This video is not available" errors for previously working videos
 - Bot detection messages in logs
 
-**Solution:** Re-export your cookies using the same method described in the [README](README.md#youtube-cookies-strongly-recommended).
+**Solution:** Re-export your cookies using the same method described in the [README](README.md#youtube-cookies-recommended).
 
 ### What cookie format does YT and Chill support?
 
@@ -48,7 +48,7 @@ YT and Chill requires cookies in **Netscape HTTP Cookie File format**. This is t
 - "Get cookies.txt LOCALLY" (Chrome/Edge)
 - "cookies.txt" (Firefox)
 
-The file must be named `cookies.txt` and placed in the project root directory.
+The file must be named `cookies.txt` and placed in the `data/` directory.
 
 ### How do I properly export cookies from YouTube?
 
@@ -68,9 +68,9 @@ The file must be named `cookies.txt` and placed in the project root directory.
 7. **Click the extension icon** and export cookies for the current site
 8. **Save the file as `cookies.txt`**
 9. **Close the incognito window immediately** after exporting
-10. **Place `cookies.txt` in your YT and Chill directory**:
-    - Native install: Project root directory
-    - Docker/Unraid: `/mnt/user/appdata/ytandchill/`
+10. **Place `cookies.txt` in your YT and Chill data directory**:
+    - Native install: `data/cookies.txt`
+    - Docker/Unraid: `/mnt/user/appdata/ytandchill/data/cookies.txt`
 
 **Why this method works best:**
 - Incognito mode ensures clean cookies without interference from other sessions
@@ -212,9 +212,8 @@ Each channel gets its own subdirectory organized by channel name.
 ### How do I backup my data?
 
 Backup these directories:
-- `data/` - Database and configuration
+- `data/` - Database, configuration, and cookies.txt
 - `downloads/` - Your video library
-- `cookies.txt` - Authentication cookies (if using)
 
 Logs in `logs/` are optional to backup.
 
@@ -224,14 +223,14 @@ Logs in `logs/` are optional to backup.
 
 **Checks:**
 1. Is the application running? Check logs in `logs/app.log`
-2. Is the correct port open? Default is 4099
-3. Is another service using port 4099?
+2. Is the correct port open? (default: 4099)
+3. Is another service using your chosen port?
 4. Firewall blocking the port?
 
 **Solutions:**
 - Check application logs for errors
-- Verify port in browser: `http://localhost:4099`
-- Change port in environment variable `PORT` if needed
+- Verify port in browser: `http://localhost:YOUR-PORT`
+- Change port via `PORT` environment variable if needed
 
 ### FFmpeg errors during download
 
