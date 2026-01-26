@@ -1,6 +1,6 @@
 # YT and Chill
 
-YouTube channel downloader and video library manager. Monitor channels, queue downloads, and manage your local video library. Built with [Claude AI](https://claude.ai) through months of collaborative prompting.
+YT channel downloader and video library manager. Monitor channels, queue downloads, and manage your local video library. Built with [Claude AI](https://claude.ai) through months of collaborative prompting.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
@@ -84,9 +84,9 @@ See [UNRAID-SETUP.md](UNRAID-SETUP.md)
 
 ## Configuration
 
-### YouTube Cookies (Recommended)
+### YT Cookies (Recommended)
 
-Required for reliable downloads due to YouTube's bot detection.
+Required for reliable downloads due to YT's bot detection.
 
 **Option 1: cookies.txt**
 1. Install browser extension ("Get cookies.txt LOCALLY" for Chrome, "cookies.txt" for Firefox)
@@ -100,20 +100,20 @@ Required for reliable downloads due to YouTube's bot detection.
 
 See [FAQ.md](FAQ.md#youtube-cookies-and-authentication) for detailed cookie setup instructions.
 
-### YouTube API Key (Highly Recommended)
+### YT API Key (Highly Recommended)
 
-A YouTube API key provides:
+A YT API key provides:
 - **Faster scanning** (~2 seconds vs ~2 minutes per channel)
 - **Proper channel thumbnails** (without API, falls back to video thumbnails)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a project and enable **YouTube Data API v3**
+2. Create a project and enable **YT Data API v3**
 3. Create an API Key under Credentials
-4. Paste in Settings → Downloads → YouTube API Key
+4. Paste in Settings → Downloads → API Key
 
 ## Importing Existing Videos
 
-Have existing YouTube videos? Import them into your library:
+Have existing YT videos? Import them into your library:
 
 ### Drag and Drop
 1. Go to the Import page
@@ -130,7 +130,7 @@ Have existing YouTube videos? Import them into your library:
 
 ### How Matching Works
 - **Filename = Video ID** (e.g., `dQw4w9WgXcQ.mp4`) → instant match
-- **Filename = Title** (e.g., `My Video Title.mp4`) → YouTube search + duration match
+- **Filename = Title** (e.g., `My Video Title.mp4`) → YT search + duration match
 
 **Tip:** Add a `channels.txt` file with channel URLs (one per line) to improve matching accuracy.
 
@@ -142,7 +142,7 @@ Have existing YouTube videos? Import them into your library:
 | Bot detection errors | Add or update cookies.txt - see [FAQ](FAQ.md#youtube-cookies-and-authentication) |
 | Port already in use | Set `PORT` environment variable to a different port |
 | Docker issues | Check logs with `docker logs ytandchill` |
-| Slow channel scanning | Add YouTube API key in Settings |
+| Slow channel scanning | Add YT API key in Settings |
 
 For detailed troubleshooting, see [FAQ.md](FAQ.md).
 
