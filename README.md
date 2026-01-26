@@ -1,26 +1,37 @@
 # YT and Chill
 
-YT channel downloader and video library manager. Monitor channels, queue downloads, and manage your local video library. Built with [Claude AI](https://claude.ai) through months of collaborative prompting.
+YouTube channel downloader and video library manager. Monitor channels, queue downloads, and manage your local video library. Built with [Claude AI](https://claude.ai) through months of collaborative prompting.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Docker](https://img.shields.io/badge/docker-ready-brightgreen.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20Unraid-lightgrey.svg)
+![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS%20%7C%20Unraid-lightgrey.svg)
+
+## Table of Contents
+
+- [Features](#features)
+- [Screenshots](#screenshots)
+- [Quick Start](#quick-start)
+- [Configuration](#configuration)
+- [Importing Existing Videos](#importing-existing-videos)
+- [Troubleshooting](#troubleshooting)
+- [Documentation](#documentation)
+- [Credits](#credits)
 
 ## Features
 
-- **Channel Management** - Subscribe to channels, organize with categories, set per-channel duration filters and auto-download
+- **Channel Management** - Subscribe to channels, organize with categories, set per-channel duration filters and auto-download preferences
 - **Smart Queue** - Drag-and-drop reordering, pause/resume, real-time progress with speed and ETA
-- **Video Library** - Search, filter, sort by download/upload date, bulk actions, watched status with resume playback
-- **Smart Import** - Drag-and-drop upload, auto-matching by filename or video ID, results view with Text/CSV export
+- **Smart Import** - Drag-and-drop upload, auto-matching by filename or video ID, export results as Text/CSV
+- **One-Off Downloading** - Download individual videos by URL without subscribing to channels
 - **Playlists** - Create custom playlists, organize with categories, shuffle play
-- **Video Player** - Playback speed controls, picture-in-picture, keyboard shortcuts, video preview on hover
-- **Settings** - Collapsible sections, tooltips, ffmpeg configuration, auto-update system
-- **Auto-Scan Scheduler** - Set daily scan times to check for new uploads
+- **Video & Playlist Players** - Theater mode, playback speed controls, picture-in-picture, keyboard shortcuts
+- **Settings with Themes** - 10 themes including Kernel, Fatal, Subnet, Archive, Buffer, Gateway, Catppuccin, Online, Pixel, Debug
+- **Auto-Scan Scheduler** - Set daily scan times to automatically check for new uploads
 - **Toast Notifications** - Non-blocking status updates throughout the app
-- **10 Themes** - Kernel, Fatal, Subnet, Archive, Buffer, Gateway, Catppuccin, Online, Pixel, Debug
+- **Favorites** - Quick access to your favorite channels and their videos
+- **Watch History** - Track watched videos with resume playback support
 - **Mobile Support** - Touch-optimized interface with gesture controls
-- **Cookie Auth** - cookies.txt or Firefox browser integration for authenticated downloads
-- **SponsorBlock** - Auto-remove sponsor segments, self-promos, and like/subscribe reminders
+- **[SponsorBlock](https://sponsor.ajay.app/)** - Auto-skip sponsor segments, intros, outros, and self-promotions
 
 ## Screenshots
 
@@ -32,13 +43,13 @@ YT channel downloader and video library manager. Monitor channels, queue downloa
 |:---:|:---:|
 | ![Library](images/library.png) | ![Playlist](images/playlist.png) |
 
-| Video Player | Import |
+| Playlist Player | Import |
 |:---:|:---:|
-| ![Video Player](images/video.png) | ![Import](images/import.png) |
+| ![Playlist Player](images/playlist-player.png) | ![Import](images/import.png) |
 
-| Settings | |
+| Settings | Mobile |
 |:---:|:---:|
-| ![Settings](images/settings.png) | |
+| ![Settings](images/settings.png) | ![Mobile](images/mobile.jpg) |
 
 ## Quick Start
 
@@ -59,19 +70,19 @@ cd ytandchill
 ```cmd
 windows-start.bat
 ```
-Select option 3 (Setup) on first run, then option 1 (Start) to launch.
+Select option 3 (Initial Setup) on first run, then option 1 (Start Server).
 
 **Linux / macOS:**
 ```bash
 chmod +x linux-start.sh
 ./linux-start.sh
 ```
-Select option 3 (Setup) on first run, then option 1 (Start) to launch.
+Select option 3 (Initial Setup) on first run, then option 1 (Start Server).
 
-**Unraid/Docker:**
+**Unraid / Docker:**
 See [UNRAID-SETUP.md](UNRAID-SETUP.md)
 
-Access at http://localhost:4099
+Access at **http://localhost:4099**
 
 ## Configuration
 
@@ -82,121 +93,76 @@ Required for reliable downloads due to YouTube's bot detection.
 **Option 1: cookies.txt**
 1. Install browser extension ("Get cookies.txt LOCALLY" for Chrome, "cookies.txt" for Firefox)
 2. Export cookies from youtube.com while logged in
-3. Save as `backend/cookies.txt`
+3. Save as `data/cookies.txt`
 4. Select "cookies.txt" in Settings → Cookie Source
 
 **Option 2: Firefox Integration (Docker only)**
+1. Mount your Firefox profile directory in docker-compose.yml
+2. Select "Firefox" in Settings → Cookie Source
 
-Mount your Firefox profile directory to automatically extract cookies:
+See [FAQ.md](FAQ.md#youtube-cookies-and-authentication) for detailed cookie setup instructions.
 
-1. Find your Firefox profile path:
-   - **Linux:** `~/.mozilla/firefox`
-   - **macOS:** `~/Library/Application Support/Firefox/Profiles`
+### YouTube API Key (Optional)
 
-2. Add volume mount to docker-compose.yml:
-   ```yaml
-   volumes:
-     # ... other volumes ...
-     - /home/YOUR_USERNAME/.mozilla/firefox:/firefox_profile:ro
-   ```
+A YouTube API key makes channel scanning significantly faster (~2 seconds vs ~2 minutes per channel).
 
-3. Rebuild container: `docker-compose up -d --build`
-4. Select "Firefox" in Settings → Cookie Source
-
-### YouTube API Key (Recommended)
-
-A YouTube API key makes channel scanning **significantly faster**. Without it, scanning falls back to yt-dlp which is slower.
-
-| Operation | With API Key | Without API Key |
-|-----------|-------------|-----------------|
-| Scan New (50 videos) | ~2 seconds | ~2 minutes |
-| Scan All (full channel) | Uses fast mode + API dates | Uses fast mode, dates may be missing |
-| Auto-scan | ~2 seconds per channel | ~2 minutes per channel |
-
-**Setup:**
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project (or select existing)
-3. Enable the **YouTube Data API v3**
-4. Go to Credentials → Create Credentials → API Key
-5. (Recommended) Restrict the key to **YouTube Data API v3** only
-6. In the app: Settings → Downloads → YouTube API Key → paste and Save
-
-**Quota:** Default is 10,000 units/day. Scanning 100 channels uses ~200 units. Adding a channel with 5,000 videos uses ~100 units.
+2. Create a project and enable **YouTube Data API v3**
+3. Create an API Key under Credentials
+4. Paste in Settings → Downloads → YouTube API Key
 
 ## Importing Existing Videos
 
 Have existing YouTube videos? Import them into your library:
 
-**Option 1: Drag and Drop**
-1. Go to Import page in the app
-2. Drag video files directly onto the page (supports files up to 50GB)
-3. Files upload to the imports folder automatically
-4. Click "Smart Import" to identify and add to library
+### Drag and Drop
+1. Go to the Import page
+2. Drag video files onto the page (supports files up to 50GB)
+3. Click "Smart Import" to identify and add to library
 
-**Option 2: Direct Folder Access**
+### Direct Folder Access
 1. Place video files in `downloads/imports/`
-2. Go to Import page in the app
-3. Click "Smart Import" (Auto or Manual mode)
+2. Go to Import page and click "Smart Import"
 
-**Supported Formats:**
+### Supported Formats
 - **Web-ready:** `.mp4`, `.webm`, `.m4v` - import directly
-- **Requires re-encoding:** `.mkv` - select "Include MKVs" option on the Import page
+- **Requires re-encoding:** `.mkv` - select "Include MKVs" option
 
-**Tips:**
-- Add a `channels.txt` file with channel URLs to improve matching accuracy
-- Supported channel file formats: `channels.txt`, `channels.csv`, `channels.list`, `urls.txt`, `urls.csv` (one URL per line)
-
-Videos are identified automatically by:
+### How Matching Works
 - **Filename = Video ID** (e.g., `dQw4w9WgXcQ.mp4`) → instant match
 - **Filename = Title** (e.g., `My Video Title.mp4`) → YouTube search + duration match
 
-**Import Results**: View matched, skipped, and failed imports with video IDs and similarity scores. Export results as Text or CSV.
-
-## Directory Structure
-
-```
-ytandchill/
-├── data/           # Database
-├── downloads/      # Videos and thumbnails
-│   └── imports/    # Drop files here for import
-├── logs/           # Application logs
-└── backend/
-    └── cookies.txt # YouTube cookies (optional)
-```
+**Tip:** Add a `channels.txt` file with channel URLs (one per line) to improve matching accuracy.
 
 ## Troubleshooting
 
-- **Downloads failing**: Update yt-dlp (`pip install --upgrade yt-dlp`), check cookies
-- **Port in use**: Set `PORT` environment variable
-- **Docker issues**: Check logs with `docker logs ytandchill`
+| Issue | Solution |
+|-------|----------|
+| Downloads failing | Update yt-dlp (`pip install --upgrade yt-dlp`), refresh cookies |
+| Bot detection errors | Add or update cookies.txt - see [FAQ](FAQ.md#youtube-cookies-and-authentication) |
+| Port already in use | Set `PORT` environment variable to a different port |
+| Docker issues | Check logs with `docker logs ytandchill` |
+| Slow channel scanning | Add YouTube API key in Settings |
 
-See [FAQ.md](FAQ.md) for more help.
+For detailed troubleshooting, see [FAQ.md](FAQ.md).
 
 ## Documentation
 
 | File | Description |
 |------|-------------|
-| [README.md](README.md) | This file - quick start and overview |
 | [FAQ.md](FAQ.md) | Frequently asked questions and troubleshooting |
-| [PLATFORM-GUIDE.md](PLATFORM-GUIDE.md) | Detailed platform-specific setup (Windows, Linux, macOS) |
+| [PLATFORM-GUIDE.md](PLATFORM-GUIDE.md) | Detailed platform-specific setup |
 | [UNRAID-SETUP.md](UNRAID-SETUP.md) | Unraid/Docker installation guide |
 
-## Architecture
+## Credits
 
-- **Frontend**: React + Vite + Tailwind CSS
-- **Backend**: Python + Flask + SQLite
-- **Downloader**: yt-dlp + ffmpeg
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp) - Video downloading
+- [SponsorBlock](https://sponsor.ajay.app/) - Sponsor segment skipping
+- [Flask](https://github.com/pallets/flask) - Backend framework
+- [React](https://github.com/facebook/react) - Frontend framework
+- [Video.js](https://github.com/videojs/video.js) - Video player
+- [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) - Styling
 
 ## License
 
 MIT License
-
-## Credits
-
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp)
-- [Dashboard Icons](https://github.com/walkxcode/dashboard-icons)
-- [Flask](https://github.com/pallets/flask)
-- [React](https://github.com/facebook/react)
-- [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss)
-- [Video.js](https://github.com/videojs/video.js)
-- [Vite](https://github.com/vitejs/vite)
