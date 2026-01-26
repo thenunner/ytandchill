@@ -389,7 +389,7 @@ initial_setup() {
 
     echo ""
     echo -e "  Creating cookies.txt placeholder..."
-    touch backend/cookies.txt
+    touch data/cookies.txt
 
     echo ""
     echo -e "${GREEN}  ==========================================${NC}"
