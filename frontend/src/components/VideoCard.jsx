@@ -501,47 +501,87 @@ export default function VideoCard({
         isDanger={true}
       />
 
-      {/* Video Info Modal */}
+      {/* Video Info Modal - Glass Minimal Style */}
       {showVideoInfo && (
         <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 sm:p-4"
           onClick={(e) => {
             e.stopPropagation();
             setShowVideoInfo(false);
           }}
         >
+          {/* Desktop: centered modal, Mobile: bottom sheet */}
           <div
-            className="bg-dark-secondary rounded-lg max-w-lg w-full max-h-[80vh] overflow-y-auto"
+            className="hidden sm:block backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between p-4 border-b border-dark-border">
-              <h3 className="text-lg font-semibold text-text-primary">Video Info</h3>
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-medium text-text-primary">Video Info</h3>
+                <button
+                  onClick={() => setShowVideoInfo(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <div className="space-y-3 text-sm">
+                <InfoField label="YT ID" value={video.yt_id} mono />
+                <InfoField label="Title" value={video.title} />
+                <div className="grid grid-cols-2 gap-3">
+                  <InfoField label="Duration" value={video.duration_sec ? formatDuration(video.duration_sec) : '-'} />
+                  <InfoField label="Upload Date" value={video.upload_date || '-'} />
+                </div>
+                <InfoField label="Thumb URL" value={video.thumb_url || '-'} small truncate />
+                <InfoField label="File Path" value={video.file_path || '-'} small truncate />
+                <div className="grid grid-cols-2 gap-3">
+                  <InfoField label="File Size" value={video.file_size_bytes ? formatFileSize(video.file_size_bytes) : '-'} />
+                  <InfoField label="Downloaded" value={video.downloaded_at ? formatDateTime(video.downloaded_at).split(',')[0] : '-'} />
+                </div>
+                <InfoField label="Channel" value={video.channel_title || '-'} />
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile: Bottom Sheet */}
+          <div
+            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl max-h-[85%] overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <h3 className="font-semibold text-text-primary">Video Info</h3>
               <button
                 onClick={() => setShowVideoInfo(false)}
-                className="text-text-secondary hover:text-text-primary transition-colors"
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
-            <div className="p-4 space-y-1 text-sm font-mono">
-              <InfoRow label="YT ID" value={video.yt_id} />
-              <InfoRow label="Title" value={video.title} />
-              <InfoRow label="Status" value={video.status} />
-              <InfoRow label="Duration" value={video.duration_sec ? `${video.duration_sec}s (${formatDuration(video.duration_sec)})` : '-'} />
-              <InfoRow label="Upload Date" value={video.upload_date || '-'} />
-              <InfoRow label="Thumb URL" value={video.thumb_url || '-'} truncate />
-              <InfoRow label="File Path" value={video.file_path || '-'} truncate />
-              <InfoRow label="File Size" value={video.file_size_bytes ? formatFileSize(video.file_size_bytes) : '-'} />
-              <InfoRow label="Watched" value={video.watched ? 'Yes' : 'No'} />
-              <InfoRow label="Playback" value={video.playback_seconds ? `${video.playback_seconds}s` : '-'} />
-              <InfoRow label="Channel ID" value={video.channel_id || '-'} />
-              <InfoRow label="Channel" value={video.channel_title || '-'} />
-              <InfoRow label="Folder" value={video.folder_name || '-'} />
-              <InfoRow label="Discovered" value={video.discovered_at ? formatDateTime(video.discovered_at) : '-'} />
-              <InfoRow label="Downloaded" value={video.downloaded_at ? formatDateTime(video.downloaded_at) : '-'} />
-              <InfoRow label="Playlists" value={video.playlist_ids?.length ? video.playlist_ids.join(', ') : '-'} />
+            <div className="p-5 space-y-4 overflow-y-auto">
+              <InfoField label="YT ID" value={video.yt_id} mono />
+              <InfoField label="Title" value={video.title} />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <p className="text-accent text-base font-semibold">{video.duration_sec ? formatDuration(video.duration_sec) : '-'}</p>
+                  <p className="text-text-muted text-xs">Duration</p>
+                </div>
+                <div className="bg-white/5 rounded-xl p-3 text-center">
+                  <p className="text-base font-semibold text-text-primary">{video.file_size_bytes ? formatFileSize(video.file_size_bytes) : '-'}</p>
+                  <p className="text-text-muted text-xs">Size</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <InfoField label="Upload Date" value={video.upload_date || '-'} />
+                <InfoField label="Downloaded" value={video.downloaded_at ? formatDateTime(video.downloaded_at).split(',')[0] : '-'} />
+              </div>
+              <InfoField label="Thumb URL" value={video.thumb_url || '-'} small truncate />
+              <InfoField label="File Path" value={video.file_path || '-'} small truncate />
+              <InfoField label="Channel" value={video.channel_title || '-'} />
             </div>
           </div>
         </div>
@@ -550,13 +590,16 @@ export default function VideoCard({
   );
 }
 
-function InfoRow({ label, value, truncate }) {
+function InfoField({ label, value, mono, small, truncate }) {
   return (
-    <div className="flex">
-      <span className="text-text-secondary w-24 flex-shrink-0">{label}:</span>
-      <span className={`text-text-primary ${truncate ? 'truncate' : ''}`} title={truncate ? value : undefined}>
+    <div>
+      <p className="text-text-muted text-xs mb-0.5">{label}</p>
+      <p
+        className={`text-text-primary ${mono ? 'font-mono text-xs' : ''} ${small ? 'text-text-secondary text-xs' : 'text-sm'} ${truncate ? 'truncate' : ''}`}
+        title={truncate ? value : undefined}
+      >
         {value}
-      </span>
+      </p>
     </div>
   );
 }

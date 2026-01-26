@@ -29,7 +29,7 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
     const calculatePosition = () => {
       if (triggerRef?.current) {
         const triggerRect = triggerRef.current.getBoundingClientRect();
-        const menuWidth = 384; // max-w-sm = 384px
+        const menuWidth = 320; // w-80 = 320px
         const menuHeight = 500; // max-h-[500px]
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
@@ -162,17 +162,17 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-[99998]"
+        className="fixed inset-0 bg-black/70 z-[99998]"
         onClick={(e) => {
           e.stopPropagation();
           onClose();
         }}
       />
 
-      {/* Menu */}
+      {/* Desktop - Glass Modal */}
       <div
         ref={menuRef}
-        className="fixed bg-dark-secondary rounded-xl border border-dark-border w-full max-w-sm max-h-[500px] flex flex-col animate-scale-in shadow-2xl z-[99999]"
+        className="hidden sm:flex fixed backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl w-80 max-h-[400px] flex-col shadow-2xl z-[99999]"
         style={{
           top: `${position.top}px`,
           left: `${position.left}px`,
@@ -180,78 +180,56 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-dark-border">
-          <h3 className="text-lg font-semibold text-text-primary">Save to playlist</h3>
-          <button
-            onClick={onClose}
-            className="text-text-secondary hover:text-text-primary transition-colors"
-          >
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
+        <div className="p-4 border-b border-white/10">
+          <p className="text-sm font-medium text-text-primary">Save to playlist</p>
         </div>
 
         {/* Playlists list */}
-        <div className="flex-1 overflow-y-auto p-2">
+        <div className="flex-1 overflow-y-auto max-h-52">
           {playlists && playlists.length > 0 ? (
-            <div className="space-y-1">
-              {[...playlists].sort((a, b) => a.name.localeCompare(b.name)).map((playlist) => {
-                const isInPlaylist = existingPlaylistIds.has(playlist.id);
-                return (
-                  <button
-                    key={playlist.id}
-                    onClick={() => {
-                      if (isBulk) {
-                        handleAddToPlaylist(playlist.id);
-                      } else {
-                        handleTogglePlaylist(playlist.id, isInPlaylist);
-                      }
-                    }}
-                    className="w-full px-3 py-2 text-left rounded-lg hover:bg-dark-hover transition-colors flex items-center gap-3"
-                  >
-                    {/* Checkbox */}
-                    <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                      isInPlaylist
-                        ? 'bg-accent border-accent'
-                        : 'border-text-secondary bg-transparent'
-                    }`}>
-                      {isInPlaylist && (
-                        <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>
-                      )}
-                    </div>
-
-                    {/* Playlist info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-text-primary truncate" title={playlist.name}>{playlist.name}</div>
-                      <div className="text-xs text-text-secondary">
-                        {playlist.video_count || 0} videos
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            [...playlists].sort((a, b) => a.name.localeCompare(b.name)).map((playlist) => {
+              const isInPlaylist = existingPlaylistIds.has(playlist.id);
+              return (
+                <label
+                  key={playlist.id}
+                  onClick={() => {
+                    if (isBulk) {
+                      handleAddToPlaylist(playlist.id);
+                    } else {
+                      handleTogglePlaylist(playlist.id, isInPlaylist);
+                    }
+                  }}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors"
+                >
+                  <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                    isInPlaylist ? 'bg-accent' : 'border border-dark-border-light'
+                  }`}>
+                    {isInPlaylist && (
+                      <svg className="w-3 h-3 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm text-text-primary flex-1 truncate">{playlist.name}</span>
+                </label>
+              );
+            })
           ) : (
-            <div className="text-center py-8 text-text-secondary">
-              <p className="text-sm">No playlists yet</p>
-            </div>
+            <div className="text-center py-6 text-text-muted text-sm">No playlists yet</div>
           )}
         </div>
 
         {/* Create new playlist */}
-        <div className="border-t border-dark-border p-3">
+        <div className="p-3 border-t border-white/10">
           {!showCreate ? (
             <button
               onClick={() => setShowCreate(true)}
-              className="w-full px-3 py-2 text-left rounded-lg hover:bg-dark-hover transition-colors flex items-center gap-2 text-sm font-medium text-accent-text"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-white/20 hover:border-accent hover:text-accent text-text-muted text-sm transition-colors"
             >
-              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
               </svg>
-              Create new playlist
+              New playlist
             </button>
           ) : (
             <form onSubmit={handleCreateAndAdd} className="space-y-2">
@@ -260,7 +238,7 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
                 value={newPlaylistName}
                 onChange={(e) => setNewPlaylistName(e.target.value)}
                 placeholder="Playlist name"
-                className="w-full px-3 py-2 bg-dark-tertiary border border-dark-border rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full bg-white/5 rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
                 autoFocus
               />
               <div className="flex gap-2">
@@ -270,13 +248,113 @@ export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, t
                     setShowCreate(false);
                     setNewPlaylistName('');
                   }}
-                  className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-secondary transition-colors"
+                  className="flex-1 py-2 text-sm rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary transition-colors"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-primary font-medium border border-dark-border-light transition-colors"
+                  className="flex-1 py-2 text-sm rounded-xl bg-accent/90 hover:bg-accent text-dark-deepest font-medium transition-colors"
+                  disabled={createPlaylist.isLoading || addToPlaylist.isLoading}
+                >
+                  Create
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile - Bottom Sheet */}
+      <div
+        className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl z-[99999]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <h3 className="font-semibold text-text-primary">Save to playlist</h3>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+          >
+            <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        {/* Playlists list */}
+        <div className="max-h-64 overflow-y-auto">
+          {playlists && playlists.length > 0 ? (
+            [...playlists].sort((a, b) => a.name.localeCompare(b.name)).map((playlist) => {
+              const isInPlaylist = existingPlaylistIds.has(playlist.id);
+              return (
+                <label
+                  key={playlist.id}
+                  onClick={() => {
+                    if (isBulk) {
+                      handleAddToPlaylist(playlist.id);
+                    } else {
+                      handleTogglePlaylist(playlist.id, isInPlaylist);
+                    }
+                  }}
+                  className="flex items-center gap-4 px-5 py-4 active:bg-white/5 border-b border-white/5 cursor-pointer"
+                >
+                  <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                    isInPlaylist ? 'bg-accent' : 'border-2 border-white/20'
+                  }`}>
+                    {isInPlaylist && (
+                      <svg className="w-4 h-4 text-dark-deepest" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-base flex-1 text-text-primary">{playlist.name}</span>
+                  <span className="text-text-muted text-sm">{playlist.video_count || 0}</span>
+                </label>
+              );
+            })
+          ) : (
+            <div className="text-center py-8 text-text-muted">No playlists yet</div>
+          )}
+        </div>
+
+        {/* Create new playlist */}
+        <div className="p-4 border-t border-white/10">
+          {!showCreate ? (
+            <button
+              onClick={() => setShowCreate(true)}
+              className="w-full py-4 flex items-center justify-center gap-2 border border-dashed border-white/20 rounded-2xl text-text-secondary"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
+              </svg>
+              New playlist
+            </button>
+          ) : (
+            <form onSubmit={handleCreateAndAdd} className="space-y-3">
+              <input
+                type="text"
+                value={newPlaylistName}
+                onChange={(e) => setNewPlaylistName(e.target.value)}
+                placeholder="Playlist name"
+                className="w-full bg-white/5 rounded-xl px-4 py-3.5 text-base text-text-primary placeholder-text-muted focus:outline-none border-2 border-transparent focus:border-accent"
+                autoFocus
+              />
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowCreate(false);
+                    setNewPlaylistName('');
+                  }}
+                  className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3.5 bg-accent rounded-xl text-dark-deepest font-semibold"
                   disabled={createPlaylist.isLoading || addToPlaylist.isLoading}
                 >
                   Create

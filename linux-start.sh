@@ -350,6 +350,22 @@ initial_setup() {
         echo -e "  Found ffmpeg: ${CYAN}$(ffmpeg -version 2>&1 | head -1 | cut -d' ' -f3)${NC}"
     fi
 
+    # Check/install CA certificates (Linux only - needed for SSL/thumbnail downloads)
+    if [[ "$OSTYPE" != "darwin"* ]]; then
+        if ! dpkg -l ca-certificates &> /dev/null 2>&1; then
+            echo ""
+            echo -e "${YELLOW}  Installing CA certificates for SSL support...${NC}"
+            if sudo apt-get update -qq && sudo apt-get install -y -qq ca-certificates; then
+                sudo update-ca-certificates
+                echo -e "${GREEN}  CA certificates installed.${NC}"
+            else
+                echo -e "${YELLOW}  Warning: Could not install ca-certificates. Thumbnail downloads may fail.${NC}"
+            fi
+        else
+            echo -e "  Found CA certificates: ${CYAN}installed${NC}"
+        fi
+    fi
+
     echo ""
     echo -e "  Creating directories..."
     mkdir -p data downloads downloads/imports logs
@@ -358,6 +374,7 @@ initial_setup() {
     echo -e "  Installing Python dependencies..."
     cd backend
     $PYTHON_CMD -m pip install -r requirements.txt
+    $PYTHON_CMD -m pip install --upgrade certifi --quiet
     cd ..
 
     echo ""

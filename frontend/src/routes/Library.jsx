@@ -1315,130 +1315,382 @@ export default function Library() {
         </div>
       )}
 
-      {/* Rename Playlist Modal */}
+      {/* Rename Playlist Modal - Glass Minimal Style */}
       {showRenameModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
-            <h3 className="text-xl font-bold text-text-primary mb-4">Rename Playlist</h3>
-            <input
-              type="text"
-              value={renameValue}
-              onChange={(e) => setRenameValue(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleRenamePlaylist();
-                }
-              }}
-              placeholder="Enter playlist name"
-              className="input w-full mb-4"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowRenameModal(false);
-                  setRenamePlaylistId(null);
-                  setRenameValue('');
-                }}
-                className="btn btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRenamePlaylist}
-                disabled={!renameValue.trim()}
-                className="btn btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Rename
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Category Modal */}
-      {showCreateCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
-            <h3 className="text-xl font-bold text-text-primary mb-4">Create Category</h3>
-            <form onSubmit={handleCreateCategory}>
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 sm:p-4"
+          onClick={() => {
+            setShowRenameModal(false);
+            setRenamePlaylistId(null);
+            setRenameValue('');
+          }}
+        >
+          {/* Desktop - Glass Modal */}
+          <div
+            className="hidden sm:block backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-medium text-text-primary">Rename Playlist</h3>
+                <button
+                  onClick={() => {
+                    setShowRenameModal(false);
+                    setRenamePlaylistId(null);
+                    setRenameValue('');
+                  }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-text-muted text-sm mb-3">Playlist name</p>
               <input
                 type="text"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                placeholder="Enter category name"
-                className="input w-full mb-4"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRenamePlaylist();
+                  }
+                }}
+                placeholder="Enter name..."
+                className="w-full bg-white/5 rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 mb-4"
                 autoFocus
               />
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <button
-                  type="button"
                   onClick={() => {
-                    setShowCreateCategoryModal(false);
-                    setNewCategoryName('');
+                    setShowRenameModal(false);
+                    setRenamePlaylistId(null);
+                    setRenameValue('');
                   }}
-                  className="btn btn-secondary flex-1"
+                  className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  disabled={!newCategoryName.trim()}
-                  className="btn btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={handleRenamePlaylist}
+                  disabled={!renameValue.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-accent/90 hover:bg-accent text-dark-deepest text-sm font-medium transition-colors disabled:opacity-50"
                 >
-                  Create
+                  Rename
                 </button>
               </div>
-            </form>
+            </div>
           </div>
-        </div>
-      )}
 
-      {/* Rename Category Modal */}
-      {showRenameCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
-            <h3 className="text-xl font-bold text-text-primary mb-4">Rename Category</h3>
-            <input
-              type="text"
-              value={renameCategoryValue}
-              onChange={(e) => setRenameCategoryValue(e.target.value)}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  handleRenameCategory();
-                }
-              }}
-              placeholder="Enter category name"
-              className="input w-full mb-4"
-              autoFocus
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  setShowRenameCategoryModal(false);
-                  setRenameCategoryId(null);
-                  setRenameCategoryValue('');
+          {/* Mobile - Bottom Sheet */}
+          <div
+            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-text-primary">Rename Playlist</h3>
+                <button
+                  onClick={() => {
+                    setShowRenameModal(false);
+                    setRenamePlaylistId(null);
+                    setRenameValue('');
+                  }}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                >
+                  <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-text-muted text-xs mb-2">Playlist name</p>
+              <input
+                type="text"
+                value={renameValue}
+                onChange={(e) => setRenameValue(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRenamePlaylist();
+                  }
                 }}
-                className="btn btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleRenameCategory}
-                disabled={!renameCategoryValue.trim()}
-                className="btn btn-primary flex-1 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Rename
-              </button>
+                placeholder="Enter name..."
+                className="w-full bg-white/5 rounded-xl px-4 py-3.5 text-base text-text-primary placeholder-text-muted focus:outline-none border-2 border-transparent focus:border-accent"
+                autoFocus
+              />
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => {
+                    setShowRenameModal(false);
+                    setRenamePlaylistId(null);
+                    setRenameValue('');
+                  }}
+                  className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRenamePlaylist}
+                  disabled={!renameValue.trim()}
+                  className="flex-1 py-3.5 bg-accent rounded-xl text-dark-deepest font-semibold disabled:opacity-50"
+                >
+                  Rename
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Category Selector Modal */}
+      {/* Create Category Modal - Glass Minimal Style */}
+      {showCreateCategoryModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 sm:p-4"
+          onClick={() => {
+            setShowCreateCategoryModal(false);
+            setNewCategoryName('');
+          }}
+        >
+          {/* Desktop - Glass Modal */}
+          <div
+            className="hidden sm:block backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-medium text-text-primary">New Category</h3>
+                <button
+                  onClick={() => {
+                    setShowCreateCategoryModal(false);
+                    setNewCategoryName('');
+                  }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleCreateCategory}>
+                <p className="text-text-muted text-sm mb-3">Category name</p>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Enter name..."
+                  className="w-full bg-white/5 rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 mb-4"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateCategoryModal(false);
+                      setNewCategoryName('');
+                    }}
+                    className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newCategoryName.trim()}
+                    className="flex-1 py-2.5 rounded-xl bg-accent/90 hover:bg-accent text-dark-deepest text-sm font-medium transition-colors disabled:opacity-50"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+          {/* Mobile - Bottom Sheet */}
+          <div
+            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-text-primary">New Category</h3>
+                <button
+                  onClick={() => {
+                    setShowCreateCategoryModal(false);
+                    setNewCategoryName('');
+                  }}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                >
+                  <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <form onSubmit={handleCreateCategory}>
+                <p className="text-text-muted text-xs mb-2">Category name</p>
+                <input
+                  type="text"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  placeholder="Enter name..."
+                  className="w-full bg-white/5 rounded-xl px-4 py-3.5 text-base text-text-primary placeholder-text-muted focus:outline-none border-2 border-transparent focus:border-accent"
+                  autoFocus
+                />
+                <div className="flex gap-3 mt-5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateCategoryModal(false);
+                      setNewCategoryName('');
+                    }}
+                    className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!newCategoryName.trim()}
+                    className="flex-1 py-3.5 bg-accent rounded-xl text-dark-deepest font-semibold disabled:opacity-50"
+                  >
+                    Create
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Rename Category Modal - Glass Minimal Style */}
+      {showRenameCategoryModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 sm:p-4"
+          onClick={() => {
+            setShowRenameCategoryModal(false);
+            setRenameCategoryId(null);
+            setRenameCategoryValue('');
+          }}
+        >
+          {/* Desktop - Glass Modal */}
+          <div
+            className="hidden sm:block backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-medium text-text-primary">Rename Category</h3>
+                <button
+                  onClick={() => {
+                    setShowRenameCategoryModal(false);
+                    setRenameCategoryId(null);
+                    setRenameCategoryValue('');
+                  }}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-text-muted text-sm mb-3">Category name</p>
+              <input
+                type="text"
+                value={renameCategoryValue}
+                onChange={(e) => setRenameCategoryValue(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRenameCategory();
+                  }
+                }}
+                placeholder="Enter name..."
+                className="w-full bg-white/5 rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 mb-4"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowRenameCategoryModal(false);
+                    setRenameCategoryId(null);
+                    setRenameCategoryValue('');
+                  }}
+                  className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRenameCategory}
+                  disabled={!renameCategoryValue.trim()}
+                  className="flex-1 py-2.5 rounded-xl bg-accent/90 hover:bg-accent text-dark-deepest text-sm font-medium transition-colors disabled:opacity-50"
+                >
+                  Rename
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile - Bottom Sheet */}
+          <div
+            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-text-primary">Rename Category</h3>
+                <button
+                  onClick={() => {
+                    setShowRenameCategoryModal(false);
+                    setRenameCategoryId(null);
+                    setRenameCategoryValue('');
+                  }}
+                  className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+                >
+                  <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <p className="text-text-muted text-xs mb-2">Category name</p>
+              <input
+                type="text"
+                value={renameCategoryValue}
+                onChange={(e) => setRenameCategoryValue(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRenameCategory();
+                  }
+                }}
+                placeholder="Enter name..."
+                className="w-full bg-white/5 rounded-xl px-4 py-3.5 text-base text-text-primary placeholder-text-muted focus:outline-none border-2 border-transparent focus:border-accent"
+                autoFocus
+              />
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => {
+                    setShowRenameCategoryModal(false);
+                    setRenameCategoryId(null);
+                    setRenameCategoryValue('');
+                  }}
+                  className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleRenameCategory}
+                  disabled={!renameCategoryValue.trim()}
+                  className="flex-1 py-3.5 bg-accent rounded-xl text-dark-deepest font-semibold disabled:opacity-50"
+                >
+                  Rename
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Category Selector Modal - Glass Minimal Style */}
       {showCategorySelectorModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 sm:p-4"
           onClick={() => {
             setShowCategorySelectorModal(false);
             setSelectedPlaylistForCategory(null);
@@ -1447,88 +1699,61 @@ export default function Library() {
             setNewCategoryInSelector('');
           }}
         >
+          {/* Desktop - Glass Modal */}
           <div
-            className="bg-dark-secondary rounded-lg max-w-md w-full shadow-2xl border border-dark-border flex flex-col max-h-[600px]"
+            className="hidden sm:flex backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl flex-col max-h-[400px]"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-border">
-              <h3 className="text-lg font-semibold text-text-primary">Category Options</h3>
-              <button
-                onClick={() => {
-                  setShowCategorySelectorModal(false);
-                  setSelectedPlaylistForCategory(null);
-                  setCategoryActionType(null);
-                  setShowCreateInSelector(false);
-                  setNewCategoryInSelector('');
-                }}
-                className="text-text-secondary hover:text-text-primary transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </button>
+            <div className="p-4 border-b border-white/10">
+              <p className="text-sm font-medium text-text-primary">Assign to Category</p>
             </div>
 
             {/* Category List */}
-            <div className="flex-1 overflow-y-auto p-2">
+            <div className="flex-1 overflow-y-auto max-h-52">
               {categories && categories.length > 0 ? (
-                <div className="space-y-1">
-                  {[...categories].sort((a, b) => a.name.localeCompare(b.name)).map(category => {
-                    // For single playlist mode, check if this category is currently assigned
-                    const currentPlaylist = categoryActionType === 'single' && playlists
-                      ? playlists.find(p => p.id === selectedPlaylistForCategory)
-                      : null;
-                    const isAssigned = currentPlaylist && currentPlaylist.category_id === category.id;
+                [...categories].sort((a, b) => a.name.localeCompare(b.name)).map(category => {
+                  const currentPlaylist = categoryActionType === 'single' && playlists
+                    ? playlists.find(p => p.id === selectedPlaylistForCategory)
+                    : null;
+                  const isAssigned = currentPlaylist && currentPlaylist.category_id === category.id;
 
-                    return (
-                      <button
-                        key={category.id}
-                        onClick={() => handleToggleCategory(category.id, isAssigned)}
-                        className="w-full px-3 py-2 text-left rounded-lg hover:bg-dark-hover transition-colors flex items-center gap-3"
-                      >
-                        {/* Checkbox */}
-                        <div className={`w-5 h-5 flex-shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                          isAssigned
-                            ? 'bg-accent border-accent'
-                            : 'border-text-secondary bg-transparent'
-                        }`}>
-                          {isAssigned && (
-                            <svg className="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                              <polyline points="20 6 9 17 4 12"></polyline>
-                            </svg>
-                          )}
-                        </div>
-
-                        {/* Category info */}
-                        <div className="flex-1 min-w-0 flex items-center justify-between">
-                          <div className="text-sm font-medium text-text-primary truncate">{category.name}</div>
-                          <div className="text-xs text-text-secondary ml-2">
-                            {category.playlist_count || 0} {category.playlist_count === 1 ? 'playlist' : 'playlists'}
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                  return (
+                    <label
+                      key={category.id}
+                      onClick={() => handleToggleCategory(category.id, isAssigned)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors"
+                    >
+                      <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                        isAssigned ? 'bg-accent' : 'border border-dark-border-light'
+                      }`}>
+                        {isAssigned && (
+                          <svg className="w-3 h-3 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-sm text-text-primary flex-1 truncate">{category.name}</span>
+                      <span className="text-xs text-text-muted">{category.playlist_count || 0}</span>
+                    </label>
+                  );
+                })
               ) : (
-                <div className="text-center py-8 text-text-secondary">
-                  <p className="text-sm">No categories yet</p>
-                </div>
+                <div className="text-center py-6 text-text-muted text-sm">No categories yet</div>
               )}
             </div>
 
-            {/* Create new category section */}
-            <div className="border-t border-dark-border p-4">
+            {/* Create new category */}
+            <div className="p-3 border-t border-white/10">
               {!showCreateInSelector ? (
                 <button
                   onClick={() => setShowCreateInSelector(true)}
-                  className="w-full px-4 py-2 text-left rounded-lg hover:bg-dark-hover transition-colors flex items-center gap-2 text-sm font-medium text-accent-text"
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-white/20 hover:border-accent hover:text-accent text-text-muted text-sm transition-colors"
                 >
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clipRule="evenodd" />
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
                   </svg>
-                  Create new category
+                  New category
                 </button>
               ) : (
                 <form
@@ -1541,7 +1766,6 @@ export default function Library() {
                     try {
                       const newCategory = await createCategory.mutateAsync({ name: newCategoryInSelector.trim() });
                       showNotification('Category created', 'success');
-                      // Immediately assign to the new category
                       await handleToggleCategory(newCategory.id, false);
                       setShowCreateInSelector(false);
                       setNewCategoryInSelector('');
@@ -1556,7 +1780,7 @@ export default function Library() {
                     value={newCategoryInSelector}
                     onChange={(e) => setNewCategoryInSelector(e.target.value)}
                     placeholder="Category name"
-                    className="w-full px-3 py-2 bg-dark-tertiary border border-dark-border rounded-lg text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full bg-white/5 rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
                     autoFocus
                   />
                   <div className="flex gap-2">
@@ -1566,13 +1790,13 @@ export default function Library() {
                         setShowCreateInSelector(false);
                         setNewCategoryInSelector('');
                       }}
-                      className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-secondary transition-colors"
+                      className="flex-1 py-2 text-sm rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-primary font-medium border border-dark-border-light transition-colors"
+                      className="flex-1 py-2 text-sm rounded-xl bg-accent/90 hover:bg-accent text-dark-deepest font-medium transition-colors"
                       disabled={createCategory.isLoading}
                     >
                       Create
@@ -1581,7 +1805,128 @@ export default function Library() {
                 </form>
               )}
             </div>
+          </div>
 
+          {/* Mobile - Bottom Sheet */}
+          <div
+            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <h3 className="font-semibold text-text-primary">Assign to Category</h3>
+              <button
+                onClick={() => {
+                  setShowCategorySelectorModal(false);
+                  setSelectedPlaylistForCategory(null);
+                  setCategoryActionType(null);
+                  setShowCreateInSelector(false);
+                  setNewCategoryInSelector('');
+                }}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+              >
+                <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Category List */}
+            <div className="max-h-64 overflow-y-auto">
+              {categories && categories.length > 0 ? (
+                [...categories].sort((a, b) => a.name.localeCompare(b.name)).map(category => {
+                  const currentPlaylist = categoryActionType === 'single' && playlists
+                    ? playlists.find(p => p.id === selectedPlaylistForCategory)
+                    : null;
+                  const isAssigned = currentPlaylist && currentPlaylist.category_id === category.id;
+
+                  return (
+                    <label
+                      key={category.id}
+                      onClick={() => handleToggleCategory(category.id, isAssigned)}
+                      className="flex items-center gap-4 px-5 py-4 active:bg-white/5 border-b border-white/5 cursor-pointer"
+                    >
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center ${
+                        isAssigned ? 'bg-accent' : 'border-2 border-white/20'
+                      }`}>
+                        {isAssigned && (
+                          <svg className="w-4 h-4 text-dark-deepest" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-base flex-1 text-text-primary">{category.name}</span>
+                      <span className="text-text-muted text-sm">{category.playlist_count || 0}</span>
+                    </label>
+                  );
+                })
+              ) : (
+                <div className="text-center py-8 text-text-muted">No categories yet</div>
+              )}
+            </div>
+
+            {/* Create new category */}
+            <div className="p-4 border-t border-white/10">
+              {!showCreateInSelector ? (
+                <button
+                  onClick={() => setShowCreateInSelector(true)}
+                  className="w-full py-4 flex items-center justify-center gap-2 border border-dashed border-white/20 rounded-2xl text-text-secondary"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4"/>
+                  </svg>
+                  New category
+                </button>
+              ) : (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newCategoryInSelector.trim()) {
+                      showNotification('Please enter a category name', 'error');
+                      return;
+                    }
+                    try {
+                      const newCategory = await createCategory.mutateAsync({ name: newCategoryInSelector.trim() });
+                      showNotification('Category created', 'success');
+                      await handleToggleCategory(newCategory.id, false);
+                      setShowCreateInSelector(false);
+                      setNewCategoryInSelector('');
+                    } catch (error) {
+                      showNotification(getUserFriendlyError(error.message, 'create category'), 'error');
+                    }
+                  }}
+                  className="space-y-3"
+                >
+                  <input
+                    type="text"
+                    value={newCategoryInSelector}
+                    onChange={(e) => setNewCategoryInSelector(e.target.value)}
+                    placeholder="Category name"
+                    className="w-full bg-white/5 rounded-xl px-4 py-3.5 text-base text-text-primary placeholder-text-muted focus:outline-none border-2 border-transparent focus:border-accent"
+                    autoFocus
+                  />
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCreateInSelector(false);
+                        setNewCategoryInSelector('');
+                      }}
+                      className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-3.5 bg-accent rounded-xl text-dark-deepest font-semibold"
+                      disabled={createCategory.isLoading}
+                    >
+                      Create
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       )}
