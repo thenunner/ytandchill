@@ -102,7 +102,9 @@ See [FAQ.md](FAQ.md#youtube-cookies-and-authentication) for detailed cookie setu
 
 ### YouTube API Key (Optional)
 
-A YouTube API key makes channel scanning significantly faster (~2 seconds vs ~2 minutes per channel).
+A YouTube API key provides:
+- **Faster scanning** (~2 seconds vs ~2 minutes per channel)
+- **Proper channel thumbnails** (without API, falls back to video thumbnails)
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a project and enable **YouTube Data API v3**
