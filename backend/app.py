@@ -476,7 +476,7 @@ def set_operation(op_type, message, channel_id=None, progress=0):
         'message': message,
         'channel_id': channel_id,
         'progress': progress,
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': datetime.now(timezone.utc).isoformat()
     }
     # Broadcast update to SSE clients immediately
     queue_events.emit('queue:changed')

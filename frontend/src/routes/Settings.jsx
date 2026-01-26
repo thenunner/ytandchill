@@ -1581,67 +1581,158 @@ export default function Settings() {
 
       </div>
 
-      {/* Main Queue/DB Repair Modal */}
+      {/* Main Queue/DB Repair Modal - Glass Minimal Style */}
       {showRepairModal && repairData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowRepairModal(false)} />
-          <div className="relative bg-dark-secondary border border-dark-border-light rounded-lg shadow-xl max-w-md w-full">
-            <div className="px-6 py-4 border-b border-dark-border">
-              <h3 className="text-lg font-semibold text-text-primary">Database Maintenance</h3>
-            </div>
-            <div className="px-6 py-4 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-4">
+          <div className="absolute inset-0 bg-black/70" onClick={() => setShowRepairModal(false)} />
+
+          {/* Desktop - Glass Modal */}
+          <div
+            className="hidden sm:block relative backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl shadow-2xl max-w-sm w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-5">
+                <h3 className="text-base font-medium text-text-primary">Database Maintenance</h3>
+                <button
+                  onClick={() => setShowRepairModal(false)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
               {repairData.orphaned_cleaned > 0 && (
-                <div className="bg-dark-tertiary border border-dark-border rounded-lg p-3">
-                  <div className="text-sm text-text-primary">
-                    ✓ Auto-cleaned {repairData.orphaned_cleaned} orphaned item{repairData.orphaned_cleaned !== 1 ? 's' : ''}
-                  </div>
+                <div className="bg-green-500/10 text-green-400 text-sm rounded-xl p-3 mb-4">
+                  ✓ Auto-cleaned {repairData.orphaned_cleaned} orphaned item{repairData.orphaned_cleaned !== 1 ? 's' : ''}
                 </div>
               )}
 
-              <p className="text-sm text-text-secondary">Choose a maintenance option:</p>
+              <div className="space-y-3">
+                <button
+                  onClick={() => { setShowRepairModal(false); setShowNotFoundModal(true); }}
+                  className="flex items-center justify-between w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+                >
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-text-primary">Unavailable Videos</p>
+                    <p className="text-text-muted text-xs">Remove unplayable videos</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 bg-amber-500/20 text-amber-400 rounded-lg">{repairData.not_found_videos?.length || 0}</span>
+                    <span className="text-text-muted">→</span>
+                  </div>
+                </button>
 
+                <button
+                  onClick={() => { setShowRepairModal(false); setShowShrinkDBModal(true); }}
+                  className="flex items-center justify-between w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+                >
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-text-primary">Purge Channels</p>
+                    <p className="text-text-muted text-xs">Delete empty channels</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 bg-red-500/20 text-red-400 rounded-lg">{repairData.deletable_channels?.length || 0}</span>
+                    <span className="text-text-muted">→</span>
+                  </div>
+                </button>
+
+                <button
+                  onClick={() => { setShowRepairModal(false); setShowMetadataFixModal(true); }}
+                  className="flex items-center justify-between w-full p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-colors"
+                >
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-text-primary">Repair Metadata</p>
+                    <p className="text-text-muted text-xs">Fix missing thumbnails & dates</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-lg">{(missingMetadataData?.count || 0) + (missingMetadataData?.broken_thumbnails || 0) + (missingMetadataData?.missing_channel_thumbnails || 0) + (missingMetadataData?.missing_video_thumbnails || 0)}</span>
+                    <span className="text-text-muted">→</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile - Bottom Sheet */}
+          <div
+            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <h3 className="font-semibold text-text-primary">Database Maintenance</h3>
+              <button
+                onClick={() => setShowRepairModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+              >
+                <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {repairData.orphaned_cleaned > 0 && (
+              <div className="mx-4 mt-4 bg-green-500/10 text-green-400 text-sm rounded-xl p-3">
+                ✓ Auto-cleaned {repairData.orphaned_cleaned} orphaned item{repairData.orphaned_cleaned !== 1 ? 's' : ''}
+              </div>
+            )}
+
+            <div className="p-4 space-y-3">
               <button
                 onClick={() => { setShowRepairModal(false); setShowNotFoundModal(true); }}
-                className="w-full p-4 bg-dark-tertiary hover:bg-dark-hover border border-dark-border-light rounded-lg text-left transition-colors"
+                className="flex items-center justify-between w-full p-4 bg-white/5 rounded-2xl active:bg-white/10"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-text-primary">Unavailable Videos <span className="text-text-muted font-normal">({repairData.not_found_videos?.length || 0} found)</span></div>
-                    <div className="text-xs text-text-secondary mt-1">Remove videos from DB no longer playable on YT</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                    </svg>
                   </div>
-                  <div className="text-2xl text-text-muted">→</div>
+                  <div className="text-left">
+                    <p className="font-medium text-sm text-text-primary">Unavailable Videos</p>
+                    <p className="text-text-muted text-xs">{repairData.not_found_videos?.length || 0} found</p>
+                  </div>
                 </div>
+                <span className="text-text-muted">→</span>
               </button>
 
               <button
                 onClick={() => { setShowRepairModal(false); setShowShrinkDBModal(true); }}
-                className="w-full p-4 bg-dark-tertiary hover:bg-dark-hover border border-dark-border-light rounded-lg text-left transition-colors"
+                className="flex items-center justify-between w-full p-4 bg-white/5 rounded-2xl active:bg-white/10"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-text-primary">Purge Channels <span className="text-text-muted font-normal">({repairData.deletable_channels?.length || 0} found)</span></div>
-                    <div className="text-xs text-text-secondary mt-1">Delete removed channels fully from DB and locally</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                    </svg>
                   </div>
-                  <div className="text-2xl text-text-muted">→</div>
+                  <div className="text-left">
+                    <p className="font-medium text-sm text-text-primary">Purge Channels</p>
+                    <p className="text-text-muted text-xs">{repairData.deletable_channels?.length || 0} empty channels</p>
+                  </div>
                 </div>
+                <span className="text-text-muted">→</span>
               </button>
 
               <button
                 onClick={() => { setShowRepairModal(false); setShowMetadataFixModal(true); }}
-                className="w-full p-4 bg-dark-tertiary hover:bg-dark-hover border border-dark-border-light rounded-lg text-left transition-colors"
+                className="flex items-center justify-between w-full p-4 bg-white/5 rounded-2xl active:bg-white/10"
               >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-text-primary">Repair Metadata <span className="text-text-muted font-normal">({(missingMetadataData?.count || 0) + (missingMetadataData?.broken_thumbnails || 0) + (missingMetadataData?.missing_channel_thumbnails || 0) + (missingMetadataData?.missing_video_thumbnails || 0)} found)</span></div>
-                    <div className="text-xs text-text-secondary mt-1">Fix missing upload dates and missing channel/video thumbnails</div>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                    </svg>
                   </div>
-                  <div className="text-2xl text-text-muted">→</div>
+                  <div className="text-left">
+                    <p className="font-medium text-sm text-text-primary">Repair Metadata</p>
+                    <p className="text-text-muted text-xs">Fix missing info</p>
+                  </div>
                 </div>
-              </button>
-            </div>
-            <div className="px-6 py-4 border-t border-dark-border">
-              <button onClick={() => setShowRepairModal(false)} className="btn btn-secondary w-full">
-                Close
+                <span className="text-text-muted">→</span>
               </button>
             </div>
           </div>
