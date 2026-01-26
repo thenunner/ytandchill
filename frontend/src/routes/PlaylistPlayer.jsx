@@ -2,7 +2,7 @@ import { useParams, useNavigate, useSearchParams, Link, useLocation } from 'reac
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import 'video.js/dist/video-js.css';
-import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo } from '../api/queries';
+import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
@@ -34,6 +34,8 @@ export default function PlaylistPlayer() {
   // Fetch playlist data based on mode (single playlist vs category)
   const { data: playlist, isLoading: isLoadingPlaylist } = usePlaylist(playlistId, { enabled: !!playlistId });
   const { data: playlistsData, isLoading: isLoadingCategory } = usePlaylists({ enabled: !!categoryId });
+  const { data: queueData } = useQueue();
+  const queueCount = queueData?.queue_items?.filter(i => i.status === 'pending' || i.status === 'downloading').length || 0;
 
   // For category mode, get all playlists in this category
   const categoryPlaylists = useMemo(() => {
