@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited, useSettings } from '../api/queries';
 import VideoCard from '../components/VideoCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import { HeartIcon } from '../components/icons';
+import { getStringSetting } from '../utils/settingsUtils';
 
 export default function Favs() {
   const [selectedChannelId, setSelectedChannelId] = useState(null);
@@ -22,6 +23,25 @@ export default function Favs() {
     }
     return true;
   });
+
+  // Get date display preference and sort videos accordingly
+  const dateDisplay = getStringSetting(settings, 'library_date_display', 'downloaded');
+  const sortedVideos = useMemo(() => {
+    if (!favoriteVideos) return [];
+    return [...favoriteVideos].sort((a, b) => {
+      if (dateDisplay === 'uploaded') {
+        // Sort by upload_date (string format YYYYMMDD or YYYY-MM-DD)
+        const dateA = a.upload_date || '';
+        const dateB = b.upload_date || '';
+        return dateB.localeCompare(dateA); // Descending (newest first)
+      } else {
+        // Sort by downloaded_at (ISO datetime string)
+        const dateA = a.downloaded_at || '';
+        const dateB = b.downloaded_at || '';
+        return dateB.localeCompare(dateA); // Descending (newest first)
+      }
+    });
+  }, [favoriteVideos, dateDisplay]);
 
   // Handle channel avatar click - toggle filter
   const handleChannelClick = (channelId) => {
@@ -120,7 +140,7 @@ export default function Favs() {
           <div className="flex items-center justify-center h-32">
             <LoadingSpinner />
           </div>
-        ) : !favoriteVideos || favoriteVideos.length === 0 ? (
+        ) : !sortedVideos || sortedVideos.length === 0 ? (
           <EmptyState
             title="No videos yet"
             description={selectedChannelId
@@ -130,7 +150,7 @@ export default function Favs() {
           />
         ) : (
           <div className="space-y-4">
-            {favoriteVideos.map(video => (
+            {sortedVideos.map(video => (
               <Link
                 key={video.id}
                 to={`/player/${video.id}`}
@@ -157,7 +177,7 @@ export default function Favs() {
                     <div className="text-xs text-text-secondary mt-1.5 flex items-center gap-1">
                       <span>{video.channel?.title || 'Unknown'}</span>
                       <span>•</span>
-                      <span>{formatTimeAgo(video.downloaded_at)}</span>
+                      <span>{dateDisplay === 'uploaded' ? formatUploadDate(video.upload_date) : formatTimeAgo(video.downloaded_at)}</span>
                       {video.file_size_bytes && (
                         <>
                           <span>•</span>
@@ -208,4 +228,31 @@ function formatFileSize(bytes) {
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
   if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
+function formatUploadDate(dateString) {
+  if (!dateString) return '';
+  // Handle YYYYMMDD format from YouTube
+  let date;
+  if (dateString.length === 8 && !dateString.includes('-')) {
+    const year = dateString.substring(0, 4);
+    const month = dateString.substring(4, 6);
+    const day = dateString.substring(6, 8);
+    date = new Date(year, month - 1, day);
+  } else {
+    date = new Date(dateString);
+  }
+
+  // Format as relative time for consistency with downloaded_at display
+  const now = new Date();
+  const diffMs = now - date;
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffDays < 0) return date.toLocaleDateString();
+  if (diffDays === 0) return 'Today';
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays}d ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)}mo ago`;
+  return date.toLocaleDateString();
 }
