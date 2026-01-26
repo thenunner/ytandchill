@@ -82,8 +82,6 @@ Select option 3 (Initial Setup) on first run, then option 1 (Start Server).
 **Unraid / Docker:**
 See [UNRAID-SETUP.md](UNRAID-SETUP.md)
 
-Access at **http://localhost:4099**
-
 ## Configuration
 
 ### YouTube Cookies (Recommended)
