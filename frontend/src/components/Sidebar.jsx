@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueue, useFavoriteChannels, useSettings } from '../api/queries';
 import {
@@ -15,6 +16,7 @@ import {
 export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [logoFailed, setLogoFailed] = useState(false);
 
   // Fetch queue count for badge
   const { data: queueData } = useQueue({});
@@ -109,20 +111,24 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
       }`}
     >
       {/* Header - Logo and Toggle Button */}
-      <div className="flex items-center justify-between p-3 border-b border-dark-border">
-        <div className="flex items-center gap-2">
-          <img
-            src="/logo.png"
-            alt="YT and Chill"
-            className="w-7 h-7 rounded"
-          />
-          {!collapsed && (
-            <span className="text-sm font-medium text-text-secondary">YTandChill</span>
-          )}
-        </div>
+      <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} p-2 border-b border-dark-border`}>
+        {!collapsed && (
+          <div className="flex-1 flex items-center">
+            {!logoFailed ? (
+              <img
+                src="/logo.png"
+                alt="YT and Chill"
+                className="h-10 w-auto object-contain"
+                onError={() => setLogoFailed(true)}
+              />
+            ) : (
+              <span className="text-sm font-medium text-text-secondary">YTandChill</span>
+            )}
+          </div>
+        )}
         <button
           onClick={onToggle}
-          className="p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors"
+          className="p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors flex-shrink-0"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <MenuIcon className="w-5 h-5" /> : <CollapseIcon className="w-5 h-5" />}
