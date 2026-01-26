@@ -115,9 +115,9 @@ Combined with `docker image prune -f` in the build script, this keeps your Docke
 
 ---
 
-## YouTube Cookie Authentication (Strongly Recommended)
+## YT Cookie Authentication (Strongly Recommended)
 
-**YouTube cookies are essential for reliable downloads.** Choose one method:
+**YT cookies are essential for reliable downloads.** Choose one method:
 
 ### Method 1: cookies.txt File
 
@@ -139,7 +139,7 @@ Combined with `docker image prune -f` in the build script, this keeps your Docke
 
 1. **If you have a Firefox Docker container:**
    - Ensure Firefox is running with profile at `/mnt/user/appdata/firefox/.mozilla/firefox`
-   - Make sure YouTube is logged in Firefox
+   - Make sure YT is logged in Firefox
 
 2. **Configure YT and Chill container:**
 
@@ -162,7 +162,7 @@ Combined with `docker image prune -f` in the build script, this keeps your Docke
    - Under "Cookie Source", select "Firefox"
    - Status will show:
      - ✅ Green "Firefox Profile" = Working!
-     - ⚠️ Yellow "No YouTube Login" = Sign into YouTube in Firefox
+     - ⚠️ Yellow "No YT Login" = Sign into YT in Firefox
      - ❌ Red "Not Mounted" = Check volume mount configuration
 
 **Advantages:**
@@ -171,7 +171,7 @@ Combined with `docker image prune -f` in the build script, this keeps your Docke
 - Automatic fallback to cookies.txt if extraction fails
 
 **Important:**
-- Use a disposable YouTube account, not your personal account
+- Use a disposable YT account, not your personal account
 - Cookies expire periodically - re-export or keep Firefox logged in
 - Without cookies: expect bot detection errors, rate limiting, and failed downloads
 
@@ -194,7 +194,7 @@ http://YOUR-UNRAID-IP:YOUR-PORT
 - Ensure your chosen port isn't already in use
 
 ### Downloads failing
-- Check cookie authentication is configured (see YouTube Cookie Authentication section)
+- Check cookie authentication is configured (see YT Cookie Authentication section)
 - If using cookies.txt: verify file exists and is properly formatted
 - If using Firefox: check Settings shows green "Firefox Profile" status
 - Verify download path has write permissions
@@ -203,7 +203,7 @@ http://YOUR-UNRAID-IP:YOUR-PORT
 ### Firefox cookie extraction not working
 - Verify Firefox profile is mounted: `ls /mnt/user/appdata/firefox/.mozilla/firefox`
 - Check container has access: In Unraid Docker, click ytandchill → Edit → verify Firefox Profile path
-- Ensure YouTube is logged in your Firefox browser
+- Ensure YT is logged in your Firefox browser
 - Check Settings page shows green "Firefox Profile" status
 - Try restarting both Firefox and ytandchill containers
 - Fallback: Use Method 1 (cookies.txt) instead

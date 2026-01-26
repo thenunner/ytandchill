@@ -6,26 +6,26 @@
 
 The most common causes of download failures are:
 
-1. **Missing or expired cookies** - YouTube has implemented aggressive bot detection. See [YouTube Cookies](#youtube-cookies-and-authentication) below.
-2. **Outdated yt-dlp** - YouTube frequently changes their systems. Keep yt-dlp updated.
+1. **Missing or expired cookies** - YT has implemented aggressive bot detection. See [YT Cookies](#youtube-cookies-and-authentication) below.
+2. **Outdated yt-dlp** - YT frequently changes their systems. Keep yt-dlp updated.
 3. **Network issues** - Check your internet connection and firewall settings.
 4. **Age-restricted or private videos** - These require valid authentication cookies.
 
-### Which YouTube account should I use for cookies?
+### Which YT account should I use for cookies?
 
-**IMPORTANT:** It is strongly advised to **NOT use your personal YouTube account** for cookies. Here's why:
+**IMPORTANT:** It is strongly advised to **NOT use your personal YT account** for cookies. Here's why:
 
-- **Risk of temporary ban or timeout** - YouTube may detect automated access and temporarily lock the account
+- **Risk of temporary ban or timeout** - YT may detect automated access and temporarily lock the account
 - **Rate limiting** - Excessive API calls or downloads can trigger rate limits on your account
-- **Terms of Service** - Automated downloads may violate YouTube's ToS
+- **Terms of Service** - Automated downloads may violate YT's ToS
 
 **Recommendation:** Create a separate, disposable Google account specifically for YT and Chill. This protects your personal account from any potential issues.
 
-## YouTube Cookies and Authentication
+## YT Cookies and Authentication
 
 ### Why do I need cookies.txt?
 
-YouTube cookies are essentially required for reliable downloads. According to [yt-dlp's FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp), YouTube has implemented increasingly aggressive bot detection that makes downloads fail without authentication cookies.
+YT cookies are essentially required for reliable downloads. According to [yt-dlp's FAQ](https://github.com/yt-dlp/yt-dlp/wiki/FAQ#how-do-i-pass-cookies-to-yt-dlp), YT has implemented increasingly aggressive bot detection that makes downloads fail without authentication cookies.
 
 Without cookies, you may experience:
 - Bot detection errors (`Sign in to confirm you're not a bot`)
@@ -35,7 +35,7 @@ Without cookies, you may experience:
 
 ### How often do I need to update cookies?
 
-YouTube cookies typically expire every few weeks to months. Signs that your cookies have expired:
+YT cookies typically expire every few weeks to months. Signs that your cookies have expired:
 - Sudden increase in download failures
 - "This video is not available" errors for previously working videos
 - Bot detection messages in logs
@@ -50,7 +50,7 @@ YT and Chill requires cookies in **Netscape HTTP Cookie File format**. This is t
 
 The file must be named `cookies.txt` and placed in the `data/` directory.
 
-### How do I properly export cookies from YouTube?
+### How do I properly export cookies from YT?
 
 **Best Practice Method (Recommended):**
 
@@ -59,7 +59,7 @@ The file must be named `cookies.txt` and placed in the `data/` directory.
    - Chrome/Edge: Ctrl+Shift+N (Windows) or Cmd+Shift+N (Mac)
    - Firefox: Ctrl+Shift+P (Windows) or Cmd+Shift+P (Mac)
 3. **Important:** Make sure ONLY ONE incognito tab is open
-4. **Go to YouTube and log in** with your disposable YouTube account (NOT your personal account)
+4. **Go to YT and log in** with your disposable YT account (NOT your personal account)
 5. **In the same tab**, navigate to `https://www.youtube.com/robots.txt`
    - This ensures the cookies are associated with the youtube.com domain properly
 6. **Install the cookie export extension** (if not already installed):
@@ -83,7 +83,7 @@ The file must be named `cookies.txt` and placed in the `data/` directory.
 - ❌ Having multiple incognito tabs open (creates cookie conflicts)
 - ❌ Using your main browser you browse with daily
 - ❌ Exporting from a tab other than robots.txt
-- ❌ Using your personal YouTube account (use disposable account instead)
+- ❌ Using your personal YT account (use disposable account instead)
 
 ## Common yt-dlp Errors
 
@@ -96,38 +96,38 @@ The file must be named `cookies.txt` and placed in the `data/` directory.
 4. **Age-restricted content** - Requires valid cookies from a logged-in account
 
 **Solutions:**
-- Re-export fresh cookies.txt from YouTube
+- Re-export fresh cookies.txt from YT
 - Use a VPN if content is geo-blocked
-- Verify the video is still public and available on YouTube
+- Verify the video is still public and available on YT
 
 ### Error: "Sign in to confirm you're not a bot"
 
-**Cause:** YouTube's bot detection has flagged your IP or detected automated access.
+**Cause:** YT's bot detection has flagged your IP or detected automated access.
 
 **Solutions:**
 1. **Add/update cookies.txt** - This is the primary fix
-2. **Wait before retrying** - YouTube may have rate-limited your IP temporarily
+2. **Wait before retrying** - YT may have rate-limited your IP temporarily
 3. **Use a VPN** - Change your IP address
 4. **Reduce concurrent downloads** - Lower the number of simultaneous downloads
 
 ### Error: "ERROR: unable to download video data: HTTP Error 403: Forbidden"
 
-**Cause:** YouTube is blocking the request, usually due to:
+**Cause:** YT is blocking the request, usually due to:
 - Missing or invalid cookies
 - IP rate limiting
 - Geo-restrictions
 
 **Solutions:**
-1. Re-export fresh cookies from a logged-in YouTube session
+1. Re-export fresh cookies from a logged-in YT session
 2. Verify cookies.txt is in Netscape format
 3. Restart the application after updating cookies
 4. Wait 15-30 minutes if rate-limited
 
 ### Error: "This video is available to this channel's members on level: X"
 
-**Cause:** The video is restricted to YouTube channel members (paid membership).
+**Cause:** The video is restricted to YT channel members (paid membership).
 
-**Solution:** YT and Chill cannot download membership-exclusive content. You must be a paying member and use cookies from that account (not recommended - see [Which YouTube account should I use](#which-youtube-account-should-i-use-for-cookies)).
+**Solution:** YT and Chill cannot download membership-exclusive content. You must be a paying member and use cookies from that account (not recommended - see [Which YT account should I use](#which-youtube-account-should-i-use-for-cookies)).
 
 ### Error: "Premieres in X hours/days"
 
@@ -139,7 +139,7 @@ The file must be named `cookies.txt` and placed in the `data/` directory.
 
 **Cause:** The video is set to private by the uploader.
 
-**Solution:** Private videos cannot be downloaded unless you have access. If you have access through your YouTube account, ensure you're using cookies from that account.
+**Solution:** Private videos cannot be downloaded unless you have access. If you have access through your YT account, ensure you're using cookies from that account.
 
 ### Error: "This live event will begin in X minutes"
 
@@ -162,7 +162,7 @@ The file must be named `cookies.txt` and placed in the `data/` directory.
 
 **Possible causes:**
 1. **Network bandwidth limitations** - Your internet connection speed
-2. **YouTube throttling** - YouTube may throttle download speeds for automated access
+2. **YT throttling** - YT may throttle download speeds for automated access
 3. **Disk I/O bottleneck** - Slow storage device (especially on network shares)
 
 **Solutions:**
@@ -173,10 +173,10 @@ The file must be named `cookies.txt` and placed in the `data/` directory.
 
 ### Why does channel scanning take so long?
 
-Channel scanning uses yt-dlp to fetch video metadata directly from YouTube. The speed depends on:
+Channel scanning uses yt-dlp to fetch video metadata directly from YT. The speed depends on:
 - Number of videos in the channel history
 - Network connection speed
-- YouTube's response times
+- YT's response times
 
 For incremental scans (daily auto-refresh), only new videos are fetched, which is much faster than full scans.
 
