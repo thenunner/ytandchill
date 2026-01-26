@@ -100,7 +100,7 @@ Required for reliable downloads due to YouTube's bot detection.
 
 See [FAQ.md](FAQ.md#youtube-cookies-and-authentication) for detailed cookie setup instructions.
 
-### YouTube API Key (Optional)
+### YouTube API Key (Highly Recommended)
 
 A YouTube API key provides:
 - **Faster scanning** (~2 seconds vs ~2 minutes per channel)
