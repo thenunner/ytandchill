@@ -96,6 +96,7 @@ function Setup() {
               placeholder="Choose a username"
               className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
+              autoComplete="username"
               autoFocus
             />
           </div>
@@ -111,6 +112,7 @@ function Setup() {
               placeholder="Choose a password"
               className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
+              autoComplete="new-password"
             />
           </div>
 
@@ -125,6 +127,7 @@ function Setup() {
               placeholder="Confirm your password"
               className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
+              autoComplete="new-password"
             />
           </div>
 
