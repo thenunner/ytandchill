@@ -420,7 +420,7 @@ docker-compose up -d --build
 ```bash
 chown -R 99:100 /mnt/user/appdata/ytandchill/data
 chown -R 99:100 /mnt/user/appdata/ytandchill/logs
-chown -R 99:100 /mnt/user/data/media/youtube/ytandchill
+chown -R 99:100 /mnt/user/downloads/ytandchill
 ```
 
 **Can't access WebUI:**
@@ -558,7 +558,7 @@ Recreate the container.
 
 **Unraid:**
 - Database: `/mnt/user/appdata/ytandchill/data/youtube_downloader.db`
-- Downloads: `/mnt/user/data/media/youtube/ytandchill/`
+- Downloads: `/mnt/user/downloads/ytandchill/`
 - Cookies: `/mnt/user/appdata/ytandchill/data/cookies.txt`
 
 ### Migrating Between Platforms

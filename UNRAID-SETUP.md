@@ -2,7 +2,7 @@
 
 > **Note:** This guide uses common Unraid paths. Adjust to match your setup:
 > - App data: `/mnt/user/appdata/ytandchill`
-> - Downloads: `/mnt/user/data/media/youtube/ytandchill`
+> - Downloads: `/mnt/user/downloads/ytandchill`
 > - Firefox (optional): `/mnt/user/appdata/firefox/.mozilla/firefox`
 
 ## Quick Start
@@ -51,7 +51,7 @@
    | Container Path | Host Path | Access Mode |
    |---------------|-----------|-------------|
    | `/app/data` | `/mnt/user/appdata/ytandchill/data` | Read/Write |
-   | `/app/downloads` | `/mnt/user/data/media/youtube/ytandchill` | Read/Write |
+   | `/app/downloads` | `/mnt/user/downloads/ytandchill` | Read/Write |
    | `/app/logs` | `/mnt/user/appdata/ytandchill/logs` | Read/Write |
    | `/firefox_profile` | `/mnt/user/appdata/firefox/.mozilla/firefox` | Read Only (Optional) |
 
@@ -69,7 +69,7 @@
 **If you encounter permission errors** after starting the container, run:
 ```bash
 chown -R 99:100 /mnt/user/appdata/ytandchill
-chown -R 99:100 /mnt/user/data/media/youtube/ytandchill
+chown -R 99:100 /mnt/user/downloads/ytandchill
 ```
 
 ---
