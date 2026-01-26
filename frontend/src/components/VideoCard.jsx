@@ -316,6 +316,7 @@ export default function VideoCard({
                 src={video.thumb_url}
                 alt={video.title}
                 className="w-full h-full object-cover"
+                loading="lazy"
                 onError={() => setImageError(true)}
               />
             ) : (

@@ -1148,6 +1148,7 @@ export default function Channels() {
                       src={channel.thumbnail}
                       alt={channel.title}
                       className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">

@@ -783,6 +783,7 @@ export default function ChannelLibrary() {
               src={channel.thumbnail}
               alt={channel.title}
               className="w-12 h-12 sm:w-16 sm:h-16 rounded-full border-2 border-dark-border"
+              loading="lazy"
             />
           )}
           <div>
