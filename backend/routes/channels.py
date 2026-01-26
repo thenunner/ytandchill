@@ -331,31 +331,68 @@ def toggle_channel_favorite(channel_id):
 
 @channels_bp.route('/api/channels/favorites', methods=['GET'])
 def get_favorite_channels():
-    """Get all favorite channels for sidebar.
+    """Get all favorite channels for sidebar (optimized).
 
-    Returns all favorited channels - frontend handles filtering based on
-    hide_empty_channels setting.
+    Uses SQL aggregation instead of loading all videos for better performance.
 
     Sorting priority:
     1. Channels with new (unwatched) videos first
     2. Then by total library video count (most videos first)
     """
+    from sqlalchemy import func, case
+
     with get_session(_session_factory) as session:
-        # Get all favorite channels that aren't deleted
-        channels = session.query(Channel).options(
-            joinedload(Channel.videos)
+        # Subquery for video counts using SQL aggregation
+        video_counts = session.query(
+            Video.channel_id,
+            func.count(case((Video.status == 'library', 1))).label('downloaded_count'),
+            func.count(case((
+                (Video.status == 'library') &
+                (Video.downloaded_at > Channel.last_visited_at),
+                1
+            ))).label('new_video_count')
+        ).join(Channel).group_by(Video.channel_id).subquery()
+
+        # Get favorite channels with counts
+        channels = session.query(
+            Channel,
+            func.coalesce(video_counts.c.downloaded_count, 0).label('downloaded_count'),
+            func.coalesce(video_counts.c.new_video_count, 0).label('new_video_count')
+        ).outerjoin(
+            video_counts, Channel.id == video_counts.c.channel_id
         ).filter(
             Channel.is_favorite == True,
             Channel.deleted_at.is_(None)
         ).all()
 
-        result = [_serialize_channel(channel) for channel in channels]
+        result = []
+        for channel, downloaded_count, new_video_count in channels:
+            # Convert thumbnail path to URL
+            thumbnail_url = None
+            if channel.thumbnail:
+                if channel.thumbnail.startswith('http'):
+                    thumbnail_url = channel.thumbnail
+                else:
+                    normalized_path = channel.thumbnail.replace('\\', '/')
+                    thumbnail_url = f"/api/media/{normalized_path}"
+
+            # If never visited, all downloaded videos are "new"
+            if channel.last_visited_at is None:
+                new_video_count = downloaded_count
+
+            result.append({
+                'id': channel.id,
+                'title': channel.title,
+                'thumbnail': thumbnail_url,
+                'downloaded_count': downloaded_count,
+                'has_new_videos': new_video_count > 0
+            })
 
         # Sort: channels with new videos first, then by downloaded_count (most videos)
         result.sort(key=lambda c: (
-            -1 if c.get('has_new_videos', False) else 0,  # New videos first
-            -c.get('downloaded_count', 0),                 # Then by video count
-            c.get('title', '').lower()                     # Then alphabetically
+            -1 if c.get('has_new_videos', False) else 0,
+            -c.get('downloaded_count', 0),
+            c.get('title', '').lower()
         ))
 
         return jsonify(result)
@@ -363,22 +400,16 @@ def get_favorite_channels():
 
 @channels_bp.route('/api/channels/favorites/videos', methods=['GET'])
 def get_favorite_videos():
-    """Get videos from favorite channels (last 30 days) for mobile Favs screen"""
-    from datetime import timedelta
-
+    """Get all videos from favorite channels for Favs screen"""
     # Optional channel filter
     channel_id = request.args.get('channel_id', type=int)
 
     with get_session(_session_factory) as session:
-        # Calculate 30 days ago
-        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
-
         # Build query for videos from favorite channels
         query = session.query(Video).join(Channel).filter(
             Channel.is_favorite == True,
             Channel.deleted_at.is_(None),
-            Video.status == 'library',
-            Video.downloaded_at >= thirty_days_ago
+            Video.status == 'library'
         )
 
         # Apply channel filter if provided
