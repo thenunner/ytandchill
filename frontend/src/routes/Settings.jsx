@@ -1389,6 +1389,7 @@ export default function Settings() {
                       placeholder="Current password"
                       className="input text-sm py-1.5 px-3 w-full"
                       disabled={isChangingPassword}
+                      autoComplete="current-password"
                       autoFocus
                     />
                   </div>
@@ -1401,6 +1402,7 @@ export default function Settings() {
                       placeholder="New password"
                       className="input text-sm py-1.5 px-3 w-full"
                       disabled={isChangingPassword}
+                      autoComplete="new-password"
                     />
                   </div>
                   <div>
@@ -1412,6 +1414,7 @@ export default function Settings() {
                       placeholder="Confirm password"
                       className="input text-sm py-1.5 px-3 w-full"
                       disabled={isChangingPassword}
+                      autoComplete="new-password"
                     />
                   </div>
                 </div>

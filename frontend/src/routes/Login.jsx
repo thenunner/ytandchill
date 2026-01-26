@@ -69,6 +69,7 @@ function Login() {
               placeholder="Enter your username"
               className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
+              autoComplete="username"
               autoFocus
             />
           </div>
@@ -84,6 +85,7 @@ function Login() {
               placeholder="Enter your password"
               className="input w-full py-2 px-3 text-sm"
               disabled={isLoading}
+              autoComplete="current-password"
             />
           </div>
 
