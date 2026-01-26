@@ -181,7 +181,7 @@ Combined with `docker image prune -f` in the build script, this keeps your Docke
 
 After the container starts, access the web interface at:
 ```
-http://YOUR-UNRAID-IP:4099
+http://YOUR-UNRAID-IP:YOUR-PORT
 ```
 
 ---
@@ -191,7 +191,7 @@ http://YOUR-UNRAID-IP:4099
 ### Container won't start
 - Check Docker logs in Unraid
 - Verify all paths exist and have correct permissions (99:100)
-- Ensure port 4099 isn't already in use
+- Ensure your chosen port isn't already in use
 
 ### Downloads failing
 - Check cookie authentication is configured (see YouTube Cookie Authentication section)
@@ -219,12 +219,12 @@ http://YOUR-UNRAID-IP:4099
 ### Using Bridge Network (Default)
 The template uses the standard bridge network:
 - Set Network Type to "Bridge"
-- Access via: `http://YOUR-UNRAID-IP:4099`
+- Access via: `http://YOUR-UNRAID-IP:YOUR-PORT`
 
 ### Using Custom Network (Optional)
 If you have a custom Docker network:
 - Set Network Type to "Custom: your_network_name"
-- Access via: `http://YOUR-UNRAID-IP:4099`
+- Access via: `http://YOUR-UNRAID-IP:YOUR-PORT`
 
 ---
 
