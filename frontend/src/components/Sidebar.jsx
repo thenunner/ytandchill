@@ -108,14 +108,21 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
         collapsed ? 'w-16' : 'w-52'
       }`}
     >
-      {/* Header - Toggle Button */}
+      {/* Header - Logo and Toggle Button */}
       <div className="flex items-center justify-between p-3 border-b border-dark-border">
-        {!collapsed && (
-          <span className="text-sm font-medium text-text-secondary">YTandChill</span>
-        )}
+        <div className="flex items-center gap-2">
+          <img
+            src="/logo.png"
+            alt="YT and Chill"
+            className="w-7 h-7 rounded"
+          />
+          {!collapsed && (
+            <span className="text-sm font-medium text-text-secondary">YTandChill</span>
+          )}
+        </div>
         <button
           onClick={onToggle}
-          className={`p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors ${collapsed ? 'mx-auto' : ''}`}
+          className="p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           {collapsed ? <MenuIcon className="w-5 h-5" /> : <CollapseIcon className="w-5 h-5" />}
