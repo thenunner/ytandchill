@@ -49,7 +49,7 @@ YouTube channel downloader and video library manager. Monitor channels, queue do
 
 | Mobile |
 |:---:|
-| ![Mobile](images/mobile.jpg) |
+| <img src="images/mobile.jpg" alt="Mobile" width="300"> |
 
 ## Quick Start
 
