@@ -210,7 +210,7 @@ http://YOUR-UNRAID-IP:YOUR-PORT
 
 ### Database errors
 - Ensure `/mnt/user/appdata/ytandchill/data` has 99:100 ownership
-- Check that `youtube_downloader.db` file is writable
+- Check that `ytandchill.db` file is writable
 
 ---
 

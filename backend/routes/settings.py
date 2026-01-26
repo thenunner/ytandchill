@@ -660,7 +660,7 @@ def health_check():
     db_size = 0
     # Database path from DATA_DIR environment variable
     db_data_dir = os.environ.get('DATA_DIR', 'data')
-    db_path = os.path.join(db_data_dir, 'youtube_downloader.db')
+    db_path = os.path.join(db_data_dir, 'ytandchill.db')
     if os.path.exists(db_path):
         try:
             db_size = os.path.getsize(db_path)
