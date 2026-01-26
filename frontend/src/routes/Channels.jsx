@@ -15,6 +15,7 @@ import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
 import { getNumericSetting } from '../utils/settingsUtils';
 import { SORT_OPTIONS } from '../constants/stickyBarOptions';
+import DurationSettingsModal from '../components/DurationSettingsModal';
 
 export default function Channels() {
   const { data: channels, isLoading } = useChannels();
@@ -64,6 +65,10 @@ export default function Channels() {
 
   // Category submenu for channel assignment
   const [showCategorySubmenu, setShowCategorySubmenu] = useState(null);
+
+  // Single channel category/duration modal (from 3-dot menu)
+  const [showSingleCategoryModal, setShowSingleCategoryModal] = useState(null);
+  const [showDurationModal, setShowDurationModal] = useState(null);
 
   // Track which scan type was last initiated ('new' or 'all')
   const [lastScanType, setLastScanType] = useState(null);
@@ -1033,169 +1038,40 @@ export default function Channels() {
                         }
                       });
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                    title="If checked, will automatically download any new video that is found via scan (manual or automated)"
+                    className="w-full px-4 py-2 text-left text-sm hover:bg-dark-hover transition-colors"
+                    title="Toggle automatic downloading of new videos from this channel"
                   >
-                    <input
-                      type="checkbox"
-                      checked={channel.auto_download || false}
-                      readOnly
-                      className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent-text"
-                    />
-                    <span className="font-medium">Auto-Download</span>
+                    <span className={`font-medium ${channel.auto_download ? 'text-green-400' : 'text-red-400'}`}>
+                      Auto-Download
+                    </span>
                   </button>
 
-                  {/* Duration Settings */}
+                  {/* Duration Settings - opens modal */}
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setShowDurationSettings(showDurationSettings === channel.id ? null : channel.id);
-                      if (showDurationSettings !== channel.id) {
-                        setEditingChannel(channel);
-                      }
+                      setEditingChannel(channel);
+                      setShowDurationModal(channel);
+                      setMenuOpen(null);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center justify-between"
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
                   >
                     <span className="font-medium">Duration Settings</span>
-                    <svg className={`w-4 h-4 text-text-muted transition-transform ${showDurationSettings === channel.id ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
                   </button>
 
-                  {/* Duration Settings - inline expansion */}
-                  {showDurationSettings === channel.id && (
-                    <div className="bg-dark-tertiary/50 border-t border-dark-border p-3 space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <label className="block text-xs text-text-secondary mb-1">Min</label>
-                          <input
-                            type="number"
-                            value={editingChannel?.id === channel.id ? editingChannel.min_minutes : channel.min_minutes}
-                            onChange={(e) => setEditingChannel({
-                              ...channel,
-                              min_minutes: Number(e.target.value),
-                              max_minutes: editingChannel?.id === channel.id ? editingChannel.max_minutes : channel.max_minutes
-                            })}
-                            onClick={(e) => e.stopPropagation()}
-                            className="input text-sm py-1 w-full"
-                            min="0"
-                            title="Minimum video duration in minutes. Only videos longer than this will be found. Use 0 for no minimum."
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <label className="block text-xs text-text-secondary mb-1">Max</label>
-                          <input
-                            type="number"
-                            value={editingChannel?.id === channel.id ? editingChannel.max_minutes : channel.max_minutes}
-                            onChange={(e) => setEditingChannel({
-                              ...channel,
-                              max_minutes: Number(e.target.value),
-                              min_minutes: editingChannel?.id === channel.id ? editingChannel.min_minutes : channel.min_minutes
-                            })}
-                            onClick={(e) => e.stopPropagation()}
-                            className="input text-sm py-1 w-full"
-                            min="0"
-                            title="Maximum video duration in minutes. Only videos shorter than this will be found. Use 0 for no maximum."
-                          />
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleUpdateFilters(editingChannel || channel);
-                          setShowDurationSettings(null);
-                          setMenuOpen(null);
-                        }}
-                        className="w-full btn btn-primary btn-sm"
-                      >
-                        Save
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Set Category - expands inline */}
+                  {/* Set Category - opens modal */}
                   <button
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      setShowCategorySubmenu(showCategorySubmenu === channel.id ? null : channel.id);
+                      setShowSingleCategoryModal(channel);
+                      setMenuOpen(null);
                     }}
-                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center justify-between"
+                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors"
                   >
                     <span className="font-medium">Set Category</span>
-                    <svg className={`w-4 h-4 text-text-muted transition-transform ${showCategorySubmenu === channel.id ? 'rotate-90' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
                   </button>
-
-                  {/* Category Options - inline expansion */}
-                  {showCategorySubmenu === channel.id && (
-                    <div className="bg-dark-tertiary/50 border-t border-dark-border">
-                      {/* Uncategorized option */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          updateChannel.mutate({
-                            id: channel.id,
-                            data: { category_id: null }
-                          }, {
-                            onSuccess: () => {
-                              showNotification(`${channel.title} set to Uncategorized`, 'success');
-                              setShowCategorySubmenu(null);
-                              setMenuOpen(null);
-                            }
-                          });
-                        }}
-                        className={`w-full px-6 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${!channel.category_id ? 'text-accent-text' : 'text-text-secondary italic'}`}
-                      >
-                        {!channel.category_id && (
-                          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                            <polyline points="20 6 9 17 4 12" stroke="currentColor" strokeWidth="3" fill="none"></polyline>
-                          </svg>
-                        )}
-                        <span className={!channel.category_id ? '' : 'ml-5'}>Uncategorized</span>
-                      </button>
-
-                      {/* Category options */}
-                      {categories?.map(cat => (
-                        <button
-                          key={cat.id}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            updateChannel.mutate({
-                              id: channel.id,
-                              data: { category_id: cat.id }
-                            }, {
-                              onSuccess: () => {
-                                showNotification(`${channel.title} moved to ${cat.name}`, 'success');
-                                setShowCategorySubmenu(null);
-                                setMenuOpen(null);
-                              }
-                            });
-                          }}
-                          className={`w-full px-6 py-2 text-left text-sm hover:bg-dark-hover transition-colors flex items-center gap-2 ${channel.category_id === cat.id ? 'text-accent-text' : 'text-text-primary'}`}
-                        >
-                          {channel.category_id === cat.id && (
-                            <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
-                              <polyline points="20 6 9 17 4 12" stroke="currentColor" strokeWidth="3" fill="none"></polyline>
-                            </svg>
-                          )}
-                          <span className={channel.category_id === cat.id ? '' : 'ml-5'}>{cat.name}</span>
-                        </button>
-                      ))}
-
-                      {/* No categories message */}
-                      {(!categories || categories.length === 0) && (
-                        <div className="px-6 py-2 text-sm text-text-muted italic">
-                          No categories yet
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   {/* Channel Info */}
                   <button
@@ -1876,6 +1752,226 @@ export default function Channels() {
                 className="w-full py-4 text-text-primary text-lg"
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Duration Settings Modal */}
+      <DurationSettingsModal
+        channel={showDurationModal}
+        onSave={(updatedChannel) => {
+          handleUpdateFilters(updatedChannel);
+          setShowDurationModal(null);
+        }}
+        onClose={() => setShowDurationModal(null)}
+      />
+
+      {/* Single Channel Category Modal - Glass Minimal Style */}
+      {showSingleCategoryModal && (
+        <div
+          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 sm:p-4"
+          onClick={() => setShowSingleCategoryModal(null)}
+        >
+          {/* Desktop - Glass Modal */}
+          <div
+            className="hidden sm:block backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-medium text-text-primary">Set Category</h3>
+                <button
+                  onClick={() => setShowSingleCategoryModal(null)}
+                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Category options */}
+              <div className="space-y-1 max-h-60 overflow-y-auto">
+                {/* Uncategorized option */}
+                <button
+                  onClick={() => {
+                    updateChannel.mutate({
+                      id: showSingleCategoryModal.id,
+                      data: { category_id: null }
+                    }, {
+                      onSuccess: () => {
+                        showNotification(`${showSingleCategoryModal.title} set to Uncategorized`, 'success');
+                        setShowSingleCategoryModal(null);
+                      }
+                    });
+                  }}
+                  className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left ${
+                    !showSingleCategoryModal.category_id ? 'bg-white/5' : ''
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded flex items-center justify-center ${
+                    !showSingleCategoryModal.category_id ? 'bg-accent' : 'border border-white/20'
+                  }`}>
+                    {!showSingleCategoryModal.category_id && (
+                      <svg className="w-3 h-3 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-sm text-text-muted italic">Uncategorized</span>
+                </button>
+
+                {/* Category list */}
+                {categories?.map(category => (
+                  <button
+                    key={category.id}
+                    onClick={() => {
+                      updateChannel.mutate({
+                        id: showSingleCategoryModal.id,
+                        data: { category_id: category.id }
+                      }, {
+                        onSuccess: () => {
+                          showNotification(`${showSingleCategoryModal.title} moved to ${category.name}`, 'success');
+                          setShowSingleCategoryModal(null);
+                        }
+                      });
+                    }}
+                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left ${
+                      showSingleCategoryModal.category_id === category.id ? 'bg-white/5' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded flex items-center justify-center ${
+                        showSingleCategoryModal.category_id === category.id ? 'bg-accent' : 'border border-white/20'
+                      }`}>
+                        {showSingleCategoryModal.category_id === category.id && (
+                          <svg className="w-3 h-3 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                      <span className="text-sm text-text-primary">{category.name}</span>
+                    </div>
+                    <span className="text-xs px-1.5 py-0.5 bg-white/10 rounded text-text-muted">{category.channel_count}</span>
+                  </button>
+                ))}
+
+                {(!categories || categories.length === 0) && (
+                  <p className="text-text-muted text-sm text-center py-4">No categories yet</p>
+                )}
+              </div>
+
+              {/* Manage Categories */}
+              <div className="border-t border-white/10 mt-4 pt-3">
+                <button
+                  onClick={() => {
+                    setShowSingleCategoryModal(null);
+                    setShowCategoryModal(true);
+                  }}
+                  className="w-full text-center text-sm text-accent hover:text-accent/80 transition-colors"
+                >
+                  Manage Categories...
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile - Bottom Sheet */}
+          <div
+            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <h3 className="font-semibold text-text-primary">Set Category</h3>
+              <button
+                onClick={() => setShowSingleCategoryModal(null)}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
+              >
+                <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="p-4 max-h-72 overflow-y-auto">
+              {/* Uncategorized option */}
+              <button
+                onClick={() => {
+                  updateChannel.mutate({
+                    id: showSingleCategoryModal.id,
+                    data: { category_id: null }
+                  }, {
+                    onSuccess: () => {
+                      showNotification(`${showSingleCategoryModal.title} set to Uncategorized`, 'success');
+                      setShowSingleCategoryModal(null);
+                    }
+                  });
+                }}
+                className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-colors text-left ${
+                  !showSingleCategoryModal.category_id ? 'bg-white/5' : 'hover:bg-white/5 active:bg-white/10'
+                }`}
+              >
+                <div className={`w-6 h-6 rounded flex items-center justify-center ${
+                  !showSingleCategoryModal.category_id ? 'bg-accent' : 'border border-white/20'
+                }`}>
+                  {!showSingleCategoryModal.category_id && (
+                    <svg className="w-4 h-4 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-base text-text-muted italic">Uncategorized</span>
+              </button>
+
+              {/* Category list */}
+              {categories?.map(category => (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    updateChannel.mutate({
+                      id: showSingleCategoryModal.id,
+                      data: { category_id: category.id }
+                    }, {
+                      onSuccess: () => {
+                        showNotification(`${showSingleCategoryModal.title} moved to ${category.name}`, 'success');
+                        setShowSingleCategoryModal(null);
+                      }
+                    });
+                  }}
+                  className={`flex items-center justify-between w-full px-4 py-3.5 rounded-xl transition-colors text-left ${
+                    showSingleCategoryModal.category_id === category.id ? 'bg-white/5' : 'hover:bg-white/5 active:bg-white/10'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded flex items-center justify-center ${
+                      showSingleCategoryModal.category_id === category.id ? 'bg-accent' : 'border border-white/20'
+                    }`}>
+                      {showSingleCategoryModal.category_id === category.id && (
+                        <svg className="w-4 h-4 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                    <span className="text-base text-text-primary">{category.name}</span>
+                  </div>
+                  <span className="text-xs px-2 py-1 bg-white/10 rounded-lg text-text-muted">{category.channel_count}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Manage Categories */}
+            <div className="px-4 pb-6 pt-2">
+              <button
+                onClick={() => {
+                  setShowSingleCategoryModal(null);
+                  setShowCategoryModal(true);
+                }}
+                className="w-full py-3.5 rounded-xl bg-white/5 text-accent font-medium"
+              >
+                Manage Categories...
               </button>
             </div>
           </div>
