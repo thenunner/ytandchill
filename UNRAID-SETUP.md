@@ -1,6 +1,6 @@
 # YT and Chill - Unraid Setup Guide
 
-> **Note:** This guide uses common Unraid paths. Adjust to match your setup:
+> **Note:** This guide uses common Unraid paths. All paths can be customized in `docker-compose.yml`:
 > - App data: `/mnt/user/appdata/ytandchill`
 > - Downloads: `/mnt/user/downloads/ytandchill`
 > - Firefox (optional): `/mnt/user/appdata/firefox/.mozilla/firefox`
