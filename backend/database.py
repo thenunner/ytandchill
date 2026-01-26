@@ -130,9 +130,32 @@ class Setting(Base):
     value = Column(Text)
 
 def init_db(database_url=None):
+    import logging
+    logger = logging.getLogger(__name__)
+
     if database_url is None:
         data_dir = os.environ.get('DATA_DIR', 'data')
-        database_url = f'sqlite:///{os.path.join(data_dir, "youtube_downloader.db")}'
+
+        # Migration: rename old database if it exists
+        old_db_path = os.path.join(data_dir, 'youtube_downloader.db')
+        new_db_path = os.path.join(data_dir, 'ytandchill.db')
+
+        if os.path.exists(old_db_path) and not os.path.exists(new_db_path):
+            logger.info(f"Migrating database: {old_db_path} → {new_db_path}")
+
+            # Rename main db file
+            os.rename(old_db_path, new_db_path)
+
+            # Rename WAL and SHM files if they exist
+            for ext in ['-wal', '-shm']:
+                old_file = old_db_path + ext
+                new_file = new_db_path + ext
+                if os.path.exists(old_file):
+                    os.rename(old_file, new_file)
+
+            logger.info("Database migration complete")
+
+        database_url = f'sqlite:///{new_db_path}'
     engine = create_engine(database_url, echo=False)
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)

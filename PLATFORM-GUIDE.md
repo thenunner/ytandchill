@@ -547,17 +547,17 @@ Recreate the container.
 **Critical files to backup:**
 
 **Windows:**
-- Database: `C:\ytandchill\data\youtube_downloader.db`
+- Database: `C:\ytandchill\data\ytandchill.db`
 - Downloads: `C:\ytandchill\downloads\`
 - Cookies: `C:\ytandchill\data\cookies.txt`
 
 **Linux/macOS:**
-- Database: `~/ytandchill/data/youtube_downloader.db`
+- Database: `~/ytandchill/data/ytandchill.db`
 - Downloads: `~/ytandchill/downloads/`
 - Cookies: `~/ytandchill/data/cookies.txt`
 
 **Unraid:**
-- Database: `/mnt/user/appdata/ytandchill/data/youtube_downloader.db`
+- Database: `/mnt/user/appdata/ytandchill/data/ytandchill.db`
 - Downloads: `/mnt/user/downloads/ytandchill/`
 - Cookies: `/mnt/user/appdata/ytandchill/data/cookies.txt`
 

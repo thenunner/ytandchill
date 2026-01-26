@@ -248,8 +248,8 @@ Logs in `logs/` are optional to backup.
 
 **Solutions:**
 1. Stop the application completely
-2. Backup `data/youtube_downloader.db`
-3. Delete `data/youtube_downloader.db-shm` and `data/youtube_downloader.db-wal` if they exist
+2. Backup `data/ytandchill.db`
+3. Delete `data/ytandchill.db-shm` and `data/ytandchill.db-wal` if they exist
 4. Restart the application
 
 If corruption persists, you may need to rebuild the database (your downloads will remain, but you'll need to re-add channels).
