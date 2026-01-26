@@ -1,7 +1,7 @@
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import 'video.js/dist/video-js.css';
-import { useVideo, useUpdateVideo, useDeleteVideo } from '../api/queries';
+import { useVideo, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -21,6 +21,8 @@ export default function Player() {
   const { data: video, isLoading } = useVideo(videoId);
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
+  const { data: queueData } = useQueue();
+  const queueCount = queueData?.queue_items?.filter(i => i.status === 'pending' || i.status === 'downloading').length || 0;
   const { showNotification } = useNotification();
 
   // Player refs
