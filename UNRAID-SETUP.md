@@ -43,7 +43,7 @@
    - **Extra Parameters:** `--rm` (removes container on stop, cleans up orphaned images)
 
 3. **Port Mappings:**
-   - Container Port: 4099
+   - Container Port: Set via `PORT` env variable (default: 4099)
    - Host Port: Your choice (default: 4099)
    - Type: TCP
 
