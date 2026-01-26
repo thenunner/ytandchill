@@ -1,5 +1,10 @@
 # YT and Chill - Unraid Setup Guide
 
+> **Note:** This guide uses common Unraid paths. Adjust to match your setup:
+> - App data: `/mnt/user/appdata/ytandchill`
+> - Downloads: `/mnt/user/data/media/youtube/ytandchill`
+> - Firefox (optional): `/mnt/user/appdata/firefox/.mozilla/firefox`
+
 ## Quick Start
 
 ### Option 1: Docker Compose (Recommended)
