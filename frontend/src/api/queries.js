@@ -140,6 +140,7 @@ export function useToggleChannelFavorite() {
       // Refetch to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['channels'] });
       queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
+      queryClient.invalidateQueries({ queryKey: ['favorite-videos'] });
     },
   });
 }
