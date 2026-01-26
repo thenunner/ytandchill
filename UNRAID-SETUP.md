@@ -117,7 +117,7 @@ Combined with `docker image prune -f` in the build script, this keeps your Docke
 
 ## YouTube Cookie Authentication (Strongly Recommended)
 
-**As of 2024, YouTube cookies are essential for reliable downloads.** Choose one method:
+**YouTube cookies are essential for reliable downloads.** Choose one method:
 
 ### Method 1: cookies.txt File
 
@@ -127,13 +127,9 @@ Combined with `docker image prune -f` in the build script, this keeps your Docke
    - Firefox: "cookies.txt"
 2. Go to youtube.com (logged in)
 3. Click extension and export cookies for youtube.com
-4. Save as `/mnt/user/appdata/ytandchill/cookies.txt`
+4. Save as `/mnt/user/appdata/ytandchill/data/cookies.txt` (inside your data folder)
 5. Restart container
 6. In YT and Chill Settings, select "Cookie Source: cookies.txt"
-
-**Template Configuration:**
-- Already configured in template at `/app/backend/cookies.txt`
-- Maps to `/mnt/user/appdata/ytandchill/cookies.txt` on host
 
 ### Method 2: Firefox Browser Integration (Recommended)
 
