@@ -51,6 +51,7 @@ export function useVideoJsPlayer({
   const updateVideoRef = useRef(updateVideoMutation);
   const lastVideoElementRef = useRef(null); // Track the actual DOM element
   const sponsorBlockSkipCooldownRef = useRef(0); // Prevent rapid re-skipping
+  const resizeQueuedRef = useRef(false); // Coalesce resize calls to one per paint
 
   // Keep refs up to date
   useEffect(() => {
@@ -718,7 +719,7 @@ export function useVideoJsPlayer({
     }
   }, [isTheaterMode]);
 
-  // Handle mobile resize/orientation - use ResizeObserver instead of fighting orientation
+  // Handle mobile resize/orientation - use ResizeObserver + rAF coalescing
   // This fixes the black screen issue when rotating device during playback
   useEffect(() => {
     const { isMobile } = detectDeviceType();
@@ -730,26 +731,27 @@ export function useVideoJsPlayer({
     const containerEl = player.el();
     if (!containerEl) return;
 
-    let resizeTimeout;
+    // Coalesce resize calls to one per paint cycle
+    const safeResize = () => {
+      if (resizeQueuedRef.current) return;
+      resizeQueuedRef.current = true;
 
-    // ResizeObserver fires when container actually changes size
-    // This lets CSS handle the layout first, then we tell Video.js to recalculate
-    const resizeObserver = new ResizeObserver(() => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        if (player && !player.isDisposed()) {
-          player.dimensions(player.currentWidth(), player.currentHeight());
-          player.trigger('resize');
+      requestAnimationFrame(() => {
+        resizeQueuedRef.current = false;
+        if (playerRef.current && !playerRef.current.isDisposed()) {
+          // Use resize() not dimensions() - let Video.js read from CSS, not force values
+          playerRef.current.resize();
         }
-      }, 100);
+      });
+    };
+
+    const ro = new ResizeObserver(() => {
+      safeResize();
     });
 
-    resizeObserver.observe(containerEl);
+    ro.observe(containerEl);
 
-    return () => {
-      clearTimeout(resizeTimeout);
-      resizeObserver.disconnect();
-    };
+    return () => ro.disconnect();
   }, []);
 
   return playerRef;
