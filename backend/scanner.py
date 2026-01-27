@@ -163,7 +163,7 @@ def scan_channel_videos(channel_url, max_results=250):
     return channel_info, videos, all_video_ids
 
 
-def scan_channel_videos_full(channel_url, max_results=50):
+def scan_channel_videos_full(channel_url, max_results=50, progress_callback=None):
     """
     Scan channel videos with FULL metadata extraction.
 
@@ -177,6 +177,7 @@ def scan_channel_videos_full(channel_url, max_results=50):
     Args:
         channel_url: YouTube channel URL (any format)
         max_results: Maximum number of videos to fetch (default: 50)
+        progress_callback: Optional callback(current, total) called after each video
 
     Returns:
         tuple: (channel_info, videos, all_video_ids) - same format as scan_channel_videos()
@@ -259,8 +260,11 @@ def scan_channel_videos_full(channel_url, max_results=50):
 
     # Step 2: Fetch full metadata for each video
     videos = []
+    total_videos = len(video_ids)
     for idx, video_id in enumerate(video_ids, 1):
-        logger.debug(f'Fetching full metadata [{idx}/{len(video_ids)}]: {video_id}')
+        if progress_callback:
+            progress_callback(idx, total_videos)
+        logger.debug(f'Fetching full metadata [{idx}/{total_videos}]: {video_id}')
 
         video_info = get_video_info(video_id)
         if video_info:
