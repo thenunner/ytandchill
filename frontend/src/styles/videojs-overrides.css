@@ -177,6 +177,7 @@
 
 /* ===== MOBILE PLAYER WRAPPER ===== */
 /* Dedicated mobile class - uses viewport width for reliable edge-to-edge sizing */
+/* Orientation-specific rules prevent iOS blackout on rotation */
 .player-wrapper-mobile {
   position: relative;
   /* Use viewport width for reliable full-bleed regardless of parent padding */
@@ -184,13 +185,29 @@
   /* Center the element by offsetting half the overflow */
   margin-left: calc(-50vw + 50%);
   margin-right: calc(-50vw + 50%);
-  aspect-ratio: 16 / 9;
-  max-height: calc(100dvh - 200px);
   background: black;
-  /* CRITICAL: Prevent any overflow */
   overflow: hidden;
-  /* Contain the video element to prevent overflow */
-  contain: layout paint;
+  /* REMOVED: contain: layout paint - breaks iOS video compositing layer */
+}
+
+/* Portrait: width-driven, aspect-ratio calculates height */
+@media (orientation: portrait) {
+  .player-wrapper-mobile {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    max-height: none;
+  }
+}
+
+/* Landscape: aspect-ratio does the math, max-height constrains */
+@media (orientation: landscape) {
+  .player-wrapper-mobile {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    max-height: calc(100dvh - 120px);
+  }
 }
 
 /* Video.js fills mobile wrapper */
@@ -210,6 +227,13 @@
   object-fit: contain;
   /* Explicit height to prevent auto sizing issues */
   max-height: 100%;
+}
+
+/* Polishing: ensure Video.js tech element respects wrapper sizing */
+.player-wrapper-mobile .video-js.vjs-fill .vjs-tech {
+  object-fit: contain;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 /* Mobile poster/thumbnail fills the player area */
