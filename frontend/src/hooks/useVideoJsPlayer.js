@@ -718,5 +718,43 @@ export function useVideoJsPlayer({
     }
   }, [isTheaterMode]);
 
+  // Handle mobile orientation changes - force Video.js to recalculate dimensions
+  // This fixes the black screen issue when rotating device during playback
+  useEffect(() => {
+    const { isMobile } = detectDeviceType();
+    if (!isMobile) return;
+
+    let resizeTimeout;
+
+    const handleOrientationChange = () => {
+      // Debounce and delay to let browser finish layout
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        const player = playerRef.current;
+        if (player && !player.isDisposed()) {
+          // Force Video.js to recalculate dimensions
+          player.dimensions(player.currentWidth(), player.currentHeight());
+          // Trigger resize event for any internal listeners
+          player.trigger('resize');
+        }
+      }, 100);
+    };
+
+    // Use screen.orientation API where available
+    if (screen.orientation) {
+      screen.orientation.addEventListener('change', handleOrientationChange);
+    }
+    // Also listen to resize as fallback (iOS Safari)
+    window.addEventListener('resize', handleOrientationChange);
+
+    return () => {
+      clearTimeout(resizeTimeout);
+      if (screen.orientation) {
+        screen.orientation.removeEventListener('change', handleOrientationChange);
+      }
+      window.removeEventListener('resize', handleOrientationChange);
+    };
+  }, []);
+
   return playerRef;
 }
