@@ -718,8 +718,22 @@ export function useVideoJsPlayer({
     }
   }, [isTheaterMode]);
 
-  // Mobile orientation/resize: Let Video.js fill:true + CSS handle it
-  // No JS intervention needed - interfering with Video.js internal state causes blackouts
+  // Mobile orientation change: trigger Video.js resize after CSS reflows
+  useEffect(() => {
+    const { isMobile } = detectDeviceType();
+    if (!isMobile) return;
+
+    const handleOrientation = () => {
+      setTimeout(() => {
+        if (playerRef.current && !playerRef.current.isDisposed()) {
+          playerRef.current.trigger('resize');
+        }
+      }, 200); // Wait for iOS rotation animation + 100dvh recalculation
+    };
+
+    window.addEventListener('orientationchange', handleOrientation);
+    return () => window.removeEventListener('orientationchange', handleOrientation);
+  }, []);
 
   return playerRef;
 }

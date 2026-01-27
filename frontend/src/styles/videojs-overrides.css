@@ -176,38 +176,11 @@
 }
 
 /* ===== MOBILE PLAYER WRAPPER ===== */
-/* Dedicated mobile class - uses viewport width for reliable edge-to-edge sizing */
-/* Orientation-specific rules prevent iOS blackout on rotation */
+/* Dedicated mobile class with responsive window behavior */
 .player-wrapper-mobile {
   position: relative;
-  /* Use viewport width for reliable full-bleed regardless of parent padding */
-  width: 100vw;
-  /* Center the element by offsetting half the overflow */
-  margin-left: calc(-50vw + 50%);
-  margin-right: calc(-50vw + 50%);
   background: black;
   overflow: hidden;
-  /* REMOVED: contain: layout paint - breaks iOS video compositing layer */
-}
-
-/* Portrait: width-driven, aspect-ratio calculates height */
-@media (orientation: portrait) {
-  .player-wrapper-mobile {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    max-height: none;
-  }
-}
-
-/* Landscape: aspect-ratio does the math, max-height constrains */
-@media (orientation: landscape) {
-  .player-wrapper-mobile {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 9;
-    max-height: calc(100dvh - 120px);
-  }
 }
 
 /* Video.js fills mobile wrapper */
@@ -217,7 +190,6 @@
   left: 0 !important;
   width: 100% !important;
   height: 100% !important;
-  /* Prevent video.js from overflowing */
   overflow: hidden !important;
 }
 
@@ -225,7 +197,6 @@
   width: 100% !important;
   height: 100% !important;
   object-fit: contain;
-  /* Explicit height to prevent auto sizing issues */
   max-height: 100%;
 }
 
@@ -234,6 +205,45 @@
   object-fit: contain;
   width: 100% !important;
   height: 100% !important;
+}
+
+/* Portrait: micro buffer prevents iOS repaint crash */
+@media (orientation: portrait) {
+  .player-wrapper-mobile {
+    width: calc(100% - 2px);
+    margin-left: 1px;
+    margin-right: 1px;
+    height: auto;
+    aspect-ratio: 16 / 9;
+    max-height: none;
+  }
+}
+
+/* Landscape + mobile only: Responsive Window - full viewport video */
+@media (orientation: landscape) and (max-width: 767px) {
+  /* Hide video info section */
+  .player-video-info {
+    display: none !important;
+  }
+
+  /* Hide mobile bottom navigation */
+  .MobileBottomNav {
+    display: none !important;
+  }
+
+  /* Fullscreen-like wrapper */
+  .player-wrapper-mobile {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100dvh;
+    max-height: none;
+    aspect-ratio: auto;
+    margin: 0;
+    z-index: 50;
+    border-radius: 0;
+  }
 }
 
 /* Mobile poster/thumbnail fills the player area */
