@@ -718,60 +718,37 @@ export function useVideoJsPlayer({
     }
   }, [isTheaterMode]);
 
-  // Handle mobile orientation changes - force Video.js to recalculate dimensions
-  // This fixes the black screen issue when rotating device during playback (especially iOS)
+  // Handle mobile resize/orientation - use ResizeObserver instead of fighting orientation
+  // This fixes the black screen issue when rotating device during playback
   useEffect(() => {
-    const { isMobile, isIOS } = detectDeviceType();
+    const { isMobile } = detectDeviceType();
     if (!isMobile) return;
+
+    const player = playerRef.current;
+    if (!player || player.isDisposed()) return;
+
+    const containerEl = player.el();
+    if (!containerEl) return;
 
     let resizeTimeout;
 
-    const handleOrientationChange = () => {
-      // Debounce - iOS needs longer delay due to WebKit compositing bugs
+    // ResizeObserver fires when container actually changes size
+    // This lets CSS handle the layout first, then we tell Video.js to recalculate
+    const resizeObserver = new ResizeObserver(() => {
       clearTimeout(resizeTimeout);
-      const delay = isIOS ? 250 : 100;
-
       resizeTimeout = setTimeout(() => {
-        const player = playerRef.current;
-        if (!player || player.isDisposed()) return;
-
-        const wasPlaying = !player.paused();
-        const videoEl = player.tech(true)?.el();
-
-        // iOS WebKit fix: force GPU layer recreation by toggling transform
-        if (isIOS && videoEl) {
-          videoEl.style.transform = 'translateZ(0)';
-          // Force reflow
-          void videoEl.offsetHeight;
-          requestAnimationFrame(() => {
-            if (videoEl) videoEl.style.transform = '';
-          });
+        if (player && !player.isDisposed()) {
+          player.dimensions(player.currentWidth(), player.currentHeight());
+          player.trigger('resize');
         }
+      }, 100);
+    });
 
-        // Force Video.js to recalculate dimensions
-        player.dimensions(player.currentWidth(), player.currentHeight());
-        player.trigger('resize');
-
-        // Ensure playback continues if it was playing
-        if (wasPlaying && player.paused()) {
-          player.play().catch(() => {});
-        }
-      }, delay);
-    };
-
-    // Use screen.orientation API where available
-    if (screen.orientation) {
-      screen.orientation.addEventListener('change', handleOrientationChange);
-    }
-    // Also listen to resize as fallback (iOS Safari)
-    window.addEventListener('resize', handleOrientationChange);
+    resizeObserver.observe(containerEl);
 
     return () => {
       clearTimeout(resizeTimeout);
-      if (screen.orientation) {
-        screen.orientation.removeEventListener('change', handleOrientationChange);
-      }
-      window.removeEventListener('resize', handleOrientationChange);
+      resizeObserver.disconnect();
     };
   }, []);
 
