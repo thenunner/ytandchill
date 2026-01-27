@@ -116,7 +116,7 @@ def serve_media(filename):
             with open(file_abs, 'rb') as f:
                 f.seek(start)
                 remaining = length
-                chunk_size = 8192  # 8KB chunks
+                chunk_size = 1048576  # 1MB chunks for faster video streaming
                 while remaining > 0:
                     chunk = f.read(min(chunk_size, remaining))
                     if not chunk:
