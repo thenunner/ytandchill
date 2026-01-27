@@ -202,8 +202,8 @@ export default function Player() {
             />
           </div>
 
-          {/* Video Info */}
-          <div className="px-4 py-3 space-y-3">
+          {/* Video Info - hidden in landscape via CSS */}
+          <div className="player-video-info px-4 py-3 space-y-3">
             <h1 className="text-base font-semibold text-text-primary leading-tight line-clamp-2">
               {video.title}
             </h1>
