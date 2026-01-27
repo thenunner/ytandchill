@@ -51,7 +51,6 @@ export function useVideoJsPlayer({
   const updateVideoRef = useRef(updateVideoMutation);
   const lastVideoElementRef = useRef(null); // Track the actual DOM element
   const sponsorBlockSkipCooldownRef = useRef(0); // Prevent rapid re-skipping
-  const resizeQueuedRef = useRef(false); // Coalesce resize calls to one per paint
 
   // Keep refs up to date
   useEffect(() => {
@@ -719,40 +718,8 @@ export function useVideoJsPlayer({
     }
   }, [isTheaterMode]);
 
-  // Handle mobile resize/orientation - use ResizeObserver + rAF coalescing
-  // This fixes the black screen issue when rotating device during playback
-  useEffect(() => {
-    const { isMobile } = detectDeviceType();
-    if (!isMobile) return;
-
-    const player = playerRef.current;
-    if (!player || player.isDisposed()) return;
-
-    const containerEl = player.el();
-    if (!containerEl) return;
-
-    // Coalesce resize calls to one per paint cycle
-    const safeResize = () => {
-      if (resizeQueuedRef.current) return;
-      resizeQueuedRef.current = true;
-
-      requestAnimationFrame(() => {
-        resizeQueuedRef.current = false;
-        if (playerRef.current && !playerRef.current.isDisposed()) {
-          // Use resize() not dimensions() - let Video.js read from CSS, not force values
-          playerRef.current.resize();
-        }
-      });
-    };
-
-    const ro = new ResizeObserver(() => {
-      safeResize();
-    });
-
-    ro.observe(containerEl);
-
-    return () => ro.disconnect();
-  }, []);
+  // Mobile orientation/resize: Let Video.js fill:true + CSS handle it
+  // No JS intervention needed - interfering with Video.js internal state causes blackouts
 
   return playerRef;
 }
