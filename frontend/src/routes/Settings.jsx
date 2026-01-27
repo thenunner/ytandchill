@@ -1085,7 +1085,7 @@ export default function Settings() {
             <div className="setting-label">
               <div>
                 <div className="setting-name">Hide Empty Libraries</div>
-                <div className="setting-desc">Hide libraries with no videos from Favorite Libraries</div>
+                <div className="setting-desc">Hide libraries with no videos</div>
               </div>
             </div>
             <label className="toggle-switch">
@@ -1097,7 +1097,7 @@ export default function Settings() {
                   setHideEmptyLibraries(newValue);
                   try {
                     await updateSettings.mutateAsync({ hide_empty_libraries: newValue ? 'true' : 'false' });
-                    showNotification(newValue ? 'Empty libraries will be hidden from favorites' : 'Empty libraries will be shown in favorites', 'success');
+                    showNotification(newValue ? 'Empty libraries hidden' : 'Empty libraries shown', 'success');
                   } catch {
                     setHideEmptyLibraries(!newValue);
                     showNotification('Failed to save setting', 'error');
