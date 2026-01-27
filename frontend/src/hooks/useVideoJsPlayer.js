@@ -719,25 +719,44 @@ export function useVideoJsPlayer({
   }, [isTheaterMode]);
 
   // Handle mobile orientation changes - force Video.js to recalculate dimensions
-  // This fixes the black screen issue when rotating device during playback
+  // This fixes the black screen issue when rotating device during playback (especially iOS)
   useEffect(() => {
-    const { isMobile } = detectDeviceType();
+    const { isMobile, isIOS } = detectDeviceType();
     if (!isMobile) return;
 
     let resizeTimeout;
 
     const handleOrientationChange = () => {
-      // Debounce and delay to let browser finish layout
+      // Debounce - iOS needs longer delay due to WebKit compositing bugs
       clearTimeout(resizeTimeout);
+      const delay = isIOS ? 250 : 100;
+
       resizeTimeout = setTimeout(() => {
         const player = playerRef.current;
-        if (player && !player.isDisposed()) {
-          // Force Video.js to recalculate dimensions
-          player.dimensions(player.currentWidth(), player.currentHeight());
-          // Trigger resize event for any internal listeners
-          player.trigger('resize');
+        if (!player || player.isDisposed()) return;
+
+        const wasPlaying = !player.paused();
+        const videoEl = player.tech(true)?.el();
+
+        // iOS WebKit fix: force GPU layer recreation by toggling transform
+        if (isIOS && videoEl) {
+          videoEl.style.transform = 'translateZ(0)';
+          // Force reflow
+          void videoEl.offsetHeight;
+          requestAnimationFrame(() => {
+            if (videoEl) videoEl.style.transform = '';
+          });
         }
-      }, 100);
+
+        // Force Video.js to recalculate dimensions
+        player.dimensions(player.currentWidth(), player.currentHeight());
+        player.trigger('resize');
+
+        // Ensure playback continues if it was playing
+        if (wasPlaying && player.paused()) {
+          player.play().catch(() => {});
+        }
+      }, delay);
     };
 
     // Use screen.orientation API where available
