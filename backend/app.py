@@ -633,22 +633,31 @@ def _fetch_videos_for_scan(channel, force_full):
 
     api_key = settings_manager.get('youtube_api_key')
     if api_key:
-        # Try YouTube API (much faster - ~1 second vs minutes)
-        logger.debug(f"Incremental scan using YouTube API for {channel.title} (max: {max_results})")
-        api_videos, api_error = scan_channel_videos_api(channel.yt_id, api_key, max_results=max_results)
+        # Try YouTube API with retry (much faster - ~1 second vs minutes)
+        max_retries = 2
+        for attempt in range(1, max_retries + 1):
+            logger.debug(f"Incremental scan using YouTube API for {channel.title} (max: {max_results}, attempt {attempt}/{max_retries})")
+            api_videos, api_error = scan_channel_videos_api(channel.yt_id, api_key, max_results=max_results)
 
-        if api_videos and not api_error:
-            # API success - use API results
-            all_video_ids = set(v['id'] for v in api_videos)
-            logger.info(f"YouTube API scan complete: {len(api_videos)} videos for {channel.title}")
-            return api_videos, all_video_ids, False
+            if api_videos and not api_error:
+                # API success - use API results
+                all_video_ids = set(v['id'] for v in api_videos)
+                logger.info(f"YouTube API scan complete: {len(api_videos)} videos for {channel.title}")
+                return api_videos, all_video_ids, False
 
-        # API failed - fall back to yt-dlp
-        logger.warning(f"YouTube API failed for {channel.title}: {api_error}, falling back to yt-dlp")
+            # API failed - retry or fall back
+            if attempt < max_retries:
+                logger.warning(f"YouTube API attempt {attempt}/{max_retries} failed for {channel.title}: {api_error}, retrying...")
+                time.sleep(2)
+            else:
+                logger.warning(f"YouTube API failed after {max_retries} attempts for {channel.title}: {api_error}, falling back to yt-dlp")
 
-    # No API key or API failed - use yt-dlp (slower)
-    logger.debug(f"Incremental scan using yt-dlp for {channel.title} (no API key)")
-    channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results)
+    # No API key or API failed - use yt-dlp (slower but reliable)
+    def yt_dlp_progress(current, total):
+        set_operation('scanning', f"Scanning: {channel.title} ({current}/{total})", channel_id=channel.id)
+
+    logger.debug(f"Incremental scan using yt-dlp for {channel.title}")
+    channel_info, videos, all_video_ids = scan_channel_videos_full(channel_url, max_results=max_results, progress_callback=yt_dlp_progress)
     return videos, all_video_ids, False
 
 

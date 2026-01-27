@@ -651,7 +651,7 @@
 }
 
 .preset-time-btn.selected {
-  @apply bg-accent/15 border-accent text-accent;
+  @apply bg-accent border-accent text-white;
 }
 
 /* AM/PM Toggle */
