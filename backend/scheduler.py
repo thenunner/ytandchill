@@ -95,7 +95,8 @@ class AutoRefreshScheduler:
                     'cron',
                     hour=hour,
                     minute=minute,
-                    id=f'auto_refresh_{idx}'
+                    id=f'auto_refresh_{idx}',
+                    misfire_grace_time=60  # Run if missed by up to 60 seconds
                 )
                 scheduled_times.append(f"{hour:02d}:{minute:02d}")
             logger.info(f"Auto-refresh scheduled at: {', '.join(scheduled_times)}")
@@ -119,7 +120,8 @@ class AutoRefreshScheduler:
                 'interval',
                 hours=interval_hours,
                 next_run_time=start_datetime,
-                id='auto_refresh_interval'
+                id='auto_refresh_interval',
+                misfire_grace_time=60  # Run if missed by up to 60 seconds
             )
             logger.info(f"Auto-refresh scheduled every {interval_hours} hours starting at {start_datetime.strftime('%Y-%m-%d %H:%M')}")
 
