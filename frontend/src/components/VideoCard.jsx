@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDeleteVideo, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
@@ -12,7 +12,8 @@ import AddToPlaylistMenu from './AddToPlaylistMenu';
 import ConfirmDialog from './ConfirmDialog';
 import { ThreeDotsIcon, CheckmarkIcon, TrashIcon, PlusIcon } from './icons';
 
-export default function VideoCard({
+// Memoized to prevent re-renders when sibling cards change selection state
+const VideoCard = memo(function VideoCard({
   video,
   isSelected,
   onToggleSelect,
@@ -594,7 +595,9 @@ export default function VideoCard({
       )}
     </div>
   );
-}
+});
+
+export default VideoCard;
 
 function InfoField({ label, value, mono, small, truncate }) {
   return (

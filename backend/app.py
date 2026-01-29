@@ -211,6 +211,54 @@ def handle_options():
         response = app.make_default_options_response()
         return response
 
+# CSRF protection via Origin header verification
+@app.before_request
+def csrf_protection():
+    """Verify Origin header for state-changing requests (CSRF protection)"""
+    # Only check state-changing methods
+    if request.method not in ('POST', 'PATCH', 'PUT', 'DELETE'):
+        return None
+
+    # Skip CSRF check for these paths (no state change or handled differently)
+    if request.path.startswith('/api/auth/'):
+        return None
+    if request.path == '/api/queue/stream':
+        return None
+
+    # Get Origin header (sent by browsers on cross-origin requests)
+    origin = request.headers.get('Origin')
+
+    # If no Origin header, check Referer as fallback
+    # (some browsers/situations may not send Origin)
+    if not origin:
+        referer = request.headers.get('Referer')
+        if referer:
+            from urllib.parse import urlparse
+            parsed = urlparse(referer)
+            origin = f"{parsed.scheme}://{parsed.netloc}"
+
+    # If we have an origin, verify it matches the Host header
+    if origin:
+        host = request.headers.get('Host', '')
+        # Extract hostname from origin (remove scheme)
+        from urllib.parse import urlparse
+        parsed_origin = urlparse(origin)
+        origin_host = parsed_origin.netloc
+
+        # Allow if origin host matches request host (same-origin)
+        # Also allow localhost variations for development
+        allowed_hosts = [host]
+        if 'localhost' in host or '127.0.0.1' in host:
+            # In dev, allow localhost variations
+            allowed_hosts.extend(['localhost', '127.0.0.1', 'localhost:4099', '127.0.0.1:4099'])
+
+        if origin_host not in allowed_hosts and not origin_host.startswith(host.split(':')[0]):
+            logger.warning(f"CSRF protection: Origin mismatch. Origin: {origin}, Host: {host}")
+            return jsonify({'error': 'CSRF validation failed'}), 403
+
+    return None
+
+
 # Authentication check before each request
 @app.before_request
 def require_authentication():

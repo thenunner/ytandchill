@@ -92,7 +92,7 @@ def is_authenticated():
 # =============================================================================
 
 # Keys that should never be exposed to the frontend
-SENSITIVE_KEYS = {'auth_username', 'auth_password_hash'}
+SENSITIVE_KEYS = {'auth_username', 'auth_password_hash', 'youtube_api_key', 'anthropic_api_key', 'secret_key'}
 
 @settings_bp.route('/api/settings', methods=['GET'])
 def get_settings():
@@ -827,8 +827,8 @@ def setup_auth():
     if len(username) < 3:
         return jsonify({'error': 'Username must be at least 3 characters'}), 400
 
-    if len(password) < 3:
-        return jsonify({'error': 'Password must be at least 3 characters'}), 400
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
 
     with get_session(_session_factory) as db_session:
         # Update username

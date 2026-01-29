@@ -3,8 +3,8 @@ import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels, useFa
 import { useQueueSSE } from './api/useQueueSSE';
 import { useNotification } from './contexts/NotificationContext';
 import { SelectionBarProvider, useSelectionBar } from './contexts/SelectionBarContext';
+import { useToastManager } from './hooks/useToastManager';
 import { useEffect, useState, useRef } from 'react';
-import api from './api/client';
 import Channels from './routes/Channels';
 import Library from './routes/Library';
 import ChannelLibrary from './routes/ChannelLibrary';
@@ -46,12 +46,11 @@ function App() {
     }
     return true;
   });
-  const { showNotification, removeToast } = useNotification();
+  const { showNotification } = useNotification();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const saved = localStorage.getItem('sidebarCollapsed');
     return saved === 'true';
   });
-  const clearingCookieWarningRef = useRef(false);
 
   // Persist sidebar collapsed state
   useEffect(() => {
@@ -63,20 +62,8 @@ function App() {
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [bannerDismissed, setBannerDismissed] = useState(false);
 
-
   // Track if update toast has been shown (one-time notification)
   const updateToastShownRef = useRef(false);
-
-  // Refs for tracking previous states (to detect changes)
-  const prevOperationRef = useRef(null);
-  const prevErrorRef = useRef(null);
-  const prevCookieWarningRef = useRef(null);
-  const prevDelayInfoRef = useRef(null);
-  const prevIsPausedRef = useRef(false);
-  const prevDownloadRef = useRef(null);
-
-  // Track user-dismissed toasts - don't re-show until condition resets
-  const dismissedToastsRef = useRef(new Set());
 
   // Update latest version from health API (populated by backend scan operations)
   useEffect(() => {
@@ -111,184 +98,9 @@ function App() {
 
   // Handle new queue structure
   const queue = queueData?.queue_items || queueData || [];
-  const currentDownload = queueData?.current_download || null;
-  const currentOperation = queueData?.current_operation || null;
-  const delayInfo = queueData?.delay_info || null;
-  const isPaused = queueData?.is_paused || false;
-  const lastErrorMessage = queueData?.last_error_message || null;
-  const cookieWarning = queueData?.cookie_warning_message || null;
 
-  // === TOAST NOTIFICATIONS ===
-
-  // Scan completion toast (15 second duration)
-  useEffect(() => {
-    if (currentOperation?.type === 'scan_complete' && currentOperation?.message) {
-      if (prevOperationRef.current?.type !== 'scan_complete') {
-        showNotification(currentOperation.message, 'success', { duration: 15000 });
-        // Clear the operation after showing toast
-        api.clearOperation().catch(() => {});
-      }
-    }
-    prevOperationRef.current = currentOperation;
-  }, [currentOperation, showNotification]);
-
-  // Active scanning toast - depend on message specifically to catch updates
-  useEffect(() => {
-    if (currentOperation?.type === 'scanning' && currentOperation?.message) {
-      // Only show if user hasn't dismissed it
-      if (!dismissedToastsRef.current.has('scanning')) {
-        showNotification(currentOperation.message, 'scanning', {
-          id: 'scanning',
-          persistent: true,
-          onDismiss: () => dismissedToastsRef.current.add('scanning')
-        });
-      }
-    } else {
-      // Always remove scanning toast when not actively scanning
-      removeToast('scanning');
-      dismissedToastsRef.current.delete('scanning');
-    }
-  }, [currentOperation?.type, currentOperation?.message, showNotification, removeToast]);
-
-  // Error message toast
-  useEffect(() => {
-    if (lastErrorMessage && lastErrorMessage !== prevErrorRef.current) {
-      showNotification(lastErrorMessage, 'error');
-    }
-    prevErrorRef.current = lastErrorMessage;
-  }, [lastErrorMessage, showNotification]);
-
-  // Cookie warning toast
-  useEffect(() => {
-    if (cookieWarning && cookieWarning !== prevCookieWarningRef.current) {
-      showNotification(cookieWarning, 'warning', { id: 'cookie-warning', persistent: true });
-    } else if (!cookieWarning && prevCookieWarningRef.current) {
-      removeToast('cookie-warning');
-      // Show success notification when cookies are loaded/fixed
-      showNotification('Cookies loaded successfully', 'success');
-    }
-    prevCookieWarningRef.current = cookieWarning;
-  }, [cookieWarning, showNotification, removeToast]);
-
-  // Clear cookie warning on navigation
-  useEffect(() => {
-    if (cookieWarning) {
-      const clearWarning = async () => {
-        if (clearingCookieWarningRef.current) return;
-        clearingCookieWarningRef.current = true;
-        try {
-          await fetch('/api/cookie-warning/clear', { method: 'POST', credentials: 'include' });
-        } catch (error) {
-          console.error('Failed to clear cookie warning:', error);
-        }
-        setTimeout(() => { clearingCookieWarningRef.current = false; }, 1000);
-      };
-      clearWarning();
-    }
-  }, [location.pathname, cookieWarning]);
-
-  // Queue paused toast
-  useEffect(() => {
-    const queueLog = queue?.find(item => item.log)?.log || null;
-    if (isPaused && !prevIsPausedRef.current && queue.length > 0) {
-      // Only show if user hasn't dismissed it
-      if (!dismissedToastsRef.current.has('paused')) {
-        showNotification(queueLog || 'Queue paused', 'paused', {
-          id: 'paused',
-          persistent: true,
-          onDismiss: () => dismissedToastsRef.current.add('paused')
-        });
-      }
-    } else if (!isPaused && prevIsPausedRef.current) {
-      removeToast('paused');
-      // Clear dismissed state so it can show again next time
-      dismissedToastsRef.current.delete('paused');
-    }
-    prevIsPausedRef.current = isPaused;
-  }, [isPaused, queue, showNotification, removeToast]);
-
-  // Delay info toast
-  useEffect(() => {
-    if (delayInfo && delayInfo !== prevDelayInfoRef.current) {
-      // Only show if user hasn't dismissed it
-      if (!dismissedToastsRef.current.has('delay')) {
-        showNotification(delayInfo, 'delay', {
-          id: 'delay',
-          persistent: true,
-          onDismiss: () => dismissedToastsRef.current.add('delay')
-        });
-      }
-    } else if (!delayInfo && prevDelayInfoRef.current) {
-      removeToast('delay');
-      dismissedToastsRef.current.delete('delay');
-      // Show notification that queue has resumed after delay
-      showNotification('Queue resumed', 'success');
-    }
-    prevDelayInfoRef.current = delayInfo;
-  }, [delayInfo, showNotification, removeToast]);
-
-  // Download progress toast
-  useEffect(() => {
-    if (currentDownload && !isPaused) {
-      // Only show if user hasn't dismissed it
-      if (dismissedToastsRef.current.has('download-progress')) {
-        return;
-      }
-
-      // Check if in postprocessing phase (SponsorBlock re-encoding)
-      const isPostprocessing = currentDownload.phase === 'postprocessing';
-      const onDismiss = () => dismissedToastsRef.current.add('download-progress');
-
-      if (isPostprocessing) {
-        // Show elapsed time for postprocessing
-        const elapsed = currentDownload.postprocess_elapsed || 0;
-        const elapsedStr = `${Math.floor(elapsed / 60)}:${(elapsed % 60).toString().padStart(2, '0')}`;
-
-        showNotification(
-          currentDownload.video?.title || 'Processing...',
-          'progress',
-          {
-            id: 'download-progress',
-            persistent: true,
-            onDismiss,
-            progress: {
-              isPostprocessing: true,
-              elapsed: elapsedStr,
-              postprocessor: currentDownload.postprocessor
-            }
-          }
-        );
-      } else {
-        // Normal download progress
-        const speed = currentDownload.speed_bps > 0
-          ? `${(currentDownload.speed_bps / 1024 / 1024).toFixed(1)} MB/s`
-          : null;
-        const eta = currentDownload.eta_seconds > 0
-          ? `${Math.floor(currentDownload.eta_seconds / 60)}:${Math.floor(currentDownload.eta_seconds % 60).toString().padStart(2, '0')}`
-          : null;
-        const percent = Math.round(currentDownload.progress_pct || 0);
-
-        showNotification(
-          currentDownload.video?.title || 'Downloading...',
-          'progress',
-          {
-            id: 'download-progress',
-            persistent: true,
-            onDismiss,
-            progress: { speed, eta, percent }
-          }
-        );
-      }
-    } else if (!currentDownload && prevDownloadRef.current) {
-      removeToast('download-progress');
-      dismissedToastsRef.current.delete('download-progress');
-      // Show download complete notification with the previous download's title
-      const completedTitle = prevDownloadRef.current.video?.title || 'Video';
-      showNotification(`Downloaded: ${completedTitle}`, 'success', { duration: 15000 });
-    }
-    prevDownloadRef.current = currentDownload;
-  }, [currentDownload, isPaused, showNotification, removeToast]);
-
+  // Toast notifications are managed by useToastManager hook
+  useToastManager({ queueData, location });
 
   // Auth checks using React Query
   const { data: firstRunData, isLoading: firstRunLoading } = useFirstRunCheck();
