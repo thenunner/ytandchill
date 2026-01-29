@@ -37,12 +37,19 @@ export function useNativeVideoPlayer({
   const videoDataRef = useRef(video);
   const updateVideoRef = useRef(updateVideoMutation);
   const sponsorBlockSkipCooldownRef = useRef(0);
+  // Store callbacks in refs to avoid effect re-runs when they change
+  const onEndedRef = useRef(onEnded);
+  const onWatchedRef = useRef(onWatched);
+  const onErrorRef = useRef(onError);
 
   // Keep refs updated with latest values
   useEffect(() => {
     videoDataRef.current = video;
     updateVideoRef.current = updateVideoMutation;
-  }, [video, updateVideoMutation]);
+    onEndedRef.current = onEnded;
+    onWatchedRef.current = onWatched;
+    onErrorRef.current = onError;
+  }, [video, updateVideoMutation, onEnded, onWatched, onError]);
 
   // Reset watched flag when video changes
   useEffect(() => {
@@ -112,7 +119,7 @@ export function useNativeVideoPlayer({
       }
 
       console.error('[useNativeVideoPlayer] Video error:', error.code, error.message);
-      if (onError) onError(userMessage);
+      if (onErrorRef.current) onErrorRef.current(userMessage);
     };
 
     // Progress saving & watched detection during playback
@@ -126,7 +133,7 @@ export function useNativeVideoPlayer({
       if (!hasMarkedWatchedRef.current && duration > 0 &&
           currentTime / duration >= WATCHED_THRESHOLD) {
         hasMarkedWatchedRef.current = true;
-        if (onWatched) onWatched();
+        if (onWatchedRef.current) onWatchedRef.current();
       }
 
       // SponsorBlock segment skipping
@@ -167,7 +174,7 @@ export function useNativeVideoPlayer({
 
     // Handle video end
     const handleEnded = () => {
-      if (onEnded) onEnded();
+      if (onEndedRef.current) onEndedRef.current();
     };
 
     // Add subtitle track (VTT format) - deferred to not compete with video load
@@ -219,7 +226,9 @@ export function useNativeVideoPlayer({
       videoEl.removeEventListener('ended', handleEnded);
       videoEl.removeEventListener('error', handleError);
     };
-  }, [video?.id, video?.file_path, saveProgress, onEnded, onWatched, onError]);
+  // Note: Callbacks (onEnded, onWatched, onError) are accessed via refs to prevent
+  // effect re-runs when they change, which would reset the video source and cause flashing
+  }, [video?.id, video?.file_path, saveProgress]);
 
   // Save progress before page unload (refresh/close)
   useEffect(() => {
