@@ -10,6 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { formatDuration, getVideoSource } from '../utils/videoPlayerUtils';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
+import { useNativeVideoPlayer } from '../hooks/useNativeVideoPlayer';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { ArrowLeftIcon, EyeIcon, CheckmarkIcon } from '../components/icons';
 import Sidebar from '../components/Sidebar';
@@ -25,8 +26,9 @@ export default function Player() {
   const queueCount = queueData?.queue_items?.filter(i => i.status === 'pending' || i.status === 'downloading').length || 0;
   const { showNotification } = useNotification();
 
-  // Player refs
-  const videoRef = useRef(null);
+  // Player refs - separate refs for mobile (native) and desktop (Video.js)
+  const mobileVideoRef = useRef(null);
+  const desktopVideoRef = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
 
   // Refs to hold latest values for event handlers (avoid stale closures)
@@ -73,10 +75,26 @@ export default function Player() {
     }
   }, [video?.id, video?.watched, updateVideo]);
 
-  // Initialize video.js player using the hook
+  // Handle video error callback for native player
+  const handleVideoError = useCallback((message) => {
+    showNotificationRef.current(message, 'error');
+  }, []);
+
+  // Mobile: Native HTML5 video player (simple, reliable fullscreen)
+  useNativeVideoPlayer({
+    video: video,
+    videoRef: mobileVideoRef,
+    saveProgress: true,
+    onEnded: null,
+    onWatched: handleWatched,
+    onError: handleVideoError,
+    updateVideoMutation: updateVideo,
+  });
+
+  // Desktop: Video.js player (rich features, theater mode, keyboard shortcuts)
   const playerRef = useVideoJsPlayer({
     video: video,
-    videoRef: videoRef,
+    videoRef: desktopVideoRef,
     saveProgress: true,
     onEnded: null,
     onWatched: handleWatched,
@@ -86,8 +104,11 @@ export default function Player() {
     autoplay: true, // Auto-play on desktop when entering player
   });
 
-  // Set video source when player is ready
+  // Set video source for Video.js player (desktop only)
   useEffect(() => {
+    // Skip on mobile - native player handles its own source
+    if (isMobile) return;
+
     if (!playerRef.current || !video?.file_path) {
       return;
     }
@@ -127,7 +148,7 @@ export default function Player() {
     } catch (error) {
       // Silently handle errors
     }
-  }, [playerRef, video?.file_path, video?.id]);
+  }, [playerRef, video?.file_path, video?.id, isMobile]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -186,19 +207,20 @@ export default function Player() {
     }
   };
 
-  // Mobile layout with bottom navigation
+  // Mobile layout with bottom navigation - uses native HTML5 video
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen bg-dark-primary animate-fade-in">
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto">
-          {/* Video Wrapper */}
+          {/* Video Wrapper - Native HTML5 video for reliable mobile fullscreen */}
           <div className="player-wrapper-mobile">
             <video
-              ref={videoRef}
-              className="video-js vjs-big-play-centered"
+              ref={mobileVideoRef}
+              controls
               playsInline
-              preload="auto"
+              preload="metadata"
+              poster={video.thumb_url || ''}
             />
           </div>
 
@@ -299,7 +321,7 @@ export default function Player() {
                 : {}
             }
           >
-            {/* Video Wrapper */}
+            {/* Video Wrapper - Video.js for desktop with rich features */}
             <div
               className={`player-wrapper ${isTheaterMode ? '' : 'shadow-card-hover'}`}
               style={{
@@ -309,7 +331,7 @@ export default function Player() {
               }}
             >
               <video
-                ref={videoRef}
+                ref={desktopVideoRef}
                 className="video-js vjs-big-play-centered"
                 playsInline
                 preload="auto"
