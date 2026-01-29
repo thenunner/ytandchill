@@ -220,6 +220,7 @@
 }
 
 /* Landscape + mobile only: Responsive Window - full viewport video */
+/* EXCLUDES native fullscreen - let browser handle that */
 @media (orientation: landscape) and (max-width: 767px) {
   /* Hide video info section */
   .player-video-info {
@@ -231,8 +232,8 @@
     display: none !important;
   }
 
-  /* Fullscreen-like wrapper */
-  .player-wrapper-mobile {
+  /* Fullscreen-like wrapper - ONLY when NOT in native fullscreen */
+  .player-wrapper-mobile:not(:has(.vjs-fullscreen)) {
     position: fixed;
     top: 0;
     left: 0;
@@ -244,6 +245,24 @@
     z-index: 50;
     border-radius: 0;
   }
+}
+
+/* Native fullscreen - let browser control everything */
+.video-js.vjs-fullscreen {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  z-index: 9999 !important;
+}
+
+.video-js.vjs-fullscreen .vjs-tech {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
 }
 
 /* Mobile poster/thumbnail fills the player area */

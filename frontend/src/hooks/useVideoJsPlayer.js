@@ -719,6 +719,7 @@ export function useVideoJsPlayer({
   }, [isTheaterMode]);
 
   // Mobile orientation change: trigger Video.js resize after CSS reflows
+  // SKIP during native fullscreen - browser handles that
   useEffect(() => {
     const { isMobile } = detectDeviceType();
     if (!isMobile) return;
@@ -726,9 +727,13 @@ export function useVideoJsPlayer({
     const handleOrientation = () => {
       setTimeout(() => {
         if (playerRef.current && !playerRef.current.isDisposed()) {
+          // Skip resize trigger if in fullscreen - browser handles it
+          if (playerRef.current.isFullscreen()) {
+            return;
+          }
           playerRef.current.trigger('resize');
         }
-      }, 200); // Wait for iOS rotation animation + 100dvh recalculation
+      }, 200); // Wait for rotation animation + 100dvh recalculation
     };
 
     window.addEventListener('orientationchange', handleOrientation);
