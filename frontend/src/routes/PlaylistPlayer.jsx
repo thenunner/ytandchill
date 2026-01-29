@@ -6,6 +6,7 @@ import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } f
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
+import { useNativeVideoPlayer } from '../hooks/useNativeVideoPlayer';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -89,8 +90,9 @@ export default function PlaylistPlayer() {
   // Media query for mobile vs desktop (ensures only one video element exists at a time)
   const isMobile = useMediaQuery('(max-width: 767px)');
 
-  // Refs
-  const videoRef = useRef(null);
+  // Refs - separate refs for mobile (native) and desktop (Video.js)
+  const mobileVideoRef = useRef(null);
+  const desktopVideoRef = useRef(null);
   const sidebarRef = useRef(null);
   const mobileQueueRef = useRef(null);
   const preloadVideoRef = useRef(null);
@@ -379,10 +381,26 @@ export default function PlaylistPlayer() {
     goToNextRef.current = goToNext;
   }, [goToNext]);
 
-  // Initialize video.js player with useVideoJsPlayer hook
+  // Handle video error callback for native player
+  const handleVideoError = useCallback((message) => {
+    showNotification(message, 'error');
+  }, [showNotification]);
+
+  // Mobile: Native HTML5 video player (reliable fullscreen, playlist auto-advance)
+  useNativeVideoPlayer({
+    video: currentVideo,
+    videoRef: mobileVideoRef,
+    saveProgress: false,  // Playlist mode doesn't save progress
+    onEnded: () => goToNextRef.current?.(),  // Auto-advance to next video
+    onWatched: handleWatched,
+    onError: handleVideoError,
+    updateVideoMutation: updateVideo,
+  });
+
+  // Desktop: Video.js player with rich features (theater mode, keyboard shortcuts)
   const playerRef = useVideoJsPlayer({
     video: currentVideo,
-    videoRef: videoRef,
+    videoRef: desktopVideoRef,
     saveProgress: false,
     onEnded: () => goToNextRef.current?.(),
     onWatched: handleWatched,
@@ -467,8 +485,12 @@ export default function PlaylistPlayer() {
     }
   }, [nextVideo?.id]);
 
-  // Update video source when currentVideo changes (keep existing source update logic)
+  // Update video source when currentVideo changes (desktop Video.js only)
+  // Mobile native player handles its own source via useNativeVideoPlayer hook
   useEffect(() => {
+    // Skip on mobile - native player handles its own source
+    if (isMobile) return;
+
     if (!currentVideo || !playerRef.current) {
       return;
     }
@@ -510,7 +532,7 @@ export default function PlaylistPlayer() {
         playerRef.current.play().catch(() => {});
       }
     });
-  }, [currentVideo?.id, playerRef]);
+  }, [currentVideo?.id, playerRef, isMobile]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -561,7 +583,7 @@ export default function PlaylistPlayer() {
                     style={{ height: '100vh', width: '100%' }}
                   >
                     <video
-                      ref={videoRef}
+                      ref={desktopVideoRef}
                       className="video-js vjs-big-play-centered"
                       playsInline
                       preload="auto"
@@ -839,7 +861,7 @@ export default function PlaylistPlayer() {
                   {/* Video Wrapper */}
                   <div className="player-wrapper shadow-card-hover">
                     <video
-                      ref={videoRef}
+                      ref={desktopVideoRef}
                       className="video-js vjs-big-play-centered"
                       playsInline
                       preload="auto"
@@ -1076,13 +1098,14 @@ export default function PlaylistPlayer() {
     <div className="flex flex-col h-screen bg-dark-primary animate-fade-in">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto">
-        {/* Video Player */}
+        {/* Video Player - Native HTML5 for reliable mobile fullscreen */}
         <div className="player-wrapper-mobile">
           <video
-            ref={videoRef}
-            className="video-js vjs-big-play-centered"
+            ref={mobileVideoRef}
+            controls
             playsInline
-            preload="auto"
+            preload="metadata"
+            poster={currentVideo.thumb_url || ''}
           />
         </div>
 
