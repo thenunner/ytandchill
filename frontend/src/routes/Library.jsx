@@ -760,7 +760,7 @@ export default function Library() {
           {paginatedChannelsList.map(channel => (
             <Link
               key={channel.id}
-              to={`/channel/${channel.id}/library`}
+              to={`/library/channel/${channel.id}`}
               className="group transition-colors rounded overflow-hidden"
             >
               {/* Thumbnail */}

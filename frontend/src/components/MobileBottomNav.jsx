@@ -54,15 +54,15 @@ export default function MobileBottomNav({ queueCount = 0, reviewCount = 0, hasFa
     {
       to: '/',
       icon: ChannelsIcon,
-      label: 'Channels',
+      label: 'Discover',
       badge: reviewCount,
-      isActive: location.pathname === '/' || (location.pathname.startsWith('/channel/') && !location.pathname.endsWith('/library'))
+      isActive: location.pathname === '/' || location.pathname.startsWith('/discover/')
     },
     {
       to: '/library',
       icon: LibraryIcon,
       label: 'Library',
-      isActive: location.pathname === '/library' || location.pathname.startsWith('/playlist/') || location.pathname.endsWith('/library')
+      isActive: location.pathname === '/library' || location.pathname.startsWith('/playlist/') || location.pathname.startsWith('/library/channel/')
     },
     {
       to: '/favs',

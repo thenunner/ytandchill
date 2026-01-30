@@ -17,7 +17,7 @@ import { getNumericSetting } from '../utils/settingsUtils';
 import { SORT_OPTIONS } from '../constants/stickyBarOptions';
 import DurationSettingsModal from '../components/DurationSettingsModal';
 
-export default function Channels() {
+export default function Discover() {
   const { data: channels, isLoading } = useChannels();
   const { data: queueData } = useQueue();
   const { data: categories } = useChannelCategories();
@@ -1131,7 +1131,7 @@ export default function Channels() {
               )}
 
               <Link
-                to={`/channel/${channel.id}`}
+                to={`/discover/${channel.id}`}
                 className="block"
                 onClick={(e) => {
                   if (editMode) {

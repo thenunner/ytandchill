@@ -1,27 +1,28 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, useSearchParams, useLocation, useNavigate } from 'react-router-dom';
-import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useBulkDeleteVideos, useQueue, useDeleteVideo, useDeleteChannel, useScanChannel, useUpdateChannel, useSettings, useMarkChannelVisited } from '../api/queries';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useQueue, useDeleteChannel, useScanChannel, useUpdateChannel, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/errorMessages';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
-import { getBooleanSetting, getNumericSetting, getStringSetting } from '../utils/settingsUtils';
+import { getNumericSetting, getStringSetting } from '../utils/settingsUtils';
 import VideoCard from '../components/VideoCard';
-import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
-import ConfirmModal from '../components/ui/ConfirmModal';
 import api from '../api/client';
-import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch, BackButton, EditButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
+import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch, BackButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
 import DurationSettingsModal from '../components/DurationSettingsModal';
 
-export default function ChannelLibrary() {
+/**
+ * DiscoverChannel - Shows videos to review or ignored for a channel
+ * URL: /discover/:channelId
+ */
+export default function DiscoverChannel() {
   const { channelId } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: channels } = useChannels();
@@ -30,26 +31,12 @@ export default function ChannelLibrary() {
   const addToQueue = useAddToQueue();
   const addToQueueBulk = useAddToQueueBulk();
   const bulkUpdate = useBulkUpdateVideos();
-  const bulkDeleteVideos = useBulkDeleteVideos();
-  const deleteVideo = useDeleteVideo();
   const deleteChannel = useDeleteChannel();
   const scanChannel = useScanChannel();
   const updateChannel = useUpdateChannel();
-  const markChannelVisited = useMarkChannelVisited();
   const { showNotification } = useNotification();
 
-  // Detect library mode from URL
-  const isLibraryMode = location.pathname.endsWith('/library');
-
-  // Mark channel as visited when entering from Library tab (for new videos badge)
-  useEffect(() => {
-    if (isLibraryMode && channelId) {
-      markChannelVisited.mutate(parseInt(channelId));
-    }
-  }, [channelId, isLibraryMode]);
-
-  // Use appropriate card size based on whether we're in library or channels mode
-  const { cardSize, setCardSize } = useCardSize(isLibraryMode ? 'library' : 'channels');
+  const { cardSize } = useCardSize('channels');
   const gridColumns = useGridColumns(cardSize);
 
   // Get queue video IDs for showing "QUEUED" status
@@ -67,33 +54,26 @@ export default function ChannelLibrary() {
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [searchInput, setSearchInput] = useState('');
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [showDurationSettings, setShowDurationSettings] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
+  const [loadedPages, setLoadedPages] = useState(1);
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
-  const [deleteVideosConfirm, setDeleteVideosConfirm] = useState(null); // { count: number }
 
   const channel = channels?.find(c => c.id === Number(channelId));
 
-  // Get filters from URL, with localStorage fallback
-  // Build localStorage keys with channel ID for per-channel persistence
-  const localStorageKey = `channelLibrary_${channelId}`;
+  // Build localStorage key for per-channel persistence
+  const localStorageKey = `discoverChannel_${channelId}`;
 
-  // Library mode: 'videos' or 'playlists' (default: 'videos')
-  // Discovery mode: 'to-review' or 'ignored' (default: 'to-review')
+  // Content filter: 'to-review' or 'ignored' (default: 'to-review')
   const contentFilter = (() => {
     const urlParam = searchParams.get('filter');
     if (urlParam) return urlParam;
     const stored = localStorage.getItem(`${localStorageKey}_filter`);
-    return stored || (isLibraryMode ? 'videos' : 'to-review');
+    return stored || 'to-review';
   })();
-
-  const search = searchParams.get('search') || '';
 
   const sort = (() => {
     const urlParam = searchParams.get('sort');
@@ -102,7 +82,6 @@ export default function ChannelLibrary() {
     return stored || 'date-desc';
   })();
 
-  // Simplified duration filter: 'all', '0-30', '30-60', 'over60'
   const durationFilter = (() => {
     const urlParam = searchParams.get('duration');
     if (urlParam) return urlParam;
@@ -114,43 +93,28 @@ export default function ChannelLibrary() {
   const minDuration = durationFilter === '30-60' ? '30' : durationFilter === 'over60' ? '60' : null;
   const maxDuration = durationFilter === '0-30' ? '30' : durationFilter === '30-60' ? '60' : null;
 
-  // Use global hide settings from Settings page (library mode only)
-  const hideWatched = isLibraryMode && getBooleanSetting(settings, 'hide_watched');
-  const hidePlaylisted = isLibraryMode && getBooleanSetting(settings, 'hide_playlisted');
-
-  // Determine status and ignored based on mode
+  // Determine status and ignored based on content filter
   let status, ignored;
-  if (isLibraryMode) {
-    // Library mode: show downloaded videos (status='library')
-    status = 'library';
-    ignored = 'false';
+  if (contentFilter === 'ignored') {
+    ignored = 'true';
   } else {
-    // Discovery mode: To Review = discovered videos, Ignored = ignored videos
-    if (contentFilter === 'ignored') {
-      ignored = 'true';
-    } else {
-      // to-review
-      status = 'discovered';
-      ignored = 'false';
-    }
+    status = 'discovered';
+    ignored = 'false';
   }
 
   const { data: videos, isLoading } = useVideos({
     channel_id: channelId,
     status,
     ignored,
-    search,
     min_duration: minDuration,
     max_duration: maxDuration,
   });
-
 
   // Initialize URL params from localStorage on mount
   useEffect(() => {
     const newParams = new URLSearchParams(searchParams);
     let changed = false;
 
-    // Only set URL params from localStorage if they're not already in the URL
     if (!searchParams.has('sort')) {
       const storedSort = localStorage.getItem(`${localStorageKey}_sort`);
       if (storedSort) {
@@ -178,17 +142,13 @@ export default function ChannelLibrary() {
     if (changed) {
       setSearchParams(newParams, { replace: true });
     }
-  }, [channelId]); // Run when channelId changes
-
-  // Note: searchInput is kept as pure local state to avoid losing focus on input
-  // It persists naturally when toggling edit mode since it's component state
+  }, [channelId]);
 
   // Scroll detection for scroll-to-top button
   useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 400);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -201,12 +161,10 @@ export default function ChannelLibrary() {
     const newParams = new URLSearchParams(searchParams);
     if (value && value !== 'all') {
       newParams.set(key, value);
-      // Save to localStorage for persistence
       if (key === 'filter') localStorage.setItem(`${localStorageKey}_filter`, value);
       if (key === 'duration') localStorage.setItem(`${localStorageKey}_duration`, value);
     } else {
       newParams.delete(key);
-      // Remove from localStorage when cleared
       if (key === 'filter') localStorage.removeItem(`${localStorageKey}_filter`);
       if (key === 'duration') localStorage.removeItem(`${localStorageKey}_duration`);
     }
@@ -216,97 +174,65 @@ export default function ChannelLibrary() {
   const handleSort = (sortValue) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('sort', sortValue);
-    // Save to localStorage for persistence
     localStorage.setItem(`${localStorageKey}_sort`, sortValue);
     setSearchParams(newParams);
   };
 
   // Helper to parse video date for sorting
   const parseVideoDate = (video) => {
-    // Library mode: respect the date display setting (uploaded vs downloaded)
-    if (isLibraryMode) {
-      const dateDisplay = getStringSetting(settings, 'library_date_display', 'downloaded');
-      if (dateDisplay === 'uploaded' && video.upload_date) {
-        const year = video.upload_date.slice(0, 4);
-        const month = video.upload_date.slice(4, 6);
-        const day = video.upload_date.slice(6, 8);
-        return new Date(`${year}-${month}-${day}`);
-      }
-      if (video.downloaded_at) {
-        return new Date(video.downloaded_at);
-      }
-    }
-    // Discovery mode (to-review/ignored): use upload_date (matches displayed date)
     if (video.upload_date) {
       const year = video.upload_date.slice(0, 4);
       const month = video.upload_date.slice(4, 6);
       const day = video.upload_date.slice(6, 8);
       const parsed = new Date(`${year}-${month}-${day}`);
-
       return isNaN(parsed.getTime()) ? new Date(video.discovered_at || 0) : parsed;
     }
-    // Fallback to discovered_at if neither is available
     return new Date(video.discovered_at || 0);
   };
 
-  // Filter and sort videos (memoized for performance)
+  // Filter and sort videos
   const sortedVideos = useMemo(() => {
     if (!videos) return [];
 
     return [...videos]
       .filter(video => {
-        // Client-side filtering by title based on searchInput
         if (!(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
           return false;
         }
-
-        // Hide watched videos if filter is enabled
-        if (hideWatched && video.watched) {
-          return false;
-        }
-
-        // Hide playlisted videos if filter is enabled
-        if (hidePlaylisted && video.playlist_name) {
-          return false;
-        }
-
         return true;
       })
       .sort((a, b) => {
-    switch (sort) {
-      case 'date-desc':
-        // Newest first
-        return parseVideoDate(b) - parseVideoDate(a);
-      case 'date-asc':
-        // Oldest first
-        return parseVideoDate(a) - parseVideoDate(b);
-      case 'duration-desc':
-        return b.duration_sec - a.duration_sec;
-      case 'duration-asc':
-        return a.duration_sec - b.duration_sec;
-      case 'title-asc':
-        return a.title.localeCompare(b.title);
-      case 'title-desc':
-        return b.title.localeCompare(a.title);
-      default:
-        return 0;
-    }
-  });
-  }, [videos, searchInput, hideWatched, hidePlaylisted, sort]);
+        switch (sort) {
+          case 'date-desc':
+            return parseVideoDate(b) - parseVideoDate(a);
+          case 'date-asc':
+            return parseVideoDate(a) - parseVideoDate(b);
+          case 'duration-desc':
+            return b.duration_sec - a.duration_sec;
+          case 'duration-asc':
+            return a.duration_sec - b.duration_sec;
+          case 'title-asc':
+            return a.title.localeCompare(b.title);
+          case 'title-desc':
+            return b.title.localeCompare(a.title);
+          default:
+            return 0;
+        }
+      });
+  }, [videos, searchInput, sort]);
 
-  // Reset page when FILTERS change (not when data changes from bulk actions)
+  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
-    setLoadedPages(1); // Reset mobile infinite scroll
+    setLoadedPages(1);
   }, [searchInput, sort, durationFilter, contentFilter]);
 
-  // Clear selection and exit edit mode when switching tabs
+  // Clear selection when switching tabs
   useEffect(() => {
     setSelectedVideos([]);
-    setEditMode(false);
   }, [contentFilter]);
 
-  // Adjust page if current page is now empty (after bulk delete/ignore)
+  // Adjust page if current page is now empty
   useEffect(() => {
     const totalPages = Math.ceil(sortedVideos.length / itemsPerPage);
     if (currentPage > totalPages && totalPages > 0) {
@@ -314,18 +240,15 @@ export default function ChannelLibrary() {
     }
   }, [sortedVideos.length, itemsPerPage, currentPage]);
 
-  // Paginate videos (mobile: infinite scroll, desktop: pagination)
+  // Paginate videos
   const paginatedVideos = useMemo(() => {
     if (isMobile) {
-      // Mobile: show loadedPages worth of items
       return sortedVideos.slice(0, loadedPages * itemsPerPage);
     }
-    // Desktop: standard pagination
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedVideos, currentPage, itemsPerPage, loadedPages, isMobile]);
 
-  // Handle duration filter change from SortDropdown
   const handleDurationChange = (value) => {
     const newParams = new URLSearchParams(searchParams);
     if (value && value !== 'all') {
@@ -338,7 +261,6 @@ export default function ChannelLibrary() {
     setSearchParams(newParams);
   };
 
-  // Real-time search handler - just update local state (debounce will handle URL params)
   const handleSearchChange = (value) => {
     setSearchInput(value);
   };
@@ -358,7 +280,6 @@ export default function ChannelLibrary() {
     try {
       switch (action) {
         case 'queue':
-          // Use bulk endpoint for better performance
           const result = await addToQueueBulk.mutateAsync(selectedVideos);
           if (result.skipped_count > 0) {
             showNotification(`${result.added_count} videos added to queue, ${result.skipped_count} already in queue`, 'success');
@@ -374,7 +295,6 @@ export default function ChannelLibrary() {
           showNotification(`${selectedVideos.length} videos ignored`, 'success');
           break;
         case 'unignore':
-          // Add ignored videos directly to queue instead of just unignoring
           const unignoreResult = await addToQueueBulk.mutateAsync(selectedVideos);
           if (unignoreResult.skipped_count > 0) {
             showNotification(`${unignoreResult.added_count} videos added to queue, ${unignoreResult.skipped_count} already in queue`, 'success');
@@ -382,32 +302,10 @@ export default function ChannelLibrary() {
             showNotification(`${unignoreResult.added_count} videos added to queue`, 'success');
           }
           break;
-        case 'delete':
-          // Delete multiple videos
-          setDeleteVideosConfirm({ count: selectedVideos.length });
-          return;
-        case 'playlist':
-          // Show playlist menu for bulk add
-          setShowPlaylistMenu(true);
-          return; // Don't clear selection yet
       }
       setSelectedVideos([]);
     } catch (error) {
       showNotification(getUserFriendlyError(error.message, 'complete action'), 'error');
-    }
-  };
-
-  const handleConfirmDeleteVideos = async () => {
-    if (!deleteVideosConfirm) return;
-
-    try {
-      await bulkDeleteVideos.mutateAsync(selectedVideos);
-      showNotification(`${selectedVideos.length} videos deleted`, 'success');
-      setSelectedVideos([]);
-      setEditMode(false);
-      setDeleteVideosConfirm(null);
-    } catch (error) {
-      showNotification(getUserFriendlyError(error.message, 'delete videos'), 'error');
     }
   };
 
@@ -423,21 +321,15 @@ export default function ChannelLibrary() {
     setSelectedVideos(sortedVideos.map(v => v.id));
   };
 
-  const selectPage = () => {
-    setSelectedVideos(paginatedVideos.map(v => v.id));
-  };
-
   const clearSelection = () => {
     setSelectedVideos([]);
   };
 
   const handleScanChannel = async (forceFull = false) => {
-    // Check API key status for full scans (needed for upload dates)
     if (forceFull) {
       if (!settings?.youtube_api_key) {
         showNotification('No API key configured - upload dates will not be fetched', 'warning');
       } else {
-        // Test if API key is valid
         try {
           const result = await api.testYoutubeApiKey();
           if (!result.valid) {
@@ -450,26 +342,22 @@ export default function ChannelLibrary() {
     }
 
     try {
-      // Get channel info for batch label
       const channel = channels?.find(c => c.id === Number(channelId));
       const batchLabel = channel?.title || `Channel ${channelId}`;
 
-      // Set scanning status immediately (optimistic UI)
       try {
         await api.setOperation('scanning', 'Scanning channels for new videos');
       } catch (error) {
         // Ignore errors, backend will set it anyway
       }
 
-      const result = await scanChannel.mutateAsync({
+      await scanChannel.mutateAsync({
         id: Number(channelId),
         forceFull,
-        is_batch_start: true,  // Single scans are their own "batch"
+        is_batch_start: true,
         is_auto_scan: false,
         batch_label: batchLabel
       });
-
-      // Backend handles completion message via toast notification
     } catch (error) {
       showNotification(getUserFriendlyError(error.message, 'scan channel'), 'error');
     }
@@ -480,7 +368,7 @@ export default function ChannelLibrary() {
       await deleteChannel.mutateAsync(Number(channelId));
       showNotification('Channel deleted', 'success');
       setDeleteConfirm(null);
-      navigate('/');
+      navigate('/discover');
     } catch (error) {
       showNotification(getUserFriendlyError(error.message, 'delete channel'), 'error');
     }
@@ -509,66 +397,31 @@ export default function ChannelLibrary() {
       {/* Sticky Header */}
       <StickyBar className="md:-mx-8 md:px-8 mb-4">
         <div className="flex items-center gap-2">
-          {/* Left: Back + Tabs + Edit/Manage */}
+          {/* Left: Back + Tabs + Manage */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            <BackButton
-              to={isLibraryMode ? "/library" : "/"}
-              title={isLibraryMode ? "Back to Library" : "Back to Channels"}
+            <BackButton to="/discover" title="Back to Discover" />
+
+            <TabGroup
+              tabs={[
+                { id: 'to-review', label: 'Review', count: channel?.video_count },
+                { id: 'ignored', label: 'Ignored', count: channel?.ignored_count },
+              ]}
+              active={contentFilter}
+              onChange={(tabId) => {
+                const newParams = new URLSearchParams(searchParams);
+                if (tabId === 'ignored') {
+                  newParams.set('filter', 'ignored');
+                } else {
+                  newParams.delete('filter');
+                }
+                setSearchParams(newParams);
+              }}
+              showCountOnActive={true}
+              hideCountOnMobile={true}
             />
 
-            {/* Tabs */}
-            {isLibraryMode ? (
-              <TabGroup
-                tabs={[
-                  { id: 'videos', label: 'Videos' },
-                  { id: 'playlists', label: 'Playlists' },
-                ]}
-                active={contentFilter}
-                onChange={(tabId) => {
-                  if (tabId === 'playlists') {
-                    navigate('/library?tab=playlists');
-                  } else {
-                    const newParams = new URLSearchParams(searchParams);
-                    newParams.delete('filter');
-                    setSearchParams(newParams);
-                  }
-                }}
-                showCountOnActive={false}
-              />
-            ) : (
-              <TabGroup
-                tabs={[
-                  { id: 'to-review', label: 'Review', count: channel?.video_count },
-                  { id: 'ignored', label: 'Ignored', count: channel?.ignored_count },
-                ]}
-                active={contentFilter}
-                onChange={(tabId) => {
-                  const newParams = new URLSearchParams(searchParams);
-                  if (tabId === 'ignored') {
-                    newParams.set('filter', 'ignored');
-                  } else {
-                    newParams.delete('filter');
-                  }
-                  setSearchParams(newParams);
-                }}
-                showCountOnActive={true}
-                hideCountOnMobile={true}
-              />
-            )}
-
-            {/* Edit Button - Only in library mode */}
-            {isLibraryMode && contentFilter !== 'playlists' && (
-              <EditButton
-                active={editMode}
-                onToggle={() => {
-                  setEditMode(!editMode);
-                  setSelectedVideos([]);
-                }}
-              />
-            )}
-
-            {/* Manage Dropdown - Only in discovery mode */}
-            {!isLibraryMode && channel && (
+            {/* Manage Dropdown */}
+            {channel && (
               <ActionDropdown
                 label="Manage"
                 variant="secondary"
@@ -667,7 +520,7 @@ export default function ChannelLibrary() {
             )}
           </div>
 
-          {/* Center: Search (desktop only, fills available space) */}
+          {/* Center: Search (desktop only) */}
           <div className="hidden sm:block flex-1 max-w-md mx-4">
             <SearchInput
               value={searchInput}
@@ -679,7 +532,6 @@ export default function ChannelLibrary() {
 
           {/* Right: Mobile (Sort + Search) / Desktop (Sort + Pagination) */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ml-auto">
-            {/* Mobile only: Sort + Search */}
             <div className="sm:hidden flex items-center gap-1.5">
               <StickyBarRightSection
                 sortValue={sort}
@@ -701,7 +553,6 @@ export default function ChannelLibrary() {
               />
             </div>
 
-            {/* Desktop: Sort + Pagination */}
             <StickyBarRightSection
               sortValue={sort}
               onSortChange={handleSort}
@@ -719,64 +570,35 @@ export default function ChannelLibrary() {
         </div>
       </StickyBar>
 
-      {/* SelectionBar - Library mode edit actions */}
-      {isLibraryMode && contentFilter !== 'playlists' && (
-        <SelectionBar
-          show={editMode && sortedVideos.length > 0}
-          selectedCount={selectedVideos.length}
-          totalCount={sortedVideos.length}
-          onSelectAll={selectAll}
-          onClear={clearSelection}
-          onDone={() => {
-            setEditMode(false);
-            setSelectedVideos([]);
-          }}
-          actions={[
-            ...(selectedVideos.length > 0 ? [{
-              label: 'Playlist',
-              onClick: () => handleBulkAction('playlist'),
-              variant: 'default'
-            }] : []),
-            ...(selectedVideos.length > 0 ? [{
-              label: 'Delete',
-              onClick: () => handleBulkAction('delete'),
-              variant: 'danger'
-            }] : [])
-          ]}
-        />
-      )}
+      {/* SelectionBar - Shows when items selected */}
+      <SelectionBar
+        show={selectedVideos.length > 0}
+        selectedCount={selectedVideos.length}
+        totalCount={sortedVideos.length}
+        onSelectAll={selectAll}
+        onClear={clearSelection}
+        onDone={clearSelection}
+        actions={contentFilter === 'to-review' ? [
+          {
+            label: 'Download',
+            onClick: () => handleBulkAction('queue'),
+            primary: true
+          },
+          {
+            label: 'Ignore',
+            onClick: () => handleBulkAction('ignore')
+          }
+        ] : [
+          {
+            label: 'Download',
+            onClick: () => handleBulkAction('unignore'),
+            primary: true
+          }
+        ]}
+      />
 
-      {/* SelectionBar - Discovery mode actions (only shows when items selected) */}
-      {!isLibraryMode && contentFilter !== 'playlists' && (
-        <SelectionBar
-          show={selectedVideos.length > 0}
-          selectedCount={selectedVideos.length}
-          totalCount={sortedVideos.length}
-          onSelectAll={selectAll}
-          onClear={clearSelection}
-          onDone={clearSelection}
-          actions={contentFilter === 'to-review' ? [
-            {
-              label: 'Download',
-              onClick: () => handleBulkAction('queue'),
-              primary: true
-            },
-            {
-              label: 'Ignore',
-              onClick: () => handleBulkAction('ignore')
-            }
-          ] : [
-            {
-              label: 'Download',
-              onClick: () => handleBulkAction('unignore'),
-              primary: true
-            }
-          ]}
-        />
-      )}
-
-      {/* Channel Header - Only show in discovery mode for videos, not in library mode or playlists */}
-      {channel && contentFilter !== 'playlists' && !isLibraryMode && (
+      {/* Channel Header */}
+      {channel && (
         <div className="flex items-center gap-4 mb-4">
           {channel.thumbnail && (
             <img
@@ -793,7 +615,7 @@ export default function ChannelLibrary() {
         </div>
       )}
 
-      {/* Duration Settings Modal - Shared Component */}
+      {/* Duration Settings Modal */}
       <DurationSettingsModal
         channel={showDurationSettings ? editingChannel : null}
         onSave={(updatedChannel) => {
@@ -813,32 +635,28 @@ export default function ChannelLibrary() {
       ) : sortedVideos.length === 0 ? (
         <EmptyState
           icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />}
-          title={videos && videos.length > 0 && (hideWatched || hidePlaylisted)
-            ? `All videos are ${hideWatched && hidePlaylisted ? 'watched or in playlists' : hideWatched ? 'watched' : 'in playlists'}`
-            : 'No videos found'}
-          message={videos && videos.length > 0 && (hideWatched || hidePlaylisted)
-            ? 'Remove filter to see them'
-            : (isLibraryMode ? 'No downloaded videos yet' : 'Try adjusting your filters or scan for videos')}
+          title="No videos found"
+          message="Try adjusting your filters or scan for videos"
         />
       ) : (() => {
         const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedVideos.length);
         return (
-        <div className="px-0 sm:px-6 lg:px-12 xl:px-16">
-          <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
-          {paginatedVideos.map(video => (
-            <VideoCard
-              key={video.id}
-              video={video}
-              isSelected={selectedVideos.includes(video.id)}
-              onToggleSelect={isLibraryMode && editMode ? toggleSelectVideo : !isLibraryMode ? toggleSelectVideo : undefined}
-              isQueued={queueVideoIds.has(video.id)}
-              editMode={isLibraryMode && editMode}
-              isLibraryView={isLibraryMode}
-              effectiveCardSize={effectiveCardSize}
-            />
-          ))}
+          <div className="px-0 sm:px-6 lg:px-12 xl:px-16">
+            <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
+              {paginatedVideos.map(video => (
+                <VideoCard
+                  key={video.id}
+                  video={video}
+                  isSelected={selectedVideos.includes(video.id)}
+                  onToggleSelect={toggleSelectVideo}
+                  isQueued={queueVideoIds.has(video.id)}
+                  editMode={false}
+                  isLibraryView={false}
+                  effectiveCardSize={effectiveCardSize}
+                />
+              ))}
+            </div>
           </div>
-        </div>
         );
       })()}
 
@@ -884,7 +702,7 @@ export default function ChannelLibrary() {
               Are you sure you want to delete "<span className="text-text-primary font-semibold">{deleteConfirm.title}</span>"?
             </p>
             <p className="text-sm text-yellow-400 mb-6">
-              ⚠️ This will permanently delete all scanned videos from this channel. Downloaded videos in your library will not be affected.
+              This will permanently delete all scanned videos from this channel. Downloaded videos in your library will not be affected.
             </p>
             <div className="flex gap-3">
               <button
@@ -904,33 +722,6 @@ export default function ChannelLibrary() {
           </div>
         </div>
       )}
-
-      {/* Add to Playlist Menu */}
-      {showPlaylistMenu && (
-        <AddToPlaylistMenu
-          videoIds={selectedVideos}
-          onClose={() => {
-            setShowPlaylistMenu(false);
-            setSelectedVideos([]); // Clear selection after adding to playlist
-          }}
-        />
-      )}
-
-      {/* Delete Videos Confirmation Modal */}
-      <ConfirmModal
-        isOpen={!!deleteVideosConfirm}
-        title="Delete Videos"
-        message={
-          <>
-            Permanently delete <span className="font-semibold">{deleteVideosConfirm?.count} videos</span> from your library?
-            This will also delete the video files from disk.
-          </>
-        }
-        confirmText="Delete"
-        confirmStyle="danger"
-        onConfirm={handleConfirmDeleteVideos}
-        onCancel={() => setDeleteVideosConfirm(null)}
-      />
     </div>
   );
 }

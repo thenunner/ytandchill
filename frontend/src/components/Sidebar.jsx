@@ -51,10 +51,10 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
 
   // Sidebar nav item component
   const SidebarNavLink = ({ to, icon, label, badge, onClick, isButton = false }) => {
-    // /channel/:id/library is part of Library, not Channels
+    // /discover/:id is part of Discover, /library/channel/:id is part of Library
     const isActive = location.pathname === to ||
-      (to === '/' && location.pathname.startsWith('/channel/') && !location.pathname.endsWith('/library')) ||
-      (to === '/library' && (location.pathname.startsWith('/playlist/') || location.pathname.endsWith('/library')));
+      (to === '/' && location.pathname.startsWith('/discover/')) ||
+      (to === '/library' && (location.pathname.startsWith('/playlist/') || location.pathname.startsWith('/library/channel/')));
 
     const baseClasses = `relative flex items-center rounded-lg transition-colors ${
       collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2.5'
@@ -139,7 +139,7 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
       {collapsed ? (
         // Collapsed view - flat structure
         <div className="flex-1 flex flex-col items-center gap-1 py-2 overflow-y-auto">
-          <SidebarNavLink to="/" icon={<ChannelsIcon className="w-7 h-7" />} label="Channels" badge={reviewCount} />
+          <SidebarNavLink to="/" icon={<ChannelsIcon className="w-7 h-7" />} label="Discover" badge={reviewCount} />
           <SidebarNavLink to="/library" icon={<LibraryIcon className="w-7 h-7" />} label="Library" />
           <SidebarNavLink to="/queue" icon={<QueueIcon className="w-7 h-7" />} label="Queue" badge={queueCount} />
 
@@ -154,7 +154,7 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
               {favoriteLibraries.slice(0, 10).map(channel => (
                 <Link
                   key={channel.id}
-                  to={`/channel/${channel.id}/library`}
+                  to={`/library/channel/${channel.id}`}
                   className="relative flex items-center justify-center p-2 rounded-lg hover:bg-dark-hover transition-colors"
                   title={channel.title}
                 >
@@ -182,7 +182,7 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
       ) : (
         // Expanded view
         <div className="flex-1 p-2 space-y-1 overflow-y-auto">
-          <SidebarNavLink to="/" icon={<ChannelsIcon className="w-5 h-5" />} label="Channels" badge={reviewCount} />
+          <SidebarNavLink to="/" icon={<ChannelsIcon className="w-5 h-5" />} label="Discover" badge={reviewCount} />
           <SidebarNavLink to="/library" icon={<LibraryIcon className="w-5 h-5" />} label="Library" />
           <SidebarNavLink to="/queue" icon={<QueueIcon className="w-5 h-5" />} label="Queue" badge={queueCount} />
 
@@ -202,7 +202,7 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
                 {favoriteLibraries.map(channel => (
                   <Link
                     key={channel.id}
-                    to={`/channel/${channel.id}/library`}
+                    to={`/library/channel/${channel.id}`}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors"
                   >
                     <div className="w-5 h-5 rounded-full overflow-hidden bg-dark-tertiary flex-shrink-0 flex items-center justify-center">
