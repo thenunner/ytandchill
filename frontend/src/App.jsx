@@ -1,6 +1,6 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels, useFavoriteChannels, useSettings } from './api/queries';
-import { useQueueSSE } from './api/useQueueSSE';
+import { useQueueSSE } from './hooks/useQueueSSE';
 import { useNotification } from './contexts/NotificationContext';
 import { useSelectionBar } from './contexts/PreferencesContext';
 import { useToastManager } from './hooks/useToastManager';

@@ -10,7 +10,7 @@ import { Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
-import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
+import { SORT_OPTIONS, DURATION_OPTIONS } from '../utils/stickyBarOptions';
 
 export default function Playlist() {
   const { id } = useParams();

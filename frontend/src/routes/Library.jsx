@@ -10,7 +10,7 @@ import { RenamePlaylistModal, CreateCategoryModal, RenameCategoryModal, Category
 import { StickyBar, SelectionBar, CollapsibleSearch, TabGroup, EditButton, StickyBarRightSection } from '../components/stickybar';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, HeartIcon } from '../components/Icons';
-import { SORT_OPTIONS } from '../constants/stickyBarOptions';
+import { SORT_OPTIONS } from '../utils/stickyBarOptions';
 
 export default function Library() {
   const [searchParams] = useSearchParams();

@@ -9,7 +9,7 @@ import api from '../api/client';
 import { StickyBar, SortDropdown, SelectionBar, EditButton, ActionDropdown, CollapsibleSearch } from '../components/stickybar';
 import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import { useGridColumns } from '../hooks/useGridColumns';
-import { SORT_OPTIONS } from '../constants/stickyBarOptions';
+import { SORT_OPTIONS } from '../utils/stickyBarOptions';
 import { DurationSettingsModal, CategoryManagementModal, SingleCategoryModal } from '../components/ui/DiscoverModals';
 
 export default function Discover() {

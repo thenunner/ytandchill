@@ -87,9 +87,6 @@ export function NotificationProvider({ children }) {
     setToasts([]);
   }, []);
 
-  // Legacy single notification getter (for backwards compatibility)
-  const notification = toasts.length > 0 ? toasts[toasts.length - 1] : null;
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -99,8 +96,7 @@ export function NotificationProvider({ children }) {
 
   return (
     <NotificationContext.Provider value={{
-      notification, // Legacy single notification
-      toasts, // All active toasts
+      toasts,
       showNotification,
       removeToast,
       clearNotification,

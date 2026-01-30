@@ -2,7 +2,7 @@
 
 Master inventory of all frontend source files in `/frontend/src/`.
 
-**Total Files:** 56 | **Total Lines:** ~19,860
+**Total Files:** 55 | **Total Lines:** ~19,860
 
 ---
 
@@ -74,7 +74,7 @@ Master inventory of all frontend source files in `/frontend/src/`.
 
 ---
 
-## Hooks (9 files, 1,787 lines)
+## Hooks (10 files, 1,943 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
@@ -83,6 +83,7 @@ Master inventory of all frontend source files in `/frontend/src/`.
 | `hooks/useToastManager.js` | 212 | Toast notification management based on queue/scan state |
 | `hooks/useDatabaseMaintenance.js` | 212 | Database maintenance operations (repair, shrink, find missing, fix metadata) |
 | `hooks/useAutoScan.js` | 171 | Auto-scan scheduling with preset times and enable/disable |
+| `hooks/useQueueSSE.js` | 156 | Server-Sent Events hook for real-time queue updates with auto-reconnection and fallback polling |
 | `hooks/usePasswordChange.js` | 84 | Password change form state and validation |
 | `hooks/usePrefetchImage.js` | 43 | Image prefetching via Intersection Observer before viewport visibility |
 | `hooks/useGridColumns.js` | 40 | Grid column responsive behavior with touch device orientation handling |
@@ -90,40 +91,32 @@ Master inventory of all frontend source files in `/frontend/src/`.
 
 ---
 
-## Contexts (2 files, 250 lines)
+## Contexts (2 files, 246 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `contexts/NotificationContext.jsx` | 119 | Toast notification system with message queue, auto-dismiss, persistent toasts, progress tracking |
+| `contexts/NotificationContext.jsx` | 115 | Toast notification system with message queue, auto-dismiss, persistent toasts, progress tracking |
 | `contexts/PreferencesContext.jsx` | 131 | Combined preferences: theme (9 themes), card sizes (channels/library), selection bar visibility |
 
 ---
 
-## API (3 files, 1,453 lines)
+## API (2 files, 1,297 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
 | `api/queries.js` | 763 | React Query hooks for all API endpoints (channels, videos, queue, playlists, settings, auth) |
 | `api/client.js` | 534 | HTTP API client with request handling, auth, channels, videos, playlists, categories, queue, settings, import endpoints |
-| `api/useQueueSSE.js` | 156 | Server-Sent Events hook for real-time queue updates with auto-reconnection and fallback polling |
 
 ---
 
-## Utils (2 files, 734 lines)
+## Utils (4 files, 802 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
 | `utils/utils.js` | 473 | Consolidated utilities (formatting: duration, file size, dates; grid system; error handling; settings helpers) |
 | `utils/videoUtils.js` | 261 | Video player utilities (source detection, theater button, seek buttons, device detection, player constants) |
-
----
-
-## Constants (2 files, 68 lines)
-
-| File | Lines | Description |
-|------|-------|-------------|
-| `constants/stickyBarOptions.js` | 57 | Centralized sort options for video lists, channels, library with dividers and headers |
-| `constants/toastIds.js` | 11 | Toast notification ID constants (scanning, paused, delay, download progress, cookie warning) |
+| `utils/stickyBarOptions.js` | 57 | Centralized sort options for video lists, channels, library with dividers and headers |
+| `utils/toastIds.js` | 11 | Toast notification ID constants (scanning, paused, delay, download progress, cookie warning) |
 
 ---
 
@@ -144,10 +137,9 @@ Master inventory of all frontend source files in `/frontend/src/`.
 | Components (root) | 8 | 1,983 | Reusable UI components |
 | StickyBar | 6 | 828 | Sticky bar layout and controls |
 | UI Modals | 5 | 2,104 | Modal dialogs for forms |
-| Hooks | 9 | 1,787 | Custom React hooks |
-| Contexts | 2 | 250 | React context providers |
-| API | 3 | 1,453 | API client and queries |
-| Utils | 2 | 734 | Utility functions |
-| Constants | 2 | 68 | Configuration constants |
+| Hooks | 10 | 1,943 | Custom React hooks |
+| Contexts | 2 | 246 | React context providers |
+| API | 2 | 1,297 | API client and queries |
+| Utils | 4 | 802 | Utility functions and constants |
 | Plugins | 1 | 299 | Video.js plugins |
-| **TOTAL** | **56** | **~19,860** | **Complete frontend** |
+| **TOTAL** | **55** | **~19,860** | **Complete frontend** |

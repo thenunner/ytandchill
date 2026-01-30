@@ -10,7 +10,7 @@ import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, EditButton, TabGroup, StickyBarRightSection } from '../components/stickybar';
-import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
+import { SORT_OPTIONS, DURATION_OPTIONS } from '../utils/stickyBarOptions';
 
 /**
  * LibraryChannel - Shows downloaded videos for a channel

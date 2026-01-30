@@ -9,7 +9,7 @@ import VideoCard from '../components/VideoCard';
 import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import api from '../api/client';
 import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
-import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
+import { SORT_OPTIONS, DURATION_OPTIONS } from '../utils/stickyBarOptions';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import { DurationSettingsModal } from '../components/ui/DiscoverModals';
 

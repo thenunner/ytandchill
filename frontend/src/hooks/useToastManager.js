@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useNotification } from '../contexts/NotificationContext';
-import { TOAST_IDS } from '../constants/toastIds';
+import { TOAST_IDS } from '../utils/toastIds';
 import api from '../api/client';
 
 /**
