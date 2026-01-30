@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Pagination from '../Pagination';
+import { Pagination } from '../ListFeedback';
 
 /**
  * SortDropdown - Sort options dropdown with optional duration filter

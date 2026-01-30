@@ -3,15 +3,13 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings, useDeletePlaylist, useUpdatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getEffectiveCardSize, getBooleanSetting, getNumericSetting } from '../utils/utils';
-import { useCardSize } from '../contexts/CardSizeContext';
+import { useCardSize } from '../contexts/PreferencesContext';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
-import Pagination from '../components/Pagination';
-import LoadMore from '../components/LoadMore';
+import { Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
-import EmptyState from '../components/EmptyState';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
 
 export default function Playlist() {

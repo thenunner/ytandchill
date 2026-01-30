@@ -3,16 +3,13 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, useChannels, useBulkDeleteVideos, useQueue, useSettings, useMarkChannelVisited } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getEffectiveCardSize, getBooleanSetting, getNumericSetting, getStringSetting } from '../utils/utils';
-import { useCardSize } from '../contexts/CardSizeContext';
+import { useCardSize } from '../contexts/PreferencesContext';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import LoadingSpinner from '../components/LoadingSpinner';
-import Pagination from '../components/Pagination';
-import LoadMore from '../components/LoadMore';
+import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, EditButton, TabGroup, StickyBarRightSection } from '../components/stickybar';
-import EmptyState from '../components/EmptyState';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
 
 /**

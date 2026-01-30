@@ -4,7 +4,7 @@ import { useQueue, useFavoriteChannels, useSettings } from '../api/queries';
 import {
   SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon,
   MenuIcon, CollapseIcon, HeartIcon, HistoryIcon
-} from './icons';
+} from './Icons';
 
 /**
  * Shared Sidebar component used across all pages

@@ -8,11 +8,11 @@ import { getUserFriendlyError, formatDuration } from '../utils/utils';
 import { getVideoSource } from '../utils/videoUtils';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
 import { useNativeVideoPlayer } from '../hooks/useNativeVideoPlayer';
-import ConfirmDialog from '../components/ConfirmDialog';
+import { ConfirmDialog } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { LoadingSpinner } from '../components/ListFeedback';
 import MobileBottomNav from '../components/MobileBottomNav';
-import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/icons';
+import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/Icons';
 import Sidebar from '../components/Sidebar';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 

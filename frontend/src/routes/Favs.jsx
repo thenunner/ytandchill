@@ -2,9 +2,8 @@ import { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited, useSettings } from '../api/queries';
 import VideoCard from '../components/VideoCard';
-import LoadingSpinner from '../components/LoadingSpinner';
-import EmptyState from '../components/EmptyState';
-import { HeartIcon } from '../components/icons';
+import { LoadingSpinner, EmptyState } from '../components/ListFeedback';
+import { HeartIcon } from '../components/Icons';
 import { getStringSetting } from '../utils/utils';
 
 export default function Favs() {

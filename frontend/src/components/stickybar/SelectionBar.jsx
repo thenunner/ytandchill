@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSelectionBar } from '../../contexts/SelectionBarContext';
+import { useSelectionBar } from '../../contexts/PreferencesContext';
 
 /**
  * SelectionBar - A floating bottom bar for edit mode selection controls

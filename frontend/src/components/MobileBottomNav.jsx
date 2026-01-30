@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChannelsIcon, LibraryIcon, QueueIcon, SettingsIcon, HeartIcon, HistoryIcon } from './icons';
+import { ChannelsIcon, LibraryIcon, QueueIcon, SettingsIcon, HeartIcon, HistoryIcon } from './Icons';
 
 // User/Me icon
 const UserIcon = ({ className = "w-5 h-5" }) => (

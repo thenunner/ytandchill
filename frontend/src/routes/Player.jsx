@@ -5,14 +5,14 @@ import { useVideo, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queri
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
 import { getVideoSource } from '../utils/videoUtils';
-import ConfirmDialog from '../components/ConfirmDialog';
+import { ConfirmDialog } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { LoadingSpinner } from '../components/ListFeedback';
 import MobileBottomNav from '../components/MobileBottomNav';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
 import { useNativeVideoPlayer } from '../hooks/useNativeVideoPlayer';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ArrowLeftIcon, EyeIcon, CheckmarkIcon } from '../components/icons';
+import { ArrowLeftIcon, EyeIcon, CheckmarkIcon } from '../components/Icons';
 import Sidebar from '../components/Sidebar';
 
 export default function Player() {

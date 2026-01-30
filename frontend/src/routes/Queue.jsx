@@ -2,14 +2,13 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useQueue, useResumeQueue, useCancelCurrent, useRemoveFromQueue, useReorderQueue, useMoveToTop, useMoveToBottom, useClearQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatFileSize } from '../utils/utils';
-import { useTheme } from '../contexts/ThemeContext';
+import { useTheme } from '../contexts/PreferencesContext';
 import { DndContext, closestCenter, PointerSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import { StickyBar } from '../components/stickybar';
-import LoadingSpinner from '../components/LoadingSpinner';
-import EmptyState from '../components/EmptyState';
+import { LoadingSpinner, EmptyState } from '../components/ListFeedback';
 
 // Sortable Queue Item Component
 function SortableQueueItem({ item, index, onRemove, onMoveToTop, onMoveToBottom }) {

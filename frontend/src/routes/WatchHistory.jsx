@@ -2,16 +2,13 @@ import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useWatchHistory, useClearWatchHistory, useChannels, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { useCardSize } from '../contexts/CardSizeContext';
+import { useCardSize } from '../contexts/PreferencesContext';
 import { StickyBar, CollapsibleSearch } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize, formatDuration, formatFileSize, getNumericSetting } from '../utils/utils';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { LoadingSpinner, EmptyState, Pagination, LoadMore } from '../components/ListFeedback';
 import { useGridColumns } from '../hooks/useGridColumns';
-import EmptyState from '../components/EmptyState';
 import { ConfirmModal } from '../components/ui/SharedModals';
-import { TrashIcon } from '../components/icons';
-import Pagination from '../components/Pagination';
-import LoadMore from '../components/LoadMore';
+import { TrashIcon } from '../components/Icons';
 
 export default function WatchHistory() {
   const navigate = useNavigate();

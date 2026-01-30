@@ -4,8 +4,8 @@ import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels } from 
 import api from '../api/client';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/utils';
-import { useTheme } from '../contexts/ThemeContext';
-import { useCardSize } from '../contexts/CardSizeContext';
+import { useTheme } from '../contexts/PreferencesContext';
+import { useCardSize } from '../contexts/PreferencesContext';
 import Tooltip from '../components/ui/Tooltip';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import {

@@ -3,16 +3,13 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings, useChannels, useToggleChannelFavorite } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, formatFileSize, getNumericSetting } from '../utils/utils';
-import { useCardSize } from '../contexts/CardSizeContext';
-import Pagination from '../components/Pagination';
-import LoadMore from '../components/LoadMore';
+import { useCardSize } from '../contexts/PreferencesContext';
+import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import { RenamePlaylistModal, CreateCategoryModal, RenameCategoryModal, CategorySelectorModal } from '../components/ui/LibraryModals';
 import { StickyBar, SelectionBar, CollapsibleSearch, TabGroup, EditButton, StickyBarRightSection } from '../components/stickybar';
-import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
-import EmptyState from '../components/EmptyState';
-import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, HeartIcon } from '../components/icons';
+import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, HeartIcon } from '../components/Icons';
 import { SORT_OPTIONS } from '../constants/stickyBarOptions';
 
 export default function Library() {

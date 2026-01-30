@@ -1,17 +1,14 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { useCardSize } from '../contexts/CardSizeContext';
+import { useCardSize } from '../contexts/PreferencesContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, getNumericSetting } from '../utils/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { StickyBar, SortDropdown, SelectionBar, EditButton, ActionDropdown, CollapsibleSearch } from '../components/stickybar';
-import LoadingSpinner from '../components/LoadingSpinner';
-import Pagination from '../components/Pagination';
-import LoadMore from '../components/LoadMore';
+import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import { useGridColumns } from '../hooks/useGridColumns';
-import EmptyState from '../components/EmptyState';
 import { SORT_OPTIONS } from '../constants/stickyBarOptions';
 import { DurationSettingsModal, CategoryManagementModal, SingleCategoryModal } from '../components/ui/DiscoverModals';
 

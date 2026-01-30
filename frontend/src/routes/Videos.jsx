@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useScanYouTubePlaylist, useQueuePlaylistVideos, useRemovePlaylistVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { useCardSize } from '../contexts/CardSizeContext';
+import { useCardSize } from '../contexts/PreferencesContext';
 import { getGridClass, getUserFriendlyError, formatDuration, formatDate } from '../utils/utils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, CollapsibleSearch, SelectionBar } from '../components/stickybar';
-import EmptyState from '../components/EmptyState';
+import { EmptyState } from '../components/ListFeedback';
 
 export default function Videos() {
   const { showNotification } = useNotification();

@@ -5,8 +5,8 @@ import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getTextSizes, formatDuration, formatDate, formatDateTime, formatFileSize, getStringSetting } from '../utils/utils';
 import { usePrefetchImage } from '../hooks/usePrefetchImage';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
-import ConfirmDialog from './ConfirmDialog';
-import { ThreeDotsIcon, CheckmarkIcon, TrashIcon, PlusIcon } from './icons';
+import { ConfirmDialog } from './ui/SharedModals';
+import { ThreeDotsIcon, CheckmarkIcon, TrashIcon, PlusIcon } from './Icons';
 
 // Memoized to prevent re-renders when sibling cards change selection state
 const VideoCard = memo(function VideoCard({
