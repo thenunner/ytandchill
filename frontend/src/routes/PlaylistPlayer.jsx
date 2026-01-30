@@ -16,6 +16,107 @@ import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } 
 import Sidebar from '../components/Sidebar';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
+// Local helper components to avoid duplicate JSX
+
+function PlaylistControls({ goToPrevious, goToNext, shufflePlaylist, toggleLoop, isLooping, currentIndex, displayOrderLength }) {
+  return (
+    <div className="flex items-center gap-2">
+      <button
+        onClick={goToPrevious}
+        disabled={currentIndex === 0 && !isLooping}
+        className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+        title="Previous video (P)"
+        aria-label="Go to previous video"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
+        </svg>
+      </button>
+      <button
+        onClick={shufflePlaylist}
+        className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
+        title="Shuffle playlist (S)"
+        aria-label="Shuffle playlist"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <polyline points="16 3 21 3 21 8"></polyline>
+          <line x1="4" y1="20" x2="21" y2="3"></line>
+          <polyline points="21 16 21 21 16 21"></polyline>
+          <line x1="15" y1="15" x2="21" y2="21"></line>
+          <line x1="4" y1="4" x2="9" y2="9"></line>
+        </svg>
+      </button>
+      <button
+        onClick={toggleLoop}
+        className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
+        title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
+        aria-label={isLooping ? 'Disable loop' : 'Enable loop'}
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 1l4 4-4 4"></path>
+          <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+          <path d="M7 23l-4-4 4-4"></path>
+          <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+        </svg>
+      </button>
+      <button
+        onClick={goToNext}
+        disabled={currentIndex === displayOrderLength - 1 && !isLooping}
+        className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
+        title="Next video (N)"
+        aria-label="Go to next video"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
+        </svg>
+      </button>
+    </div>
+  );
+}
+
+function ActionButtons({ handleBack, setShowPlaylistMenu, toggleWatched, setShowDeleteConfirm, currentVideo, addToPlaylistButtonRef }) {
+  return (
+    <div className="flex gap-2 mt-3">
+      <button
+        onClick={handleBack}
+        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors text-sm"
+      >
+        <ArrowLeftIcon />
+        <span className="font-medium">Back</span>
+      </button>
+
+      <button
+        ref={addToPlaylistButtonRef}
+        onClick={() => setShowPlaylistMenu(true)}
+        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary transition-colors text-sm"
+      >
+        <PlusIcon />
+        <span className="font-medium">Playlist</span>
+      </button>
+
+      <button
+        onClick={toggleWatched}
+        className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-sm ${
+          currentVideo.watched
+            ? 'bg-accent border-accent text-dark-primary'
+            : 'bg-dark-surface border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary'
+        }`}
+      >
+        <EyeIcon />
+        <span className="font-medium">{currentVideo.watched ? 'Watched' : 'Mark Watched'}</span>
+      </button>
+
+      <button
+        onClick={() => setShowDeleteConfirm(true)}
+        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors text-sm"
+      >
+        <TrashIcon />
+        <span className="font-medium">Delete</span>
+      </button>
+    </div>
+  );
+}
+
 export default function PlaylistPlayer() {
   const { playlistId, categoryId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -625,44 +726,14 @@ export default function PlaylistPlayer() {
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 mt-3">
-                  <button
-                    onClick={handleBack}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors text-sm"
-                  >
-                    <ArrowLeftIcon />
-                    <span className="font-medium">Back</span>
-                  </button>
-
-                  <button
-                    ref={addToPlaylistButtonRef}
-                    onClick={() => setShowPlaylistMenu(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary transition-colors text-sm"
-                  >
-                    <PlusIcon />
-                    <span className="font-medium">Playlist</span>
-                  </button>
-
-                  <button
-                    onClick={toggleWatched}
-                    className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-sm ${
-                      currentVideo.watched
-                        ? 'bg-accent border-accent text-dark-primary'
-                        : 'bg-dark-surface border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary'
-                    }`}
-                  >
-                    <EyeIcon />
-                    <span className="font-medium">{currentVideo.watched ? 'Watched' : 'Mark Watched'}</span>
-                  </button>
-
-                  <button
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors text-sm"
-                  >
-                    <TrashIcon />
-                    <span className="font-medium">Delete</span>
-                  </button>
-                </div>
+                <ActionButtons
+                  handleBack={handleBack}
+                  setShowPlaylistMenu={setShowPlaylistMenu}
+                  toggleWatched={toggleWatched}
+                  setShowDeleteConfirm={setShowDeleteConfirm}
+                  currentVideo={currentVideo}
+                  addToPlaylistButtonRef={addToPlaylistButtonRef}
+                />
               </div>
 
               {/* Horizontal Queue */}
@@ -676,53 +747,15 @@ export default function PlaylistPlayer() {
                   </div>
 
                   {/* Playlist Controls */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={goToPrevious}
-                      disabled={currentIndex === 0 && !isLooping}
-                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Previous video (P)"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={shufflePlaylist}
-                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
-                      title="Shuffle playlist (S)"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="16 3 21 3 21 8"></polyline>
-                        <line x1="4" y1="20" x2="21" y2="3"></line>
-                        <polyline points="21 16 21 21 16 21"></polyline>
-                        <line x1="15" y1="15" x2="21" y2="21"></line>
-                        <line x1="4" y1="4" x2="9" y2="9"></line>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={toggleLoop}
-                      className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
-                      title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M17 1l4 4-4 4"></path>
-                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                        <path d="M7 23l-4-4 4-4"></path>
-                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={goToNext}
-                      disabled={currentIndex === displayOrder.length - 1 && !isLooping}
-                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Next video (N)"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
-                      </svg>
-                    </button>
-                  </div>
+                  <PlaylistControls
+                    goToPrevious={goToPrevious}
+                    goToNext={goToNext}
+                    shufflePlaylist={shufflePlaylist}
+                    toggleLoop={toggleLoop}
+                    isLooping={isLooping}
+                    currentIndex={currentIndex}
+                    displayOrderLength={displayOrder.length}
+                  />
                 </div>
 
                   {/* Horizontal Queue with Overlay Scroll Buttons */}
@@ -901,44 +934,14 @@ export default function PlaylistPlayer() {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-2 mt-3">
-                      <button
-                        onClick={handleBack}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors text-sm"
-                      >
-                        <ArrowLeftIcon />
-                        <span className="font-medium">Back</span>
-                      </button>
-
-                      <button
-                        ref={addToPlaylistButtonRef}
-                        onClick={() => setShowPlaylistMenu(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary transition-colors text-sm"
-                      >
-                        <PlusIcon />
-                        <span className="font-medium">Playlist</span>
-                      </button>
-
-                      <button
-                        onClick={toggleWatched}
-                        className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition-colors text-sm ${
-                          currentVideo.watched
-                            ? 'bg-accent border-accent text-dark-primary'
-                            : 'bg-dark-surface border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary'
-                        }`}
-                      >
-                        <EyeIcon />
-                        <span className="font-medium">{currentVideo.watched ? 'Watched' : 'Mark Watched'}</span>
-                      </button>
-
-                      <button
-                        onClick={() => setShowDeleteConfirm(true)}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-dark-surface border border-dark-border rounded-lg text-text-secondary hover:bg-red-600 hover:border-red-600 hover:text-white transition-colors text-sm"
-                      >
-                        <TrashIcon />
-                        <span className="font-medium">Delete</span>
-                      </button>
-                    </div>
+                    <ActionButtons
+                      handleBack={handleBack}
+                      setShowPlaylistMenu={setShowPlaylistMenu}
+                      toggleWatched={toggleWatched}
+                      setShowDeleteConfirm={setShowDeleteConfirm}
+                      currentVideo={currentVideo}
+                      addToPlaylistButtonRef={addToPlaylistButtonRef}
+                    />
                   </div>
                 </div>
 
@@ -955,57 +958,15 @@ export default function PlaylistPlayer() {
                       <p className="text-sm text-text-secondary">{currentIndex + 1} of {videos.length} videos</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={goToPrevious}
-                      disabled={currentIndex === 0 && !isLooping}
-                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Previous video (P)"
-                      aria-label="Go to previous video"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 6h2v12H6V6zm3.5 6l8.5 6V6l-8.5 6z"/>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={shufflePlaylist}
-                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent"
-                      title="Shuffle playlist (S)"
-                      aria-label="Shuffle playlist"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <polyline points="16 3 21 3 21 8"></polyline>
-                        <line x1="4" y1="20" x2="21" y2="3"></line>
-                        <polyline points="21 16 21 21 16 21"></polyline>
-                        <line x1="15" y1="15" x2="21" y2="21"></line>
-                        <line x1="4" y1="4" x2="9" y2="9"></line>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={toggleLoop}
-                      className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
-                      title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
-                      aria-label={isLooping ? 'Disable loop' : 'Enable loop'}
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M17 1l4 4-4 4"></path>
-                        <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
-                        <path d="M7 23l-4-4 4-4"></path>
-                        <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
-                      </svg>
-                    </button>
-                    <button
-                      onClick={goToNext}
-                      disabled={currentIndex === displayOrder.length - 1 && !isLooping}
-                      className="icon-btn icon-btn-sm hover:bg-accent hover:border-accent disabled:opacity-30 disabled:cursor-not-allowed"
-                      title="Next video (N)"
-                      aria-label="Go to next video"
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M6 6l8.5 6L6 18V6zm10.5 0v12h2V6h-2z"/>
-                      </svg>
-                    </button>
-                  </div>
+                  <PlaylistControls
+                    goToPrevious={goToPrevious}
+                    goToNext={goToNext}
+                    shufflePlaylist={shufflePlaylist}
+                    toggleLoop={toggleLoop}
+                    isLooping={isLooping}
+                    currentIndex={currentIndex}
+                    displayOrderLength={displayOrder.length}
+                  />
                 </div>
 
                 <div className="overflow-y-auto flex-1">

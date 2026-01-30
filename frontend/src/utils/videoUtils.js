@@ -80,6 +80,29 @@ export const SEEK_TIME_SECONDS = 10;
 export const PROGRESS_SAVE_DEBOUNCE_MS = 3000;
 export const WATCHED_THRESHOLD = 0.9;
 
+/**
+ * Get user-friendly error message for video playback errors
+ * @param {number} errorCode - MediaError code (1-4)
+ * @param {boolean} isIOS - Whether device is iOS (affects code 4 message)
+ * @returns {string} User-friendly error message
+ */
+export function getVideoErrorMessage(errorCode, isIOS = false) {
+  switch (errorCode) {
+    case 1:
+      return 'Video loading was aborted';
+    case 2:
+      return 'Network error while loading video';
+    case 3:
+      return 'Video decoding failed. The file may be corrupted';
+    case 4:
+      return isIOS
+        ? 'Video format not supported. On iOS, try opening in Safari'
+        : 'Video format not supported by your browser';
+    default:
+      return 'Video playback error';
+  }
+}
+
 // ============================================================================
 // VIDEO SOURCE UTILITIES
 // ============================================================================

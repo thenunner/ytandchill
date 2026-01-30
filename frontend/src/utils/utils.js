@@ -571,3 +571,31 @@ export function getStringSetting(settings, key, defaultValue) {
   }
   return settings[key];
 }
+
+// ============================================================================
+// SORT UTILITIES
+// ============================================================================
+
+/**
+ * Create a comparator function for sorting by title or count
+ * @param {string} sortBy - Sort option: 'title-asc', 'title-desc', 'count-asc', 'count-desc'
+ * @param {string} titleField - Field name for title (default: 'title')
+ * @param {string} countField - Field name for count (default: 'count')
+ * @returns {Function} Comparator function for Array.sort()
+ */
+export function createSortComparator(sortBy, titleField = 'title', countField = 'count') {
+  return (a, b) => {
+    switch (sortBy) {
+      case 'title-asc':
+        return (a[titleField] || '').localeCompare(b[titleField] || '');
+      case 'title-desc':
+        return (b[titleField] || '').localeCompare(a[titleField] || '');
+      case 'count-desc':
+        return (b[countField] || 0) - (a[countField] || 0);
+      case 'count-asc':
+        return (a[countField] || 0) - (b[countField] || 0);
+      default:
+        return 0;
+    }
+  };
+}

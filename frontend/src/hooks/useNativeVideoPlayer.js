@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { WATCHED_THRESHOLD, PROGRESS_SAVE_DEBOUNCE_MS, getVideoSource } from '../utils/videoUtils';
+import { WATCHED_THRESHOLD, PROGRESS_SAVE_DEBOUNCE_MS, getVideoSource, getVideoErrorMessage } from '../utils/videoUtils';
 
 /**
  * Custom hook for native HTML5 video player on mobile devices
@@ -100,24 +100,7 @@ export function useNativeVideoPlayer({
       const error = videoEl.error;
       if (!error) return;
 
-      let userMessage = 'Video playback error';
-      switch (error.code) {
-        case 1: // MEDIA_ERR_ABORTED
-          userMessage = 'Video loading was aborted';
-          break;
-        case 2: // MEDIA_ERR_NETWORK
-          userMessage = 'Network error while loading video';
-          break;
-        case 3: // MEDIA_ERR_DECODE
-          userMessage = 'Video format not supported by your device';
-          break;
-        case 4: // MEDIA_ERR_SRC_NOT_SUPPORTED
-          userMessage = 'Video format not supported by your browser';
-          break;
-        default:
-          userMessage = error.message || 'Unknown video error';
-      }
-
+      const userMessage = getVideoErrorMessage(error.code);
       console.error('[useNativeVideoPlayer] Video error:', error.code, error.message);
       if (onErrorRef.current) onErrorRef.current(userMessage);
     };

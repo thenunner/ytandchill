@@ -609,10 +609,8 @@ export default function Library() {
                 onSortChange={(value) => {
                   if (activeTab === 'channels') {
                     setChannelSortBy(value);
-                    localStorage.setItem('library_channelSortBy', value);
                   } else {
                     setPlaylistSortBy(value);
-                    localStorage.setItem('library_playlistSortBy', value);
                   }
                 }}
                 sortOptions={activeTab === 'channels' ? SORT_OPTIONS.libraryChannels : SORT_OPTIONS.playlists}
@@ -635,10 +633,8 @@ export default function Library() {
               onSortChange={(value) => {
                 if (activeTab === 'channels') {
                   setChannelSortBy(value);
-                  localStorage.setItem('library_channelSortBy', value);
                 } else {
                   setPlaylistSortBy(value);
-                  localStorage.setItem('library_playlistSortBy', value);
                 }
               }}
               sortOptions={activeTab === 'channels' ? SORT_OPTIONS.libraryChannels : SORT_OPTIONS.playlists}

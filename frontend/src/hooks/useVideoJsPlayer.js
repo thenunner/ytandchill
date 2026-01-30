@@ -6,6 +6,7 @@ import {
   WATCHED_THRESHOLD,
   detectDeviceType,
   getVideoSource,
+  getVideoErrorMessage,
   createTheaterButton,
   updateTheaterButtonState,
   SeekBackward10Button,
@@ -527,28 +528,7 @@ export function useVideoJsPlayer({
         type: error.type,
       });
 
-      let userMessage = 'Video playback error';
-
-      switch (error.code) {
-        case 1:
-          userMessage = 'Video loading was aborted';
-          break;
-        case 2:
-          userMessage = 'Network error occurred while loading video';
-          break;
-        case 3:
-          userMessage = 'Video decoding failed. The file may be corrupted';
-          break;
-        case 4:
-          userMessage = 'Video format not supported by your browser';
-          if (isIOS) {
-            userMessage += '. On iOS, try opening in Safari';
-          }
-          break;
-        default:
-          userMessage = error.message || 'Unknown video error';
-      }
-
+      const userMessage = getVideoErrorMessage(error.code, isIOS);
       console.error('User-facing error:', userMessage);
     });
 
