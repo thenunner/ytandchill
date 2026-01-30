@@ -198,6 +198,13 @@ export default function LibraryChannel() {
     }
   }, [sortedVideos.length, itemsPerPage, currentPage]);
 
+  // Redirect to library if channel becomes empty (all videos deleted)
+  useEffect(() => {
+    if (!isLoading && videos && videos.length === 0) {
+      navigate('/library', { replace: true });
+    }
+  }, [videos, isLoading, navigate]);
+
   // Paginate videos
   const paginatedVideos = useMemo(() => {
     if (isMobile) {
