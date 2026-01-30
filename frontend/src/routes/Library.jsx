@@ -5,8 +5,8 @@ import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, formatFileSize, getNumericSetting } from '../utils/utils';
 import { useCardSize } from '../contexts/PreferencesContext';
 import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
-import { ConfirmModal } from '../components/ui/SharedModals';
-import { RenamePlaylistModal, CreateCategoryModal, RenameCategoryModal, CategorySelectorModal } from '../components/ui/LibraryModals';
+import { ConfirmModal, InputModal } from '../components/ui/SharedModals';
+import { CategorySelectorModal } from '../components/ui/LibraryModals';
 import { StickyBar, SelectionBar, CollapsibleSearch, TabGroup, EditButton, StickyBarRightSection } from '../components/stickybar';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, HeartIcon } from '../components/Icons';
@@ -1314,44 +1314,56 @@ export default function Library() {
       )}
 
       {/* Rename Playlist Modal */}
-      <RenamePlaylistModal
+      <InputModal
         isOpen={showRenameModal}
         onClose={() => {
           setShowRenameModal(false);
           setRenamePlaylistId(null);
           setRenameValue('');
         }}
+        title="Rename Playlist"
+        label="Playlist name"
         value={renameValue}
         onChange={setRenameValue}
-        onRename={handleRenamePlaylist}
+        onSubmit={handleRenamePlaylist}
+        submitText="Rename"
+        loadingText="Renaming..."
         isLoading={updatePlaylist.isPending}
       />
 
       {/* Create Category Modal */}
-      <CreateCategoryModal
+      <InputModal
         isOpen={showCreateCategoryModal}
         onClose={() => {
           setShowCreateCategoryModal(false);
           setNewCategoryName('');
         }}
+        title="New Category"
+        label="Category name"
         value={newCategoryName}
         onChange={setNewCategoryName}
-        onCreate={handleCreateCategory}
-        isCreating={createCategory.isPending}
+        onSubmit={handleCreateCategory}
+        submitText="Create"
+        loadingText="Creating..."
+        isLoading={createCategory.isPending}
       />
 
       {/* Rename Category Modal */}
-      <RenameCategoryModal
+      <InputModal
         isOpen={showRenameCategoryModal}
         onClose={() => {
           setShowRenameCategoryModal(false);
           setRenameCategoryId(null);
           setRenameCategoryValue('');
         }}
+        title="Rename Category"
+        label="Category name"
         value={renameCategoryValue}
         onChange={setRenameCategoryValue}
-        onRename={handleRenameCategory}
-        isRenaming={updateCategory.isPending}
+        onSubmit={handleRenameCategory}
+        submitText="Rename"
+        loadingText="Renaming..."
+        isLoading={updateCategory.isPending}
       />
 
       {/* Category Selector Modal */}

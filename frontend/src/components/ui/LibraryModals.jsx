@@ -1,22 +1,9 @@
-import { useState, useEffect } from 'react';
-import { ResponsiveModal, ConfirmModal } from './SharedModals';
+import { useState } from 'react';
+import { ResponsiveModal } from './SharedModals';
 import { useCreatePlaylist, useUpdatePlaylist, usePlaylists } from '../../api/queries';
 import { useNotification } from '../../contexts/NotificationContext';
 import { getUserFriendlyError } from '../../utils/utils';
-
-// Close icon SVG component
-const CloseIcon = ({ className = "w-4 h-4" }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-  </svg>
-);
-
-// Checkmark icon
-const CheckIcon = ({ className = "w-3 h-3" }) => (
-  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-  </svg>
-);
+import { CheckIcon } from '../Icons';
 
 // Plus icon
 const PlusIcon = () => (
@@ -121,151 +108,6 @@ export function PlaylistModal({ playlist, onClose }) {
           </button>
         </div>
       </form>
-    </ResponsiveModal>
-  );
-}
-
-/**
- * RenamePlaylistModal - Simple input modal for renaming a playlist
- */
-export function RenamePlaylistModal({
-  isOpen,
-  onClose,
-  value,
-  onChange,
-  onRename,
-  isLoading
-}) {
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      onRename();
-    }
-  };
-
-  return (
-    <ResponsiveModal isOpen={isOpen} onClose={onClose} title="Rename Playlist">
-      <p className="text-text-muted text-sm sm:text-sm text-xs mb-3 sm:mb-3 mb-2">Playlist name</p>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyPress={handleKeyPress}
-        placeholder="Enter name..."
-        className="w-full bg-white/5 rounded-xl px-4 py-3 sm:py-3 py-3.5 text-sm sm:text-sm text-base text-text-primary placeholder-text-muted focus:outline-none sm:focus:ring-2 sm:focus:ring-accent/30 sm:border-0 border-2 border-transparent focus:border-accent mb-4 sm:mb-4"
-        autoFocus
-      />
-      <div className="flex gap-2 sm:gap-2 gap-3 sm:mt-0 mt-5">
-        <button
-          onClick={onClose}
-          className="flex-1 py-2.5 sm:py-2.5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm font-medium sm:font-normal transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onRename}
-          disabled={!value.trim() || isLoading}
-          className="flex-1 py-2.5 sm:py-2.5 py-3.5 rounded-xl bg-accent/90 hover:bg-accent sm:bg-accent/90 sm:hover:bg-accent bg-accent text-dark-deepest text-sm font-medium sm:font-medium font-semibold transition-colors disabled:opacity-50"
-        >
-          {isLoading ? 'Renaming...' : 'Rename'}
-        </button>
-      </div>
-    </ResponsiveModal>
-  );
-}
-
-/**
- * CreateCategoryModal - Create a new playlist category
- */
-export function CreateCategoryModal({
-  isOpen,
-  onClose,
-  value,
-  onChange,
-  onCreate,
-  isCreating
-}) {
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onCreate();
-  };
-
-  return (
-    <ResponsiveModal isOpen={isOpen} onClose={onClose} title="New Category">
-      <form onSubmit={handleSubmit}>
-        <p className="text-text-muted text-sm sm:text-sm text-xs mb-3 sm:mb-3 mb-2">Category name</p>
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="Enter name..."
-          className="w-full bg-white/5 rounded-xl px-4 py-3 sm:py-3 py-3.5 text-sm sm:text-sm text-base text-text-primary placeholder-text-muted focus:outline-none sm:focus:ring-2 sm:focus:ring-accent/30 sm:border-0 border-2 border-transparent focus:border-accent mb-4 sm:mb-4"
-          autoFocus
-        />
-        <div className="flex gap-2 sm:gap-2 gap-3 sm:mt-0 mt-5">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-2.5 sm:py-2.5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm font-medium sm:font-normal transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={!value.trim() || isCreating}
-            className="flex-1 py-2.5 sm:py-2.5 py-3.5 rounded-xl bg-accent/90 hover:bg-accent sm:bg-accent/90 sm:hover:bg-accent bg-accent text-dark-deepest text-sm font-medium sm:font-medium font-semibold transition-colors disabled:opacity-50"
-          >
-            {isCreating ? 'Creating...' : 'Create'}
-          </button>
-        </div>
-      </form>
-    </ResponsiveModal>
-  );
-}
-
-/**
- * RenameCategoryModal - Rename a playlist category
- */
-export function RenameCategoryModal({
-  isOpen,
-  onClose,
-  value,
-  onChange,
-  onRename,
-  isRenaming
-}) {
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      onRename();
-    }
-  };
-
-  return (
-    <ResponsiveModal isOpen={isOpen} onClose={onClose} title="Rename Category">
-      <p className="text-text-muted text-sm sm:text-sm text-xs mb-3 sm:mb-3 mb-2">Category name</p>
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyPress={handleKeyPress}
-        placeholder="Enter name..."
-        className="w-full bg-white/5 rounded-xl px-4 py-3 sm:py-3 py-3.5 text-sm sm:text-sm text-base text-text-primary placeholder-text-muted focus:outline-none sm:focus:ring-2 sm:focus:ring-accent/30 sm:border-0 border-2 border-transparent focus:border-accent mb-4 sm:mb-4"
-        autoFocus
-      />
-      <div className="flex gap-2 sm:gap-2 gap-3 sm:mt-0 mt-5">
-        <button
-          onClick={onClose}
-          className="flex-1 py-2.5 sm:py-2.5 py-3.5 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm font-medium sm:font-normal transition-colors"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={onRename}
-          disabled={!value.trim() || isRenaming}
-          className="flex-1 py-2.5 sm:py-2.5 py-3.5 rounded-xl bg-accent/90 hover:bg-accent sm:bg-accent/90 sm:hover:bg-accent bg-accent text-dark-deepest text-sm font-medium sm:font-medium font-semibold transition-colors disabled:opacity-50"
-        >
-          {isRenaming ? 'Renaming...' : 'Rename'}
-        </button>
-      </div>
     </ResponsiveModal>
   );
 }
@@ -395,8 +237,5 @@ export function CategorySelectorModal({
 
 export default {
   PlaylistModal,
-  RenamePlaylistModal,
-  CreateCategoryModal,
-  RenameCategoryModal,
   CategorySelectorModal
 };

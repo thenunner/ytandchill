@@ -6,11 +6,9 @@ import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/utils';
 import { useTheme } from '../contexts/PreferencesContext';
 import { useCardSize } from '../contexts/PreferencesContext';
-import { ConfirmModal } from '../components/ui/SharedModals';
+import { ConfirmModal, SelectionListModal } from '../components/ui/SharedModals';
 import {
   DatabaseMaintenanceModal,
-  NotFoundVideosModal,
-  ShrinkDatabaseModal,
   MetadataFixModal
 } from '../components/ui/SettingsModals';
 import { useAutoScan } from '../hooks/useAutoScan';
@@ -1030,24 +1028,39 @@ export default function Settings() {
         onOpenMetadataFix={dbMaintenance.openMetadataFixModal}
       />
 
-      <NotFoundVideosModal
+      <SelectionListModal
         isOpen={dbMaintenance.showNotFoundModal}
         onClose={() => dbMaintenance.setShowNotFoundModal(false)}
-        videos={dbMaintenance.repairData?.not_found_videos || []}
-        selectedVideos={dbMaintenance.selectedNotFoundVideos}
-        setSelectedVideos={dbMaintenance.setSelectedNotFoundVideos}
-        onRemove={dbMaintenance.handleRemoveNotFoundVideos}
-        isRemoving={dbMaintenance.isRemoving}
+        title="Unavailable Videos"
+        items={(dbMaintenance.repairData?.not_found_videos || []).map(v => ({
+          id: v.id,
+          title: v.title,
+          subtitle: v.channel_name
+        }))}
+        selectedIds={dbMaintenance.selectedNotFoundVideos}
+        setSelectedIds={dbMaintenance.setSelectedNotFoundVideos}
+        onAction={dbMaintenance.handleRemoveNotFoundVideos}
+        isLoading={dbMaintenance.isRemoving}
+        actionText="Remove"
+        emptyMessage="✓ No videos to remove"
       />
 
-      <ShrinkDatabaseModal
+      <SelectionListModal
         isOpen={dbMaintenance.showShrinkDBModal}
         onClose={() => dbMaintenance.setShowShrinkDBModal(false)}
-        channels={dbMaintenance.repairData?.deletable_channels || []}
-        selectedChannels={dbMaintenance.selectedChannels}
-        setSelectedChannels={dbMaintenance.setSelectedChannels}
-        onPurge={dbMaintenance.handlePurgeChannels}
-        isRemoving={dbMaintenance.isRemoving}
+        title="Purge Channels"
+        items={(dbMaintenance.repairData?.deletable_channels || []).map(c => ({
+          id: c.id,
+          title: c.title,
+          subtitle: `${c.video_count} video${c.video_count !== 1 ? 's' : ''} • No library videos`
+        }))}
+        selectedIds={dbMaintenance.selectedChannels}
+        setSelectedIds={dbMaintenance.setSelectedChannels}
+        onAction={dbMaintenance.handlePurgeChannels}
+        isLoading={dbMaintenance.isRemoving}
+        actionText="Purge"
+        emptyMessage="✓ No channels to purge"
+        headerMessage="Select empty channels to permanently remove:"
       />
 
       <MetadataFixModal
