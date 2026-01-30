@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getGridColumns } from '../utils/gridUtils';
+import { getGridColumns } from '../utils/utils';
 
 /**
  * Custom hook to manage grid columns with proper orientation change handling

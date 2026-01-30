@@ -3,11 +3,11 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useSettings, useUpdateSettings, useHealth, useLogs, useChannels } from '../api/queries';
 import api from '../api/client';
 import { useNotification } from '../contexts/NotificationContext';
-import { getUserFriendlyError } from '../utils/errorMessages';
+import { getUserFriendlyError } from '../utils/utils';
 import { useTheme } from '../contexts/ThemeContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import Tooltip from '../components/ui/Tooltip';
-import ConfirmModal from '../components/ui/ConfirmModal';
+import { ConfirmModal } from '../components/ui/SharedModals';
 import {
   DatabaseMaintenanceModal,
   NotFoundVideosModal,

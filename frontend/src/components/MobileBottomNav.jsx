@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChannelsIcon, LibraryIcon, QueueIcon, SettingsIcon, HeartIcon, HistoryIcon } from './icons';
 
@@ -12,7 +12,7 @@ const UserIcon = ({ className = "w-5 h-5" }) => (
 
 /**
  * Shared mobile bottom navigation component
- * Used across all mobile pages for consistent navigation
+ * Memoized to prevent unnecessary re-renders when parent state changes
  *
  * Tabs: Channels, Library, Favs, Queue (with badge), Me (popup with Settings/Watch History)
  *
@@ -20,7 +20,7 @@ const UserIcon = ({ className = "w-5 h-5" }) => (
  * @param {number} reviewCount - Optional review count for Channels badge
  * @param {boolean} hasFavoritesWithNew - Optional flag for favorites dot indicator
  */
-export default function MobileBottomNav({ queueCount = 0, reviewCount = 0, hasFavoritesWithNew = false }) {
+export default memo(function MobileBottomNav({ queueCount = 0, reviewCount = 0, hasFavoritesWithNew = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [showMePopup, setShowMePopup] = useState(false);
@@ -153,4 +153,4 @@ export default function MobileBottomNav({ queueCount = 0, reviewCount = 0, hasFa
       </div>
     </nav>
   );
-}
+});

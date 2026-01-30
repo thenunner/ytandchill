@@ -4,17 +4,14 @@ import { useQueries } from '@tanstack/react-query';
 import 'video.js/dist/video-js.css';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { getUserFriendlyError } from '../utils/errorMessages';
+import { getUserFriendlyError, formatDuration } from '../utils/utils';
+import { getVideoSource } from '../utils/videoUtils';
 import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
 import { useNativeVideoPlayer } from '../hooks/useNativeVideoPlayer';
 import ConfirmDialog from '../components/ConfirmDialog';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import LoadingSpinner from '../components/LoadingSpinner';
 import MobileBottomNav from '../components/MobileBottomNav';
-import {
-  formatDuration,
-  getVideoSource,
-} from '../utils/videoPlayerUtils';
 import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/icons';
 import Sidebar from '../components/Sidebar';
 import { useMediaQuery } from '../hooks/useMediaQuery';

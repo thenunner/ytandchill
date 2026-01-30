@@ -2,11 +2,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useQueue, useDeleteChannel, useScanChannel, useUpdateChannel, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { getUserFriendlyError } from '../utils/errorMessages';
+import { getUserFriendlyError, getGridClass, getEffectiveCardSize, getNumericSetting, getStringSetting } from '../utils/utils';
 import { useCardSize } from '../contexts/CardSizeContext';
-import { getGridClass, getEffectiveCardSize } from '../utils/gridUtils';
 import { useGridColumns } from '../hooks/useGridColumns';
-import { getNumericSetting, getStringSetting } from '../utils/settingsUtils';
 import VideoCard from '../components/VideoCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
@@ -15,7 +13,8 @@ import api from '../api/client';
 import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch, BackButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
-import DurationSettingsModal from '../components/DurationSettingsModal';
+import { ConfirmModal } from '../components/ui/SharedModals';
+import { DurationSettingsModal } from '../components/ui/DiscoverModals';
 
 /**
  * DiscoverChannel - Shows videos to review or ignored for a channel
@@ -694,34 +693,22 @@ export default function DiscoverChannel() {
       )}
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
-            <h3 className="text-xl font-bold text-text-primary mb-3">Delete Channel?</h3>
-            <p className="text-text-secondary mb-4">
-              Are you sure you want to delete "<span className="text-text-primary font-semibold">{deleteConfirm.title}</span>"?
-            </p>
-            <p className="text-sm text-yellow-400 mb-6">
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={handleDeleteChannel}
+        title="Delete Channel?"
+        message={
+          <>
+            Are you sure you want to delete "<span className="text-text-primary font-semibold">{deleteConfirm?.title}</span>"?
+            <p className="text-sm text-yellow-400 mt-3">
               This will permanently delete all scanned videos from this channel. Downloaded videos in your library will not be affected.
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="btn btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteChannel}
-                disabled={deleteChannel.isPending}
-                className="btn btn-danger flex-1"
-              >
-                {deleteChannel.isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        }
+        confirmText="Delete"
+        isLoading={deleteChannel.isPending}
+      />
     </div>
   );
 }

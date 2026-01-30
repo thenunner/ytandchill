@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getUserFriendlyError } from '../utils/errorMessages';
+import { getUserFriendlyError } from '../utils/utils';
 
 const PRESET_TIMES = ['12 AM', '3 AM', '6 AM', '9 AM', '12 PM', '3 PM', '6 PM', '9 PM'];
 

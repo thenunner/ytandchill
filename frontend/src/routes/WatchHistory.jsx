@@ -4,14 +4,12 @@ import { useWatchHistory, useClearWatchHistory, useChannels, useSettings } from 
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { StickyBar, SearchInput, CollapsibleSearch } from '../components/stickybar';
-import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
+import { getGridClass, getTextSizes, getEffectiveCardSize, formatDuration, formatFileSize, getNumericSetting } from '../utils/utils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
-import ConfirmModal from '../components/ui/ConfirmModal';
+import { ConfirmModal } from '../components/ui/SharedModals';
 import { TrashIcon } from '../components/icons';
-import { formatDuration, formatFileSize } from '../utils/formatters';
-import { getNumericSetting } from '../utils/settingsUtils';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 

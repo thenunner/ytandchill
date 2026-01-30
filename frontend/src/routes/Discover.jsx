@@ -3,19 +3,17 @@ import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpd
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { getUserFriendlyError } from '../utils/errorMessages';
+import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, getNumericSetting } from '../utils/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { StickyBar, SearchInput, SortDropdown, SelectionBar, EditButton, ActionDropdown, CollapsibleSearch } from '../components/stickybar';
-import { getGridClass, getTextSizes, getEffectiveCardSize } from '../utils/gridUtils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
-import { getNumericSetting } from '../utils/settingsUtils';
 import { SORT_OPTIONS } from '../constants/stickyBarOptions';
-import DurationSettingsModal from '../components/DurationSettingsModal';
+import { DurationSettingsModal, CategoryManagementModal, SingleCategoryModal } from '../components/ui/DiscoverModals';
 
 export default function Discover() {
   const { data: channels, isLoading } = useChannels();
@@ -1401,363 +1399,42 @@ export default function Discover() {
         </div>
       )}
 
-      {/* Category Management Modal - Glass Minimal Style */}
-      {showCategoryModal && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 sm:p-4"
-          onClick={() => {
-            setShowCategoryModal(false);
-            setNewCategoryName('');
-            setEditingCategory(null);
-          }}
-        >
-          {/* Desktop - Glass Modal */}
-          <div
-            className="hidden sm:block backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-medium text-text-primary">Manage Categories</h3>
-                <button
-                  onClick={() => {
-                    setShowCategoryModal(false);
-                    setNewCategoryName('');
-                    setEditingCategory(null);
-                  }}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Add new category */}
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!newCategoryName.trim()) return;
-                  try {
-                    await createCategory.mutateAsync({ name: newCategoryName.trim() });
-                    setNewCategoryName('');
-                    showNotification('Category created', 'success');
-                  } catch (error) {
-                    showNotification(getUserFriendlyError(error.message, 'create category'), 'error');
-                  }
-                }}
-                className="flex gap-2 mb-4"
-              >
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="New category..."
-                  className="flex-1 bg-white/5 rounded-xl px-3 py-2.5 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30"
-                />
-                <button
-                  type="submit"
-                  disabled={!newCategoryName.trim() || createCategory.isPending}
-                  className="px-4 py-2.5 rounded-xl bg-accent/90 hover:bg-accent text-dark-deepest text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  Add
-                </button>
-              </form>
-
-              {/* Category list */}
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {categories?.length === 0 && (
-                  <p className="text-text-muted text-sm text-center py-6">No categories yet</p>
-                )}
-                {categories?.map(category => (
-                  <div key={category.id} className="flex items-center justify-between p-3 bg-white/5 rounded-xl">
-                    {editingCategory?.id === category.id ? (
-                      <form
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          if (!editingCategory.name.trim()) return;
-                          try {
-                            await updateCategoryMutation.mutateAsync({
-                              id: category.id,
-                              data: { name: editingCategory.name.trim() }
-                            });
-                            setEditingCategory(null);
-                            showNotification('Category renamed', 'success');
-                          } catch (error) {
-                            showNotification(getUserFriendlyError(error.message, 'rename category'), 'error');
-                          }
-                        }}
-                        className="flex gap-2 flex-1"
-                      >
-                        <input
-                          type="text"
-                          value={editingCategory.name}
-                          onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                          className="flex-1 bg-white/10 rounded-lg px-2 py-1.5 text-sm text-text-primary focus:outline-none"
-                          autoFocus
-                        />
-                        <button type="submit" className="text-green-400 hover:text-green-300 p-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                        <button type="button" onClick={() => setEditingCategory(null)} className="text-text-muted hover:text-text-primary p-1">
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-2">
-                          <span className="text-text-primary text-sm">{category.name}</span>
-                          <span className="text-xs px-1.5 py-0.5 bg-white/10 rounded text-text-muted">{category.channel_count}</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setEditingCategory({ id: category.id, name: category.name })}
-                            className="p-1.5 rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setDeleteCategoryConfirm(category)}
-                            className="p-1.5 rounded-lg hover:bg-red-500/20 text-text-muted hover:text-red-400 transition-colors"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile - Bottom Sheet */}
-          <div
-            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <h3 className="font-semibold text-text-primary">Manage Categories</h3>
-              <button
-                onClick={() => {
-                  setShowCategoryModal(false);
-                  setNewCategoryName('');
-                  setEditingCategory(null);
-                }}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-              >
-                <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="p-4">
-              {/* Add new category */}
-              <form
-                onSubmit={async (e) => {
-                  e.preventDefault();
-                  if (!newCategoryName.trim()) return;
-                  try {
-                    await createCategory.mutateAsync({ name: newCategoryName.trim() });
-                    setNewCategoryName('');
-                    showNotification('Category created', 'success');
-                  } catch (error) {
-                    showNotification(getUserFriendlyError(error.message, 'create category'), 'error');
-                  }
-                }}
-                className="flex gap-2 mb-4"
-              >
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  placeholder="New category..."
-                  className="flex-1 bg-white/5 rounded-xl px-4 py-3 text-base text-text-primary placeholder-text-muted focus:outline-none border-2 border-transparent focus:border-accent"
-                />
-                <button
-                  type="submit"
-                  disabled={!newCategoryName.trim() || createCategory.isPending}
-                  className="px-5 py-3 rounded-xl bg-accent text-dark-deepest font-semibold disabled:opacity-50"
-                >
-                  Add
-                </button>
-              </form>
-
-              {/* Category list */}
-              <div className="space-y-2 max-h-64 overflow-y-auto">
-                {categories?.length === 0 && (
-                  <p className="text-text-muted text-center py-8">No categories yet</p>
-                )}
-                {categories?.map(category => (
-                  <div key={category.id} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl">
-                    {editingCategory?.id === category.id ? (
-                      <form
-                        onSubmit={async (e) => {
-                          e.preventDefault();
-                          if (!editingCategory.name.trim()) return;
-                          try {
-                            await updateCategoryMutation.mutateAsync({
-                              id: category.id,
-                              data: { name: editingCategory.name.trim() }
-                            });
-                            setEditingCategory(null);
-                            showNotification('Category renamed', 'success');
-                          } catch (error) {
-                            showNotification(getUserFriendlyError(error.message, 'rename category'), 'error');
-                          }
-                        }}
-                        className="flex gap-2 flex-1"
-                      >
-                        <input
-                          type="text"
-                          value={editingCategory.name}
-                          onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
-                          className="flex-1 bg-white/10 rounded-xl px-3 py-2 text-base text-text-primary focus:outline-none"
-                          autoFocus
-                        />
-                        <button type="submit" className="w-10 h-10 rounded-xl bg-green-500/20 text-green-400 flex items-center justify-center">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </button>
-                        <button type="button" onClick={() => setEditingCategory(null)} className="w-10 h-10 rounded-xl bg-white/10 text-text-muted flex items-center justify-center">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </form>
-                    ) : (
-                      <>
-                        <div className="flex items-center gap-3">
-                          <span className="text-text-primary">{category.name}</span>
-                          <span className="text-xs px-2 py-0.5 bg-white/10 rounded-lg text-text-muted">{category.channel_count}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => setEditingCategory({ id: category.id, name: category.name })}
-                            className="w-9 h-9 rounded-xl bg-white/10 text-text-muted flex items-center justify-center"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                            </svg>
-                          </button>
-                          <button
-                            onClick={() => setDeleteCategoryConfirm(category)}
-                            className="w-9 h-9 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Category Confirmation Modal - Glass Minimal Style */}
-      {deleteCategoryConfirm && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4 sm:p-4"
-          onClick={() => setDeleteCategoryConfirm(null)}
-        >
-          {/* Desktop - Glass Modal */}
-          <div
-            className="hidden sm:block backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-5">
-              <h3 className="text-base font-medium text-text-primary mb-1">Delete Category?</h3>
-              <p className="text-text-muted text-sm mb-4">
-                Delete "{deleteCategoryConfirm.name}"?
-                {deleteCategoryConfirm.channel_count > 0 && (
-                  <span className="block mt-2 text-amber-400 text-xs">
-                    {deleteCategoryConfirm.channel_count} channel{deleteCategoryConfirm.channel_count !== 1 ? 's' : ''} will become uncategorized.
-                  </span>
-                )}
-              </p>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setDeleteCategoryConfirm(null)}
-                  className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={async () => {
-                    try {
-                      await deleteCategoryMutation.mutateAsync(deleteCategoryConfirm.id);
-                      setDeleteCategoryConfirm(null);
-                      showNotification('Category deleted', 'success');
-                    } catch (error) {
-                      showNotification(getUserFriendlyError(error.message, 'delete category'), 'error');
-                    }
-                  }}
-                  disabled={deleteCategoryMutation.isPending}
-                  className="flex-1 py-2.5 rounded-xl bg-red-500/90 hover:bg-red-500 text-white text-sm font-medium transition-colors disabled:opacity-50"
-                >
-                  {deleteCategoryMutation.isPending ? 'Deleting...' : 'Delete'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile - iOS Action Sheet Style */}
-          <div className="sm:hidden fixed inset-x-0 bottom-0 p-3" onClick={(e) => e.stopPropagation()}>
-            <div className="backdrop-blur-xl bg-dark-secondary rounded-2xl overflow-hidden">
-              <div className="p-4 text-center border-b border-white/10">
-                <p className="font-medium text-text-primary">Delete Category?</p>
-                <p className="text-sm mt-1 text-text-muted">
-                  Delete "{deleteCategoryConfirm.name}"?
-                  {deleteCategoryConfirm.channel_count > 0 && (
-                    <span className="block mt-2 text-amber-400">
-                      {deleteCategoryConfirm.channel_count} channel{deleteCategoryConfirm.channel_count !== 1 ? 's' : ''} will become uncategorized.
-                    </span>
-                  )}
-                </p>
-              </div>
-              <button
-                onClick={async () => {
-                  try {
-                    await deleteCategoryMutation.mutateAsync(deleteCategoryConfirm.id);
-                    setDeleteCategoryConfirm(null);
-                    showNotification('Category deleted', 'success');
-                  } catch (error) {
-                    showNotification(getUserFriendlyError(error.message, 'delete category'), 'error');
-                  }
-                }}
-                disabled={deleteCategoryMutation.isPending}
-                className="w-full py-4 text-red-500 text-lg font-semibold border-b border-white/10 disabled:opacity-50"
-              >
-                {deleteCategoryMutation.isPending ? 'Deleting...' : 'Delete'}
-              </button>
-              <button
-                onClick={() => setDeleteCategoryConfirm(null)}
-                className="w-full py-4 text-text-primary text-lg"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Category Management Modal */}
+      <CategoryManagementModal
+        isOpen={showCategoryModal}
+        onClose={() => {
+          setShowCategoryModal(false);
+          setNewCategoryName('');
+          setEditingCategory(null);
+        }}
+        categories={categories}
+        onCreateCategory={async (name) => {
+          try {
+            await createCategory.mutateAsync({ name });
+            showNotification('Category created', 'success');
+          } catch (error) {
+            showNotification(getUserFriendlyError(error.message, 'create category'), 'error');
+          }
+        }}
+        onUpdateCategory={async (id, name) => {
+          try {
+            await updateCategoryMutation.mutateAsync({ id, data: { name } });
+            showNotification('Category renamed', 'success');
+          } catch (error) {
+            showNotification(getUserFriendlyError(error.message, 'rename category'), 'error');
+          }
+        }}
+        onDeleteCategory={async (id) => {
+          try {
+            await deleteCategoryMutation.mutateAsync(id);
+            showNotification('Category deleted', 'success');
+          } catch (error) {
+            showNotification(getUserFriendlyError(error.message, 'delete category'), 'error');
+          }
+        }}
+        isCreating={createCategory.isPending}
+        isUpdating={updateCategoryMutation.isPending}
+      />
 
       {/* Duration Settings Modal */}
       <DurationSettingsModal
@@ -1769,215 +1446,31 @@ export default function Discover() {
         onClose={() => setShowDurationModal(null)}
       />
 
-      {/* Single Channel Category Modal - Glass Minimal Style */}
-      {showSingleCategoryModal && (
-        <div
-          className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 sm:p-4"
-          onClick={() => setShowSingleCategoryModal(null)}
-        >
-          {/* Desktop - Glass Modal */}
-          <div
-            className="hidden sm:block backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl max-w-sm w-full shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-5">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-medium text-text-primary">Set Category</h3>
-                <button
-                  onClick={() => setShowSingleCategoryModal(null)}
-                  className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Category options */}
-              <div className="space-y-1 max-h-60 overflow-y-auto">
-                {/* Uncategorized option */}
-                <button
-                  onClick={() => {
-                    updateChannel.mutate({
-                      id: showSingleCategoryModal.id,
-                      data: { category_id: null }
-                    }, {
-                      onSuccess: () => {
-                        showNotification(`${showSingleCategoryModal.title} set to Uncategorized`, 'success');
-                        setShowSingleCategoryModal(null);
-                      }
-                    });
-                  }}
-                  className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left ${
-                    !showSingleCategoryModal.category_id ? 'bg-white/5' : ''
-                  }`}
-                >
-                  <div className={`w-5 h-5 rounded flex items-center justify-center ${
-                    !showSingleCategoryModal.category_id ? 'bg-accent' : 'border border-white/20'
-                  }`}>
-                    {!showSingleCategoryModal.category_id && (
-                      <svg className="w-3 h-3 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
-                  <span className="text-sm text-text-muted italic">Uncategorized</span>
-                </button>
-
-                {/* Category list */}
-                {categories?.map(category => (
-                  <button
-                    key={category.id}
-                    onClick={() => {
-                      updateChannel.mutate({
-                        id: showSingleCategoryModal.id,
-                        data: { category_id: category.id }
-                      }, {
-                        onSuccess: () => {
-                          showNotification(`${showSingleCategoryModal.title} moved to ${category.name}`, 'success');
-                          setShowSingleCategoryModal(null);
-                        }
-                      });
-                    }}
-                    className={`flex items-center justify-between w-full px-3 py-2.5 rounded-xl hover:bg-white/5 transition-colors text-left ${
-                      showSingleCategoryModal.category_id === category.id ? 'bg-white/5' : ''
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded flex items-center justify-center ${
-                        showSingleCategoryModal.category_id === category.id ? 'bg-accent' : 'border border-white/20'
-                      }`}>
-                        {showSingleCategoryModal.category_id === category.id && (
-                          <svg className="w-3 h-3 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                      <span className="text-sm text-text-primary">{category.name}</span>
-                    </div>
-                    <span className="text-xs px-1.5 py-0.5 bg-white/10 rounded text-text-muted">{category.channel_count}</span>
-                  </button>
-                ))}
-
-                {(!categories || categories.length === 0) && (
-                  <p className="text-text-muted text-sm text-center py-4">No categories yet</p>
-                )}
-              </div>
-
-              {/* Manage Categories */}
-              <div className="border-t border-white/10 mt-4 pt-3">
-                <button
-                  onClick={() => {
-                    setShowSingleCategoryModal(null);
-                    setShowCategoryModal(true);
-                  }}
-                  className="w-full text-center text-sm text-accent hover:text-accent/80 transition-colors"
-                >
-                  Manage Categories...
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile - Bottom Sheet */}
-          <div
-            className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <h3 className="font-semibold text-text-primary">Set Category</h3>
-              <button
-                onClick={() => setShowSingleCategoryModal(null)}
-                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center"
-              >
-                <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="p-4 max-h-72 overflow-y-auto">
-              {/* Uncategorized option */}
-              <button
-                onClick={() => {
-                  updateChannel.mutate({
-                    id: showSingleCategoryModal.id,
-                    data: { category_id: null }
-                  }, {
-                    onSuccess: () => {
-                      showNotification(`${showSingleCategoryModal.title} set to Uncategorized`, 'success');
-                      setShowSingleCategoryModal(null);
-                    }
-                  });
-                }}
-                className={`flex items-center gap-3 w-full px-4 py-3.5 rounded-xl transition-colors text-left ${
-                  !showSingleCategoryModal.category_id ? 'bg-white/5' : 'hover:bg-white/5 active:bg-white/10'
-                }`}
-              >
-                <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                  !showSingleCategoryModal.category_id ? 'bg-accent' : 'border border-white/20'
-                }`}>
-                  {!showSingleCategoryModal.category_id && (
-                    <svg className="w-4 h-4 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                  )}
-                </div>
-                <span className="text-base text-text-muted italic">Uncategorized</span>
-              </button>
-
-              {/* Category list */}
-              {categories?.map(category => (
-                <button
-                  key={category.id}
-                  onClick={() => {
-                    updateChannel.mutate({
-                      id: showSingleCategoryModal.id,
-                      data: { category_id: category.id }
-                    }, {
-                      onSuccess: () => {
-                        showNotification(`${showSingleCategoryModal.title} moved to ${category.name}`, 'success');
-                        setShowSingleCategoryModal(null);
-                      }
-                    });
-                  }}
-                  className={`flex items-center justify-between w-full px-4 py-3.5 rounded-xl transition-colors text-left ${
-                    showSingleCategoryModal.category_id === category.id ? 'bg-white/5' : 'hover:bg-white/5 active:bg-white/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded flex items-center justify-center ${
-                      showSingleCategoryModal.category_id === category.id ? 'bg-accent' : 'border border-white/20'
-                    }`}>
-                      {showSingleCategoryModal.category_id === category.id && (
-                        <svg className="w-4 h-4 text-dark-deepest" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                        </svg>
-                      )}
-                    </div>
-                    <span className="text-base text-text-primary">{category.name}</span>
-                  </div>
-                  <span className="text-xs px-2 py-1 bg-white/10 rounded-lg text-text-muted">{category.channel_count}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* Manage Categories */}
-            <div className="px-4 pb-6 pt-2">
-              <button
-                onClick={() => {
-                  setShowSingleCategoryModal(null);
-                  setShowCategoryModal(true);
-                }}
-                className="w-full py-3.5 rounded-xl bg-white/5 text-accent font-medium"
-              >
-                Manage Categories...
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Single Channel Category Modal */}
+      <SingleCategoryModal
+        isOpen={!!showSingleCategoryModal}
+        onClose={() => setShowSingleCategoryModal(null)}
+        channel={showSingleCategoryModal}
+        categories={categories}
+        onSelectCategory={(categoryId) => {
+          const categoryName = categoryId
+            ? categories?.find(c => c.id === categoryId)?.name
+            : 'Uncategorized';
+          updateChannel.mutate({
+            id: showSingleCategoryModal.id,
+            data: { category_id: categoryId }
+          }, {
+            onSuccess: () => {
+              showNotification(`${showSingleCategoryModal.title} ${categoryId ? 'moved to' : 'set to'} ${categoryName}`, 'success');
+              setShowSingleCategoryModal(null);
+            }
+          });
+        }}
+        onManageCategories={() => {
+          setShowSingleCategoryModal(null);
+          setShowCategoryModal(true);
+        }}
+      />
     </div>
   );
 }

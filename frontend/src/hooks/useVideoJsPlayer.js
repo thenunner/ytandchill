@@ -5,12 +5,13 @@ import {
   PROGRESS_SAVE_DEBOUNCE_MS,
   WATCHED_THRESHOLD,
   detectDeviceType,
-  initializeMobileTouchControls,
   getVideoSource,
-} from '../utils/videoPlayerUtils';
-import { createTheaterButton, updateTheaterButtonState } from '../utils/createTheaterButton';
+  createTheaterButton,
+  updateTheaterButtonState,
+  SeekBackward10Button,
+  SeekForward10Button,
+} from '../utils/videoUtils';
 import '../plugins/videojs-seek-coordinator'; // Register plugin
-import { SeekBackward10Button, SeekForward10Button } from '../utils/createSeekButtons'; // Register buttons
 
 // Register theater button component once globally
 let theaterButtonRegistered = false;
@@ -515,12 +516,6 @@ export function useVideoJsPlayer({
 
     document.addEventListener('keydown', handleKeyPress);
 
-    // Mobile touch controls
-    let cleanupTouchControls = null;
-    if (isMobile) {
-      cleanupTouchControls = initializeMobileTouchControls(player, isIOS);
-    }
-
     // Error handling
     player.on('error', () => {
       const error = player.error();
@@ -663,9 +658,6 @@ export function useVideoJsPlayer({
       // Non-persistent players: full cleanup
       if (saveProgressTimeout.current) {
         clearTimeout(saveProgressTimeout.current);
-      }
-      if (cleanupTouchControls) {
-        cleanupTouchControls();
       }
       document.removeEventListener('keydown', handleKeyPress);
       if (playerRef.current) {

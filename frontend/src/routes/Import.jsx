@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { getUserFriendlyError } from '../utils/errorMessages';
+import { getUserFriendlyError } from '../utils/utils';
 import {
   useScanImportFolder,
   useImportState,
@@ -15,7 +15,7 @@ import {
 import LoadingSpinner from '../components/LoadingSpinner';
 import { CheckmarkIcon } from '../components/icons';
 import MkvPromptCard from '../components/MkvPromptCard';
-import ImportResultsModal from '../components/ImportResultsModal';
+import { ImportResultsModal } from '../components/ui/DiscoverModals';
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024 * 1024; // 50GB
 

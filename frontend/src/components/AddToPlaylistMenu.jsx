@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { usePlaylists, useAddVideoToPlaylist, useAddVideosToPlaylistBulk, useRemoveVideoFromPlaylist, useCreatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { getUserFriendlyError } from '../utils/errorMessages';
+import { getUserFriendlyError } from '../utils/utils';
 
 export default function AddToPlaylistMenu({ videoId, videoIds, onClose, video, triggerRef }) {
   const { data: playlists } = usePlaylists();

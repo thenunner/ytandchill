@@ -2,12 +2,9 @@ import { useState, useRef, useEffect } from 'react';
 import { useScanYouTubePlaylist, useQueuePlaylistVideos, useRemovePlaylistVideos } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
-import { getGridClass } from '../utils/gridUtils';
+import { getGridClass, getUserFriendlyError, formatDuration, formatDate } from '../utils/utils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
-import { getUserFriendlyError } from '../utils/errorMessages';
-import { formatDuration } from '../utils/videoPlayerUtils';
-import { formatDate } from '../utils/formatters';
 import EmptyState from '../components/EmptyState';
 
 export default function Videos() {

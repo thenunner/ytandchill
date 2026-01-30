@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { WATCHED_THRESHOLD, PROGRESS_SAVE_DEBOUNCE_MS, getVideoSource } from '../utils/videoPlayerUtils';
+import { WATCHED_THRESHOLD, PROGRESS_SAVE_DEBOUNCE_MS, getVideoSource } from '../utils/videoUtils';
 
 /**
  * Custom hook for native HTML5 video player on mobile devices

@@ -5,7 +5,7 @@ import VideoCard from '../components/VideoCard';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EmptyState from '../components/EmptyState';
 import { HeartIcon } from '../components/icons';
-import { getStringSetting } from '../utils/settingsUtils';
+import { getStringSetting } from '../utils/utils';
 
 export default function Favs() {
   const [selectedChannelId, setSelectedChannelId] = useState(null);

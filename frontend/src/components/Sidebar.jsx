@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useQueue, useFavoriteChannels, useSettings } from '../api/queries';
 import {
@@ -8,12 +8,13 @@ import {
 
 /**
  * Shared Sidebar component used across all pages
+ * Memoized to prevent unnecessary re-renders when parent state changes
  *
  * @param {boolean} collapsed - Whether sidebar is collapsed
  * @param {function} onToggle - Callback to toggle collapsed state
  * @param {number} reviewCount - Badge count for Channels (videos to review)
  */
-export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
+export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [logoFailed, setLogoFailed] = useState(false);
@@ -246,4 +247,4 @@ export default function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
       )}
     </nav>
   );
-}
+});
