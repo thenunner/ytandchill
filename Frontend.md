@@ -2,7 +2,7 @@
 
 Master inventory of all frontend source files in `/frontend/src/`.
 
-**Total Files:** 55 | **Total Lines:** ~19,860
+**Total Files:** 53 | **Total Lines:** ~19,580
 
 ---
 
@@ -51,18 +51,17 @@ Master inventory of all frontend source files in `/frontend/src/`.
 | `components/ListFeedback.jsx` | 111 | List feedback components (LoadingSpinner, EmptyState, LoadMore, Pagination) |
 | `components/ErrorBoundary.jsx` | 38 | React error boundary for catching component errors |
 
-### StickyBar Components (6 files, 828 lines)
+### StickyBar Components (5 files, 823 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
-| `components/stickybar/StickyBarControls.jsx` | 270 | Combined controls: SortDropdown, StickyBarRightSection, BackButton, EditButton, TabGroup |
+| `components/stickybar/StickyBar.jsx` | 273 | Sticky bar wrapper + controls: SortDropdown, StickyBarRightSection, BackButton, EditButton, TabGroup |
 | `components/stickybar/ActionDropdown.jsx` | 224 | Generic action dropdown menu with custom items, mobile bottom sheet |
 | `components/stickybar/CollapsibleSearch.jsx` | 179 | Responsive search: icon→overlay on mobile, full input on desktop; supports `alwaysExpanded` prop |
 | `components/stickybar/SelectionBar.jsx` | 143 | Floating selection mode bar for bulk operations |
-| `components/stickybar/StickyBar.jsx` | 7 | Wrapper for sticky top bar layout |
-| `components/stickybar/index.js` | 5 | Barrel export for sticky bar components |
+| `components/stickybar/index.js` | 4 | Barrel export for sticky bar components |
 
-### UI Modal Components (5 files, 2,104 lines)
+### UI Modal Components (4 files, 2,083 lines)
 
 | File | Lines | Description |
 |------|-------|-------------|
@@ -70,7 +69,6 @@ Master inventory of all frontend source files in `/frontend/src/`.
 | `components/ui/SettingsModals.jsx` | 644 | Settings modals (database maintenance, metadata fix, shrink DB, not found videos) |
 | `components/ui/LibraryModals.jsx` | 402 | Library modals (rename playlist, create category, rename category, select category) |
 | `components/ui/SharedModals.jsx` | 337 | Shared modals (ResponsiveModal, ResponsiveModalActions, ConfirmModal, ConfirmDialog) |
-| `components/ui/Tooltip.jsx` | 21 | Hover tooltip component |
 
 ---
 
@@ -135,11 +133,11 @@ Master inventory of all frontend source files in `/frontend/src/`.
 | Entry Points | 2 | 357 | App bootstrap and routing |
 | Routes | 14 | 10,094 | Page components for all features |
 | Components (root) | 8 | 1,983 | Reusable UI components |
-| StickyBar | 6 | 828 | Sticky bar layout and controls |
-| UI Modals | 5 | 2,104 | Modal dialogs for forms |
+| StickyBar | 5 | 823 | Sticky bar layout and controls |
+| UI Modals | 4 | 2,083 | Modal dialogs for forms |
 | Hooks | 10 | 1,943 | Custom React hooks |
 | Contexts | 2 | 246 | React context providers |
 | API | 2 | 1,297 | API client and queries |
 | Utils | 4 | 802 | Utility functions and constants |
 | Plugins | 1 | 299 | Video.js plugins |
-| **TOTAL** | **55** | **~19,860** | **Complete frontend** |
+| **TOTAL** | **53** | **~19,580** | **Complete frontend** |

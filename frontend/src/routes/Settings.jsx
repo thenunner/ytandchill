@@ -6,7 +6,6 @@ import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError } from '../utils/utils';
 import { useTheme } from '../contexts/PreferencesContext';
 import { useCardSize } from '../contexts/PreferencesContext';
-import Tooltip from '../components/ui/Tooltip';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import {
   DatabaseMaintenanceModal,
@@ -439,30 +438,27 @@ export default function Settings() {
                 <div className="setting-name">SponsorBlock</div>
               </div>
               <div className="settings-toggle-group">
-                <Tooltip text="Paid promotions and sponsored segments">
-                  <button
-                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
-                    className={`settings-toggle-btn ${removeSponsor ? 'active' : ''}`}
-                  >
-                    Sponsors
-                  </button>
-                </Tooltip>
-                <Tooltip text="Self-promotion of own products, channels, or social media">
-                  <button
-                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
-                    className={`settings-toggle-btn ${removeSelfpromo ? 'active' : ''}`}
-                  >
-                    Promo
-                  </button>
-                </Tooltip>
-                <Tooltip text="Reminders to like, subscribe, or follow">
-                  <button
-                    onClick={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
-                    className={`settings-toggle-btn ${removeInteraction ? 'active' : ''}`}
-                  >
-                    Like/Sub
-                  </button>
-                </Tooltip>
+                <button
+                  onClick={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
+                  className={`settings-toggle-btn ${removeSponsor ? 'active' : ''}`}
+                  title="Paid promotions and sponsored segments"
+                >
+                  Sponsors
+                </button>
+                <button
+                  onClick={() => handleSponsorBlockToggle('sponsorblock_remove_selfpromo', removeSelfpromo, setRemoveSelfpromo)}
+                  className={`settings-toggle-btn ${removeSelfpromo ? 'active' : ''}`}
+                  title="Self-promotion of own products, channels, or social media"
+                >
+                  Promo
+                </button>
+                <button
+                  onClick={() => handleSponsorBlockToggle('sponsorblock_remove_interaction', removeInteraction, setRemoveInteraction)}
+                  className={`settings-toggle-btn ${removeInteraction ? 'active' : ''}`}
+                  title="Reminders to like, subscribe, or follow"
+                >
+                  Like/Sub
+                </button>
               </div>
             </div>
           </div>
@@ -485,38 +481,36 @@ export default function Settings() {
                 </div>
               </div>
               <div className="settings-toggle-group">
-                <Tooltip text="When the video was originally published on YT">
-                  <button
-                    onClick={async () => {
-                      setLibraryDateDisplay('uploaded');
-                      try {
-                        await updateSettings.mutateAsync({ library_date_display: 'uploaded' });
-                        showNotification('Library cards will show upload date', 'success');
-                      } catch {
-                        setLibraryDateDisplay('downloaded');
-                      }
-                    }}
-                    className={`settings-toggle-btn ${libraryDateDisplay === 'uploaded' ? 'active' : ''}`}
-                  >
-                    YT Upload
-                  </button>
-                </Tooltip>
-                <Tooltip text="When the video was added to your library">
-                  <button
-                    onClick={async () => {
+                <button
+                  onClick={async () => {
+                    setLibraryDateDisplay('uploaded');
+                    try {
+                      await updateSettings.mutateAsync({ library_date_display: 'uploaded' });
+                      showNotification('Library cards will show upload date', 'success');
+                    } catch {
                       setLibraryDateDisplay('downloaded');
-                      try {
-                        await updateSettings.mutateAsync({ library_date_display: 'downloaded' });
-                        showNotification('Library cards will show download date', 'success');
-                      } catch {
-                        setLibraryDateDisplay('uploaded');
-                      }
-                    }}
-                    className={`settings-toggle-btn ${libraryDateDisplay === 'downloaded' ? 'active' : ''}`}
-                  >
-                    Download
-                  </button>
-                </Tooltip>
+                    }
+                  }}
+                  className={`settings-toggle-btn ${libraryDateDisplay === 'uploaded' ? 'active' : ''}`}
+                  title="When the video was originally published on YT"
+                >
+                  YT Upload
+                </button>
+                <button
+                  onClick={async () => {
+                    setLibraryDateDisplay('downloaded');
+                    try {
+                      await updateSettings.mutateAsync({ library_date_display: 'downloaded' });
+                      showNotification('Library cards will show download date', 'success');
+                    } catch {
+                      setLibraryDateDisplay('uploaded');
+                    }
+                  }}
+                  className={`settings-toggle-btn ${libraryDateDisplay === 'downloaded' ? 'active' : ''}`}
+                  title="When the video was added to your library"
+                >
+                  Download
+                </button>
               </div>
             </div>
 
@@ -705,15 +699,9 @@ export default function Settings() {
                 </div>
               </div>
               <div className="settings-toggle-group">
-                <Tooltip text="Use cookies.txt file from downloads folder">
-                  <button onClick={() => handleCookieSourceChange('file')} className={`settings-toggle-btn ${cookieSource === 'file' ? 'active' : ''}`}>File</button>
-                </Tooltip>
-                <Tooltip text="Extract cookies from local Firefox browser">
-                  <button onClick={() => handleCookieSourceChange('browser')} className={`settings-toggle-btn ${cookieSource === 'browser' ? 'active' : ''}`}>Firefox</button>
-                </Tooltip>
-                <Tooltip text="No auth - may fail on age-restricted videos">
-                  <button onClick={() => handleCookieSourceChange('none')} className={`settings-toggle-btn ${cookieSource === 'none' ? 'active' : ''}`}>None</button>
-                </Tooltip>
+                <button onClick={() => handleCookieSourceChange('file')} className={`settings-toggle-btn ${cookieSource === 'file' ? 'active' : ''}`} title="Use cookies.txt file from downloads folder">File</button>
+                <button onClick={() => handleCookieSourceChange('browser')} className={`settings-toggle-btn ${cookieSource === 'browser' ? 'active' : ''}`} title="Extract cookies from local Firefox browser">Firefox</button>
+                <button onClick={() => handleCookieSourceChange('none')} className={`settings-toggle-btn ${cookieSource === 'none' ? 'active' : ''}`} title="No auth - may fail on age-restricted videos">None</button>
               </div>
             </div>
 
@@ -977,22 +965,22 @@ export default function Settings() {
                       { level: 'WARNING', tip: 'Warnings and errors only' },
                       { level: 'ERROR', tip: 'Only error messages' },
                     ].map(({ level, tip }) => (
-                      <Tooltip key={level} text={tip}>
-                        <button
-                          onClick={async () => {
-                            setLogLevel(level);
-                            try {
-                              await updateSettings.mutateAsync({ log_level: level });
-                              showNotification(`Log level changed to ${level}`, 'success');
-                            } catch (error) {
-                              showNotification(getUserFriendlyError(error.message, 'save settings'), 'error');
-                            }
-                          }}
-                          className={`settings-toggle-btn ${logLevel === level ? 'active' : ''}`}
-                        >
-                          {level === 'WARNING' ? 'WARN' : level}
-                        </button>
-                      </Tooltip>
+                      <button
+                        key={level}
+                        onClick={async () => {
+                          setLogLevel(level);
+                          try {
+                            await updateSettings.mutateAsync({ log_level: level });
+                            showNotification(`Log level changed to ${level}`, 'success');
+                          } catch (error) {
+                            showNotification(getUserFriendlyError(error.message, 'save settings'), 'error');
+                          }
+                        }}
+                        className={`settings-toggle-btn ${logLevel === level ? 'active' : ''}`}
+                        title={tip}
+                      >
+                        {level === 'WARNING' ? 'WARN' : level}
+                      </button>
                     ))}
                   </div>
                   <button onClick={toggleLogs} className="settings-action-btn">{showLogs ? 'Hide' : 'View'} Logs</button>
