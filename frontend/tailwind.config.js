@@ -31,6 +31,7 @@ export default {
         }
       },
       fontFamily: {
+        sans: ['Outfit', 'system-ui', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
         mono: ['Courier New', 'monospace'],
       },
       animation: {
