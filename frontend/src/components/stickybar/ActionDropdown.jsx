@@ -46,10 +46,10 @@ export default function ActionDropdown({
 
   const buttonStyles = {
     default: 'filter-btn',
-    primary: 'h-[35px] px-2.5 sm:px-4 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 bg-accent border border-accent text-black hover:bg-accent-hover',
-    secondary: 'h-[35px] px-2.5 sm:px-4 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 bg-dark-tertiary border border-dark-border-light text-text-primary hover:bg-dark-hover',
+    primary: 'h-[35px] px-2.5 sm:px-4 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 bg-accent border border-accent text-black hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-dark-primary',
+    secondary: 'h-[35px] px-2.5 sm:px-4 rounded-lg text-sm font-medium transition-colors flex items-center gap-1 bg-dark-tertiary border border-dark-border-light text-text-primary hover:bg-dark-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
     // Icon-only variant for mobile
-    iconOnly: 'h-[35px] w-[35px] rounded-lg text-sm font-medium transition-colors flex items-center justify-center bg-dark-tertiary border border-dark-border-light text-text-primary hover:bg-dark-hover',
+    iconOnly: 'h-[35px] w-[35px] rounded-lg text-sm font-medium transition-colors flex items-center justify-center bg-dark-tertiary border border-dark-border-light text-text-primary hover:bg-dark-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent',
   };
 
   const renderMenuItem = (item, index) => {
@@ -89,12 +89,12 @@ export default function ActionDropdown({
           setIsOpen(false);
         }}
         disabled={item.disabled}
-        className={`w-full px-4 py-3.5 text-left text-base transition-colors flex items-center gap-3 rounded-xl ${
+        className={`w-full px-4 py-3.5 text-left text-base transition-colors flex items-center gap-3 rounded-xl focus-visible:outline-none ${
           isDanger
-            ? 'text-red-400 hover:bg-red-500/10 active:bg-red-500/20'
+            ? 'text-red-400 hover:bg-red-500/10 active:bg-red-500/20 focus-visible:bg-red-500/10'
             : isSuccess
-            ? 'text-green-400 hover:bg-green-500/10 active:bg-green-500/20'
-            : 'text-text-primary hover:bg-white/5 active:bg-white/10'
+            ? 'text-green-400 hover:bg-green-500/10 active:bg-green-500/20 focus-visible:bg-green-500/10'
+            : 'text-text-primary hover:bg-white/5 active:bg-white/10 focus-visible:bg-white/5'
         } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {item.icon && <span className="w-5 h-5 flex-shrink-0">{item.icon}</span>}
@@ -201,12 +201,12 @@ export default function ActionDropdown({
                   setIsOpen(false);
                 }}
                 disabled={item.disabled}
-                className={`w-full px-4 py-2 text-left text-sm transition-colors flex items-center gap-2 ${
+                className={`w-full px-4 py-2 text-left text-sm transition-colors flex items-center gap-2 focus-visible:outline-none ${
                   isDanger
-                    ? 'text-red-400 hover:bg-red-900/30'
+                    ? 'text-red-400 hover:bg-red-900/30 focus-visible:bg-red-900/30'
                     : isSuccess
-                    ? 'text-green-400 hover:bg-green-900/30'
-                    : 'text-text-primary hover:bg-dark-hover'
+                    ? 'text-green-400 hover:bg-green-900/30 focus-visible:bg-green-900/30'
+                    : 'text-text-primary hover:bg-dark-hover focus-visible:bg-dark-hover'
                 } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {item.icon && <span className="w-4 h-4 flex-shrink-0">{item.icon}</span>}

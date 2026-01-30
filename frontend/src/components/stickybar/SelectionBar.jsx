@@ -81,7 +81,7 @@ export default function SelectionBar({
               {!hideSelectControls && totalCount > 0 && selectedCount < totalCount && (
                 <button
                   onClick={onSelectAll}
-                  className="px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors"
+                  className="px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-primary rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   All
                 </button>
@@ -91,7 +91,7 @@ export default function SelectionBar({
               {!hideSelectControls && selectedCount > 0 && (
                 <button
                   onClick={onClear}
-                  className="px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors"
+                  className="px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-dark-tertiary hover:bg-dark-hover text-text-secondary rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   Clear
                 </button>
@@ -116,7 +116,7 @@ export default function SelectionBar({
                     key={index}
                     onClick={action.onClick}
                     disabled={action.disabled}
-                    className={`px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm rounded-lg transition-colors flex items-center gap-1 disabled:opacity-75 disabled:cursor-not-allowed whitespace-nowrap ${variantClasses[variant]}`}
+                    className={`px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm sm:text-sm rounded-lg transition-colors flex items-center gap-1 disabled:opacity-75 disabled:cursor-not-allowed whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent ${variantClasses[variant]}`}
                     {...(action.dataAttrs || {})}
                   >
                     {action.icon && <span className="w-4 h-4">{action.icon}</span>}
@@ -129,7 +129,7 @@ export default function SelectionBar({
               {!hideDone && onDone && (
                 <button
                   onClick={onDone}
-                  className="px-3 sm:px-4 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors"
+                  className="px-3 sm:px-4 py-2.5 sm:py-1.5 text-sm sm:text-sm bg-accent hover:bg-accent-hover text-white font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-dark-secondary"
                 >
                   Done
                 </button>

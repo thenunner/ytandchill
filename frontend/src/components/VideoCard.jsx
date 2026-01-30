@@ -381,7 +381,7 @@ const VideoCard = memo(function VideoCard({
                   }}
                   title="Video options"
                   aria-label="Video options"
-                  className="p-1 rounded hover:bg-dark-hover transition-colors text-text-secondary hover:text-text-primary"
+                  className="p-1 rounded hover:bg-dark-hover transition-colors text-text-secondary hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                 >
                   <ThreeDotsIcon />
                 </button>
@@ -398,7 +398,7 @@ const VideoCard = memo(function VideoCard({
                         setShowMenu(false);
                         setShowPlaylistMenu(true);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:bg-dark-hover"
                     >
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="3" y="3" width="7" height="7"></rect>
@@ -414,7 +414,7 @@ const VideoCard = memo(function VideoCard({
                         setShowMenu(false);
                         setShowVideoInfo(true);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:bg-dark-hover"
                     >
                       <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10"></circle>
@@ -429,7 +429,7 @@ const VideoCard = memo(function VideoCard({
                         setShowMenu(false);
                         setShowDeleteConfirm(true);
                       }}
-                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
+                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2 focus-visible:outline-none focus-visible:bg-dark-hover"
                     >
                       <TrashIcon className="w-4 h-4" />
                       Delete video
