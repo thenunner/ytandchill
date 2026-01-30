@@ -5,17 +5,17 @@ import { useNotification } from './contexts/NotificationContext';
 import { SelectionBarProvider, useSelectionBar } from './contexts/SelectionBarContext';
 import { useToastManager } from './hooks/useToastManager';
 import { useEffect, useState, useRef } from 'react';
-import Channels from './routes/Channels';
+import Discover from './routes/Discover';
 import Library from './routes/Library';
-import ChannelLibrary from './routes/ChannelLibrary';
+import DiscoverChannel from './routes/DiscoverChannel';
+import LibraryChannel from './routes/LibraryChannel';
 import Playlist from './routes/Playlist';
 import Videos from './routes/Videos';
 import Queue from './routes/Queue';
 import Settings from './routes/Settings';
 import Player from './routes/Player';
 import PlaylistPlayer from './routes/PlaylistPlayer';
-import Setup from './routes/Setup';
-import Login from './routes/Login';
+import Auth from './routes/Auth';
 import Import from './routes/Import';
 import Favs from './routes/Favs';
 import WatchHistory from './routes/WatchHistory';
@@ -171,8 +171,8 @@ function App() {
       <div className="min-h-screen bg-dark-primary">
         <ErrorBoundary>
           <Routes>
-            <Route path="/setup" element={<Setup />} />
-            <Route path="/login" element={<Login />} />
+            <Route path="/setup" element={<Auth mode="setup" />} />
+            <Route path="/login" element={<Auth mode="login" />} />
             <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
             <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
             <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
@@ -208,11 +208,12 @@ function App() {
         <main className="flex-1 overflow-y-auto overflow-x-hidden px-0 pb-4 sm:px-6 sm:pb-6">
           <ErrorBoundary>
             <Routes>
-              <Route path="/" element={isAuthenticated ? <Channels /> : <Navigate to="/login" replace />} />
+              <Route path="/" element={isAuthenticated ? <Discover /> : <Navigate to="/login" replace />} />
+              <Route path="/discover" element={isAuthenticated ? <Discover /> : <Navigate to="/login" replace />} />
+              <Route path="/discover/:channelId" element={isAuthenticated ? <DiscoverChannel /> : <Navigate to="/login" replace />} />
               <Route path="/videos" element={isAuthenticated ? <Videos /> : <Navigate to="/login" replace />} />
               <Route path="/library" element={isAuthenticated ? <Library /> : <Navigate to="/login" replace />} />
-              <Route path="/channel/:channelId" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
-              <Route path="/channel/:channelId/library" element={isAuthenticated ? <ChannelLibrary /> : <Navigate to="/login" replace />} />
+              <Route path="/library/channel/:channelId" element={isAuthenticated ? <LibraryChannel /> : <Navigate to="/login" replace />} />
               <Route path="/playlist/:id" element={isAuthenticated ? <Playlist /> : <Navigate to="/login" replace />} />
               <Route path="/import" element={isAuthenticated ? <Import /> : <Navigate to="/login" replace />} />
               <Route path="/queue" element={isAuthenticated ? <Queue /> : <Navigate to="/login" replace />} />
