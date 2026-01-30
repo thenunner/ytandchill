@@ -112,6 +112,106 @@ export const formatLastScan = (dateString) => {
 };
 
 /**
+ * Check if a Date object represents today
+ * @param {Date} date - Date object to check
+ * @returns {boolean} True if date is today
+ */
+export const isToday = (date) => {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+         date.getMonth() === today.getMonth() &&
+         date.getFullYear() === today.getFullYear();
+};
+
+/**
+ * Format scan time for channel cards - shows time if today, date if past
+ * @param {string} scanTimeString - ISO datetime string
+ * @returns {string|null} Formatted time (e.g., "5:30pm") or date (e.g., "1/15")
+ */
+export const formatChannelScanTime = (scanTimeString) => {
+  if (!scanTimeString) return null;
+  const scanDate = new Date(scanTimeString);
+
+  if (isToday(scanDate)) {
+    const hours = scanDate.getHours();
+    const minutes = scanDate.getMinutes();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    return `${displayHours}:${displayMinutes}${ampm}`;
+  } else {
+    return scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+  }
+};
+
+/**
+ * Format YYYYMMDD video date for channel cards
+ * @param {string} videoDateString - Date in YYYYMMDD format
+ * @returns {string|null} Formatted date (e.g., "1/15")
+ */
+export const formatChannelVideoDate = (videoDateString) => {
+  if (!videoDateString) return null;
+  const year = videoDateString.substring(0, 4);
+  const month = videoDateString.substring(4, 6);
+  const day = videoDateString.substring(6, 8);
+  const videoDate = new Date(year, month - 1, day);
+  return videoDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+};
+
+/**
+ * Format channel last scan with video date - "Scan: x | Video: x"
+ * @param {string} scanTimeString - ISO datetime string for scan
+ * @param {string} videoDateString - YYYYMMDD format for video date
+ * @returns {string} Combined format (e.g., "Scan: 5:30pm | Video: 1/15")
+ */
+export const formatChannelLastScan = (scanTimeString, videoDateString) => {
+  if (!scanTimeString) return 'Never';
+
+  const scanDate = new Date(scanTimeString);
+
+  let scanStr;
+  if (isToday(scanDate)) {
+    const hours = scanDate.getHours();
+    const minutes = scanDate.getMinutes();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    scanStr = `${displayHours}:${displayMinutes}${ampm}`;
+  } else {
+    scanStr = scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+  }
+
+  if (videoDateString) {
+    const year = videoDateString.substring(0, 4);
+    const month = videoDateString.substring(4, 6);
+    const day = videoDateString.substring(6, 8);
+    const videoDate = new Date(year, month - 1, day);
+    const videoStr = videoDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+    return `Scan: ${scanStr} | Video: ${videoStr}`;
+  } else {
+    return `Scan: ${scanStr} | Video: None`;
+  }
+};
+
+/**
+ * Format datetime for modals - full date and time display
+ * @param {string} dateString - ISO datetime string
+ * @returns {string} Full datetime (e.g., "Jan 15, 2024, 3:30 PM")
+ */
+export const formatFullDateTime = (dateString) => {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  });
+};
+
+/**
  * Format a date string to relative time with more granularity
  * @param {string} dateString - ISO date string
  * @returns {string} Relative time string

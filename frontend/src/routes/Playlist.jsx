@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings, useDeletePlaylist, useUpdatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getEffectiveCardSize, getBooleanSetting, getNumericSetting } from '../utils/utils';
+import { parsePlaylistVideoDate } from '../utils/videoUtils';
 import { useCardSize } from '../contexts/PreferencesContext';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
@@ -131,15 +132,6 @@ export default function Playlist() {
     }
   };
 
-  // Helper to parse downloaded_at date
-  const parseVideoDate = (video) => {
-    if (video.downloaded_at) {
-      return new Date(video.downloaded_at);
-    }
-    // Fallback to discovered_at if downloaded_at is not set
-    return new Date(video.discovered_at || 0);
-  };
-
   // Filter and sort videos - must be before any early returns
   const sortedVideos = useMemo(() => {
     if (!playlist?.videos) return [];
@@ -166,9 +158,9 @@ export default function Playlist() {
       .sort((a, b) => {
         switch (sort) {
           case 'date-desc':
-            return parseVideoDate(b) - parseVideoDate(a);
+            return parsePlaylistVideoDate(b) - parsePlaylistVideoDate(a);
           case 'date-asc':
-            return parseVideoDate(a) - parseVideoDate(b);
+            return parsePlaylistVideoDate(a) - parsePlaylistVideoDate(b);
           case 'duration-desc':
             return b.duration_sec - a.duration_sec;
           case 'duration-asc':

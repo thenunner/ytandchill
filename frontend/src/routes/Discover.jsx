@@ -3,7 +3,7 @@ import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpd
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/PreferencesContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, getNumericSetting } from '../utils/utils';
+import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, getNumericSetting, formatChannelScanTime, formatChannelVideoDate, formatChannelLastScan, formatFullDateTime } from '../utils/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
 import { StickyBar, SortDropdown, SelectionBar, EditButton, ActionDropdown, CollapsibleSearch } from '../components/stickybar';
@@ -11,6 +11,7 @@ import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/
 import { useGridColumns } from '../hooks/useGridColumns';
 import { SORT_OPTIONS } from '../utils/stickyBarOptions';
 import { DurationSettingsModal, CategoryManagementModal, SingleCategoryModal } from '../components/ui/DiscoverModals';
+import { ConfirmModal } from '../components/ui/SharedModals';
 
 export default function Discover() {
   const { data: channels, isLoading } = useChannels();
@@ -386,93 +387,6 @@ export default function Discover() {
   useEffect(() => {
     localStorage.setItem('channels_categoryFilter', JSON.stringify(selectedCategories));
   }, [selectedCategories]);
-
-  // Helper function to check if a date is today
-  const isToday = (date) => {
-    const today = new Date();
-    return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
-  };
-
-  // Helper function to format scan time only
-  const formatScanTime = (scanTimeString) => {
-    if (!scanTimeString) return null;
-    const scanDate = new Date(scanTimeString);
-
-    if (isToday(scanDate)) {
-      // Show time with minutes
-      const hours = scanDate.getHours();
-      const minutes = scanDate.getMinutes();
-      const ampm = hours >= 12 ? 'pm' : 'am';
-      const displayHours = hours % 12 || 12;
-      const displayMinutes = minutes.toString().padStart(2, '0');
-      return `${displayHours}:${displayMinutes}${ampm}`;
-    } else {
-      // Show date
-      return scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-    }
-  };
-
-  // Helper function to format video date only
-  const formatVideoDate = (videoDateString) => {
-    if (!videoDateString) return null;
-    const year = videoDateString.substring(0, 4);
-    const month = videoDateString.substring(4, 6);
-    const day = videoDateString.substring(6, 8);
-    const videoDate = new Date(year, month - 1, day);
-    return videoDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-  };
-
-  // Helper function to format last scan - always shows "Scan: x | Video: x"
-  const formatLastScan = (scanTimeString, videoDateString) => {
-    if (!scanTimeString) return 'Never';
-
-    // Parse the UTC datetime string and convert to local time
-    // Backend sends ISO string in UTC, JavaScript Date automatically converts to local timezone
-    const scanDate = new Date(scanTimeString);
-
-    // Format scan: time if today, date if past
-    let scanStr;
-    if (isToday(scanDate)) {
-      // Get local hour and minutes (JavaScript automatically converts from UTC)
-      const hours = scanDate.getHours();
-      const minutes = scanDate.getMinutes();
-      const ampm = hours >= 12 ? 'pm' : 'am';
-      const displayHours = hours % 12 || 12;
-      const displayMinutes = minutes.toString().padStart(2, '0');
-      scanStr = `${displayHours}:${displayMinutes}${ampm}`;
-    } else {
-      // Display date in local timezone
-      scanStr = scanDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-    }
-
-    // Format video: always date
-    if (videoDateString) {
-      const year = videoDateString.substring(0, 4);
-      const month = videoDateString.substring(4, 6);
-      const day = videoDateString.substring(6, 8);
-      const videoDate = new Date(year, month - 1, day);
-      const videoStr = videoDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
-      return `Scan: ${scanStr} | Video: ${videoStr}`;
-    } else {
-      return `Scan: ${scanStr} | Video: None`;
-    }
-  };
-
-  // Helper function to format datetime for Channel Info modal
-  const formatDateTime = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
 
   // Filter and sort channels (memoized for performance)
   const filteredAndSortedChannels = useMemo(() => {
@@ -1162,7 +1076,7 @@ export default function Discover() {
 
                   {/* Lower Right: Last Scan Time */}
                   <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded z-10">
-                    {formatScanTime(channel.last_scan_time) || 'Never'}
+                    {formatChannelScanTime(channel.last_scan_time) || 'Never'}
                   </div>
                 </div>
 
@@ -1249,39 +1163,27 @@ export default function Discover() {
       ) : null}
 
       {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-          <div className="bg-dark-secondary rounded-lg max-w-md w-full p-6 shadow-2xl border border-dark-border">
-            <h3 className="text-xl font-bold text-text-primary mb-3">
-              {deleteConfirm.bulk ? `Delete ${deleteConfirm.count} Channel${deleteConfirm.count > 1 ? 's' : ''}?` : 'Delete Channel?'}
-            </h3>
-            <p className="text-text-secondary mb-4">
-              {deleteConfirm.bulk
+      <ConfirmModal
+        isOpen={!!deleteConfirm}
+        title={deleteConfirm?.bulk ? `Delete ${deleteConfirm.count} Channel${deleteConfirm.count > 1 ? 's' : ''}?` : 'Delete Channel?'}
+        message={
+          <>
+            <p className="mb-3">
+              {deleteConfirm?.bulk
                 ? `Are you sure you want to delete ${deleteConfirm.count} selected channel${deleteConfirm.count > 1 ? 's' : ''}?`
-                : <>Are you sure you want to delete "<span className="text-text-primary font-semibold">{deleteConfirm.title}</span>"?</>
+                : <>Are you sure you want to delete "<span className="font-semibold text-text-primary">{deleteConfirm?.title}</span>"?</>
               }
             </p>
-            <p className="text-sm text-text-muted mb-6">
-              This will remove the channel{deleteConfirm.bulk && deleteConfirm.count > 1 ? 's' : ''} from your subscriptions and clear any pending/discovered videos. Downloaded videos will remain in your library.
+            <p className="text-xs text-text-muted">
+              This will remove the channel{deleteConfirm?.bulk && deleteConfirm.count > 1 ? 's' : ''} from your subscriptions and clear any pending/discovered videos. Downloaded videos will remain in your library.
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="btn btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => deleteConfirm.bulk ? handleBulkDeleteChannels() : handleDeleteChannel(deleteConfirm.id)}
-                disabled={deleteChannel.isPending}
-                className="btn btn-danger flex-1"
-              >
-                {deleteChannel.isPending ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </>
+        }
+        confirmText={deleteChannel.isPending ? 'Deleting...' : 'Delete'}
+        onConfirm={() => deleteConfirm.bulk ? handleBulkDeleteChannels() : handleDeleteChannel(deleteConfirm.id)}
+        onCancel={() => setDeleteConfirm(null)}
+        isLoading={deleteChannel.isPending}
+      />
 
       {/* Channel Info Modal - Glass Minimal Style */}
       {showChannelInfo && (
@@ -1329,13 +1231,13 @@ export default function Discover() {
                   <div>
                     <p className="text-text-muted text-xs mb-0.5">Last Scan</p>
                     <p className="text-text-primary">
-                      {showChannelInfo.last_scan_at ? formatDateTime(showChannelInfo.last_scan_at).split(',')[0] : '-'}
+                      {showChannelInfo.last_scan_at ? formatFullDateTime(showChannelInfo.last_scan_at).split(',')[0] : '-'}
                     </p>
                   </div>
                   <div>
                     <p className="text-text-muted text-xs mb-0.5">Created</p>
                     <p className="text-text-primary">
-                      {showChannelInfo.created_at ? formatDateTime(showChannelInfo.created_at).split(',')[0] : '-'}
+                      {showChannelInfo.created_at ? formatFullDateTime(showChannelInfo.created_at).split(',')[0] : '-'}
                     </p>
                   </div>
                 </div>
@@ -1381,13 +1283,13 @@ export default function Discover() {
                 <div>
                   <p className="text-text-muted text-xs mb-1">Last Scan</p>
                   <p className="text-sm text-text-primary">
-                    {showChannelInfo.last_scan_at ? formatDateTime(showChannelInfo.last_scan_at).split(',')[0] : '-'}
+                    {showChannelInfo.last_scan_at ? formatFullDateTime(showChannelInfo.last_scan_at).split(',')[0] : '-'}
                   </p>
                 </div>
                 <div>
                   <p className="text-text-muted text-xs mb-1">Created</p>
                   <p className="text-sm text-text-primary">
-                    {showChannelInfo.created_at ? formatDateTime(showChannelInfo.created_at).split(',')[0] : '-'}
+                    {showChannelInfo.created_at ? formatFullDateTime(showChannelInfo.created_at).split(',')[0] : '-'}
                   </p>
                 </div>
               </div>

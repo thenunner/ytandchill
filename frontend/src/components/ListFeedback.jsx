@@ -1,4 +1,5 @@
 // List feedback and utility components
+import { useState, useEffect } from 'react';
 
 /**
  * LoadingSpinner - Centered spinner for loading states
@@ -107,5 +108,49 @@ export function Pagination({
         </svg>
       </button>
     </div>
+  );
+}
+
+/**
+ * useScrollToTop - Hook for scroll-to-top button visibility and action
+ * @param {number} threshold - Scroll position (in px) to show button (default: 400)
+ * @returns {{ showButton: boolean, scrollToTop: function }}
+ */
+export function useScrollToTop(threshold = 400) {
+  const [showButton, setShowButton] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowButton(window.scrollY > threshold);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [threshold]);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return { showButton, scrollToTop };
+}
+
+/**
+ * ScrollToTopButton - Fixed position button to scroll to top of page
+ * @param {boolean} show - Whether to show the button
+ * @param {function} onClick - Click handler (use scrollToTop from useScrollToTop)
+ */
+export function ScrollToTopButton({ show, onClick }) {
+  if (!show) return null;
+
+  return (
+    <button
+      onClick={onClick}
+      className="fixed bottom-20 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-colors z-50 animate-fade-in"
+      aria-label="Scroll to top"
+    >
+      <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <polyline points="18 15 12 9 6 15"></polyline>
+      </svg>
+    </button>
   );
 }

@@ -6,10 +6,11 @@ import { getUserFriendlyError, getGridClass, getEffectiveCardSize, getNumericSet
 import { useCardSize } from '../contexts/PreferencesContext';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
-import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
+import { LoadingSpinner, Pagination, LoadMore, EmptyState, useScrollToTop, ScrollToTopButton } from '../components/ListFeedback';
 import api from '../api/client';
 import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../utils/stickyBarOptions';
+import { parseDiscoverVideoDate } from '../utils/videoUtils';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import { DurationSettingsModal } from '../components/ui/DiscoverModals';
 
@@ -49,7 +50,7 @@ export default function DiscoverChannel() {
 
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [searchInput, setSearchInput] = useState('');
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const { showButton: showScrollTop, scrollToTop } = useScrollToTop();
   const [showDurationSettings, setShowDurationSettings] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
@@ -140,19 +141,6 @@ export default function DiscoverChannel() {
     }
   }, [channelId]);
 
-  // Scroll detection for scroll-to-top button
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleFilter = (key, value) => {
     const newParams = new URLSearchParams(searchParams);
     if (value && value !== 'all') {
@@ -174,18 +162,6 @@ export default function DiscoverChannel() {
     setSearchParams(newParams);
   };
 
-  // Helper to parse video date for sorting
-  const parseVideoDate = (video) => {
-    if (video.upload_date) {
-      const year = video.upload_date.slice(0, 4);
-      const month = video.upload_date.slice(4, 6);
-      const day = video.upload_date.slice(6, 8);
-      const parsed = new Date(`${year}-${month}-${day}`);
-      return isNaN(parsed.getTime()) ? new Date(video.discovered_at || 0) : parsed;
-    }
-    return new Date(video.discovered_at || 0);
-  };
-
   // Filter and sort videos
   const sortedVideos = useMemo(() => {
     if (!videos) return [];
@@ -200,9 +176,9 @@ export default function DiscoverChannel() {
       .sort((a, b) => {
         switch (sort) {
           case 'date-desc':
-            return parseVideoDate(b) - parseVideoDate(a);
+            return parseDiscoverVideoDate(b) - parseDiscoverVideoDate(a);
           case 'date-asc':
-            return parseVideoDate(a) - parseVideoDate(b);
+            return parseDiscoverVideoDate(a) - parseDiscoverVideoDate(b);
           case 'duration-desc':
             return b.duration_sec - a.duration_sec;
           case 'duration-asc':
@@ -676,18 +652,7 @@ export default function DiscoverChannel() {
         )
       )}
 
-      {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-20 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-colors z-50 animate-fade-in"
-          aria-label="Scroll to top"
-        >
-          <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="18 15 12 9 6 15"></polyline>
-          </svg>
-        </button>
-      )}
+      <ScrollToTopButton show={showScrollTop} onClick={scrollToTop} />
 
       {/* Delete Confirmation Modal */}
       <ConfirmModal

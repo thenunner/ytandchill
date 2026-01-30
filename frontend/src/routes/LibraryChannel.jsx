@@ -7,10 +7,11 @@ import { useCardSize } from '../contexts/PreferencesContext';
 import { useGridColumns } from '../hooks/useGridColumns';
 import VideoCard from '../components/VideoCard';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
+import { LoadingSpinner, Pagination, LoadMore, EmptyState, useScrollToTop, ScrollToTopButton } from '../components/ListFeedback';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, EditButton, TabGroup, StickyBarRightSection } from '../components/stickybar';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../utils/stickyBarOptions';
+import { parseVideoDate } from '../utils/videoUtils';
 
 /**
  * LibraryChannel - Shows downloaded videos for a channel
@@ -47,7 +48,7 @@ export default function LibraryChannel() {
 
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [searchInput, setSearchInput] = useState('');
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const { showButton: showScrollTop, scrollToTop } = useScrollToTop();
   const [editMode, setEditMode] = useState(false);
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -133,39 +134,11 @@ export default function LibraryChannel() {
     }
   }, [channelId]);
 
-  // Scroll detection for scroll-to-top button
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const handleSort = (sortValue) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set('sort', sortValue);
     localStorage.setItem(`${localStorageKey}_sort`, sortValue);
     setSearchParams(newParams);
-  };
-
-  // Helper to parse video date for sorting
-  const parseVideoDate = (video) => {
-    const dateDisplay = getStringSetting(settings, 'library_date_display', 'downloaded');
-    if (dateDisplay === 'uploaded' && video.upload_date) {
-      const year = video.upload_date.slice(0, 4);
-      const month = video.upload_date.slice(4, 6);
-      const day = video.upload_date.slice(6, 8);
-      return new Date(`${year}-${month}-${day}`);
-    }
-    if (video.downloaded_at) {
-      return new Date(video.downloaded_at);
-    }
-    return new Date(0);
   };
 
   // Filter and sort videos
@@ -188,9 +161,9 @@ export default function LibraryChannel() {
       .sort((a, b) => {
         switch (sort) {
           case 'date-desc':
-            return parseVideoDate(b) - parseVideoDate(a);
+            return parseVideoDate(b, settings) - parseVideoDate(a, settings);
           case 'date-asc':
-            return parseVideoDate(a) - parseVideoDate(b);
+            return parseVideoDate(a, settings) - parseVideoDate(b, settings);
           case 'duration-desc':
             return b.duration_sec - a.duration_sec;
           case 'duration-asc':
@@ -474,18 +447,7 @@ export default function LibraryChannel() {
         )
       )}
 
-      {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-20 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-colors z-50 animate-fade-in"
-          aria-label="Scroll to top"
-        >
-          <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="18 15 12 9 6 15"></polyline>
-          </svg>
-        </button>
-      )}
+      <ScrollToTopButton show={showScrollTop} onClick={scrollToTop} />
 
       {/* Add to Playlist Menu */}
       {showPlaylistMenu && (

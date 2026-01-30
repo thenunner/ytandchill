@@ -6,6 +6,71 @@
  */
 
 import videojs from 'video.js';
+import { getStringSetting } from './utils';
+
+// ============================================================================
+// VIDEO DATE UTILITIES
+// ============================================================================
+
+/**
+ * Parse YYYYMMDD format upload_date to Date
+ * @param {string} uploadDate - Date in YYYYMMDD format
+ * @returns {Date|null} Parsed date or null if invalid
+ */
+const parseUploadDate = (uploadDate) => {
+  if (!uploadDate) return null;
+  const year = uploadDate.slice(0, 4);
+  const month = uploadDate.slice(4, 6);
+  const day = uploadDate.slice(6, 8);
+  const parsed = new Date(`${year}-${month}-${day}`);
+  return isNaN(parsed.getTime()) ? null : parsed;
+};
+
+/**
+ * Parse video date for sorting - library/playlist context
+ * Uses settings preference (uploaded vs downloaded) for downloaded videos
+ * @param {object} video - Video object with upload_date and/or downloaded_at
+ * @param {object} settings - Settings object from useSettings hook
+ * @returns {Date} Parsed date for comparison
+ */
+export const parseVideoDate = (video, settings) => {
+  const dateDisplay = getStringSetting(settings, 'library_date_display', 'downloaded');
+  if (dateDisplay === 'uploaded' && video.upload_date) {
+    const parsed = parseUploadDate(video.upload_date);
+    if (parsed) return parsed;
+  }
+  if (video.downloaded_at) {
+    return new Date(video.downloaded_at);
+  }
+  return new Date(0);
+};
+
+/**
+ * Parse video date for sorting - discover context (not yet downloaded videos)
+ * Always uses upload_date, falls back to discovered_at
+ * @param {object} video - Video object with upload_date and/or discovered_at
+ * @returns {Date} Parsed date for comparison
+ */
+export const parseDiscoverVideoDate = (video) => {
+  if (video.upload_date) {
+    const parsed = parseUploadDate(video.upload_date);
+    if (parsed) return parsed;
+  }
+  return new Date(video.discovered_at || 0);
+};
+
+/**
+ * Parse video date for sorting - playlist context
+ * Uses downloaded_at, falls back to discovered_at
+ * @param {object} video - Video object with downloaded_at and/or discovered_at
+ * @returns {Date} Parsed date for comparison
+ */
+export const parsePlaylistVideoDate = (video) => {
+  if (video.downloaded_at) {
+    return new Date(video.downloaded_at);
+  }
+  return new Date(video.discovered_at || 0);
+};
 
 // ============================================================================
 // CONSTANTS

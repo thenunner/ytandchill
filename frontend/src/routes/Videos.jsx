@@ -5,7 +5,7 @@ import { useCardSize } from '../contexts/PreferencesContext';
 import { getGridClass, getUserFriendlyError, formatDuration, formatDate } from '../utils/utils';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, CollapsibleSearch, SelectionBar } from '../components/stickybar';
-import { EmptyState } from '../components/ListFeedback';
+import { EmptyState, useScrollToTop, ScrollToTopButton } from '../components/ListFeedback';
 
 export default function Videos() {
   const { showNotification } = useNotification();
@@ -18,7 +18,7 @@ export default function Videos() {
   // State
   const [playlistUrl, setPlaylistUrl] = useState('');
   const [scanResults, setScanResults] = useState(null);
-  const [showScrollTop, setShowScrollTop] = useState(false);
+  const { showButton: showScrollTop, scrollToTop } = useScrollToTop();
 
   // URL history state
   const [showUrlHistory, setShowUrlHistory] = useState(false);
@@ -40,19 +40,6 @@ export default function Videos() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  // Scroll detection for scroll-to-top button
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 400);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   // Save URL to history (called on successful scan)
   const saveUrlToHistory = (url) => {
@@ -519,18 +506,7 @@ export default function Videos() {
         </div>
       )}
 
-      {/* Scroll to Top Button */}
-      {showScrollTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-20 right-6 p-3 bg-gray-700 hover:bg-gray-600 rounded-full shadow-lg transition-colors z-50 animate-fade-in"
-          aria-label="Scroll to top"
-        >
-          <svg className="w-5 h-5 text-text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <polyline points="18 15 12 9 6 15"></polyline>
-          </svg>
-        </button>
-      )}
+      <ScrollToTopButton show={showScrollTop} onClick={scrollToTop} />
     </div>
   );
 }
