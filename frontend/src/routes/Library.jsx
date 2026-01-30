@@ -8,7 +8,7 @@ import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import { RenamePlaylistModal, CreateCategoryModal, RenameCategoryModal, CategorySelectorModal } from '../components/ui/LibraryModals';
-import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch, TabGroup, EditButton, StickyBarRightSection } from '../components/stickybar';
+import { StickyBar, SelectionBar, CollapsibleSearch, TabGroup, EditButton, StickyBarRightSection } from '../components/stickybar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
 import EmptyState from '../components/EmptyState';
@@ -595,11 +595,11 @@ export default function Library() {
 
           {/* Center: Search (desktop only, fills available space) */}
           <div className="hidden sm:block flex-1 max-w-md mx-4">
-            <SearchInput
+            <CollapsibleSearch
               value={searchInput}
               onChange={setSearchInput}
               placeholder={activeTab === 'channels' ? 'Search channels...' : 'Search playlists...'}
-              className="w-full"
+              alwaysExpanded
             />
           </div>
 

@@ -6,7 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, getNumericSetting } from '../utils/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
-import { StickyBar, SearchInput, SortDropdown, SelectionBar, EditButton, ActionDropdown, CollapsibleSearch } from '../components/stickybar';
+import { StickyBar, SortDropdown, SelectionBar, EditButton, ActionDropdown, CollapsibleSearch } from '../components/stickybar';
 import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
@@ -636,11 +636,11 @@ export default function Discover() {
 
           {/* Center: Search (desktop only, fills available space) */}
           <div className="hidden sm:block flex-1 max-w-md mx-4">
-            <SearchInput
+            <CollapsibleSearch
               value={searchInput}
               onChange={setSearchInput}
               placeholder="Search channels..."
-              className="w-full"
+              alwaysExpanded
             />
           </div>
 

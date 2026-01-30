@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useWatchHistory, useClearWatchHistory, useChannels, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
-import { StickyBar, SearchInput, CollapsibleSearch } from '../components/stickybar';
+import { StickyBar, CollapsibleSearch } from '../components/stickybar';
 import { getGridClass, getTextSizes, getEffectiveCardSize, formatDuration, formatFileSize, getNumericSetting } from '../utils/utils';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { useGridColumns } from '../hooks/useGridColumns';
@@ -137,11 +137,11 @@ export default function WatchHistory() {
 
           {/* Center: Search (desktop only) */}
           <div className="hidden sm:block flex-1 max-w-md mx-4">
-            <SearchInput
+            <CollapsibleSearch
               value={searchInput}
               onChange={setSearchInput}
               placeholder="Search watch history..."
-              className="w-full"
+              alwaysExpanded
             />
           </div>
 

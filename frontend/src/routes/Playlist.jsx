@@ -10,7 +10,7 @@ import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import { ConfirmModal } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
-import { StickyBar, SelectionBar, SearchInput, CollapsibleSearch, BackButton, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
+import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
 
@@ -358,11 +358,11 @@ export default function Playlist() {
 
           {/* CENTER: Search (desktop only, fills available space) */}
           <div className="hidden sm:block flex-1 max-w-md mx-4">
-            <SearchInput
+            <CollapsibleSearch
               value={searchInput}
               onChange={setSearchInput}
               placeholder="Search videos..."
-              className="w-full"
+              alwaysExpanded
             />
           </div>
 

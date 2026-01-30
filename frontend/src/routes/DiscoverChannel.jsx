@@ -10,7 +10,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import Pagination from '../components/Pagination';
 import LoadMore from '../components/LoadMore';
 import api from '../api/client';
-import { StickyBar, SearchInput, SelectionBar, CollapsibleSearch, BackButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
+import { StickyBar, SelectionBar, CollapsibleSearch, BackButton, TabGroup, ActionDropdown, StickyBarRightSection } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 import { SORT_OPTIONS, DURATION_OPTIONS } from '../constants/stickyBarOptions';
 import { ConfirmModal } from '../components/ui/SharedModals';
@@ -521,11 +521,11 @@ export default function DiscoverChannel() {
 
           {/* Center: Search (desktop only) */}
           <div className="hidden sm:block flex-1 max-w-md mx-4">
-            <SearchInput
+            <CollapsibleSearch
               value={searchInput}
               onChange={handleSearchChange}
               placeholder="Search videos..."
-              className="w-full"
+              alwaysExpanded
             />
           </div>
 

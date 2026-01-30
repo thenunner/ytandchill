@@ -4,7 +4,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/CardSizeContext';
 import { getGridClass, getUserFriendlyError, formatDuration, formatDate } from '../utils/utils';
 import { useGridColumns } from '../hooks/useGridColumns';
-import { StickyBar, SearchInput, SelectionBar } from '../components/stickybar';
+import { StickyBar, CollapsibleSearch, SelectionBar } from '../components/stickybar';
 import EmptyState from '../components/EmptyState';
 
 export default function Videos() {
@@ -325,11 +325,11 @@ export default function Videos() {
               <>
                 {/* Row 2: Search (full width on mobile) */}
                 <div className="w-full sm:w-auto sm:max-w-xs">
-                  <SearchInput
+                  <CollapsibleSearch
                     value={searchInput}
                     onChange={setSearchInput}
                     placeholder="Search videos..."
-                    className="w-full"
+                    alwaysExpanded
                   />
                 </div>
 

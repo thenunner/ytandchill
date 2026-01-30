@@ -9,13 +9,15 @@ import { useState, useRef, useEffect } from 'react';
  * @param {string} placeholder - Placeholder text
  * @param {string} className - Additional classes for the container
  * @param {string} desktopWidth - Width class for desktop input (default: w-[200px])
+ * @param {boolean} alwaysExpanded - Always show full input (no collapse on mobile)
  */
 export default function CollapsibleSearch({
   value,
   onChange,
   placeholder = "Search...",
   className = '',
-  desktopWidth = 'sm:w-[200px]'
+  desktopWidth = 'sm:w-[200px]',
+  alwaysExpanded = false
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const inputRef = useRef(null);
@@ -60,6 +62,39 @@ export default function CollapsibleSearch({
     onChange('');
     setIsExpanded(false);
   };
+
+  // Always-expanded mode: show full input on all screen sizes
+  if (alwaysExpanded) {
+    return (
+      <div className={`relative ${className}`}>
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={handleKeyDown}
+          placeholder={placeholder}
+          className="w-full h-[35px] pl-10 pr-9 text-sm bg-dark-secondary border border-dark-border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+        />
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <path d="m21 21-4.35-4.35"></path>
+        </svg>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+            aria-label="Clear search"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        )}
+      </div>
+    );
+  }
 
   return (
     <>
