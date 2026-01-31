@@ -152,6 +152,13 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
           {favoriteLibraries && favoriteLibraries.length > 0 && (
             <>
               <div className="w-8 border-t border-dark-border my-1" />
+              <Link
+                to="/favs"
+                className="flex items-center justify-center p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors"
+                title="Favorites"
+              >
+                <HeartIcon className="w-7 h-7" />
+              </Link>
               {favoriteLibraries.slice(0, 10).map(channel => (
                 <Link
                   key={channel.id}
@@ -195,10 +202,13 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
           {/* Favorite Libraries */}
           {favoriteLibraries && favoriteLibraries.length > 0 && (
             <div className="pt-3 mt-3 border-t border-dark-border">
-              <div className="flex items-center gap-2 px-3 py-2 text-text-muted">
+              <Link
+                to="/favs"
+                className="flex items-center gap-2 px-3 py-2 text-text-muted hover:text-text-primary transition-colors rounded-lg hover:bg-dark-hover"
+              >
                 <HeartIcon className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wider">Favorites</span>
-              </div>
+              </Link>
               <div className="space-y-0.5">
                 {favoriteLibraries.map(channel => (
                   <Link
