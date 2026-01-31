@@ -1,15 +1,14 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited, useSettings, useToggleChannelFavorite } from '../api/queries';
+import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited, useSettings } from '../api/queries';
 import VideoCard from '../components/VideoCard';
-import { LoadingSpinner, EmptyState, Pagination, LoadMore } from '../components/ListFeedback';
+import { LoadingSpinner, EmptyState, Pagination } from '../components/ListFeedback';
 import { HeartIcon } from '../components/Icons';
-import { getStringSetting, getGridClass, getTextSizes, getEffectiveCardSize, formatFileSize, getNumericSetting } from '../utils/utils';
+import { getStringSetting, getGridClass, formatFileSize, getNumericSetting } from '../utils/utils';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useCardSize } from '../contexts/PreferencesContext';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, CollapsibleSearch, StickyBarRightSection } from '../components/stickybar';
-import { SORT_OPTIONS } from '../utils/stickyBarOptions';
 
 export default function Favs() {
   // Mobile detection
@@ -18,17 +17,17 @@ export default function Favs() {
   // Mobile-specific state
   const [selectedChannelId, setSelectedChannelId] = useState(null);
 
-  // Desktop-specific state
+  // Shared state
   const { cardSize } = useCardSize('library');
   const gridColumns = useGridColumns(cardSize);
-  const toggleFavorite = useToggleChannelFavorite();
   const [searchInput, setSearchInput] = useState('');
-  const [sortBy, setSortBy] = useState('title-asc');
+  const [sortBy, setSortBy] = useState('date-desc');
   const [currentPage, setCurrentPage] = useState(1);
   const [loadedPages, setLoadedPages] = useState(1);
 
   const { data: favoriteLibrariesRaw, isLoading: channelsLoading } = useFavoriteChannels();
-  const { data: favoriteVideos, isLoading: videosLoading } = useFavoriteVideos(selectedChannelId);
+  // For mobile, filter by selected channel; for desktop, get all videos (null)
+  const { data: favoriteVideos, isLoading: videosLoading } = useFavoriteVideos(isMobile ? selectedChannelId : null);
   const { data: settings } = useSettings();
   const markVisited = useMarkChannelVisited();
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
@@ -42,48 +41,47 @@ export default function Favs() {
     return true;
   });
 
-  // Get date display preference and sort videos accordingly (for mobile)
+  // Get date display preference
   const dateDisplay = getStringSetting(settings, 'library_date_display', 'downloaded');
-  const sortedVideos = useMemo(() => {
+
+  // Filter and sort videos (used by both mobile and desktop)
+  const filteredVideos = useMemo(() => {
     if (!favoriteVideos) return [];
-    return [...favoriteVideos].sort((a, b) => {
-      if (dateDisplay === 'uploaded') {
-        // Sort by upload_date (string format YYYYMMDD or YYYY-MM-DD)
-        const dateA = a.upload_date || '';
-        const dateB = b.upload_date || '';
-        return dateB.localeCompare(dateA); // Descending (newest first)
-      } else {
-        // Sort by downloaded_at (ISO datetime string)
-        const dateA = a.downloaded_at || '';
-        const dateB = b.downloaded_at || '';
-        return dateB.localeCompare(dateA); // Descending (newest first)
-      }
-    });
-  }, [favoriteVideos, dateDisplay]);
 
-  // Desktop: Filter and sort channels
-  const filteredChannels = useMemo(() => {
-    if (!favoriteLibraries) return [];
-
-    return [...favoriteLibraries]
-      .filter(ch => ch.title?.toLowerCase().includes(searchInput.toLowerCase()))
+    return [...favoriteVideos]
+      .filter(v => {
+        if (!searchInput) return true;
+        const search = searchInput.toLowerCase();
+        return v.title?.toLowerCase().includes(search) ||
+               v.channel?.title?.toLowerCase().includes(search);
+      })
       .sort((a, b) => {
         switch (sortBy) {
+          case 'date-desc': {
+            if (dateDisplay === 'uploaded') {
+              return (b.upload_date || '').localeCompare(a.upload_date || '');
+            }
+            return (b.downloaded_at || '').localeCompare(a.downloaded_at || '');
+          }
+          case 'date-asc': {
+            if (dateDisplay === 'uploaded') {
+              return (a.upload_date || '').localeCompare(b.upload_date || '');
+            }
+            return (a.downloaded_at || '').localeCompare(b.downloaded_at || '');
+          }
           case 'title-asc': return (a.title || '').localeCompare(b.title || '');
           case 'title-desc': return (b.title || '').localeCompare(a.title || '');
-          case 'count-desc': return (b.downloaded_count || 0) - (a.downloaded_count || 0);
-          case 'count-asc': return (a.downloaded_count || 0) - (b.downloaded_count || 0);
           default: return 0;
         }
       });
-  }, [favoriteLibraries, searchInput, sortBy]);
+  }, [favoriteVideos, searchInput, sortBy, dateDisplay]);
 
-  // Desktop: Paginate channels
-  const paginatedChannels = useMemo(() => {
-    if (isMobile) return filteredChannels.slice(0, loadedPages * itemsPerPage);
+  // Paginate videos for desktop
+  const paginatedVideos = useMemo(() => {
+    if (isMobile) return filteredVideos;
     const start = (currentPage - 1) * itemsPerPage;
-    return filteredChannels.slice(start, start + itemsPerPage);
-  }, [filteredChannels, currentPage, itemsPerPage, isMobile, loadedPages]);
+    return filteredVideos.slice(start, start + itemsPerPage);
+  }, [filteredVideos, currentPage, itemsPerPage, isMobile]);
 
   // Reset page when search/sort changes
   useEffect(() => {
@@ -190,7 +188,7 @@ export default function Favs() {
             <div className="flex items-center justify-center h-32">
               <LoadingSpinner />
             </div>
-          ) : !sortedVideos || sortedVideos.length === 0 ? (
+          ) : !filteredVideos || filteredVideos.length === 0 ? (
             <EmptyState
               title="No videos yet"
               description={selectedChannelId
@@ -200,7 +198,7 @@ export default function Favs() {
             />
           ) : (
             <div className="space-y-4">
-              {sortedVideos.map(video => (
+              {filteredVideos.map(video => (
                 <Link
                   key={video.id}
                   to={`/player/${video.id}`}
@@ -246,9 +244,16 @@ export default function Favs() {
     );
   }
 
-  // DESKTOP VIEW - Channel card grid with sticky bar
-  const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedChannels.length);
-  const textSizes = getTextSizes(effectiveCardSize);
+  // DESKTOP VIEW - Video grid with sticky bar
+  const hasNewFavorites = favoriteLibraries?.some(ch => ch.has_new_videos) || false;
+
+  // Sort options for videos
+  const videoSortOptions = [
+    { value: 'date-desc', label: 'Newest First' },
+    { value: 'date-asc', label: 'Oldest First' },
+    { value: 'title-asc', label: 'Title A-Z' },
+    { value: 'title-desc', label: 'Title Z-A' },
+  ];
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -257,9 +262,9 @@ export default function Favs() {
         <div className="flex items-center gap-2">
           {/* Left: Title */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <HeartIcon className="w-5 h-5 text-accent" filled />
+            <HeartIcon className={`w-5 h-5 ${hasNewFavorites ? 'text-accent' : 'text-text-secondary'}`} filled={hasNewFavorites} />
             <h1 className="text-lg font-semibold text-text-primary">Favorites</h1>
-            <span className="text-sm text-text-secondary">({filteredChannels.length})</span>
+            <span className="text-sm text-text-secondary">({filteredVideos.length} videos)</span>
           </div>
 
           {/* Center: Search */}
@@ -267,7 +272,7 @@ export default function Favs() {
             <CollapsibleSearch
               value={searchInput}
               onChange={setSearchInput}
-              placeholder="Search favorites..."
+              placeholder="Search videos..."
               alwaysExpanded
             />
           </div>
@@ -277,9 +282,9 @@ export default function Favs() {
             <StickyBarRightSection
               sortValue={sortBy}
               onSortChange={setSortBy}
-              sortOptions={SORT_OPTIONS.channels}
+              sortOptions={videoSortOptions}
               currentPage={currentPage}
-              totalItems={filteredChannels.length}
+              totalItems={filteredVideos.length}
               itemsPerPage={itemsPerPage}
               onPageChange={setCurrentPage}
             />
@@ -287,82 +292,36 @@ export default function Favs() {
         </div>
       </StickyBar>
 
-      {/* Channel Grid */}
-      {filteredChannels.length === 0 ? (
+      {/* Video Grid */}
+      {videosLoading ? (
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner />
+        </div>
+      ) : filteredVideos.length === 0 ? (
         <EmptyState
           icon={<HeartIcon className="w-12 h-12" />}
-          title={searchInput ? 'No matching favorites' : 'No favorite libraries yet'}
-          description={searchInput ? 'Try a different search term' : 'Heart libraries in Library to add them to your favorites'}
+          title={searchInput ? 'No matching videos' : 'No videos yet'}
+          description={searchInput ? 'Try a different search term' : 'Videos from your favorite channels will appear here'}
         />
       ) : (
-        <div className={`grid ${getGridClass(gridColumns, paginatedChannels.length)} gap-4 w-full [&>*]:min-w-0`}>
-          {paginatedChannels.map(channel => (
-            <Link
-              key={channel.id}
-              to={`/library/channel/${channel.id}`}
-              className="group transition-colors rounded overflow-hidden"
-            >
-              {/* Thumbnail */}
-              <div className="relative aspect-video bg-dark-tertiary rounded-t-xl rounded-b-xl group-hover:rounded-b-none overflow-hidden transition-all">
-                {channel.thumbnail ? (
-                  <img
-                    src={channel.thumbnail}
-                    alt={channel.title}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <svg className="w-10 h-10 text-text-muted" fill="currentColor" viewBox="0 0 20 20">
-                      <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                    </svg>
-                  </div>
-                )}
-                {/* New Videos Badge */}
-                {channel.has_new_videos && (
-                  <div className="absolute top-0 left-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tl-xl rounded-br-lg leading-none z-20">
-                    NEW
-                  </div>
-                )}
-              </div>
-
-              {/* Channel Info */}
-              <div className="p-3 rounded-b-xl transition-colors group-hover:bg-dark-tertiary">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 mb-1 flex-1`} title={channel.title}>
-                    {channel.title}
-                  </h3>
-                  {/* Heart Button (unfavorite) */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      toggleFavorite.mutate(channel.id);
-                    }}
-                    className="p-1.5 -mr-1.5 -mt-0.5 rounded-lg flex-shrink-0 transition-all hover:scale-110 active:scale-95 text-accent"
-                    title="Remove from favorites"
-                  >
-                    <HeartIcon className="w-5 h-5" filled />
-                  </button>
-                </div>
-                <div className="text-sm text-text-secondary font-medium">
-                  <span>
-                    {channel.downloaded_count || 0} video{(channel.downloaded_count || 0) !== 1 ? 's' : ''}
-                    {(channel.downloaded_count || 0) > 0 && channel.total_size_bytes && ` • ${formatFileSize(channel.total_size_bytes)}`}
-                  </span>
-                </div>
-              </div>
-            </Link>
+        <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
+          {paginatedVideos.map(video => (
+            <VideoCard
+              key={video.id}
+              video={video}
+              showChannel={true}
+              dateDisplay={dateDisplay}
+            />
           ))}
         </div>
       )}
 
       {/* Bottom Pagination */}
-      {filteredChannels.length > itemsPerPage && (
+      {filteredVideos.length > itemsPerPage && (
         <div className="flex justify-center mt-6">
           <Pagination
             currentPage={currentPage}
-            totalItems={filteredChannels.length}
+            totalItems={filteredVideos.length}
             itemsPerPage={itemsPerPage}
             onPageChange={setCurrentPage}
           />

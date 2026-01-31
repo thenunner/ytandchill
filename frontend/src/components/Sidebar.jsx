@@ -36,6 +36,9 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
     return true;
   });
 
+  // Check if any favorite has new videos
+  const hasNewFavorites = favoriteLibraries?.some(ch => ch.has_new_videos) || false;
+
   // Handle logout
   const handleLogout = async () => {
     try {
@@ -154,10 +157,12 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
               <div className="w-8 border-t border-dark-border my-1" />
               <Link
                 to="/favs"
-                className="flex items-center justify-center p-2 rounded-lg text-text-secondary hover:bg-dark-hover hover:text-text-primary transition-colors"
+                className={`flex items-center justify-center p-2 rounded-lg hover:bg-dark-hover transition-colors ${
+                  hasNewFavorites ? 'text-accent' : 'text-text-secondary hover:text-text-primary'
+                }`}
                 title="Favorites"
               >
-                <HeartIcon className="w-7 h-7" />
+                <HeartIcon className="w-7 h-7" filled={hasNewFavorites} />
               </Link>
               {favoriteLibraries.slice(0, 10).map(channel => (
                 <Link
@@ -204,9 +209,11 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
             <div className="pt-3 mt-3 border-t border-dark-border">
               <Link
                 to="/favs"
-                className="flex items-center gap-2 px-3 py-2 text-text-muted hover:text-text-primary transition-colors rounded-lg hover:bg-dark-hover"
+                className={`flex items-center gap-2 px-3 py-2 transition-colors rounded-lg hover:bg-dark-hover ${
+                  hasNewFavorites ? 'text-accent' : 'text-text-muted hover:text-text-primary'
+                }`}
               >
-                <HeartIcon className="w-4 h-4" />
+                <HeartIcon className="w-4 h-4" filled={hasNewFavorites} />
                 <span className="text-xs font-medium uppercase tracking-wider">Favorites</span>
               </Link>
               <div className="space-y-0.5">
