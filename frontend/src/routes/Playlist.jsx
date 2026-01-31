@@ -136,43 +136,52 @@ export default function Playlist() {
   const sortedVideos = useMemo(() => {
     if (!playlist?.videos) return [];
     const durationRange = getDurationRange();
-    return playlist.videos
-      .filter(video => {
-        // Search filter
-        if (!(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+
+    // Create a copy to avoid mutating the original array
+    const filtered = playlist.videos.filter(video => {
+      // Search filter
+      if (!(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+        return false;
+      }
+      // Hide watched filter (global setting)
+      if (hideWatched && video.watched) {
+        return false;
+      }
+      // Duration filter
+      if (durationRange) {
+        const duration = video.duration_sec || 0;
+        if (duration < durationRange.min || duration >= durationRange.max) {
           return false;
         }
-        // Hide watched filter (global setting)
-        if (hideWatched && video.watched) {
-          return false;
+      }
+      return true;
+    });
+
+    // Sort the filtered array
+    return [...filtered].sort((a, b) => {
+      switch (sort) {
+        case 'date-desc': {
+          const dateA = parsePlaylistVideoDate(a);
+          const dateB = parsePlaylistVideoDate(b);
+          return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
         }
-        // Duration filter
-        if (durationRange) {
-          const duration = video.duration_sec || 0;
-          if (duration < durationRange.min || duration >= durationRange.max) {
-            return false;
-          }
+        case 'date-asc': {
+          const dateA = parsePlaylistVideoDate(a);
+          const dateB = parsePlaylistVideoDate(b);
+          return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
         }
-        return true;
-      })
-      .sort((a, b) => {
-        switch (sort) {
-          case 'date-desc':
-            return parsePlaylistVideoDate(b) - parsePlaylistVideoDate(a);
-          case 'date-asc':
-            return parsePlaylistVideoDate(a) - parsePlaylistVideoDate(b);
-          case 'duration-desc':
-            return b.duration_sec - a.duration_sec;
-          case 'duration-asc':
-            return a.duration_sec - b.duration_sec;
-          case 'title-asc':
-            return a.title.localeCompare(b.title);
-          case 'title-desc':
-            return b.title.localeCompare(a.title);
-          default:
-            return 0;
-        }
-      });
+        case 'duration-desc':
+          return (b.duration_sec || 0) - (a.duration_sec || 0);
+        case 'duration-asc':
+          return (a.duration_sec || 0) - (b.duration_sec || 0);
+        case 'title-asc':
+          return (a.title || '').localeCompare(b.title || '');
+        case 'title-desc':
+          return (b.title || '').localeCompare(a.title || '');
+        default:
+          return 0;
+      }
+    });
   }, [playlist?.videos, searchInput, hideWatched, sort, durationFilter]);
 
   // Reset page when filters change

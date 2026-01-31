@@ -31,16 +31,19 @@ const parseUploadDate = (uploadDate) => {
  * Uses settings preference (uploaded vs downloaded) for downloaded videos
  * @param {object} video - Video object with upload_date and/or downloaded_at
  * @param {object} settings - Settings object from useSettings hook
- * @returns {Date} Parsed date for comparison
+ * @returns {Date} Parsed date for comparison (always valid)
  */
 export const parseVideoDate = (video, settings) => {
+  if (!video) return new Date(0);
+
   const dateDisplay = getStringSetting(settings, 'library_date_display', 'downloaded');
   if (dateDisplay === 'uploaded' && video.upload_date) {
     const parsed = parseUploadDate(video.upload_date);
     if (parsed) return parsed;
   }
   if (video.downloaded_at) {
-    return new Date(video.downloaded_at);
+    const date = new Date(video.downloaded_at);
+    if (!isNaN(date.getTime())) return date;
   }
   return new Date(0);
 };
@@ -49,27 +52,44 @@ export const parseVideoDate = (video, settings) => {
  * Parse video date for sorting - discover context (not yet downloaded videos)
  * Always uses upload_date, falls back to discovered_at
  * @param {object} video - Video object with upload_date and/or discovered_at
- * @returns {Date} Parsed date for comparison
+ * @returns {Date} Parsed date for comparison (always valid)
  */
 export const parseDiscoverVideoDate = (video) => {
+  if (!video) return new Date(0);
+
   if (video.upload_date) {
     const parsed = parseUploadDate(video.upload_date);
     if (parsed) return parsed;
   }
-  return new Date(video.discovered_at || 0);
+
+  if (video.discovered_at) {
+    const date = new Date(video.discovered_at);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  return new Date(0);
 };
 
 /**
  * Parse video date for sorting - playlist context
  * Uses downloaded_at, falls back to discovered_at
  * @param {object} video - Video object with downloaded_at and/or discovered_at
- * @returns {Date} Parsed date for comparison
+ * @returns {Date} Parsed date for comparison (always valid)
  */
 export const parsePlaylistVideoDate = (video) => {
+  if (!video) return new Date(0);
+
   if (video.downloaded_at) {
-    return new Date(video.downloaded_at);
+    const date = new Date(video.downloaded_at);
+    if (!isNaN(date.getTime())) return date;
   }
-  return new Date(video.discovered_at || 0);
+
+  if (video.discovered_at) {
+    const date = new Date(video.discovered_at);
+    if (!isNaN(date.getTime())) return date;
+  }
+
+  return new Date(0);
 };
 
 // ============================================================================

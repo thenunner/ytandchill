@@ -160,18 +160,24 @@ export default function LibraryChannel() {
       })
       .sort((a, b) => {
         switch (sort) {
-          case 'date-desc':
-            return parseVideoDate(b, settings) - parseVideoDate(a, settings);
-          case 'date-asc':
-            return parseVideoDate(a, settings) - parseVideoDate(b, settings);
+          case 'date-desc': {
+            const dateA = parseVideoDate(a, settings);
+            const dateB = parseVideoDate(b, settings);
+            return (dateB?.getTime() || 0) - (dateA?.getTime() || 0);
+          }
+          case 'date-asc': {
+            const dateA = parseVideoDate(a, settings);
+            const dateB = parseVideoDate(b, settings);
+            return (dateA?.getTime() || 0) - (dateB?.getTime() || 0);
+          }
           case 'duration-desc':
-            return b.duration_sec - a.duration_sec;
+            return (b.duration_sec || 0) - (a.duration_sec || 0);
           case 'duration-asc':
-            return a.duration_sec - b.duration_sec;
+            return (a.duration_sec || 0) - (b.duration_sec || 0);
           case 'title-asc':
-            return a.title.localeCompare(b.title);
+            return (a.title || '').localeCompare(b.title || '');
           case 'title-desc':
-            return b.title.localeCompare(a.title);
+            return (b.title || '').localeCompare(a.title || '');
           default:
             return 0;
         }
