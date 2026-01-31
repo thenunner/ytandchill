@@ -252,14 +252,19 @@ update_app() {
     echo -e "  Pulling latest changes..."
     if ! git pull origin main; then
         echo ""
-        echo -e "${YELLOW}  Git pull failed. Trying to stash local changes...${NC}"
-        git stash
-        if ! git pull origin main; then
-            echo -e "${RED}  ERROR: Could not pull updates.${NC}"
+        echo -e "${YELLOW}  Git pull failed. Resetting to latest remote version...${NC}"
+        echo ""
+        echo -e "  NOTE: Your data (videos, thumbnails, database) is safe."
+        echo -e "        Only source code will be reset."
+        echo ""
+        git fetch origin
+        if ! git reset --hard origin/main; then
+            echo -e "${RED}  ERROR: Could not reset to remote.${NC}"
+            echo -e "  Try deleting this folder and re-cloning the repository."
             read -p "  Press Enter to return to menu..."
             return
         fi
-        echo -e "${YELLOW}  Note: Local changes stashed. Run 'git stash pop' to restore.${NC}"
+        echo -e "${GREEN}  Reset successful!${NC}"
     fi
 
     echo ""

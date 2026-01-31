@@ -152,15 +152,20 @@ echo  Pulling latest changes...
 git pull origin main
 if errorlevel 1 (
     echo.
-    echo  Git pull failed. Trying to stash local changes...
-    git stash
-    git pull origin main
+    echo  Git pull failed. Resetting to latest remote version...
+    echo.
+    echo  NOTE: Your data (videos, thumbnails, database) is safe.
+    echo        Only source code will be reset.
+    echo.
+    git fetch origin
+    git reset --hard origin/main
     if errorlevel 1 (
-        echo  ERROR: Could not pull updates.
+        echo  ERROR: Could not reset to remote.
+        echo  Try deleting this folder and re-cloning the repository.
         pause
         goto menu
     )
-    echo  Note: Local changes stashed. Run 'git stash pop' to restore.
+    echo  Reset successful!
 )
 
 echo.
