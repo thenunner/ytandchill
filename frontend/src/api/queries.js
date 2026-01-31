@@ -397,6 +397,7 @@ export function useAddVideoToPlaylist() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] }); // Update video.playlist_ids
     },
   });
 }
@@ -420,6 +421,7 @@ export function useRemoveVideoFromPlaylist() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['playlists'] });
       queryClient.invalidateQueries({ queryKey: ['playlist'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] }); // Update video.playlist_ids
     },
   });
 }

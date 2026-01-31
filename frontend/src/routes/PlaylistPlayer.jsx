@@ -185,8 +185,12 @@ export default function PlaylistPlayer() {
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Media query for mobile vs desktop (ensures only one video element exists at a time)
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  // Media query for mobile vs desktop - use touch detection for reliable native video
+  // pointer: coarse = touch device (use native HTML5 video)
+  // pointer: fine = mouse device (use Video.js)
+  const isTouchDevice = useMediaQuery('(pointer: coarse)');
+  const isSmallScreen = useMediaQuery('(max-width: 767px)');
+  const isMobile = isTouchDevice || isSmallScreen;
 
   // Refs - separate refs for mobile (native) and desktop (Video.js)
   const mobileVideoRef = useRef(null);
@@ -1067,8 +1071,8 @@ export default function PlaylistPlayer() {
           />
         </div>
 
-        {/* Video Info with Prev/Next Controls */}
-        <div className="px-4 py-3 space-y-3">
+        {/* Video Info with Prev/Next Controls - hidden in landscape via CSS */}
+        <div className="player-video-info px-4 py-3 space-y-3">
           {/* Title with Prev/Next buttons */}
           <div className="flex items-start gap-2">
             <button

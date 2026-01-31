@@ -64,8 +64,11 @@ export function useNativeVideoPlayer({
     const videoSrc = getVideoSource(video.file_path);
     if (!videoSrc) return;
 
-    // Set video source
-    videoEl.src = videoSrc;
+    // Only set source if different (prevents reload on orientation change)
+    const currentSrc = videoEl.src || '';
+    if (!currentSrc.endsWith(videoSrc)) {
+      videoEl.src = videoSrc;
+    }
 
     // Save progress function
     const saveProgressNow = () => {

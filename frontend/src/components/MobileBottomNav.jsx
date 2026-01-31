@@ -83,7 +83,7 @@ export default memo(function MobileBottomNav({ queueCount = 0, reviewCount = 0, 
   const isMeActive = location.pathname === '/settings' || location.pathname === '/history';
 
   return (
-    <nav className="flex items-center justify-around py-2 px-1 border-t border-dark-border bg-dark-secondary safe-area-bottom">
+    <nav className="MobileBottomNav flex items-center justify-around py-2 px-1 border-t border-dark-border bg-dark-secondary safe-area-bottom">
       {navItems.map(({ to, icon: Icon, label, badge, hasDot, isActive }) => (
         <Link
           key={to}

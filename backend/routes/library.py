@@ -217,7 +217,10 @@ def create_playlist():
 @library_bp.route('/api/playlists/<int:playlist_id>', methods=['GET'])
 def get_playlist(playlist_id):
     with get_session(_session_factory) as session:
-        playlist = session.query(Playlist).options(joinedload(Playlist.category)).filter(Playlist.id == playlist_id).first()
+        playlist = session.query(Playlist).options(
+            joinedload(Playlist.category),
+            joinedload(Playlist.playlist_videos).joinedload(PlaylistVideo.video).joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
+        ).filter(Playlist.id == playlist_id).first()
 
         if not playlist:
             return jsonify({'error': 'Playlist not found'}), 404
