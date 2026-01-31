@@ -44,8 +44,12 @@ export default function Player() {
     return saved === 'true';
   });
 
-  // Media query for mobile detection
-  const isMobile = useMediaQuery('(max-width: 767px)');
+  // Media query for mobile vs desktop - use touch detection for reliable native video
+  // pointer: coarse = touch device (use native HTML5 video)
+  // This ensures tablets and wide phones also get the native player
+  const isTouchDevice = useMediaQuery('(pointer: coarse)');
+  const isSmallScreen = useMediaQuery('(max-width: 767px)');
+  const isMobile = isTouchDevice || isSmallScreen;
 
   // Keep refs updated with latest values
   useEffect(() => {
