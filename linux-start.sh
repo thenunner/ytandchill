@@ -425,62 +425,6 @@ stop_server() {
     sleep 1
 }
 
-repair_git() {
-    print_header
-    echo -e "${GREEN}  ==========================================${NC}"
-    echo -e "${GREEN}  Repair - Fix Git Conflicts${NC}"
-    echo -e "${GREEN}  ==========================================${NC}"
-    echo ""
-    echo -e "  This will reset your code to match GitHub exactly."
-    echo ""
-    echo -e "  Your data is ${GREEN}SAFE${NC}:"
-    echo -e "    - Videos and thumbnails (downloads folder)"
-    echo -e "    - Database and settings (data folder)"
-    echo -e "    - These are NOT affected by this repair"
-    echo ""
-    echo -e "  Only source code files will be reset."
-    echo ""
-    read -p "  Continue? [Y/n]: " confirm
-
-    if [[ "${confirm,,}" == "n" ]]; then
-        return
-    fi
-
-    # Check git
-    if ! command -v git &> /dev/null; then
-        echo -e "${RED}  ERROR: Git is not installed.${NC}"
-        read -p "  Press Enter to return to menu..."
-        return
-    fi
-
-    if [ ! -d ".git" ]; then
-        echo -e "${RED}  ERROR: This is not a git repository.${NC}"
-        read -p "  Press Enter to return to menu..."
-        return
-    fi
-
-    echo ""
-    echo -e "  Fetching latest from GitHub..."
-    git fetch origin
-
-    echo ""
-    echo -e "  Resetting to match remote..."
-    if ! git reset --hard origin/main; then
-        echo -e "${RED}  ERROR: Reset failed.${NC}"
-        read -p "  Press Enter to return to menu..."
-        return
-    fi
-
-    echo ""
-    echo -e "${GREEN}  ==========================================${NC}"
-    echo -e "${GREEN}  Repair complete!${NC}"
-    echo -e "${GREEN}  ==========================================${NC}"
-    echo ""
-    echo -e "  Now run option ${CYAN}[2] Update${NC} to rebuild."
-    echo ""
-    read -p "  Press Enter to return to menu..."
-}
-
 # ==========================================
 # Main Menu Loop
 # ==========================================
@@ -517,20 +461,18 @@ while true; do
     echo -e "    ${CYAN}[2]${NC} Update (git pull + rebuild)"
     echo -e "    ${CYAN}[3]${NC} Initial Setup (first time only)"
     echo -e "    ${CYAN}[4]${NC} Stop Server"
-    echo -e "    ${CYAN}[5]${NC} Repair (fix git conflicts)"
-    echo -e "    ${CYAN}[6]${NC} Exit"
+    echo -e "    ${CYAN}[5]${NC} Exit"
     echo ""
     echo -e "  ------------------------------------------"
     echo ""
-    read -p "  Enter choice (1-6): " choice
+    read -p "  Enter choice (1-5): " choice
 
     case $choice in
         1) start_server ;;
         2) update_app ;;
         3) initial_setup ;;
         4) stop_server ;;
-        5) repair_git ;;
-        6)
+        5)
             echo ""
             echo -e "${GREEN}  Goodbye!${NC}"
             echo ""
@@ -538,7 +480,7 @@ while true; do
             ;;
         *)
             echo ""
-            echo -e "${RED}  Invalid choice. Please enter 1-6.${NC}"
+            echo -e "${RED}  Invalid choice. Please enter 1-5.${NC}"
             sleep 1
             ;;
     esac
