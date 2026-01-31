@@ -16,6 +16,7 @@ const VideoCard = memo(function VideoCard({
   isQueued,
   editMode = false, // New prop for edit mode
   isLibraryView = false, // New prop for library view (shows 3-column layout with file size)
+  showChannel = false, // Show channel name in metadata
   effectiveCardSize, // Required: card size for text sizing
 }) {
   const { data: settings } = useSettings();
@@ -448,7 +449,7 @@ const VideoCard = memo(function VideoCard({
 
         {/* Metadata */}
         {isLibraryView && video.file_size_bytes ? (
-          // Library view: date (uploaded or downloaded based on setting) • size • badges
+          // Library view: date (uploaded or downloaded based on setting) • channel • size • badges
           <div className={`${textSizes.metadata} text-text-secondary font-medium flex items-center gap-1 flex-wrap`}>
             <span>
               {(() => {
@@ -459,6 +460,12 @@ const VideoCard = memo(function VideoCard({
                 return formatDateTime(video.downloaded_at);
               })()}
             </span>
+            {showChannel && (video.channel?.title || video.channel_title) && (
+              <>
+                <span>•</span>
+                <span className="truncate max-w-[150px]">{video.channel?.title || video.channel_title}</span>
+              </>
+            )}
             <span>•</span>
             <span>{formatFileSize(video.file_size_bytes)}</span>
             {video.watched && (

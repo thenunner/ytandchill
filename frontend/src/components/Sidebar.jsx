@@ -36,8 +36,12 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
     return true;
   });
 
-  // Check if any favorite has new videos
-  const hasNewFavorites = favoriteLibraries?.some(ch => ch.has_new_videos) || false;
+  // Check if any favorite has NEW unacknowledged videos
+  // Heart clears when user clicks Favorites, but fills again for new channels with videos
+  const acknowledgedIds = JSON.parse(localStorage.getItem('acknowledgedFavoriteChannels') || '[]');
+  const hasNewFavorites = favoriteLibraries?.some(
+    ch => ch.has_new_videos && !acknowledgedIds.includes(ch.id)
+  ) || false;
 
   // Handle logout
   const handleLogout = async () => {

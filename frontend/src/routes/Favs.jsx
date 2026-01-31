@@ -89,6 +89,17 @@ export default function Favs() {
     setLoadedPages(1);
   }, [searchInput, sortBy]);
 
+  // Desktop: Acknowledge channels with new videos (clears heart icon, not channel badges)
+  // Channel badges only clear when visiting individual channels
+  useEffect(() => {
+    if (!isMobile && favoriteLibraries) {
+      const channelsWithNew = favoriteLibraries
+        .filter(ch => ch.has_new_videos)
+        .map(ch => ch.id);
+      localStorage.setItem('acknowledgedFavoriteChannels', JSON.stringify(channelsWithNew));
+    }
+  }, [isMobile, favoriteLibraries]);
+
   // Handle channel avatar click - toggle filter
   const handleChannelClick = (channelId) => {
     if (selectedChannelId === channelId) {
@@ -309,8 +320,9 @@ export default function Favs() {
             <VideoCard
               key={video.id}
               video={video}
+              isLibraryView={true}
               showChannel={true}
-              dateDisplay={dateDisplay}
+              effectiveCardSize={cardSize}
             />
           ))}
         </div>
