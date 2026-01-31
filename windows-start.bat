@@ -60,20 +60,22 @@ echo.
 echo    [1] Start Server
 echo    [2] Update (git pull + rebuild)
 echo    [3] Initial Setup (first time only)
-echo    [4] Exit
+echo    [4] Repair (fix git conflicts)
+echo    [5] Exit
 echo.
 echo  ------------------------------------------
 echo.
 
-set /p choice="  Enter choice (1-4): "
+set /p choice="  Enter choice (1-5): "
 
 if "%choice%"=="1" goto start_server
 if "%choice%"=="2" goto update
 if "%choice%"=="3" goto setup
-if "%choice%"=="4" goto end
+if "%choice%"=="4" goto repair
+if "%choice%"=="5" goto end
 
 echo.
-echo  Invalid choice. Please enter 1-4.
+echo  Invalid choice. Please enter 1-5.
 timeout /t 2 >nul
 goto menu
 
@@ -370,6 +372,67 @@ if not errorlevel 1 (
 )
 
 goto :eof
+
+REM ==========================================
+REM OPTION 4: Repair (fix git conflicts)
+REM ==========================================
+:repair
+cls
+echo.
+echo  ==========================================
+echo  Repair - Fix Git Conflicts
+echo  ==========================================
+echo.
+echo  This will reset your code to match GitHub exactly.
+echo.
+echo  Your data is SAFE:
+echo    - Videos and thumbnails (downloads folder)
+echo    - Database and settings (data folder)
+echo    - These are NOT affected by this repair
+echo.
+echo  Only source code files will be reset.
+echo.
+
+set /p confirm="  Continue? [Y/n]: "
+if /i "%confirm%"=="n" goto menu
+
+cd /d "%~dp0"
+
+git --version >nul 2>&1
+if errorlevel 1 (
+    echo  ERROR: Git is not installed.
+    pause
+    goto menu
+)
+
+if not exist .git (
+    echo  ERROR: This is not a git repository.
+    pause
+    goto menu
+)
+
+echo.
+echo  Fetching latest from GitHub...
+git fetch origin
+
+echo.
+echo  Resetting to match remote...
+git reset --hard origin/main
+if errorlevel 1 (
+    echo  ERROR: Reset failed.
+    pause
+    goto menu
+)
+
+echo.
+echo  ==========================================
+echo  Repair complete!
+echo  ==========================================
+echo.
+echo  Now run option [2] Update to rebuild.
+echo.
+pause
+goto menu
 
 REM ==========================================
 REM Exit
