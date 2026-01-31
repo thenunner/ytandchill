@@ -437,6 +437,7 @@ def get_favorite_videos():
                 'id': video.id,
                 'yt_id': video.yt_id,
                 'title': video.title,
+                'status': video.status,
                 'duration_sec': video.duration_sec,
                 'thumb_url': thumb_url,
                 'file_path': video.file_path,
