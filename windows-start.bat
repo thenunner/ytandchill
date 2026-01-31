@@ -152,24 +152,29 @@ if "!PYTHON_CMD!"=="" (
 
 echo  Pulling latest changes...
 git pull origin main
-if errorlevel 1 (
-    echo.
-    echo  Git pull failed. Resetting to latest remote version...
-    echo.
-    echo  NOTE: Your data (videos, thumbnails, database) is safe.
-    echo        Only source code will be reset.
-    echo.
-    git fetch origin
-    git reset --hard origin/main
-    if errorlevel 1 (
-        echo  ERROR: Could not reset to remote.
-        echo  Try deleting this folder and re-cloning the repository.
-        pause
-        goto menu
-    )
-    echo  Reset successful!
-)
+if errorlevel 1 goto update_repair
+goto update_deps
 
+:update_repair
+echo.
+echo  Git pull failed. Resetting to latest remote version...
+echo.
+echo  NOTE: Your data (videos, thumbnails, database) is safe.
+echo        Only source code will be reset.
+echo.
+git fetch origin
+git reset --hard origin/main
+if errorlevel 1 goto update_failed
+echo  Reset successful!
+goto update_deps
+
+:update_failed
+echo  ERROR: Could not reset to remote.
+echo  Try deleting this folder and re-cloning the repository.
+pause
+goto menu
+
+:update_deps
 echo.
 echo  Updating Python dependencies...
 cd backend
