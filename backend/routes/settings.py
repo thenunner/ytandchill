@@ -1496,3 +1496,179 @@ def purge_deleted_channels():
             return jsonify({'error': str(e)}), 500
 
 
+# =============================================================================
+# Low Quality Video Detection
+# =============================================================================
+
+def get_video_resolution(file_path):
+    """
+    Get video height in pixels using ffprobe.
+    Returns None if file doesn't exist or ffprobe fails.
+    """
+    if not file_path or not os.path.exists(file_path):
+        return None
+
+    try:
+        result = subprocess.run(
+            ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+             '-show_entries', 'stream=height', '-of', 'csv=p=0', file_path],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return int(result.stdout.strip())
+    except (subprocess.TimeoutExpired, ValueError, Exception) as e:
+        logger.warning(f"ffprobe failed for {file_path}: {e}")
+
+    return None
+
+
+@settings_bp.route('/api/settings/low-quality-videos', methods=['GET'])
+def get_low_quality_videos():
+    """
+    Find library videos under 1080p resolution.
+    Excludes Singles channel (one-off downloads).
+    Uses ffprobe to check actual file resolution.
+    """
+    global _session_factory
+
+    downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
+
+    with get_session(_session_factory) as session:
+        # Get all library videos with file paths, excluding Singles channel
+        # Singles channel identified by folder_name='Singles' or title='Singles'
+        videos = session.query(Video).join(Channel).filter(
+            Video.status == 'library',
+            Video.file_path.isnot(None),
+            Video.file_path != '',
+            Channel.folder_name != 'Singles',
+            Channel.title != 'Singles'
+        ).all()
+
+        total_count = len(videos)
+        low_quality_videos = []
+        scanned_count = 0
+        errors_count = 0
+
+        for video in videos:
+            scanned_count += 1
+
+            # Build full path
+            if video.file_path.startswith('/'):
+                full_path = video.file_path
+            else:
+                full_path = os.path.join(downloads_folder, video.file_path)
+
+            # Get resolution via ffprobe
+            height = get_video_resolution(full_path)
+
+            if height is None:
+                errors_count += 1
+                continue
+
+            # Check if under 1080p
+            if height < 1080:
+                # Determine resolution label
+                if height >= 720:
+                    resolution_label = '720p'
+                elif height >= 480:
+                    resolution_label = '480p'
+                elif height >= 360:
+                    resolution_label = '360p'
+                elif height >= 240:
+                    resolution_label = '240p'
+                else:
+                    resolution_label = f'{height}p'
+
+                low_quality_videos.append({
+                    'id': video.id,
+                    'yt_id': video.yt_id,
+                    'title': video.title,
+                    'channel_id': video.channel_id,
+                    'channel_title': video.channel.title if video.channel else None,
+                    'height': height,
+                    'resolution': resolution_label,
+                    'file_path': video.file_path,
+                    'file_size_bytes': video.file_size_bytes
+                })
+
+        logger.info(f"Low quality scan complete: {len(low_quality_videos)} videos under 1080p "
+                    f"(scanned {scanned_count}, errors {errors_count})")
+
+        return jsonify({
+            'count': len(low_quality_videos),
+            'videos': low_quality_videos,
+            'total_scanned': scanned_count,
+            'errors': errors_count
+        })
+
+
+@settings_bp.route('/api/settings/upgrade-videos', methods=['POST'])
+def upgrade_selected_videos():
+    """
+    Re-queue selected videos for download at better quality.
+    Deletes old files and sets status back to 'queued'.
+    """
+    global _session_factory
+
+    data = request.get_json()
+    video_ids = data.get('video_ids', [])
+
+    if not video_ids:
+        return jsonify({'error': 'No video IDs provided'}), 400
+
+    downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
+    upgraded_count = 0
+    errors = []
+
+    with get_session(_session_factory) as session:
+        try:
+            for video_id in video_ids:
+                video = session.query(Video).filter(Video.id == video_id).first()
+                if not video:
+                    errors.append(f"Video ID {video_id} not found")
+                    continue
+
+                if video.status != 'library':
+                    errors.append(f"Video '{video.title}' is not in library")
+                    continue
+
+                # Delete old video file
+                if video.file_path:
+                    if video.file_path.startswith('/'):
+                        full_path = video.file_path
+                    else:
+                        full_path = os.path.join(downloads_folder, video.file_path)
+
+                    if os.path.exists(full_path):
+                        try:
+                            os.remove(full_path)
+                            logger.info(f"Deleted old file: {full_path}")
+                        except OSError as e:
+                            logger.warning(f"Failed to delete {full_path}: {e}")
+                            # Continue anyway - file might be locked or already gone
+
+                # Reset video to queued state (like fresh discovery from channel)
+                video.status = 'queued'
+                video.file_path = None
+                video.file_size_bytes = None
+                video.playback_seconds = 0  # Reset watch progress
+                video.watched = False  # Reset watched status
+
+                upgraded_count += 1
+                logger.info(f"Queued for upgrade: {video.title} (ID: {video.id})")
+
+            session.commit()
+
+            # Emit event to refresh queue UI
+            queue_events.emit_queue_update()
+
+            return jsonify({
+                'upgraded': upgraded_count,
+                'errors': errors if errors else None
+            })
+
+        except Exception as e:
+            session.rollback()
+            logger.error(f"Error upgrading videos: {e}", exc_info=True)
+            return jsonify({'error': str(e)}), 500
+

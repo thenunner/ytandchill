@@ -7,6 +7,7 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
   const [showShrinkDBModal, setShowShrinkDBModal] = useState(false);
   const [showMetadataFixModal, setShowMetadataFixModal] = useState(false);
   const [showSponsorblockModal, setShowSponsorblockModal] = useState(false);
+  const [showLowQualityModal, setShowLowQualityModal] = useState(false);
 
   // Data
   const [repairData, setRepairData] = useState(null);
@@ -14,12 +15,16 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
   const [sponsorblockData, setSponsorblockData] = useState(null);
   const [selectedNotFoundVideos, setSelectedNotFoundVideos] = useState([]);
   const [selectedChannels, setSelectedChannels] = useState([]);
+  const [lowQualityData, setLowQualityData] = useState(null);
+  const [selectedLowQualityVideos, setSelectedLowQualityVideos] = useState([]);
 
   // Loading states
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isFixingMetadata, setIsFixingMetadata] = useState(false);
   const [isFixingSponsorblock, setIsFixingSponsorblock] = useState(false);
+  const [isCheckingQuality, setIsCheckingQuality] = useState(false);
+  const [isUpgrading, setIsUpgrading] = useState(false);
 
   const handleQueueRepair = async () => {
     setIsCheckingRepair(true);
@@ -206,6 +211,66 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     }
   };
 
+  const handleCheckLowQuality = async () => {
+    setIsCheckingQuality(true);
+    setLowQualityData(null);
+    setSelectedLowQualityVideos([]);
+    try {
+      const response = await fetch('/api/settings/low-quality-videos', { credentials: 'include' });
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      setLowQualityData(data);
+
+      if (data.count === 0) {
+        showNotification('All videos are 1080p or higher!', 'success');
+      }
+    } catch (error) {
+      showNotification(`Failed to scan videos: ${error.message}`, 'error');
+    } finally {
+      setIsCheckingQuality(false);
+    }
+  };
+
+  const handleUpgradeVideos = async () => {
+    if (selectedLowQualityVideos.length === 0) {
+      showNotification('No videos selected', 'warning');
+      return;
+    }
+
+    setIsUpgrading(true);
+    try {
+      const response = await fetch('/api/settings/upgrade-videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_ids: selectedLowQualityVideos }),
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      const message = `Queued ${data.upgraded} video${data.upgraded !== 1 ? 's' : ''} for upgrade`;
+      showNotification(message, 'success');
+
+      setShowLowQualityModal(false);
+      setShowRepairModal(false);
+      setSelectedLowQualityVideos([]);
+      setLowQualityData(null);
+    } catch (error) {
+      showNotification('Failed to upgrade videos', 'error');
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   const openNotFoundModal = () => {
     setShowRepairModal(false);
     setShowNotFoundModal(true);
@@ -226,12 +291,20 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     setShowSponsorblockModal(true);
   };
 
+  const openLowQualityModal = () => {
+    setShowRepairModal(false);
+    setShowLowQualityModal(true);
+    // Automatically start scanning when modal opens
+    handleCheckLowQuality();
+  };
+
   const closeAllModals = () => {
     setShowRepairModal(false);
     setShowNotFoundModal(false);
     setShowShrinkDBModal(false);
     setShowMetadataFixModal(false);
     setShowSponsorblockModal(false);
+    setShowLowQualityModal(false);
   };
 
   return {
@@ -246,6 +319,8 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     setShowMetadataFixModal,
     showSponsorblockModal,
     setShowSponsorblockModal,
+    showLowQualityModal,
+    setShowLowQualityModal,
 
     // Data
     repairData,
@@ -255,12 +330,17 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     setSelectedNotFoundVideos,
     selectedChannels,
     setSelectedChannels,
+    lowQualityData,
+    selectedLowQualityVideos,
+    setSelectedLowQualityVideos,
 
     // Loading states
     isCheckingRepair,
     isRemoving,
     isFixingMetadata,
     isFixingSponsorblock,
+    isCheckingQuality,
+    isUpgrading,
 
     // Actions
     handleQueueRepair,
@@ -268,12 +348,15 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     handlePurgeChannels,
     handleFixMetadata,
     handleFixSponsorblockChapters,
+    handleCheckLowQuality,
+    handleUpgradeVideos,
 
     // Modal navigation
     openNotFoundModal,
     openShrinkDBModal,
     openMetadataFixModal,
     openSponsorblockModal,
+    openLowQualityModal,
     closeAllModals,
 
     // For MetadataFixModal

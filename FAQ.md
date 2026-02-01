@@ -85,6 +85,27 @@ The file must be named `cookies.txt` and placed in the `data/` directory.
 - ❌ Exporting from a tab other than robots.txt
 - ❌ Using your personal YT account (use disposable account instead)
 
+### Age-Restricted Videos and Account Verification
+
+If you're getting low-quality (360p/480p) downloads for age-restricted videos, your YT account may need age verification.
+
+**Symptoms:**
+- Age-restricted videos download at 360p instead of 1080p
+- yt-dlp shows: "This video is age-restricted and YouTube is requiring account age-verification"
+- Only limited formats available even with valid cookies
+
+**Solution - Complete YT Age Verification:**
+
+1. **Log into YT** in the browser you use for cookies (e.g., Firefox)
+2. **Go to your Google Account settings:** https://myaccount.google.com/birthday
+3. **Verify your birthdate** shows you're 18+
+4. **If still restricted**, complete age verification at: https://www.youtube.com/verify_age
+   - YT may ask for **ID upload** or **credit card** verification
+5. **Test in browser** - Try playing an age-restricted video at 1080p
+6. **Re-export cookies** after verification (or restart container if using Firefox integration)
+
+**Note:** Age verification is tied to your Google account, not your cookies. Once verified, the account stays verified.
+
 ## Common yt-dlp Errors
 
 ### Error: "Video unavailable" or "This video is not available"

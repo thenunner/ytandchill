@@ -12,7 +12,8 @@ export function DatabaseMaintenanceModal({
   onOpenNotFound,
   onOpenShrinkDB,
   onOpenMetadataFix,
-  onOpenSponsorblock
+  onOpenSponsorblock,
+  onOpenLowQuality
 }) {
   if (!repairData) return null;
 
@@ -125,6 +126,28 @@ export function DatabaseMaintenanceModal({
             ) : (
               <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-lg">{sponsorblockCount}</span>
             )}
+            <span className="text-text-muted">→</span>
+          </div>
+        </button>
+
+        <button
+          onClick={onOpenLowQuality}
+          className="flex items-center justify-between w-full p-3 sm:p-3 p-4 bg-white/5 hover:bg-white/10 sm:hover:bg-white/10 active:bg-white/10 rounded-xl sm:rounded-xl rounded-2xl transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block" />
+            <div className="sm:hidden w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 4v16h18V4H3zm3 12l3-3 2 2 4-4 4 4M8 10a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-text-primary">Low Quality Videos</p>
+              <p className="text-text-muted text-xs">Find videos under 1080p</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2 py-0.5 bg-purple-500/20 text-purple-400 rounded-lg">Scan</span>
             <span className="text-text-muted">→</span>
           </div>
         </button>
@@ -692,6 +715,343 @@ export function SponsorblockChaptersModal({
                     className="flex-1 py-3.5 bg-green-500 rounded-xl text-white font-semibold"
                   >
                     Fix {count}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Low Quality Videos Modal - Find and upgrade videos under 1080p
+export function LowQualityVideosModal({
+  isOpen,
+  onClose,
+  data,
+  selectedVideos,
+  setSelectedVideos,
+  isScanning,
+  isUpgrading,
+  onUpgrade
+}) {
+  // Handle ESC key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen && !isScanning && !isUpgrading) onClose();
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onClose, isScanning, isUpgrading]);
+
+  if (!isOpen) return null;
+
+  const videos = data?.videos || [];
+  const count = data?.count || 0;
+  const totalScanned = data?.total_scanned || 0;
+
+  const allSelected = videos.length > 0 && selectedVideos.length === videos.length;
+  const someSelected = selectedVideos.length > 0 && selectedVideos.length < videos.length;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedVideos([]);
+    } else {
+      setSelectedVideos(videos.map(v => v.id));
+    }
+  };
+
+  const toggleVideo = (videoId) => {
+    if (selectedVideos.includes(videoId)) {
+      setSelectedVideos(selectedVideos.filter(id => id !== videoId));
+    } else {
+      setSelectedVideos([...selectedVideos, videoId]);
+    }
+  };
+
+  const getResolutionColor = (resolution) => {
+    if (resolution === '720p') return 'bg-yellow-500/20 text-yellow-400';
+    if (resolution === '480p') return 'bg-orange-500/20 text-orange-400';
+    return 'bg-red-500/20 text-red-400'; // 360p and lower
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Desktop - Glass Modal */}
+      <div
+        className="hidden sm:block relative w-full max-w-lg backdrop-blur-xl bg-dark-secondary/95 rounded-2xl shadow-2xl border border-white/10 max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-white/10">
+          <div>
+            <h2 className="text-lg font-semibold text-text-primary">Low Quality Videos</h2>
+            <p className="text-text-muted text-sm">
+              {isScanning ? 'Scanning library...' : `${count} video${count !== 1 ? 's' : ''} under 1080p`}
+            </p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
+            <CloseIcon className="w-4 h-4 text-text-secondary" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          {isScanning ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-purple-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-purple-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">Scanning videos...</p>
+              <p className="text-sm text-text-muted mt-1">Checking resolution with ffprobe</p>
+            </div>
+          ) : isUpgrading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-purple-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-purple-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">Queueing {selectedVideos.length} videos...</p>
+              <p className="text-sm text-text-muted mt-1">Removing old files and adding to queue</p>
+            </div>
+          ) : count === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">All Clear!</p>
+              <p className="text-sm text-text-muted">All {totalScanned} videos are 1080p or higher</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Select All Header */}
+              <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                <button
+                  onClick={toggleSelectAll}
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    allSelected ? 'bg-purple-500 border-purple-500' : someSelected ? 'bg-purple-500/50 border-purple-500' : 'border-white/30 hover:border-white/50'
+                  }`}
+                >
+                  {(allSelected || someSelected) && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  )}
+                </button>
+                <span className="text-sm text-text-secondary">
+                  {selectedVideos.length === 0 ? 'Select all' : `${selectedVideos.length} selected`}
+                </span>
+              </div>
+
+              {/* Video List */}
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                {videos.map((video) => (
+                  <div
+                    key={video.id}
+                    onClick={() => toggleVideo(video.id)}
+                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                      selectedVideos.includes(video.id) ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-white/5 hover:bg-white/10'
+                    }`}
+                  >
+                    <button
+                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        selectedVideos.includes(video.id) ? 'bg-purple-500 border-purple-500' : 'border-white/30'
+                      }`}
+                    >
+                      {selectedVideos.includes(video.id) && (
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      )}
+                    </button>
+                    <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${getResolutionColor(video.resolution)}`}>
+                      {video.resolution}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-text-primary truncate">{video.title}</p>
+                      <p className="text-xs text-text-muted truncate">{video.channel_title}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-5 border-t border-white/10 flex items-center justify-between">
+          <p className="text-xs text-text-muted">
+            {isScanning || isUpgrading ? 'Please wait...' : count > 0 ? 'Old files will be deleted' : ''}
+          </p>
+          <div className="flex gap-2">
+            {!isScanning && !isUpgrading && (
+              <button onClick={onClose} className="py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors">
+                {count === 0 ? 'Close' : 'Cancel'}
+              </button>
+            )}
+            {count > 0 && !isScanning && !isUpgrading && (
+              <button
+                onClick={onUpgrade}
+                disabled={selectedVideos.length === 0}
+                className={`py-2.5 px-4 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${
+                  selectedVideos.length > 0
+                    ? 'bg-purple-500/90 hover:bg-purple-500 text-white'
+                    : 'bg-white/5 text-text-muted cursor-not-allowed'
+                }`}
+              >
+                Upgrade {selectedVideos.length} Video{selectedVideos.length !== 1 ? 's' : ''}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile - Bottom Sheet */}
+      <div
+        className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div>
+            <h3 className="font-semibold text-text-primary">Low Quality Videos</h3>
+            <p className="text-xs text-text-muted">
+              {isScanning ? 'Scanning...' : `${count} video${count !== 1 ? 's' : ''} under 1080p`}
+            </p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+            <CloseIcon className="w-4 h-4 text-text-secondary" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {isScanning ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-purple-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-purple-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">Scanning videos...</p>
+              <p className="text-xs text-text-muted mt-1">Checking resolution with ffprobe</p>
+            </div>
+          ) : isUpgrading ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-purple-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-purple-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">Queueing videos...</p>
+            </div>
+          ) : count === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">All Clear!</p>
+              <p className="text-xs text-text-muted">All videos are 1080p or higher</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Select All Header */}
+              <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                <button
+                  onClick={toggleSelectAll}
+                  className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                    allSelected ? 'bg-purple-500 border-purple-500' : someSelected ? 'bg-purple-500/50 border-purple-500' : 'border-white/30'
+                  }`}
+                >
+                  {(allSelected || someSelected) && (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  )}
+                </button>
+                <span className="text-sm text-text-secondary">
+                  {selectedVideos.length === 0 ? 'Select all' : `${selectedVideos.length} selected`}
+                </span>
+              </div>
+
+              {/* Video List */}
+              <div className="space-y-2">
+                {videos.map((video) => (
+                  <div
+                    key={video.id}
+                    onClick={() => toggleVideo(video.id)}
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                      selectedVideos.includes(video.id) ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-white/5'
+                    }`}
+                  >
+                    <button
+                      className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                        selectedVideos.includes(video.id) ? 'bg-purple-500 border-purple-500' : 'border-white/30'
+                      }`}
+                    >
+                      {selectedVideos.includes(video.id) && (
+                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                        </svg>
+                      )}
+                    </button>
+                    <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${getResolutionColor(video.resolution)}`}>
+                      {video.resolution}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-text-primary truncate">{video.title}</p>
+                      <p className="text-xs text-text-muted truncate">{video.channel_title}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-white/10 safe-area-bottom">
+          {isScanning || isUpgrading ? (
+            <p className="text-xs text-text-muted text-center">Please wait...</p>
+          ) : (
+            <>
+              <p className="text-xs text-text-muted text-center mb-3">
+                {count > 0 ? 'Old files will be deleted' : ''}
+              </p>
+              <div className="flex gap-3">
+                <button onClick={onClose} className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium">
+                  {count === 0 ? 'Close' : 'Cancel'}
+                </button>
+                {count > 0 && (
+                  <button
+                    onClick={onUpgrade}
+                    disabled={selectedVideos.length === 0}
+                    className={`flex-1 py-3.5 rounded-xl font-semibold ${
+                      selectedVideos.length > 0
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-white/5 text-text-muted'
+                    }`}
+                  >
+                    Upgrade {selectedVideos.length}
                   </button>
                 )}
               </div>

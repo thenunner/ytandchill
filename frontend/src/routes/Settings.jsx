@@ -10,7 +10,8 @@ import { ConfirmModal, SelectionListModal } from '../components/ui/SharedModals'
 import {
   DatabaseMaintenanceModal,
   MetadataFixModal,
-  SponsorblockChaptersModal
+  SponsorblockChaptersModal,
+  LowQualityVideosModal
 } from '../components/ui/SettingsModals';
 import { useAutoScan } from '../hooks/useAutoScan';
 import { usePasswordChange } from '../hooks/usePasswordChange';
@@ -1029,6 +1030,7 @@ export default function Settings() {
         onOpenShrinkDB={dbMaintenance.openShrinkDBModal}
         onOpenMetadataFix={dbMaintenance.openMetadataFixModal}
         onOpenSponsorblock={dbMaintenance.openSponsorblockModal}
+        onOpenLowQuality={dbMaintenance.openLowQualityModal}
       />
 
       <SelectionListModal
@@ -1081,6 +1083,17 @@ export default function Settings() {
         data={dbMaintenance.sponsorblockData}
         onFix={dbMaintenance.handleFixSponsorblockChapters}
         isFixing={dbMaintenance.isFixingSponsorblock}
+      />
+
+      <LowQualityVideosModal
+        isOpen={dbMaintenance.showLowQualityModal}
+        onClose={() => dbMaintenance.setShowLowQualityModal(false)}
+        data={dbMaintenance.lowQualityData}
+        selectedVideos={dbMaintenance.selectedLowQualityVideos}
+        setSelectedVideos={dbMaintenance.setSelectedLowQualityVideos}
+        isScanning={dbMaintenance.isCheckingQuality}
+        isUpgrading={dbMaintenance.isUpgrading}
+        onUpgrade={dbMaintenance.handleUpgradeVideos}
       />
 
       {/* Reset Auth Confirmation Modal */}
