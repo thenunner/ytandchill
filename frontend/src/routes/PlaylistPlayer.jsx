@@ -49,7 +49,7 @@ function PlaylistControls({ goToPrevious, goToNext, shufflePlaylist, toggleLoop,
       <button
         onClick={toggleLoop}
         className={`icon-btn icon-btn-sm hover:bg-accent hover:border-accent ${isLooping ? 'bg-accent border-accent' : ''}`}
-        title={isLooping ? 'Disable loop (L)' : 'Enable loop (L)'}
+        title={isLooping ? 'Disable loop (O)' : 'Enable loop (O)'}
         aria-label={isLooping ? 'Disable loop' : 'Enable loop'}
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -183,7 +183,6 @@ export default function PlaylistPlayer() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Media query for mobile vs desktop - use touch detection for reliable native video
   // pointer: coarse = touch device (use native HTML5 video)
@@ -510,6 +509,7 @@ export default function PlaylistPlayer() {
     isTheaterMode: isTheaterMode,
     setIsTheaterMode: handleTheaterModeChange,
     persistPlayer: true, // CRITICAL - prevents reinit on video change
+    autoplay: true, // Auto-play on desktop for faster video start
   });
 
   // Update URL when current video changes
@@ -546,8 +546,8 @@ export default function PlaylistPlayer() {
           goToPrevious();
           showNotification('Previous video', 'info');
           break;
-        case 'l':
-          // Toggle loop
+        case 'o':
+          // Toggle loop (use 'o' to avoid conflict with 'l' for seek forward in video.js)
           e.preventDefault();
           toggleLoop();
           showNotification(isLooping ? 'Loop disabled' : 'Loop enabled', 'info');

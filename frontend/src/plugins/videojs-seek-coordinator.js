@@ -37,6 +37,8 @@ class SeekCoordinatorPlugin extends Plugin {
     this.isSeeking = false;           // Player is currently seeking
     this.lastSeekCompleteTime = 0;   // Timestamp of last seek completion
     this.originalCurrentTime = null;  // Store original currentTime method
+    this.seekRetryCount = 0;          // Track retries for current seek
+    this.maxSeekRetries = 60;         // Max retries (~1 second at 60fps)
 
     // Only initialize if enabled
     if (this.options.enabled) {
@@ -103,6 +105,10 @@ class SeekCoordinatorPlugin extends Plugin {
     }
 
     // Update seek target (multiple calls just overwrite this value)
+    // If target changed significantly, reset retry count
+    if (this.seekTarget === null || Math.abs(this.seekTarget - targetTime) > 0.5) {
+      this.seekRetryCount = 0;
+    }
     this.seekTarget = targetTime;
 
     this.log(`Seek requested: ${targetTime.toFixed(2)}s`);
@@ -132,11 +138,28 @@ class SeekCoordinatorPlugin extends Plugin {
       return;
     }
 
-    if (player.readyState() < 1) {
-      // Metadata not loaded yet, retry next frame
-      this.log('Metadata not ready, retrying...');
-      this.rafId = requestAnimationFrame(() => this.executeSeek());
-      return;
+    // readyState levels:
+    // 0 = HAVE_NOTHING
+    // 1 = HAVE_METADATA
+    // 2 = HAVE_CURRENT_DATA
+    // 3 = HAVE_FUTURE_DATA
+    // 4 = HAVE_ENOUGH_DATA
+    // We need at least HAVE_CURRENT_DATA (2) to seek safely without decoder abort errors
+    if (player.readyState() < 2) {
+      this.seekRetryCount++;
+      if (this.seekRetryCount > this.maxSeekRetries) {
+        // Exceeded max retries, attempt seek anyway (may fail gracefully)
+        this.log(`Exceeded max retries (readyState=${player.readyState()}), attempting seek anyway`);
+        this.seekRetryCount = 0;
+      } else {
+        // Not enough data loaded yet, retry next frame
+        this.log(`ReadyState ${player.readyState()} too low (retry ${this.seekRetryCount}/${this.maxSeekRetries})`);
+        this.rafId = requestAnimationFrame(() => this.executeSeek());
+        return;
+      }
+    } else {
+      // Reset retry count on successful readyState check
+      this.seekRetryCount = 0;
     }
 
     const duration = player.duration();

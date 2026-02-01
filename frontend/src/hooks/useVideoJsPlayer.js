@@ -53,6 +53,7 @@ export function useVideoJsPlayer({
   const updateVideoRef = useRef(updateVideoMutation);
   const lastVideoElementRef = useRef(null); // Track the actual DOM element
   const sponsorBlockSkipCooldownRef = useRef(0); // Prevent rapid re-skipping
+  const keyboardHandlerRef = useRef(null); // Store keyboard handler for cleanup
 
   // Keep refs up to date
   useEffect(() => {
@@ -508,6 +509,8 @@ export function useVideoJsPlayer({
       }
     };
 
+    // Store in ref for cleanup on unmount (especially for persistPlayer mode)
+    keyboardHandlerRef.current = handleKeyPress;
     document.addEventListener('keydown', handleKeyPress);
 
     // Error handling
@@ -719,9 +722,14 @@ export function useVideoJsPlayer({
     };
   }, [saveProgress]);
 
-  // Component unmount cleanup: Always pause and dispose player when leaving the page
+  // Component unmount cleanup: Always pause, dispose player, and remove keyboard listener when leaving the page
   useEffect(() => {
     return () => {
+      // Remove keyboard listener (especially important for persistPlayer mode)
+      if (keyboardHandlerRef.current) {
+        document.removeEventListener('keydown', keyboardHandlerRef.current);
+        keyboardHandlerRef.current = null;
+      }
       if (playerRef.current && !playerRef.current.isDisposed()) {
         playerRef.current.pause();
         playerRef.current.dispose();
