@@ -22,6 +22,7 @@ export function DatabaseMaintenanceModal({
     (missingMetadataData?.missing_video_thumbnails || 0);
 
   const sponsorblockCount = sponsorblockData?.count || 0;
+  const sponsorblockDisabled = sponsorblockData?.message && sponsorblockData.message.includes('not enabled');
 
   return (
     <ResponsiveModal isOpen={isOpen} onClose={onClose} title="Database Maintenance">
@@ -100,22 +101,30 @@ export function DatabaseMaintenanceModal({
 
         <button
           onClick={onOpenSponsorblock}
-          className="flex items-center justify-between w-full p-3 sm:p-3 p-4 bg-white/5 hover:bg-white/10 sm:hover:bg-white/10 active:bg-white/10 rounded-xl sm:rounded-xl rounded-2xl transition-colors"
+          className={`flex items-center justify-between w-full p-3 sm:p-3 p-4 bg-white/5 rounded-xl sm:rounded-xl rounded-2xl transition-colors ${
+            sponsorblockDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/10 sm:hover:bg-white/10 active:bg-white/10'
+          }`}
         >
           <div className="flex items-center gap-3">
             <div className="hidden sm:block" />
-            <div className="sm:hidden w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-              <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <div className={`sm:hidden w-10 h-10 rounded-xl flex items-center justify-center ${sponsorblockDisabled ? 'bg-gray-500/20' : 'bg-green-500/20'}`}>
+              <svg className={`w-5 h-5 ${sponsorblockDisabled ? 'text-gray-500' : 'text-green-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
               </svg>
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium text-text-primary">SponsorBlock Chapters</p>
-              <p className="text-text-muted text-xs">Embed chapter markers in files</p>
+              <p className={`text-sm font-medium ${sponsorblockDisabled ? 'text-text-muted' : 'text-text-primary'}`}>SponsorBlock Chapters</p>
+              <p className="text-text-muted text-xs">
+                {sponsorblockDisabled ? 'SponsorBlock disabled in Settings' : 'Embed chapter markers in files'}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-lg">{sponsorblockCount}</span>
+            {sponsorblockDisabled ? (
+              <span className="text-xs px-2 py-0.5 bg-gray-500/20 text-gray-400 rounded-lg">Off</span>
+            ) : (
+              <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-lg">{sponsorblockCount}</span>
+            )}
             <span className="text-text-muted">→</span>
           </div>
         </button>
@@ -337,7 +346,8 @@ export function SponsorblockChaptersModal({
   onFix,
   isFixing
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expandedSegments, setExpandedSegments] = useState(false);
+  const [expandedChapters, setExpandedChapters] = useState(false);
 
   // Handle ESC key
   useEffect(() => {
@@ -356,8 +366,15 @@ export function SponsorblockChaptersModal({
 
   if (!isOpen || !data) return null;
 
+  // Check if SponsorBlock is disabled
+  const isDisabled = data.message && data.message.includes('not enabled');
+
   const count = data.count || 0;
+  const missingSegments = data.missing_segments || 0;
+  const missingChapters = data.missing_chapters || 0;
   const videos = data.videos || [];
+  const segmentVideos = videos.filter(v => v.needs === 'segments');
+  const chapterVideos = videos.filter(v => v.needs === 'chapters');
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -388,7 +405,17 @@ export function SponsorblockChaptersModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {count === 0 ? (
+          {isDisabled ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-text-primary">SponsorBlock Disabled</p>
+              <p className="text-xs text-text-muted text-center mt-1">Enable SponsorBlock categories in Settings to use this feature</p>
+            </div>
+          ) : count === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -401,58 +428,96 @@ export function SponsorblockChaptersModal({
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-text-secondary">
-                These videos have SponsorBlock segment data but no chapter markers embedded in the file.
-                Chapter markers allow external players (VLC, phone) to show sponsor segment locations.
+                Fetches segment data from SponsorBlock API and embeds chapter markers into video files.
+                Chapter markers allow external players (VLC, phone apps) to show sponsor locations.
               </p>
 
-              <div className="rounded-xl bg-white/5 overflow-hidden">
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span className="text-sm font-medium text-text-primary">Videos Missing Chapters</span>
-                    <span className="px-2 py-0.5 rounded-lg text-xs bg-white/10 text-text-muted">{count}</span>
-                  </div>
-                  <svg className={`w-4 h-4 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-                  </svg>
-                </button>
-                {expanded && videos.length > 0 && (
-                  <div className="px-4 pb-3 space-y-1.5">
-                    {videos.slice(0, 20).map((video) => (
-                      <div key={video.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-secondary/50">
-                        <div className="w-8 h-8 rounded flex-shrink-0 bg-white/10" />
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm text-text-primary truncate">{video.title}</div>
-                          {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
+              {missingSegments > 0 && (
+                <div className="rounded-xl bg-white/5 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedSegments(!expandedSegments)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="text-sm font-medium text-text-primary">Need Segment Fetch</span>
+                      <span className="px-2 py-0.5 rounded-lg text-xs bg-blue-500/20 text-blue-400">{missingSegments}</span>
+                    </div>
+                    <svg className={`w-4 h-4 text-text-muted transition-transform ${expandedSegments ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  {expandedSegments && segmentVideos.length > 0 && (
+                    <div className="px-4 pb-3 space-y-1.5">
+                      {segmentVideos.slice(0, 20).map((video) => (
+                        <div key={video.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-secondary/50">
+                          <div className="w-8 h-8 rounded flex-shrink-0 bg-white/10" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm text-text-primary truncate">{video.title}</div>
+                            {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                    {count > 20 && (
-                      <p className="text-xs text-text-muted text-center py-2">...and {count - 20} more</p>
-                    )}
-                  </div>
-                )}
-              </div>
+                      ))}
+                      {missingSegments > 20 && (
+                        <p className="text-xs text-text-muted text-center py-2">...and {missingSegments - 20} more</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {missingChapters > 0 && (
+                <div className="rounded-xl bg-white/5 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedChapters(!expandedChapters)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-sm font-medium text-text-primary">Need Chapter Embed</span>
+                      <span className="px-2 py-0.5 rounded-lg text-xs bg-green-500/20 text-green-400">{missingChapters}</span>
+                    </div>
+                    <svg className={`w-4 h-4 text-text-muted transition-transform ${expandedChapters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  {expandedChapters && chapterVideos.length > 0 && (
+                    <div className="px-4 pb-3 space-y-1.5">
+                      {chapterVideos.slice(0, 20).map((video) => (
+                        <div key={video.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-secondary/50">
+                          <div className="w-8 h-8 rounded flex-shrink-0 bg-white/10" />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm text-text-primary truncate">{video.title}</div>
+                            {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
+                          </div>
+                        </div>
+                      ))}
+                      {missingChapters > 20 && (
+                        <p className="text-xs text-text-muted text-center py-2">...and {missingChapters - 20} more</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <div className="p-5 border-t border-white/10 flex items-center justify-between">
-          <p className="text-xs text-text-muted">Fast remux, no re-encoding</p>
+          <p className="text-xs text-text-muted">
+            {isDisabled ? 'Enable SponsorBlock in Settings' : 'Fast remux, no re-encoding'}
+          </p>
           <div className="flex gap-2">
             <button onClick={onClose} className="py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors">
-              Cancel
+              {isDisabled || count === 0 ? 'Close' : 'Cancel'}
             </button>
-            {count > 0 && (
+            {count > 0 && !isDisabled && (
               <button
                 onClick={onFix}
                 disabled={isFixing}
                 className="py-2.5 px-4 rounded-xl bg-green-500/90 hover:bg-green-500 text-white text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                {isFixing ? 'Fixing...' : `Fix ${count} Video${count !== 1 ? 's' : ''}`}
+                {isFixing ? 'Processing...' : `Fix ${count} Video${count !== 1 ? 's' : ''}`}
               </button>
             )}
           </div>
@@ -476,7 +541,17 @@ export function SponsorblockChaptersModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {count === 0 ? (
+          {isDisabled ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">SponsorBlock Disabled</p>
+              <p className="text-xs text-text-muted text-center mt-1">Enable SponsorBlock in Settings</p>
+            </div>
+          ) : count === 0 ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -489,56 +564,87 @@ export function SponsorblockChaptersModal({
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-text-secondary">
-                These videos have SponsorBlock data but no chapter markers in the file.
+                Fetches segments from SponsorBlock and embeds chapter markers.
               </p>
 
-              <div className="rounded-xl bg-white/5 overflow-hidden">
-                <button
-                  onClick={() => setExpanded(!expanded)}
-                  className="w-full px-4 py-3 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-green-500" />
-                    <span className="text-sm font-medium text-text-primary">Videos</span>
-                    <span className="px-2 py-0.5 rounded-lg text-xs bg-white/10 text-text-muted">{count}</span>
-                  </div>
-                  <svg className={`w-4 h-4 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
-                  </svg>
-                </button>
-                {expanded && videos.length > 0 && (
-                  <div className="px-4 pb-3 space-y-1.5">
-                    {videos.slice(0, 20).map((video) => (
-                      <div key={video.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-secondary/50">
-                        <div className="min-w-0 flex-1">
+              {missingSegments > 0 && (
+                <div className="rounded-xl bg-white/5 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedSegments(!expandedSegments)}
+                    className="w-full px-4 py-3 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      <span className="text-sm font-medium text-text-primary">Need Fetch</span>
+                      <span className="px-2 py-0.5 rounded-lg text-xs bg-blue-500/20 text-blue-400">{missingSegments}</span>
+                    </div>
+                    <svg className={`w-4 h-4 text-text-muted transition-transform ${expandedSegments ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  {expandedSegments && segmentVideos.length > 0 && (
+                    <div className="px-4 pb-3 space-y-1.5">
+                      {segmentVideos.slice(0, 15).map((video) => (
+                        <div key={video.id} className="px-3 py-2 rounded-lg bg-dark-secondary/50">
                           <div className="text-sm text-text-primary truncate">{video.title}</div>
-                          {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
                         </div>
-                      </div>
-                    ))}
-                    {count > 20 && (
-                      <p className="text-xs text-text-muted text-center py-2">...and {count - 20} more</p>
-                    )}
-                  </div>
-                )}
-              </div>
+                      ))}
+                      {missingSegments > 15 && (
+                        <p className="text-xs text-text-muted text-center py-2">...and {missingSegments - 15} more</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {missingChapters > 0 && (
+                <div className="rounded-xl bg-white/5 overflow-hidden">
+                  <button
+                    onClick={() => setExpandedChapters(!expandedChapters)}
+                    className="w-full px-4 py-3 flex items-center justify-between"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      <span className="text-sm font-medium text-text-primary">Need Embed</span>
+                      <span className="px-2 py-0.5 rounded-lg text-xs bg-green-500/20 text-green-400">{missingChapters}</span>
+                    </div>
+                    <svg className={`w-4 h-4 text-text-muted transition-transform ${expandedChapters ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                  </button>
+                  {expandedChapters && chapterVideos.length > 0 && (
+                    <div className="px-4 pb-3 space-y-1.5">
+                      {chapterVideos.slice(0, 15).map((video) => (
+                        <div key={video.id} className="px-3 py-2 rounded-lg bg-dark-secondary/50">
+                          <div className="text-sm text-text-primary truncate">{video.title}</div>
+                        </div>
+                      ))}
+                      {missingChapters > 15 && (
+                        <p className="text-xs text-text-muted text-center py-2">...and {missingChapters - 15} more</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
 
         <div className="p-4 border-t border-white/10">
-          <p className="text-xs text-text-muted text-center mb-3">Fast remux, no re-encoding</p>
+          <p className="text-xs text-text-muted text-center mb-3">
+            {isDisabled ? 'Enable SponsorBlock in Settings' : 'Fast remux, no re-encoding'}
+          </p>
           <div className="flex gap-3">
             <button onClick={onClose} className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium">
-              Cancel
+              {isDisabled || count === 0 ? 'Close' : 'Cancel'}
             </button>
-            {count > 0 && (
+            {count > 0 && !isDisabled && (
               <button
                 onClick={onFix}
                 disabled={isFixing}
                 className="flex-1 py-3.5 bg-green-500 rounded-xl text-white font-semibold disabled:opacity-50"
               >
-                {isFixing ? 'Fixing...' : `Fix ${count}`}
+                {isFixing ? 'Processing...' : `Fix ${count}`}
               </button>
             )}
           </div>

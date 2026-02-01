@@ -169,10 +169,30 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
         return;
       }
 
-      const message = data.fixed > 0
-        ? `Embedded chapters in ${data.fixed} video${data.fixed !== 1 ? 's' : ''}${data.failed > 0 ? ` (${data.failed} failed)` : ''}`
-        : 'No videos needed chapter fixes';
-      showNotification(message, data.failed > 0 ? 'warning' : 'success');
+      // Build detailed message
+      const parts = [];
+      if (data.segments_fetched > 0) {
+        parts.push(`${data.segments_fetched} segment${data.segments_fetched !== 1 ? 's' : ''} fetched`);
+      }
+      if (data.chapters_embedded > 0) {
+        parts.push(`${data.chapters_embedded} chapter${data.chapters_embedded !== 1 ? 's' : ''} embedded`);
+      }
+      if (data.no_segments_available > 0) {
+        parts.push(`${data.no_segments_available} had no SponsorBlock data`);
+      }
+
+      let message;
+      if (parts.length > 0) {
+        message = parts.join(', ');
+        if (data.failed > 0) {
+          message += ` (${data.failed} failed)`;
+        }
+      } else {
+        message = 'No videos needed processing';
+      }
+
+      const hasWarning = data.failed > 0 || data.no_segments_available > 0;
+      showNotification(message, hasWarning ? 'warning' : 'success');
 
       setShowSponsorblockModal(false);
       setShowRepairModal(false);

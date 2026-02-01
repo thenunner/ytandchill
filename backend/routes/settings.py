@@ -536,76 +536,115 @@ def fix_upload_dates():
 
 @settings_bp.route('/api/settings/missing-sponsorblock-chapters', methods=['GET'])
 def get_missing_sponsorblock_chapters():
-    """Get count of library videos that have SponsorBlock segments but no chapter markers in file."""
-    global _session_factory
+    """Get count of library videos that need SponsorBlock processing (fetch segments + embed chapters)."""
+    global _session_factory, _settings_manager
     import subprocess
     import json as json_module
 
     downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
 
+    # Check if SponsorBlock is enabled
+    sponsorblock_categories = _settings_manager.get_sponsorblock_categories()
+    if not sponsorblock_categories:
+        return jsonify({
+            'count': 0,
+            'videos': [],
+            'missing_segments': 0,
+            'missing_chapters': 0,
+            'message': 'SponsorBlock is not enabled in Settings'
+        })
+
     with get_session(_session_factory) as session:
-        # Get all library videos that have sponsorblock_segments data
-        videos = session.query(Video).filter(
+        # Get all library videos with files
+        all_library_videos = session.query(Video).filter(
             Video.status == 'library',
-            Video.sponsorblock_segments.isnot(None),
-            Video.sponsorblock_segments != '',
-            Video.sponsorblock_segments != '[]',
-            Video.file_path.isnot(None)
+            Video.file_path.isnot(None),
+            Video.yt_id.isnot(None)
         ).all()
 
-        missing_chapters = []
-        for video in videos:
-            # Build full file path
-            file_path = video.file_path
-            if not os.path.isabs(file_path):
-                file_path = os.path.join(downloads_folder, file_path)
+        missing_segments_list = []  # Videos that need segment fetch
+        missing_chapters_list = []  # Videos that have segments but no chapters
 
-            if not os.path.exists(file_path):
-                continue
+        for video in all_library_videos:
+            # Check if video has segments
+            has_segments = (video.sponsorblock_segments and
+                          video.sponsorblock_segments != '' and
+                          video.sponsorblock_segments != '[]')
 
-            # Check if file has chapters using ffprobe
-            try:
-                result = subprocess.run(
-                    ['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_chapters', file_path],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
-                )
-                if result.returncode == 0:
-                    probe_data = json_module.loads(result.stdout)
-                    chapters = probe_data.get('chapters', [])
-                    if len(chapters) == 0:
-                        # No chapters - needs fixing
-                        missing_chapters.append({
-                            'id': video.id,
-                            'yt_id': video.yt_id,
-                            'title': video.title,
-                            'channel_title': video.channel.title if video.channel else None,
-                            'file_path': video.file_path
-                        })
-            except Exception as e:
-                logger.warning(f"Failed to probe {video.title}: {e}")
-                continue
+            if not has_segments:
+                # Needs segment fetch
+                missing_segments_list.append({
+                    'id': video.id,
+                    'yt_id': video.yt_id,
+                    'title': video.title,
+                    'channel_title': video.channel.title if video.channel else None,
+                    'needs': 'segments'
+                })
+            else:
+                # Has segments - check if file has chapters
+                file_path = video.file_path
+                if not os.path.isabs(file_path):
+                    file_path = os.path.join(downloads_folder, file_path)
+
+                if not os.path.exists(file_path):
+                    continue
+
+                try:
+                    result = subprocess.run(
+                        ['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_chapters', file_path],
+                        capture_output=True,
+                        text=True,
+                        timeout=10
+                    )
+                    if result.returncode == 0:
+                        probe_data = json_module.loads(result.stdout)
+                        chapters = probe_data.get('chapters', [])
+                        if len(chapters) == 0:
+                            missing_chapters_list.append({
+                                'id': video.id,
+                                'yt_id': video.yt_id,
+                                'title': video.title,
+                                'channel_title': video.channel.title if video.channel else None,
+                                'needs': 'chapters'
+                            })
+                except Exception as e:
+                    logger.warning(f"Failed to probe {video.title}: {e}")
+
+        # Combine lists - videos needing segments come first
+        all_videos = missing_segments_list + missing_chapters_list
+        total_count = len(all_videos)
 
         return jsonify({
-            'count': len(missing_chapters),
-            'videos': missing_chapters[:100]  # Limit for display
+            'count': total_count,
+            'videos': all_videos[:100],
+            'missing_segments': len(missing_segments_list),
+            'missing_chapters': len(missing_chapters_list)
         })
 
 
 @settings_bp.route('/api/settings/fix-sponsorblock-chapters', methods=['POST'])
 def fix_sponsorblock_chapters():
-    """Embed SponsorBlock segments as chapter markers into video files."""
-    global _session_factory
+    """Fetch SponsorBlock segments and embed as chapter markers into video files."""
+    global _session_factory, _settings_manager
     import subprocess
     import json as json_module
     import tempfile
 
     downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
 
-    fixed_count = 0
+    segments_fetched = 0
+    chapters_embedded = 0
+    no_segments_available = 0  # Videos where SponsorBlock has no data
     failed_count = 0
     errors = []
+
+    # Check if SponsorBlock is enabled
+    sponsorblock_categories = _settings_manager.get_sponsorblock_categories()
+    if not sponsorblock_categories:
+        return jsonify({
+            'success': False,
+            'error': 'SponsorBlock is not enabled in Settings'
+        })
 
     # Category display names for chapter titles
     category_names = {
@@ -620,16 +659,52 @@ def fix_sponsorblock_chapters():
     }
 
     with get_session(_session_factory) as session:
-        # Get all library videos that have sponsorblock_segments data
+        # Get all library videos
         videos = session.query(Video).filter(
             Video.status == 'library',
-            Video.sponsorblock_segments.isnot(None),
-            Video.sponsorblock_segments != '',
-            Video.sponsorblock_segments != '[]',
-            Video.file_path.isnot(None)
+            Video.file_path.isnot(None),
+            Video.yt_id.isnot(None)
         ).all()
 
         for video in videos:
+            # Step 1: Fetch segments if missing
+            has_segments = (video.sponsorblock_segments and
+                          video.sponsorblock_segments != '' and
+                          video.sponsorblock_segments != '[]')
+
+            if not has_segments:
+                # Fetch from SponsorBlock API
+                try:
+                    url = f"https://sponsor.ajay.app/api/skipSegments?videoID={video.yt_id}&categories={json_module.dumps(sponsorblock_categories)}"
+                    response = requests.get(url, timeout=10)
+
+                    if response.status_code == 200:
+                        api_segments = response.json()
+                        segments = [
+                            {
+                                "start": seg["segment"][0],
+                                "end": seg["segment"][1],
+                                "category": seg["category"]
+                            }
+                            for seg in api_segments
+                        ]
+                        if segments:
+                            video.sponsorblock_segments = json_module.dumps(segments)
+                            session.commit()
+                            segments_fetched += 1
+                            logger.info(f"Fetched {len(segments)} SponsorBlock segments for {video.title}")
+                            has_segments = True
+                    elif response.status_code == 404:
+                        # No segments available for this video - mark as checked with empty array
+                        video.sponsorblock_segments = '[]'
+                        session.commit()
+                        no_segments_available += 1
+                except Exception as e:
+                    logger.warning(f"Failed to fetch segments for {video.title}: {e}")
+
+            # Step 2: Embed chapters if has segments but no chapters in file
+            if not has_segments:
+                continue
             # Build full file path
             file_path = video.file_path
             if not os.path.isabs(file_path):
@@ -720,7 +795,7 @@ def fix_sponsorblock_chapters():
                 if ffmpeg_result.returncode == 0 and os.path.exists(temp_output):
                     # Replace original with new file
                     os.replace(temp_output, file_path)
-                    fixed_count += 1
+                    chapters_embedded += 1
                     logger.info(f"Embedded SponsorBlock chapters in {video.title}")
                 else:
                     failed_count += 1
@@ -735,7 +810,9 @@ def fix_sponsorblock_chapters():
 
     return jsonify({
         'success': True,
-        'fixed': fixed_count,
+        'segments_fetched': segments_fetched,
+        'chapters_embedded': chapters_embedded,
+        'no_segments_available': no_segments_available,
         'failed': failed_count,
         'errors': errors[:10]  # Limit errors for response
     })
