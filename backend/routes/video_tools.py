@@ -198,7 +198,11 @@ def get_videos():
 @video_tools_bp.route('/api/videos/<int:video_id>', methods=['GET'])
 def get_video(video_id):
     with get_session(_session_factory) as session:
-        video = session.query(Video).filter(Video.id == video_id).first()
+        # Use joinedload to fetch related data in single query (avoids N+1 queries)
+        video = session.query(Video).options(
+            joinedload(Video.channel),
+            joinedload(Video.playlist_videos).joinedload(PlaylistVideo.playlist)
+        ).filter(Video.id == video_id).first()
 
         if not video:
             return jsonify({'error': 'Video not found'}), 404

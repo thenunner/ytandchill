@@ -172,6 +172,7 @@ export function useVideo(id) {
     queryKey: ['video', id],
     queryFn: () => api.getVideo(id),
     enabled: !!id,
+    staleTime: 30000,  // Cache for 30 seconds to prevent unnecessary refetches
   });
 }
 
