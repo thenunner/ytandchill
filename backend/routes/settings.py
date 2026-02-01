@@ -694,11 +694,18 @@ def fix_sponsorblock_chapters():
                             segments_fetched += 1
                             logger.info(f"Fetched {len(segments)} SponsorBlock segments for {video.title}")
                             has_segments = True
+                        else:
+                            # API returned 200 but no matching segments
+                            video.sponsorblock_segments = '[]'
+                            session.commit()
+                            no_segments_available += 1
+                            logger.debug(f"No SponsorBlock segments available for {video.title}")
                     elif response.status_code == 404:
                         # No segments available for this video - mark as checked with empty array
                         video.sponsorblock_segments = '[]'
                         session.commit()
                         no_segments_available += 1
+                        logger.debug(f"SponsorBlock API returned 404 for {video.title}")
                 except Exception as e:
                     logger.warning(f"Failed to fetch segments for {video.title}: {e}")
 
@@ -723,8 +730,10 @@ def fix_sponsorblock_chapters():
                 )
                 if result.returncode == 0:
                     probe_data = json_module.loads(result.stdout)
-                    if len(probe_data.get('chapters', [])) > 0:
+                    existing_chapters = probe_data.get('chapters', [])
+                    if len(existing_chapters) > 0:
                         # Already has chapters, skip
+                        logger.debug(f"Skipping {video.title}: already has {len(existing_chapters)} chapters")
                         continue
             except Exception as e:
                 logger.warning(f"Failed to probe {video.title}: {e}")
@@ -734,9 +743,13 @@ def fix_sponsorblock_chapters():
             try:
                 segments = json_module.loads(video.sponsorblock_segments)
                 if not segments:
+                    logger.debug(f"Skipping {video.title}: segments list is empty")
                     continue
-            except:
+            except Exception as e:
+                logger.warning(f"Failed to parse segments for {video.title}: {e}")
                 continue
+
+            logger.info(f"Embedding {len(segments)} SponsorBlock chapters in {video.title}")
 
             # Get video duration for the final chapter
             try:

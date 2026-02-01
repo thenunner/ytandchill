@@ -405,7 +405,20 @@ export function SponsorblockChaptersModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {isDisabled ? (
+          {isFixing ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-text-primary">Processing {count} videos...</p>
+              <p className="text-xs text-text-muted text-center mt-2 max-w-xs">
+                Fetching segments from SponsorBlock API and embedding chapters. This may take a while for large libraries.
+              </p>
+            </div>
+          ) : isDisabled ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,12 +463,9 @@ export function SponsorblockChaptersModal({
                   {expandedSegments && segmentVideos.length > 0 && (
                     <div className="px-4 pb-3 space-y-1.5">
                       {segmentVideos.slice(0, 20).map((video) => (
-                        <div key={video.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-secondary/50">
-                          <div className="w-8 h-8 rounded flex-shrink-0 bg-white/10" />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm text-text-primary truncate">{video.title}</div>
-                            {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
-                          </div>
+                        <div key={video.id} className="px-3 py-2 rounded-lg bg-dark-secondary/50">
+                          <div className="text-sm text-text-primary truncate">{video.title}</div>
+                          {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
                         </div>
                       ))}
                       {missingSegments > 20 && (
@@ -484,12 +494,9 @@ export function SponsorblockChaptersModal({
                   {expandedChapters && chapterVideos.length > 0 && (
                     <div className="px-4 pb-3 space-y-1.5">
                       {chapterVideos.slice(0, 20).map((video) => (
-                        <div key={video.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-secondary/50">
-                          <div className="w-8 h-8 rounded flex-shrink-0 bg-white/10" />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm text-text-primary truncate">{video.title}</div>
-                            {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
-                          </div>
+                        <div key={video.id} className="px-3 py-2 rounded-lg bg-dark-secondary/50">
+                          <div className="text-sm text-text-primary truncate">{video.title}</div>
+                          {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
                         </div>
                       ))}
                       {missingChapters > 20 && (
@@ -505,19 +512,20 @@ export function SponsorblockChaptersModal({
 
         <div className="p-5 border-t border-white/10 flex items-center justify-between">
           <p className="text-xs text-text-muted">
-            {isDisabled ? 'Enable SponsorBlock in Settings' : 'Fast remux, no re-encoding'}
+            {isFixing ? 'Please wait...' : isDisabled ? 'Enable SponsorBlock in Settings' : 'Fast remux, no re-encoding'}
           </p>
           <div className="flex gap-2">
-            <button onClick={onClose} className="py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors">
-              {isDisabled || count === 0 ? 'Close' : 'Cancel'}
-            </button>
-            {count > 0 && !isDisabled && (
+            {!isFixing && (
+              <button onClick={onClose} className="py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors">
+                {isDisabled || count === 0 ? 'Close' : 'Cancel'}
+              </button>
+            )}
+            {count > 0 && !isDisabled && !isFixing && (
               <button
                 onClick={onFix}
-                disabled={isFixing}
-                className="py-2.5 px-4 rounded-xl bg-green-500/90 hover:bg-green-500 text-white text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                className="py-2.5 px-4 rounded-xl bg-green-500/90 hover:bg-green-500 text-white text-sm font-medium transition-colors flex items-center gap-2"
               >
-                {isFixing ? 'Processing...' : `Fix ${count} Video${count !== 1 ? 's' : ''}`}
+                Fix {count} Video{count !== 1 ? 's' : ''}
               </button>
             )}
           </div>
@@ -541,7 +549,18 @@ export function SponsorblockChaptersModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4">
-          {isDisabled ? (
+          {isFixing ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">Processing {count} videos...</p>
+              <p className="text-xs text-text-muted text-center mt-2">This may take a while</p>
+            </div>
+          ) : isDisabled ? (
             <div className="flex flex-col items-center justify-center py-8">
               <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mb-4">
                 <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -631,23 +650,28 @@ export function SponsorblockChaptersModal({
         </div>
 
         <div className="p-4 border-t border-white/10">
-          <p className="text-xs text-text-muted text-center mb-3">
-            {isDisabled ? 'Enable SponsorBlock in Settings' : 'Fast remux, no re-encoding'}
-          </p>
-          <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium">
-              {isDisabled || count === 0 ? 'Close' : 'Cancel'}
-            </button>
-            {count > 0 && !isDisabled && (
-              <button
-                onClick={onFix}
-                disabled={isFixing}
-                className="flex-1 py-3.5 bg-green-500 rounded-xl text-white font-semibold disabled:opacity-50"
-              >
-                {isFixing ? 'Processing...' : `Fix ${count}`}
-              </button>
-            )}
-          </div>
+          {isFixing ? (
+            <p className="text-xs text-text-muted text-center py-3">Please wait...</p>
+          ) : (
+            <>
+              <p className="text-xs text-text-muted text-center mb-3">
+                {isDisabled ? 'Enable SponsorBlock in Settings' : 'Fast remux, no re-encoding'}
+              </p>
+              <div className="flex gap-3">
+                <button onClick={onClose} className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium">
+                  {isDisabled || count === 0 ? 'Close' : 'Cancel'}
+                </button>
+                {count > 0 && !isDisabled && (
+                  <button
+                    onClick={onFix}
+                    className="flex-1 py-3.5 bg-green-500 rounded-xl text-white font-semibold"
+                  >
+                    Fix {count}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
