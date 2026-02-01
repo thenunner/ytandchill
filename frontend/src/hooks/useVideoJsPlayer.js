@@ -616,6 +616,60 @@ export function useVideoJsPlayer({
       }
     });
 
+    // SponsorBlock segment markers on progress bar (desktop only)
+    const renderSponsorBlockMarkers = () => {
+      if (!player || player.isDisposed()) return;
+
+      const duration = player.duration();
+      const segments = videoDataRef.current?.sponsorblock_segments || [];
+      if (!duration || segments.length === 0) return;
+
+      // Find progress bar element
+      const progressHolder = player.el().querySelector('.vjs-progress-holder');
+      if (!progressHolder) return;
+
+      // Remove any existing markers
+      progressHolder.querySelectorAll('.sb-marker').forEach(el => el.remove());
+
+      // Category colors (semi-transparent)
+      const colors = {
+        sponsor: 'rgba(0, 212, 144, 0.6)',       // green
+        selfpromo: 'rgba(255, 193, 7, 0.6)',     // yellow
+        interaction: 'rgba(138, 43, 226, 0.6)',  // purple
+        intro: 'rgba(0, 191, 255, 0.6)',         // cyan
+        outro: 'rgba(0, 0, 139, 0.6)',           // dark blue
+        preview: 'rgba(135, 206, 235, 0.6)',     // light blue
+        filler: 'rgba(128, 128, 128, 0.6)',      // gray
+        music_offtopic: 'rgba(255, 140, 0, 0.6)' // orange
+      };
+
+      // Create marker for each segment
+      segments.forEach(segment => {
+        const startPercent = (segment.start / duration) * 100;
+        const widthPercent = ((segment.end - segment.start) / duration) * 100;
+
+        const marker = document.createElement('div');
+        marker.className = 'sb-marker';
+        marker.style.cssText = `
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          left: ${startPercent}%;
+          width: ${widthPercent}%;
+          background: ${colors[segment.category] || colors.sponsor};
+          pointer-events: none;
+          z-index: 1;
+          border-radius: 2px;
+        `;
+        marker.title = `[SponsorBlock] ${segment.category}`;
+        progressHolder.appendChild(marker);
+      });
+    };
+
+    // Render markers when duration is known
+    player.on('loadedmetadata', renderSponsorBlockMarkers);
+    player.on('durationchange', renderSponsorBlockMarkers);
+
     // Handle video end
     if (onEnded) {
       player.on('ended', () => {
