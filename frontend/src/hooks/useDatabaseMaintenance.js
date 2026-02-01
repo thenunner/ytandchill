@@ -172,13 +172,13 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
       // Build detailed message
       const parts = [];
       if (data.segments_fetched > 0) {
-        parts.push(`${data.segments_fetched} segment${data.segments_fetched !== 1 ? 's' : ''} fetched`);
+        parts.push(`${data.segments_fetched} fetched`);
       }
       if (data.chapters_embedded > 0) {
-        parts.push(`${data.chapters_embedded} chapter${data.chapters_embedded !== 1 ? 's' : ''} embedded`);
+        parts.push(`${data.chapters_embedded} embedded`);
       }
       if (data.no_segments_available > 0) {
-        parts.push(`${data.no_segments_available} had no SponsorBlock data`);
+        parts.push(`${data.no_segments_available} no SB data`);
       }
 
       let message;
@@ -187,11 +187,13 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
         if (data.failed > 0) {
           message += ` (${data.failed} failed)`;
         }
+      } else if (data.skipped_has_chapters > 0 || data.already_had_no_data > 0) {
+        message = 'All videos already processed';
       } else {
         message = 'No videos needed processing';
       }
 
-      const hasWarning = data.failed > 0 || data.no_segments_available > 0;
+      const hasWarning = data.failed > 0;
       showNotification(message, hasWarning ? 'warning' : 'success');
 
       setShowSponsorblockModal(false);
