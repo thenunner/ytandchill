@@ -716,6 +716,13 @@ class DownloadWorker:
             }],
         }
 
+        # Add SponsorBlock chapter markers if categories are enabled
+        # This embeds segment markers as chapters in the video metadata (no re-encoding)
+        # Works alongside our playback-time auto-skip for external player compatibility
+        sponsorblock_categories = self.settings_manager.get_sponsorblock_categories()
+        if sponsorblock_categories:
+            ydl_opts['sponsorblock_mark'] = sponsorblock_categories
+
         # Add cookies if available
         data_dir = os.environ.get('DATA_DIR', 'data')
         cookies_path = os.path.join(data_dir, 'cookies.txt')
