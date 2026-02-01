@@ -111,8 +111,8 @@ export function useVideoJsPlayer({
     const player = videojs(videoRef.current, {
       controls: true,
       fill: true,  // Fill the container (respects our CSS sizing)
-      preload: (autoplay && !isMobile) ? 'auto' : 'metadata', // Preload more when autoplay enabled
-      poster: isMobile ? (video.thumb_url || '') : '', // Only show poster on mobile devices
+      preload: 'metadata',  // Fast initial load - only fetch video headers
+      poster: video.thumb_url || '',  // Show thumbnail while loading (all devices)
       autoplay: autoplay && !isMobile, // Use native autoplay on desktop for faster start
       // Device-specific inactivity timeout for auto-hiding controls
       // Mobile: 0 = never auto-hide (controls always visible, except fullscreen)
