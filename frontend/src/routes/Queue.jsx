@@ -416,7 +416,7 @@ export default function Queue() {
                           <span className="w-3 h-3 border-2 border-accent/30 border-t-accent rounded-full animate-spin" />
                           Processing ({Math.floor((currentDownload.postprocess_elapsed || 0) / 60)}:{((currentDownload.postprocess_elapsed || 0) % 60).toString().padStart(2, '0')})
                         </span>
-                        <span className="text-text-muted">SponsorBlock re-encoding</span>
+                        <span className="text-text-muted">Finishing up...</span>
                       </>
                     ) : (
                       <>
