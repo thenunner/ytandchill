@@ -609,31 +609,17 @@ export default function PlaylistPlayer() {
         return;
       }
 
-      // Reset player state before changing source
-      playerRef.current.pause();
-
       playerRef.current.src({
         src: videoSrc,
         type: 'video/mp4'
       });
 
-      // Explicitly load the new source
+      // Explicitly load and play immediately (don't wait for loadedmetadata)
       playerRef.current.load();
+      playerRef.current.play().catch(() => {});
     } catch (error) {
       // Silently handle errors
     }
-
-    // Restore position after source loads
-    playerRef.current.one('loadedmetadata', () => {
-      // In playlist mode, ALWAYS start from beginning (don't restore saved position)
-      playerRef.current.currentTime(0);
-
-      // Autoplay on desktop and tablet (not mobile)
-      const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      if (!isMobileDevice) {
-        playerRef.current.play().catch(() => {});
-      }
-    });
   }, [currentVideo?.id, playerRef, isMobile]);
 
   if (isLoading) {

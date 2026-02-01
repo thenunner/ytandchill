@@ -112,7 +112,7 @@ export function useVideoJsPlayer({
       fill: true,  // Fill the container (respects our CSS sizing)
       preload: (autoplay && !isMobile) ? 'auto' : 'metadata', // Preload more when autoplay enabled
       poster: isMobile ? (video.thumb_url || '') : '', // Only show poster on mobile devices
-      autoplay: false, // Don't use built-in autoplay - we handle it manually after source is set
+      autoplay: autoplay && !isMobile, // Use native autoplay on desktop for faster start
       // Device-specific inactivity timeout for auto-hiding controls
       // Mobile: 0 = never auto-hide (controls always visible, except fullscreen)
       // Desktop/Tablet: 2000ms = hide after 2 seconds of inactivity
@@ -149,18 +149,25 @@ export function useVideoJsPlayer({
       debug: false,
     });
 
-    // Apply default playback speed from settings
-    fetch('/api/settings', { credentials: 'include' })
-      .then(res => res.json())
-      .then(settings => {
-        const defaultSpeed = parseFloat(settings.default_playback_speed) || 1;
-        if (defaultSpeed !== 1 && player && !player.isDisposed()) {
-          player.playbackRate(defaultSpeed);
-        }
-      })
-      .catch(err => {
-        console.warn('[useVideoJsPlayer] Failed to fetch default playback speed:', err);
-      });
+    // Apply default playback speed from settings (deferred to not block video loading)
+    const fetchSettings = () => {
+      fetch('/api/settings', { credentials: 'include' })
+        .then(res => res.json())
+        .then(settings => {
+          const defaultSpeed = parseFloat(settings.default_playback_speed) || 1;
+          if (defaultSpeed !== 1 && player && !player.isDisposed()) {
+            player.playbackRate(defaultSpeed);
+          }
+        })
+        .catch(() => {});
+    };
+
+    // Use requestIdleCallback to defer settings fetch, avoiding competition with video load
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(fetchSettings, { timeout: 2000 });
+    } else {
+      setTimeout(fetchSettings, 100);
+    }
 
     // ============================================
     // DEVICE-SPECIFIC CONTROL VISIBILITY BEHAVIOR
@@ -358,13 +365,16 @@ export function useVideoJsPlayer({
       const videoSrc = getVideoSource(video.file_path);
       if (videoSrc) {
         player.src({ src: videoSrc, type: 'video/mp4' });
+        player.load(); // Force immediate loading for faster start
 
-        // When metadata loads, restore progress and prepare video frame
+        // Restore progress when metadata loads (non-blocking - video may already be playing)
+        // With native autoplay enabled, the video starts immediately from position 0
+        // Once metadata loads, we seek to the saved position if applicable
         player.one('loadedmetadata', () => {
           try {
             const duration = player.duration();
 
-            // Restore saved progress position or start at beginning
+            // Restore saved progress position
             // Only resume if: position >= 5 seconds AND position < 95% of duration
             const startTime = (video.playback_seconds &&
                                video.playback_seconds >= 5 &&
@@ -372,36 +382,19 @@ export function useVideoJsPlayer({
               ? video.playback_seconds
               : 0;
 
-            // Function to start playback (called after seek completes)
-            const startPlayback = () => {
-              if (!isMobile) {
-                try {
-                  player.hasStarted(true);
-                  player.userActive(true);
-                } catch (err) {
-                  console.warn('[useVideoJsPlayer] Failed to mark as started:', err);
-                }
-                // Autoplay on desktop if enabled
-                if (autoplay) {
-                  player.play().catch(() => {
-                    // Browser blocked autoplay - user will need to click play
-                  });
-                }
-              }
-            };
-
             if (startTime > 0) {
-              // Seek first, then wait for seek to complete and frame to render
+              // Seek to saved position (video continues playing)
               player.currentTime(startTime);
-              player.one('seeked', () => {
-                // Use requestAnimationFrame to ensure video frame is rendered
-                requestAnimationFrame(() => {
-                  startPlayback();
-                });
-              });
-            } else {
-              // No seek needed, start immediately
-              startPlayback();
+            }
+
+            // Mark as started for UI purposes
+            if (!isMobile) {
+              try {
+                player.hasStarted(true);
+                player.userActive(true);
+              } catch (err) {
+                console.warn('[useVideoJsPlayer] Failed to mark as started:', err);
+              }
             }
           } catch (err) {
             console.warn('[useVideoJsPlayer] Failed to restore progress:', err);
