@@ -6,10 +6,12 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
   const [showNotFoundModal, setShowNotFoundModal] = useState(false);
   const [showShrinkDBModal, setShowShrinkDBModal] = useState(false);
   const [showMetadataFixModal, setShowMetadataFixModal] = useState(false);
+  const [showSponsorblockModal, setShowSponsorblockModal] = useState(false);
 
   // Data
   const [repairData, setRepairData] = useState(null);
   const [missingMetadataData, setMissingMetadataData] = useState(null);
+  const [sponsorblockData, setSponsorblockData] = useState(null);
   const [selectedNotFoundVideos, setSelectedNotFoundVideos] = useState([]);
   const [selectedChannels, setSelectedChannels] = useState([]);
 
@@ -17,17 +19,20 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isFixingMetadata, setIsFixingMetadata] = useState(false);
+  const [isFixingSponsorblock, setIsFixingSponsorblock] = useState(false);
 
   const handleQueueRepair = async () => {
     setIsCheckingRepair(true);
     try {
-      const [repairResponse, metadataResponse] = await Promise.all([
+      const [repairResponse, metadataResponse, sponsorblockResponse] = await Promise.all([
         fetch('/api/queue/check-orphaned', { credentials: 'include' }),
-        fetch('/api/settings/missing-metadata', { credentials: 'include' })
+        fetch('/api/settings/missing-metadata', { credentials: 'include' }),
+        fetch('/api/settings/missing-sponsorblock-chapters', { credentials: 'include' })
       ]);
 
       const data = await repairResponse.json();
       const metadataData = await metadataResponse.json();
+      const sbData = await sponsorblockResponse.json();
 
       if (data.error) {
         showNotification(data.error, 'error');
@@ -36,6 +41,7 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
 
       setRepairData(data);
       setMissingMetadataData(metadataData);
+      setSponsorblockData(sbData);
       setShowRepairModal(true);
     } catch (error) {
       showNotification(`Failed to check database: ${error.message}`, 'error');
@@ -148,6 +154,36 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     }
   };
 
+  const handleFixSponsorblockChapters = async () => {
+    setIsFixingSponsorblock(true);
+    try {
+      const response = await fetch('/api/settings/fix-sponsorblock-chapters', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      const message = data.fixed > 0
+        ? `Embedded chapters in ${data.fixed} video${data.fixed !== 1 ? 's' : ''}${data.failed > 0 ? ` (${data.failed} failed)` : ''}`
+        : 'No videos needed chapter fixes';
+      showNotification(message, data.failed > 0 ? 'warning' : 'success');
+
+      setShowSponsorblockModal(false);
+      setShowRepairModal(false);
+      setSponsorblockData(null);
+    } catch (error) {
+      showNotification('Failed to fix SponsorBlock chapters', 'error');
+    } finally {
+      setIsFixingSponsorblock(false);
+    }
+  };
+
   const openNotFoundModal = () => {
     setShowRepairModal(false);
     setShowNotFoundModal(true);
@@ -163,11 +199,17 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     setShowMetadataFixModal(true);
   };
 
+  const openSponsorblockModal = () => {
+    setShowRepairModal(false);
+    setShowSponsorblockModal(true);
+  };
+
   const closeAllModals = () => {
     setShowRepairModal(false);
     setShowNotFoundModal(false);
     setShowShrinkDBModal(false);
     setShowMetadataFixModal(false);
+    setShowSponsorblockModal(false);
   };
 
   return {
@@ -180,10 +222,13 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     setShowShrinkDBModal,
     showMetadataFixModal,
     setShowMetadataFixModal,
+    showSponsorblockModal,
+    setShowSponsorblockModal,
 
     // Data
     repairData,
     missingMetadataData,
+    sponsorblockData,
     selectedNotFoundVideos,
     setSelectedNotFoundVideos,
     selectedChannels,
@@ -193,17 +238,20 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     isCheckingRepair,
     isRemoving,
     isFixingMetadata,
+    isFixingSponsorblock,
 
     // Actions
     handleQueueRepair,
     handleRemoveNotFoundVideos,
     handlePurgeChannels,
     handleFixMetadata,
+    handleFixSponsorblockChapters,
 
     // Modal navigation
     openNotFoundModal,
     openShrinkDBModal,
     openMetadataFixModal,
+    openSponsorblockModal,
     closeAllModals,
 
     // For MetadataFixModal

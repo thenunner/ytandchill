@@ -8,9 +8,11 @@ export function DatabaseMaintenanceModal({
   onClose,
   repairData,
   missingMetadataData,
+  sponsorblockData,
   onOpenNotFound,
   onOpenShrinkDB,
-  onOpenMetadataFix
+  onOpenMetadataFix,
+  onOpenSponsorblock
 }) {
   if (!repairData) return null;
 
@@ -18,6 +20,8 @@ export function DatabaseMaintenanceModal({
     (missingMetadataData?.broken_thumbnails || 0) +
     (missingMetadataData?.missing_channel_thumbnails || 0) +
     (missingMetadataData?.missing_video_thumbnails || 0);
+
+  const sponsorblockCount = sponsorblockData?.count || 0;
 
   return (
     <ResponsiveModal isOpen={isOpen} onClose={onClose} title="Database Maintenance">
@@ -90,6 +94,28 @@ export function DatabaseMaintenanceModal({
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs px-2 py-0.5 bg-blue-500/20 text-blue-400 rounded-lg">{totalMetadataIssues}</span>
+            <span className="text-text-muted">→</span>
+          </div>
+        </button>
+
+        <button
+          onClick={onOpenSponsorblock}
+          className="flex items-center justify-between w-full p-3 sm:p-3 p-4 bg-white/5 hover:bg-white/10 sm:hover:bg-white/10 active:bg-white/10 rounded-xl sm:rounded-xl rounded-2xl transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block" />
+            <div className="sm:hidden w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+              <svg className="w-5 h-5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <p className="text-sm font-medium text-text-primary">SponsorBlock Chapters</p>
+              <p className="text-text-muted text-xs">Embed chapter markers in files</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-lg">{sponsorblockCount}</span>
             <span className="text-text-muted">→</span>
           </div>
         </button>
@@ -299,6 +325,225 @@ function IssueSection({ title, count, items, isChannel }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// SponsorBlock Chapters Fix Modal
+export function SponsorblockChaptersModal({
+  isOpen,
+  onClose,
+  data,
+  onFix,
+  isFixing
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  // Handle ESC key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen || !data) return null;
+
+  const count = data.count || 0;
+  const videos = data.videos || [];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
+
+      {/* Desktop - Glass Modal */}
+      <div
+        className="hidden sm:flex relative backdrop-blur-xl bg-dark-secondary border border-white/10 rounded-2xl shadow-2xl max-w-lg w-full flex-col max-h-[80vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="p-5 border-b border-white/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-green-500/15 flex items-center justify-center">
+                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25H12"/>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-base font-medium text-text-primary">SponsorBlock Chapters</h3>
+                <p className="text-xs text-text-muted">{count} video{count !== 1 ? 's' : ''} missing chapters</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors">
+              <CloseIcon />
+            </button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {count === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-text-primary">All Clear</p>
+              <p className="text-xs text-text-muted">All videos have chapter markers</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-text-secondary">
+                These videos have SponsorBlock segment data but no chapter markers embedded in the file.
+                Chapter markers allow external players (VLC, phone) to show sponsor segment locations.
+              </p>
+
+              <div className="rounded-xl bg-white/5 overflow-hidden">
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="w-full px-4 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-sm font-medium text-text-primary">Videos Missing Chapters</span>
+                    <span className="px-2 py-0.5 rounded-lg text-xs bg-white/10 text-text-muted">{count}</span>
+                  </div>
+                  <svg className={`w-4 h-4 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+                {expanded && videos.length > 0 && (
+                  <div className="px-4 pb-3 space-y-1.5">
+                    {videos.slice(0, 20).map((video) => (
+                      <div key={video.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-secondary/50">
+                        <div className="w-8 h-8 rounded flex-shrink-0 bg-white/10" />
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm text-text-primary truncate">{video.title}</div>
+                          {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
+                        </div>
+                      </div>
+                    ))}
+                    {count > 20 && (
+                      <p className="text-xs text-text-muted text-center py-2">...and {count - 20} more</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-5 border-t border-white/10 flex items-center justify-between">
+          <p className="text-xs text-text-muted">Fast remux, no re-encoding</p>
+          <div className="flex gap-2">
+            <button onClick={onClose} className="py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors">
+              Cancel
+            </button>
+            {count > 0 && (
+              <button
+                onClick={onFix}
+                disabled={isFixing}
+                className="py-2.5 px-4 rounded-xl bg-green-500/90 hover:bg-green-500 text-white text-sm font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isFixing ? 'Fixing...' : `Fix ${count} Video${count !== 1 ? 's' : ''}`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile - Bottom Sheet */}
+      <div
+        className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div>
+            <h3 className="font-semibold text-text-primary">SponsorBlock Chapters</h3>
+            <p className="text-xs text-text-muted">{count} video{count !== 1 ? 's' : ''} missing chapters</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+            <CloseIcon className="w-4 h-4 text-text-secondary" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {count === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">All Clear</p>
+              <p className="text-xs text-text-muted">All videos have chapter markers</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-text-secondary">
+                These videos have SponsorBlock data but no chapter markers in the file.
+              </p>
+
+              <div className="rounded-xl bg-white/5 overflow-hidden">
+                <button
+                  onClick={() => setExpanded(!expanded)}
+                  className="w-full px-4 py-3 flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="text-sm font-medium text-text-primary">Videos</span>
+                    <span className="px-2 py-0.5 rounded-lg text-xs bg-white/10 text-text-muted">{count}</span>
+                  </div>
+                  <svg className={`w-4 h-4 text-text-muted transition-transform ${expanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                  </svg>
+                </button>
+                {expanded && videos.length > 0 && (
+                  <div className="px-4 pb-3 space-y-1.5">
+                    {videos.slice(0, 20).map((video) => (
+                      <div key={video.id} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-dark-secondary/50">
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm text-text-primary truncate">{video.title}</div>
+                          {video.channel_title && <div className="text-xs text-text-muted">{video.channel_title}</div>}
+                        </div>
+                      </div>
+                    ))}
+                    {count > 20 && (
+                      <p className="text-xs text-text-muted text-center py-2">...and {count - 20} more</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-white/10">
+          <p className="text-xs text-text-muted text-center mb-3">Fast remux, no re-encoding</p>
+          <div className="flex gap-3">
+            <button onClick={onClose} className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium">
+              Cancel
+            </button>
+            {count > 0 && (
+              <button
+                onClick={onFix}
+                disabled={isFixing}
+                className="flex-1 py-3.5 bg-green-500 rounded-xl text-white font-semibold disabled:opacity-50"
+              >
+                {isFixing ? 'Fixing...' : `Fix ${count}`}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

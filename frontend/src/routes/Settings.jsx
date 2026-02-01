@@ -9,7 +9,8 @@ import { useCardSize } from '../contexts/PreferencesContext';
 import { ConfirmModal, SelectionListModal } from '../components/ui/SharedModals';
 import {
   DatabaseMaintenanceModal,
-  MetadataFixModal
+  MetadataFixModal,
+  SponsorblockChaptersModal
 } from '../components/ui/SettingsModals';
 import { useAutoScan } from '../hooks/useAutoScan';
 import { usePasswordChange } from '../hooks/usePasswordChange';
@@ -1023,9 +1024,11 @@ export default function Settings() {
         onClose={() => dbMaintenance.setShowRepairModal(false)}
         repairData={dbMaintenance.repairData}
         missingMetadataData={dbMaintenance.missingMetadataData}
+        sponsorblockData={dbMaintenance.sponsorblockData}
         onOpenNotFound={dbMaintenance.openNotFoundModal}
         onOpenShrinkDB={dbMaintenance.openShrinkDBModal}
         onOpenMetadataFix={dbMaintenance.openMetadataFixModal}
+        onOpenSponsorblock={dbMaintenance.openSponsorblockModal}
       />
 
       <SelectionListModal
@@ -1070,6 +1073,14 @@ export default function Settings() {
         onFix={dbMaintenance.handleFixMetadata}
         isFixing={dbMaintenance.isFixingMetadata}
         hasApiKey={hasApiKey}
+      />
+
+      <SponsorblockChaptersModal
+        isOpen={dbMaintenance.showSponsorblockModal}
+        onClose={() => dbMaintenance.setShowSponsorblockModal(false)}
+        data={dbMaintenance.sponsorblockData}
+        onFix={dbMaintenance.handleFixSponsorblockChapters}
+        isFixing={dbMaintenance.isFixingSponsorblock}
       />
 
       {/* Reset Auth Confirmation Modal */}

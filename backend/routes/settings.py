@@ -534,6 +534,213 @@ def fix_upload_dates():
     })
 
 
+@settings_bp.route('/api/settings/missing-sponsorblock-chapters', methods=['GET'])
+def get_missing_sponsorblock_chapters():
+    """Get count of library videos that have SponsorBlock segments but no chapter markers in file."""
+    global _session_factory
+    import subprocess
+    import json as json_module
+
+    downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
+
+    with get_session(_session_factory) as session:
+        # Get all library videos that have sponsorblock_segments data
+        videos = session.query(Video).filter(
+            Video.status == 'library',
+            Video.sponsorblock_segments.isnot(None),
+            Video.sponsorblock_segments != '',
+            Video.sponsorblock_segments != '[]',
+            Video.file_path.isnot(None)
+        ).all()
+
+        missing_chapters = []
+        for video in videos:
+            # Build full file path
+            file_path = video.file_path
+            if not os.path.isabs(file_path):
+                file_path = os.path.join(downloads_folder, file_path)
+
+            if not os.path.exists(file_path):
+                continue
+
+            # Check if file has chapters using ffprobe
+            try:
+                result = subprocess.run(
+                    ['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_chapters', file_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    probe_data = json_module.loads(result.stdout)
+                    chapters = probe_data.get('chapters', [])
+                    if len(chapters) == 0:
+                        # No chapters - needs fixing
+                        missing_chapters.append({
+                            'id': video.id,
+                            'yt_id': video.yt_id,
+                            'title': video.title,
+                            'channel_title': video.channel.title if video.channel else None,
+                            'file_path': video.file_path
+                        })
+            except Exception as e:
+                logger.warning(f"Failed to probe {video.title}: {e}")
+                continue
+
+        return jsonify({
+            'count': len(missing_chapters),
+            'videos': missing_chapters[:100]  # Limit for display
+        })
+
+
+@settings_bp.route('/api/settings/fix-sponsorblock-chapters', methods=['POST'])
+def fix_sponsorblock_chapters():
+    """Embed SponsorBlock segments as chapter markers into video files."""
+    global _session_factory
+    import subprocess
+    import json as json_module
+    import tempfile
+
+    downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
+
+    fixed_count = 0
+    failed_count = 0
+    errors = []
+
+    # Category display names for chapter titles
+    category_names = {
+        'sponsor': 'Sponsor',
+        'selfpromo': 'Self-promotion',
+        'interaction': 'Interaction',
+        'intro': 'Intro',
+        'outro': 'Outro',
+        'preview': 'Preview',
+        'filler': 'Filler',
+        'music_offtopic': 'Non-music'
+    }
+
+    with get_session(_session_factory) as session:
+        # Get all library videos that have sponsorblock_segments data
+        videos = session.query(Video).filter(
+            Video.status == 'library',
+            Video.sponsorblock_segments.isnot(None),
+            Video.sponsorblock_segments != '',
+            Video.sponsorblock_segments != '[]',
+            Video.file_path.isnot(None)
+        ).all()
+
+        for video in videos:
+            # Build full file path
+            file_path = video.file_path
+            if not os.path.isabs(file_path):
+                file_path = os.path.join(downloads_folder, file_path)
+
+            if not os.path.exists(file_path):
+                continue
+
+            # Check if file already has chapters
+            try:
+                result = subprocess.run(
+                    ['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_chapters', file_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                if result.returncode == 0:
+                    probe_data = json_module.loads(result.stdout)
+                    if len(probe_data.get('chapters', [])) > 0:
+                        # Already has chapters, skip
+                        continue
+            except Exception as e:
+                logger.warning(f"Failed to probe {video.title}: {e}")
+                continue
+
+            # Parse sponsorblock segments
+            try:
+                segments = json_module.loads(video.sponsorblock_segments)
+                if not segments:
+                    continue
+            except:
+                continue
+
+            # Get video duration for the final chapter
+            try:
+                duration_result = subprocess.run(
+                    ['ffprobe', '-v', 'quiet', '-print_format', 'json', '-show_format', file_path],
+                    capture_output=True,
+                    text=True,
+                    timeout=10
+                )
+                duration = float(json_module.loads(duration_result.stdout).get('format', {}).get('duration', 0))
+            except:
+                duration = video.duration_sec or 0
+
+            # Generate ffmetadata content
+            metadata_lines = [';FFMETADATA1']
+
+            # Sort segments by start time
+            segments = sorted(segments, key=lambda x: x.get('start', 0))
+
+            for seg in segments:
+                start_ms = int(seg.get('start', 0) * 1000)
+                end_ms = int(seg.get('end', 0) * 1000)
+                category = seg.get('category', 'sponsor')
+                title = f"[SponsorBlock]: {category_names.get(category, category.title())}"
+
+                metadata_lines.append('')
+                metadata_lines.append('[CHAPTER]')
+                metadata_lines.append('TIMEBASE=1/1000')
+                metadata_lines.append(f'START={start_ms}')
+                metadata_lines.append(f'END={end_ms}')
+                metadata_lines.append(f'title={title}')
+
+            metadata_content = '\n'.join(metadata_lines)
+
+            # Write metadata to temp file and run ffmpeg
+            try:
+                with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as meta_file:
+                    meta_file.write(metadata_content)
+                    meta_path = meta_file.name
+
+                # Create temp output file
+                temp_output = file_path + '.tmp.mp4'
+
+                # Run ffmpeg to embed chapters
+                ffmpeg_result = subprocess.run(
+                    ['ffmpeg', '-y', '-i', file_path, '-f', 'ffmetadata', '-i', meta_path,
+                     '-map_metadata', '1', '-c', 'copy', temp_output],
+                    capture_output=True,
+                    text=True,
+                    timeout=120
+                )
+
+                # Clean up metadata file
+                os.remove(meta_path)
+
+                if ffmpeg_result.returncode == 0 and os.path.exists(temp_output):
+                    # Replace original with new file
+                    os.replace(temp_output, file_path)
+                    fixed_count += 1
+                    logger.info(f"Embedded SponsorBlock chapters in {video.title}")
+                else:
+                    failed_count += 1
+                    errors.append(f"{video.title}: ffmpeg failed")
+                    if os.path.exists(temp_output):
+                        os.remove(temp_output)
+
+            except Exception as e:
+                failed_count += 1
+                errors.append(f"{video.title}: {str(e)}")
+                logger.warning(f"Failed to embed chapters in {video.title}: {e}")
+
+    return jsonify({
+        'success': True,
+        'fixed': fixed_count,
+        'failed': failed_count,
+        'errors': errors[:10]  # Limit errors for response
+    })
+
+
 # =============================================================================
 # Health & Logs Endpoints
 # =============================================================================
