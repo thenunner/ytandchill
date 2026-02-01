@@ -108,52 +108,6 @@ export default function Player() {
     autoplay: true, // Auto-play on desktop when entering player
   });
 
-  // Set video source for Video.js player (desktop only)
-  useEffect(() => {
-    // Skip on mobile - native player handles its own source
-    if (isMobile) return;
-
-    if (!playerRef.current || !video?.file_path) {
-      return;
-    }
-
-    try {
-      const player = playerRef.current;
-
-      // Safety check: don't operate on disposed player
-      if (player.isDisposed && player.isDisposed()) {
-        return;
-      }
-
-      const videoSrc = getVideoSource(video.file_path);
-
-      if (!videoSrc) {
-        return;
-      }
-
-      player.src({
-        src: videoSrc,
-        type: 'video/mp4'
-      });
-
-      // Add error notification
-      const handleError = () => {
-        const error = player.error();
-        if (error) {
-          showNotificationRef.current('Failed to load video', 'error');
-        }
-      };
-
-      player.on('error', handleError);
-
-      return () => {
-        player.off('error', handleError);
-      };
-    } catch (error) {
-      // Silently handle errors
-    }
-  }, [playerRef, video?.file_path, video?.id, isMobile]);
-
   if (isLoading) {
     return <LoadingSpinner />;
   }
