@@ -550,7 +550,14 @@ const VideoCard = memo(function VideoCard({
                   <InfoField label="File Size" value={video.file_size_bytes ? formatFileSize(video.file_size_bytes) : '-'} />
                   <InfoField label="Downloaded" value={video.downloaded_at ? formatDateTime(video.downloaded_at).split(',')[0] : '-'} />
                 </div>
-                <InfoField label="Channel" value={video.channel_title || '-'} />
+                <div className="grid grid-cols-2 gap-3">
+                  <InfoField label="Channel" value={video.channel_title || '-'} />
+                  <InfoField
+                    label="SponsorBlock"
+                    value={video.sponsorblock_segments && video.sponsorblock_segments.length > 0 ? 'Yes' : 'No'}
+                    highlight={video.sponsorblock_segments && video.sponsorblock_segments.length > 0}
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -591,7 +598,14 @@ const VideoCard = memo(function VideoCard({
               </div>
               <InfoField label="Thumb URL" value={video.thumb_url || '-'} small truncate />
               <InfoField label="File Path" value={video.file_path || '-'} small truncate />
-              <InfoField label="Channel" value={video.channel_title || '-'} />
+              <div className="grid grid-cols-2 gap-3">
+                <InfoField label="Channel" value={video.channel_title || '-'} />
+                <InfoField
+                  label="SponsorBlock"
+                  value={video.sponsorblock_segments && video.sponsorblock_segments.length > 0 ? 'Yes' : 'No'}
+                  highlight={video.sponsorblock_segments && video.sponsorblock_segments.length > 0}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -602,12 +616,12 @@ const VideoCard = memo(function VideoCard({
 
 export default VideoCard;
 
-function InfoField({ label, value, mono, small, truncate }) {
+function InfoField({ label, value, mono, small, truncate, highlight }) {
   return (
     <div>
       <p className="text-text-muted text-xs mb-0.5">{label}</p>
       <p
-        className={`text-text-primary ${mono ? 'font-mono text-xs' : ''} ${small ? 'text-text-secondary text-xs' : 'text-sm'} ${truncate ? 'truncate' : ''}`}
+        className={`${highlight ? 'text-green-400' : 'text-text-primary'} ${mono ? 'font-mono text-xs' : ''} ${small ? 'text-text-secondary text-xs' : 'text-sm'} ${truncate ? 'truncate' : ''}`}
         title={truncate ? value : undefined}
       >
         {value}
