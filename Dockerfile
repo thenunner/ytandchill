@@ -18,9 +18,9 @@ RUN npm run build
 # Stage 2: Production Runtime
 FROM python:3.12-slim
 
-# Install system dependencies (ffmpeg for video processing, curl/unzip for Deno, gosu for user switching)
+# Install system dependencies (ffmpeg for video processing, curl/unzip for Deno, gosu for user switching, nginx for fast media serving)
 RUN apt-get update && \
-    apt-get install -y ffmpeg curl unzip gosu ca-certificates && \
+    apt-get install -y ffmpeg curl unzip gosu ca-certificates nginx gettext-base && \
     update-ca-certificates && \
     rm -rf /var/lib/apt/lists/*
 
@@ -48,6 +48,9 @@ COPY backend/routes/ ./routes/
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
+
+# Copy nginx config template (envsubst fills in PORT at runtime)
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
 
 # Copy built frontend from Stage 1
 COPY --from=frontend-builder /frontend/dist ./dist
