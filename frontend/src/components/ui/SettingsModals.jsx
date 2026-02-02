@@ -142,8 +142,8 @@ export function DatabaseMaintenanceModal({
               </svg>
             </div>
             <div className="text-left">
-              <p className="text-sm font-medium text-text-primary">Low Quality Videos</p>
-              <p className="text-text-muted text-xs">Find videos under 1080p</p>
+              <p className="text-sm font-medium text-text-primary">Video Issues</p>
+              <p className="text-text-muted text-xs">Low quality & mobile compatibility</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -726,7 +726,7 @@ export function SponsorblockChaptersModal({
   );
 }
 
-// Low Quality Videos Modal - Find and upgrade videos under 1080p
+// Video Issues Modal - Find low quality and mobile-incompatible videos
 export function LowQualityVideosModal({
   isOpen,
   onClose,
@@ -758,6 +758,12 @@ export function LowQualityVideosModal({
   const count = data?.count || 0;
   const totalScanned = data?.total_scanned || 0;
 
+  // Separate videos by issue type
+  const lowResVideos = videos.filter(v => v.issue === 'low_resolution' || v.resolution);
+  const mobileIncompatVideos = videos.filter(v => v.issue === 'mobile_incompatible' || v.codec);
+  const lowResCount = data?.low_resolution_count || lowResVideos.length;
+  const mobileIncompatCount = data?.mobile_incompatible_count || mobileIncompatVideos.length;
+
   const allSelected = videos.length > 0 && selectedVideos.length === videos.length;
   const someSelected = selectedVideos.length > 0 && selectedVideos.length < videos.length;
 
@@ -777,10 +783,17 @@ export function LowQualityVideosModal({
     }
   };
 
-  const getResolutionColor = (resolution) => {
-    if (resolution === '720p') return 'bg-yellow-500/20 text-yellow-400';
-    if (resolution === '480p') return 'bg-orange-500/20 text-orange-400';
-    return 'bg-red-500/20 text-red-400'; // 360p and lower
+  const getIssueBadge = (video) => {
+    // Mobile incompatible codec (VP9, AV1, etc)
+    if (video.issue === 'mobile_incompatible' || video.codec) {
+      const codec = video.codec?.toUpperCase() || 'VP9';
+      return { text: codec, className: 'bg-red-500/20 text-red-400', tooltip: 'Not supported on iOS' };
+    }
+    // Low resolution
+    if (video.resolution === '720p') return { text: '720p', className: 'bg-yellow-500/20 text-yellow-400' };
+    if (video.resolution === '480p') return { text: '480p', className: 'bg-orange-500/20 text-orange-400' };
+    if (video.resolution) return { text: video.resolution, className: 'bg-red-500/20 text-red-400' };
+    return { text: '???', className: 'bg-gray-500/20 text-gray-400' };
   };
 
   return (
@@ -797,9 +810,9 @@ export function LowQualityVideosModal({
       >
         <div className="flex items-center justify-between p-5 border-b border-white/10">
           <div>
-            <h2 className="text-lg font-semibold text-text-primary">Low Quality Videos</h2>
+            <h2 className="text-lg font-semibold text-text-primary">Video Issues</h2>
             <p className="text-text-muted text-sm">
-              {isScanning ? 'Scanning library...' : `${count} video${count !== 1 ? 's' : ''} under 1080p`}
+              {isScanning ? 'Scanning library...' : `${count} video${count !== 1 ? 's' : ''} with issues`}
             </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors">
@@ -817,7 +830,7 @@ export function LowQualityVideosModal({
                 </svg>
               </div>
               <p className="font-medium text-text-primary">Scanning videos...</p>
-              <p className="text-sm text-text-muted mt-1">Checking resolution with ffprobe</p>
+              <p className="text-sm text-text-muted mt-1">Checking resolution & codec compatibility</p>
             </div>
           ) : isUpgrading ? (
             <div className="flex flex-col items-center justify-center py-12">
@@ -838,10 +851,24 @@ export function LowQualityVideosModal({
                 </svg>
               </div>
               <p className="font-medium text-text-primary">All Clear!</p>
-              <p className="text-sm text-text-muted">All {totalScanned} videos are 1080p or higher</p>
+              <p className="text-sm text-text-muted">All {totalScanned} videos are 1080p+ and mobile-ready</p>
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Issue Type Summary */}
+              <div className="flex gap-2 text-xs">
+                {lowResCount > 0 && (
+                  <div className="px-3 py-1.5 rounded-lg bg-yellow-500/10 text-yellow-400">
+                    <span className="font-medium">{lowResCount}</span> low res
+                  </div>
+                )}
+                {mobileIncompatCount > 0 && (
+                  <div className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400">
+                    <span className="font-medium">{mobileIncompatCount}</span> mobile incompatible
+                  </div>
+                )}
+              </div>
+
               {/* Select All Header */}
               <div className="flex items-center gap-3 pb-3 border-b border-white/10">
                 <button
@@ -863,34 +890,40 @@ export function LowQualityVideosModal({
 
               {/* Video List */}
               <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                {videos.map((video) => (
-                  <div
-                    key={video.id}
-                    onClick={() => toggleVideo(video.id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                      selectedVideos.includes(video.id) ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-white/5 hover:bg-white/10'
-                    }`}
-                  >
-                    <button
-                      className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        selectedVideos.includes(video.id) ? 'bg-purple-500 border-purple-500' : 'border-white/30'
+                {videos.map((video) => {
+                  const badge = getIssueBadge(video);
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => toggleVideo(video.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                        selectedVideos.includes(video.id) ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-white/5 hover:bg-white/10'
                       }`}
                     >
-                      {selectedVideos.includes(video.id) && (
-                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-                        </svg>
-                      )}
-                    </button>
-                    <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${getResolutionColor(video.resolution)}`}>
-                      {video.resolution}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-text-primary truncate">{video.title}</p>
-                      <p className="text-xs text-text-muted truncate">{video.channel_title}</p>
+                      <button
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          selectedVideos.includes(video.id) ? 'bg-purple-500 border-purple-500' : 'border-white/30'
+                        }`}
+                      >
+                        {selectedVideos.includes(video.id) && (
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        )}
+                      </button>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${badge.className}`}
+                        title={badge.tooltip}
+                      >
+                        {badge.text}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-text-primary truncate">{video.title}</p>
+                        <p className="text-xs text-text-muted truncate">{video.channel_title}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -898,7 +931,7 @@ export function LowQualityVideosModal({
 
         <div className="p-5 border-t border-white/10 flex items-center justify-between">
           <p className="text-xs text-text-muted">
-            {isScanning || isUpgrading ? 'Please wait...' : count > 0 ? 'Old files will be deleted' : ''}
+            {isScanning || isUpgrading ? 'Please wait...' : count > 0 ? 'Re-downloads with H.264 codec' : ''}
           </p>
           <div className="flex gap-2">
             {!isScanning && !isUpgrading && (
@@ -916,7 +949,7 @@ export function LowQualityVideosModal({
                     : 'bg-white/5 text-text-muted cursor-not-allowed'
                 }`}
               >
-                Upgrade {selectedVideos.length} Video{selectedVideos.length !== 1 ? 's' : ''}
+                Fix {selectedVideos.length} Video{selectedVideos.length !== 1 ? 's' : ''}
               </button>
             )}
           </div>
@@ -931,9 +964,9 @@ export function LowQualityVideosModal({
         <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
         <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
           <div>
-            <h3 className="font-semibold text-text-primary">Low Quality Videos</h3>
+            <h3 className="font-semibold text-text-primary">Video Issues</h3>
             <p className="text-xs text-text-muted">
-              {isScanning ? 'Scanning...' : `${count} video${count !== 1 ? 's' : ''} under 1080p`}
+              {isScanning ? 'Scanning...' : `${count} video${count !== 1 ? 's' : ''} with issues`}
             </p>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
@@ -951,7 +984,7 @@ export function LowQualityVideosModal({
                 </svg>
               </div>
               <p className="font-medium text-text-primary">Scanning videos...</p>
-              <p className="text-xs text-text-muted mt-1">Checking resolution with ffprobe</p>
+              <p className="text-xs text-text-muted mt-1">Checking resolution & codec</p>
             </div>
           ) : isUpgrading ? (
             <div className="flex flex-col items-center justify-center py-8">
@@ -971,10 +1004,24 @@ export function LowQualityVideosModal({
                 </svg>
               </div>
               <p className="font-medium text-text-primary">All Clear!</p>
-              <p className="text-xs text-text-muted">All videos are 1080p or higher</p>
+              <p className="text-xs text-text-muted">All videos are 1080p+ and mobile-ready</p>
             </div>
           ) : (
             <div className="space-y-3">
+              {/* Issue Type Summary */}
+              <div className="flex gap-2 text-xs">
+                {lowResCount > 0 && (
+                  <div className="px-2 py-1 rounded bg-yellow-500/10 text-yellow-400">
+                    <span className="font-medium">{lowResCount}</span> low res
+                  </div>
+                )}
+                {mobileIncompatCount > 0 && (
+                  <div className="px-2 py-1 rounded bg-red-500/10 text-red-400">
+                    <span className="font-medium">{mobileIncompatCount}</span> mobile
+                  </div>
+                )}
+              </div>
+
               {/* Select All Header */}
               <div className="flex items-center gap-3 pb-3 border-b border-white/10">
                 <button
@@ -996,34 +1043,37 @@ export function LowQualityVideosModal({
 
               {/* Video List */}
               <div className="space-y-2">
-                {videos.map((video) => (
-                  <div
-                    key={video.id}
-                    onClick={() => toggleVideo(video.id)}
-                    className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                      selectedVideos.includes(video.id) ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-white/5'
-                    }`}
-                  >
-                    <button
-                      className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                        selectedVideos.includes(video.id) ? 'bg-purple-500 border-purple-500' : 'border-white/30'
+                {videos.map((video) => {
+                  const badge = getIssueBadge(video);
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => toggleVideo(video.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                        selectedVideos.includes(video.id) ? 'bg-purple-500/10 border border-purple-500/30' : 'bg-white/5'
                       }`}
                     >
-                      {selectedVideos.includes(video.id) && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-                        </svg>
-                      )}
-                    </button>
-                    <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${getResolutionColor(video.resolution)}`}>
-                      {video.resolution}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-text-primary truncate">{video.title}</p>
-                      <p className="text-xs text-text-muted truncate">{video.channel_title}</p>
+                      <button
+                        className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          selectedVideos.includes(video.id) ? 'bg-purple-500 border-purple-500' : 'border-white/30'
+                        }`}
+                      >
+                        {selectedVideos.includes(video.id) && (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        )}
+                      </button>
+                      <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${badge.className}`}>
+                        {badge.text}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-text-primary truncate">{video.title}</p>
+                        <p className="text-xs text-text-muted truncate">{video.channel_title}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -1035,7 +1085,7 @@ export function LowQualityVideosModal({
           ) : (
             <>
               <p className="text-xs text-text-muted text-center mb-3">
-                {count > 0 ? 'Old files will be deleted' : ''}
+                {count > 0 ? 'Re-downloads with H.264 codec' : ''}
               </p>
               <div className="flex gap-3">
                 <button onClick={onClose} className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium">
@@ -1051,7 +1101,7 @@ export function LowQualityVideosModal({
                         : 'bg-white/5 text-text-muted'
                     }`}
                   >
-                    Upgrade {selectedVideos.length}
+                    Fix {selectedVideos.length}
                   </button>
                 )}
               </div>
