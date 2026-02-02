@@ -16,13 +16,17 @@ from queue import Empty
 import json
 import logging
 
-from database import Video, QueueItem, get_session
+from database import Video, QueueItem, Channel, Setting, get_session
 from events import queue_events
+from sqlalchemy.orm import joinedload
 
 logger = logging.getLogger(__name__)
 
 # Create Blueprint
 queue_bp = Blueprint('queue', __name__)
+
+# Sensitive settings keys that should not be exposed via API
+SENSITIVE_KEYS = {'password', 'youtube_api_key'}
 
 # Module-level references to shared dependencies
 _session_factory = None
@@ -32,11 +36,12 @@ _download_worker = None
 _limiter = None
 _serialize_queue_item = None
 _get_current_operation = None
+_serialize_channel = None
 
 
-def init_queue_routes(session_factory, settings_manager, scheduler, download_worker, limiter, serialize_queue_item, get_current_operation):
+def init_queue_routes(session_factory, settings_manager, scheduler, download_worker, limiter, serialize_queue_item, get_current_operation, serialize_channel=None):
     """Initialize the queue routes with required dependencies."""
-    global _session_factory, _settings_manager, _scheduler, _download_worker, _limiter, _serialize_queue_item, _get_current_operation
+    global _session_factory, _settings_manager, _scheduler, _download_worker, _limiter, _serialize_queue_item, _get_current_operation, _serialize_channel
     _session_factory = session_factory
     _settings_manager = settings_manager
     _scheduler = scheduler
@@ -44,6 +49,7 @@ def init_queue_routes(session_factory, settings_manager, scheduler, download_wor
     _limiter = limiter
     _serialize_queue_item = serialize_queue_item
     _get_current_operation = get_current_operation
+    _serialize_channel = serialize_channel
 
 
 # =============================================================================
@@ -116,6 +122,27 @@ def get_queue():
         })
 
 
+def _get_settings_state():
+    """Helper to get current settings for SSE init event."""
+    with get_session(_session_factory) as session:
+        settings = session.query(Setting).all()
+        result = {s.key: s.value for s in settings if s.key not in SENSITIVE_KEYS}
+        # Add boolean flags for sensitive keys (without exposing actual values)
+        api_key = _settings_manager.get('youtube_api_key')
+        result['has_youtube_api_key'] = bool(api_key and api_key.strip())
+        return result
+
+
+def _get_channels_state():
+    """Helper to get current channels for SSE init event."""
+    if not _serialize_channel:
+        return []
+    with get_session(_session_factory) as session:
+        # Filter out soft-deleted channels - eager load videos to avoid N+1 queries
+        channels = session.query(Channel).options(joinedload(Channel.videos)).filter(Channel.deleted_at.is_(None)).all()
+        return [_serialize_channel(c) for c in channels]
+
+
 def _get_queue_state():
     """Helper to get current queue state for SSE events."""
     with get_session(_session_factory) as session:
@@ -179,9 +206,14 @@ def queue_stream():
         subscriber = queue_events.subscribe()
         logger.info(f"SSE client connected from {client_ip}")
         try:
-            # Send initial state immediately
-            initial_state = _get_queue_state()
-            yield f"event: queue\ndata: {json.dumps(initial_state)}\n\n"
+            # Send init event with all initial state (reduces HTTP connection count)
+            # This replaces separate API calls for queue, settings, and channels
+            init_data = {
+                'queue': _get_queue_state(),
+                'settings': _get_settings_state(),
+                'channels': _get_channels_state(),
+            }
+            yield f"event: init\ndata: {json.dumps(init_data)}\n\n"
 
             # Listen for events
             while True:

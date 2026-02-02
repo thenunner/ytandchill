@@ -38,6 +38,29 @@ export function useQueueSSE() {
         reconnectAttempts.current = 0;
       };
 
+      // Listen for init event (sent on connect with all initial data)
+      // This replaces separate API calls for queue, settings, and channels
+      eventSource.addEventListener('init', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          // Populate all caches at once - reduces HTTP connections on page load
+          if (data.queue) {
+            queryClient.setQueryData(['queue'], data.queue);
+          }
+          if (data.settings) {
+            queryClient.setQueryData(['settings'], data.settings);
+          }
+          if (data.channels) {
+            queryClient.setQueryData(['channels'], data.channels);
+            // Also set favorite-channels by filtering
+            const favorites = data.channels.filter(ch => ch.is_favorite);
+            queryClient.setQueryData(['favorite-channels'], favorites);
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse SSE init data:', parseError);
+        }
+      });
+
       // Listen for named 'queue' events (not generic onmessage)
       eventSource.addEventListener('queue', (event) => {
         try {

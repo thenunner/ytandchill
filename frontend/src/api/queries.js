@@ -22,12 +22,13 @@ export function useFirstRunCheck() {
   });
 }
 
-// Channels
+// Channels - SSE init populates cache, SSE events invalidate on changes
 export function useChannels() {
   return useQuery({
     queryKey: ['channels'],
     queryFn: () => api.getChannels(),
-    staleTime: 60000, // 60 seconds - channels rarely change, SSE invalidates on updates
+    staleTime: 30000, // 30s - prevents refetch during navigation, SSE events handle updates
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -73,12 +74,13 @@ export function useMarkChannelVisited() {
   });
 }
 
-// Favorites
+// Favorites - SSE init populates cache from channels data
 export function useFavoriteChannels() {
   return useQuery({
     queryKey: ['favorite-channels'],
     queryFn: () => api.getFavoriteChannels(),
-    staleTime: 30000,
+    staleTime: 30000, // 30s - prevents refetch during navigation, SSE events handle updates
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -441,7 +443,7 @@ export function useRemoveVideoFromPlaylist() {
   });
 }
 
-// Queue - SSE in App.jsx keeps cache updated, polling is fallback only
+// Queue - SSE init populates cache, SSE events update in real-time
 export function useQueue(options = {}) {
   const { sseConnected, enablePolling } = options;
   // Only App.jsx passes sseConnected - it controls the SSE connection
@@ -451,11 +453,10 @@ export function useQueue(options = {}) {
   return useQuery({
     queryKey: ['queue'],
     queryFn: () => api.getQueue(),
-    // Main consumer (App.jsx): poll as fallback when SSE disconnected
-    // enablePolling: force polling for components that need guaranteed fresh data
-    // Other consumers: no polling, just read from shared cache
+    // SSE init populates cache, polling only as fallback when SSE disconnected
     refetchInterval: enablePolling ? 2000 : (isMainConsumer ? (sseConnected ? false : 3000) : false),
-    staleTime: enablePolling ? 1000 : 30000, // Shorter stale time when polling enabled
+    staleTime: 30000, // 30s - prevents refetch during navigation, SSE events handle updates
+    refetchOnWindowFocus: false,
   });
 }
 
@@ -556,13 +557,13 @@ export function useClearQueue() {
   });
 }
 
-// Settings
+// Settings - SSE init populates cache, SSE events invalidate on changes
 export function useSettings() {
   return useQuery({
     queryKey: ['settings'],
     queryFn: () => api.getSettings(),
-    staleTime: 30000,            // 30 seconds - settings rarely change
-    refetchOnWindowFocus: false, // SSE handles real-time updates
+    staleTime: 30000, // 30s - prevents refetch during navigation, SSE events handle updates
+    refetchOnWindowFocus: false,
   });
 }
 

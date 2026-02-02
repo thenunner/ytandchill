@@ -1008,6 +1008,9 @@ def health_check():
     # Get latest version from settings (populated by scan operations)
     latest_version = _settings_manager.get('latest_version')
 
+    # Get media port for frontend to construct media URLs
+    media_port = int(os.environ.get('MEDIA_PORT', 4100))
+
     return jsonify({
         'status': 'ok',
         'server_platform': server_platform,
@@ -1022,7 +1025,8 @@ def health_check():
         'firefox_has_cookies': firefox_has_cookies,
         'total_storage': total_storage,
         'database_size': database_size,
-        'latest_version': latest_version
+        'latest_version': latest_version,
+        'media_port': media_port
     })
 
 

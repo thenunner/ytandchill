@@ -49,7 +49,7 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
     # Initialize and register queue blueprint
     if serialize_queue_item and get_current_operation:
         init_queue_routes(session_factory, settings_manager, scheduler, download_worker,
-                         limiter, serialize_queue_item, get_current_operation)
+                         limiter, serialize_queue_item, get_current_operation, serialize_channel)
         app.register_blueprint(queue_bp)
 
     # Initialize and register video_tools blueprint (video CRUD operations)

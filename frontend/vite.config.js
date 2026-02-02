@@ -12,7 +12,7 @@ export default defineConfig({
         changeOrigin: true
       },
       '/media': {
-        target: 'http://192.168.168.245:4100',
+        target: 'http://192.168.168.245:4099',
         changeOrigin: true
       }
     }
