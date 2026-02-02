@@ -54,6 +54,7 @@ export function useUnifiedPlayer({
   const autoplayRef = useRef(autoplay);
   const clickTimeoutRef = useRef(null);
   const lastClickTimeRef = useRef(0);
+  const initializedVideoIdRef = useRef(null);  // Track which video we've initialized
 
   // Keep refs updated
   useEffect(() => {
@@ -260,6 +261,14 @@ export function useUnifiedPlayer({
       }
       return;
     }
+
+    // Prevent double initialization of the same video
+    // This can happen when activeVideoEl state updates after initial mount
+    if (initializedVideoIdRef.current === video.id) {
+      console.log('[useUnifiedPlayer] Already initialized video', video.id);
+      return;
+    }
+    initializedVideoIdRef.current = video.id;
 
     const initTime = performance.now();
     console.log('[Timing] === PLAYER INIT ===');
@@ -499,6 +508,11 @@ export function useUnifiedPlayer({
       }
       if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current);
+      }
+      // Reset initialized flag so new video can initialize
+      // (but only if video ID is changing, not just element remounting)
+      if (initializedVideoIdRef.current !== video?.id) {
+        initializedVideoIdRef.current = null;
       }
     };
     // Re-run when video ID, file path, or video element changes
