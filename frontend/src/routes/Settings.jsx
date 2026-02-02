@@ -168,8 +168,8 @@ export default function Settings() {
       setCookieSource(settings.cookie_source || 'file');
       setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
       setDownloadSubtitles(settings.download_subtitles === 'true');
-      setYoutubeApiKey(settings.youtube_api_key || '');
-      setHasApiKey(!!settings.youtube_api_key);
+      setYoutubeApiKey(''); // API key is not returned for security - only presence flag
+      setHasApiKey(!!settings.has_youtube_api_key);
       setHideWatched(settings.hide_watched === 'true');
       setHidePlaylisted(settings.hide_playlisted === 'true');
       setHideEmptyLibraries(settings.hide_empty_libraries === 'true');

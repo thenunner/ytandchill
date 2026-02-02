@@ -99,6 +99,9 @@ def get_settings():
     with get_session(_session_factory) as db_session:
         settings = db_session.query(Setting).all()
         result = {s.key: s.value for s in settings if s.key not in SENSITIVE_KEYS}
+        # Add boolean flags for sensitive keys (without exposing actual values)
+        api_key = _settings_manager.get('youtube_api_key')
+        result['has_youtube_api_key'] = bool(api_key and api_key.strip())
         return jsonify(result)
 
 
