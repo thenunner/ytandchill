@@ -11,6 +11,7 @@ const WATCHED_THRESHOLD = 0.9;
 export function useUnifiedPlayer({
   video,
   videoRef,
+  videoElement = null,  // Direct element for reliable mounting detection
   saveProgress = true,
   onEnded = null,
   onWatched = null,
@@ -19,6 +20,17 @@ export function useUnifiedPlayer({
   setIsTheaterMode = null,
   autoplay = true,
 }) {
+  // Track the actual video element - needed because refs don't trigger re-renders
+  const [activeVideoEl, setActiveVideoEl] = useState(null);
+
+  // Update internal state when element changes (via callback ref or direct element)
+  useEffect(() => {
+    if (videoElement) {
+      setActiveVideoEl(videoElement);
+    } else if (videoRef?.current) {
+      setActiveVideoEl(videoRef.current);
+    }
+  }, [videoElement, videoRef?.current]);
   // State
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -240,9 +252,12 @@ export function useUnifiedPlayer({
 
   // Initialize video element
   useEffect(() => {
-    const videoEl = videoRef.current;
+    const videoEl = activeVideoEl;
     if (!videoEl || !video?.file_path) {
-      console.log('[useUnifiedPlayer] Waiting for video element or file_path', { hasVideoEl: !!videoEl, filePath: video?.file_path });
+      // Only log if we have video data but no element (helps debugging)
+      if (video?.file_path && !videoEl) {
+        console.log('[useUnifiedPlayer] Waiting for video element to mount');
+      }
       return;
     }
 
@@ -298,7 +313,7 @@ export function useUnifiedPlayer({
     }
 
     // Track the effective start time for the metadata handler
-    const targetStartTime = effectiveStartTime;
+    const targetStartTime = resumeTime;
 
     // Track if first frame has been logged
     let firstFrameLogged = false;
@@ -486,9 +501,9 @@ export function useUnifiedPlayer({
         clearTimeout(controlsTimeoutRef.current);
       }
     };
-    // Only re-run when video ID or file path changes
+    // Re-run when video ID, file path, or video element changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [video?.id, video?.file_path]);
+  }, [video?.id, video?.file_path, activeVideoEl]);
 
   // Keyboard shortcuts (desktop only)
   useEffect(() => {

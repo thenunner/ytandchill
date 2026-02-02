@@ -288,7 +288,7 @@ function PlayerControls({
                 step="0.05"
                 value={isMuted ? 0 : volume}
                 onChange={(e) => onSetVolume(parseFloat(e.target.value))}
-                className="w-0 group-hover:w-16 transition-all duration-200 accent-accent"
+                className="w-0 group-hover:w-16 transition-all duration-200 h-1 bg-white/30 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-accent [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:shadow-md [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:bg-accent [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0"
               />
             </div>
           )}

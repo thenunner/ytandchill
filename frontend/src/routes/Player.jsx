@@ -59,7 +59,13 @@ export default function Player() {
   const { showNotification } = useNotification();
 
   // Player refs - single ref for unified native player
+  // Use callback ref pattern to detect when video element mounts
   const videoRef = useRef(null);
+  const [videoElement, setVideoElement] = useState(null);
+  const videoRefCallback = useCallback((el) => {
+    videoRef.current = el;
+    if (el) setVideoElement(el);
+  }, []);
   const addToPlaylistButtonRef = useRef(null);
 
   // Refs to hold latest values for event handlers (avoid stale closures)
@@ -126,6 +132,7 @@ export default function Player() {
   const player = useUnifiedPlayer({
     video: playerVideoData,
     videoRef: videoRef,
+    videoElement: videoElement,  // Direct element for reliable mounting detection
     saveProgress: true,
     onEnded: null,
     onWatched: handleWatched,
@@ -203,7 +210,7 @@ export default function Player() {
           {/* Video Wrapper - Native HTML5 video with custom controls */}
           <div className="player-wrapper-mobile relative" onClick={player.handleVideoClick}>
             <video
-              ref={videoRef}
+              ref={videoRefCallback}
               playsInline
               preload="metadata"
               poster={video?.thumb_url || ''}
@@ -350,7 +357,7 @@ export default function Player() {
               onClick={player.handleVideoClick}
             >
               <video
-                ref={videoRef}
+                ref={videoRefCallback}
                 className="w-full h-full object-contain bg-black"
                 playsInline
                 preload="metadata"
