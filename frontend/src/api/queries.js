@@ -805,3 +805,16 @@ export function useThumbnailBatch(videoIds) {
   });
 }
 
+// Channel thumbnails - batch fetch for sidebar (8-10 requests -> 1)
+export function useChannelThumbnailBatch(channelIds) {
+  return useQuery({
+    queryKey: ['channel-thumbnails', channelIds?.length > 0 ? channelIds.slice().sort((a, b) => a - b).join(',') : ''],
+    queryFn: () => api.batchChannelThumbnails(channelIds),
+    enabled: channelIds && channelIds.length > 0,
+    staleTime: 5 * 60 * 1000, // Cache 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+}
+

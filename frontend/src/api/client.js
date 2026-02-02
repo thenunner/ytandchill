@@ -542,6 +542,13 @@ class APIClient {
       body: JSON.stringify({ video_ids: videoIds }),
     });
   }
+
+  batchChannelThumbnails(channelIds) {
+    return this.request('/thumbnails/batch', {
+      method: 'POST',
+      body: JSON.stringify({ channel_ids: channelIds }),
+    });
+  }
 }
 
 export default new APIClient();

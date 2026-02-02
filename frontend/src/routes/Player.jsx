@@ -214,6 +214,7 @@ export default function Player() {
               playsInline
               preload="metadata"
               poster={video?.thumb_url || ''}
+              fetchpriority="high"
             />
             <PlayerControls
               isPlaying={player.isPlaying}
@@ -361,6 +362,7 @@ export default function Player() {
                 className="w-full h-full object-contain bg-black"
                 playsInline
                 preload="metadata"
+                fetchpriority="high"
               />
               <PlayerControls
                 isPlaying={player.isPlaying}

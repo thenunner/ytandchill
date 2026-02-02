@@ -12,7 +12,7 @@ import os
 import mimetypes
 import base64
 
-from database import Video, get_session
+from database import Video, Channel, get_session
 
 logger = logging.getLogger(__name__)
 
@@ -169,48 +169,70 @@ def batch_thumbnails():
 
     This reduces HTTP connections from N (one per thumbnail) to 1,
     preventing connection exhaustion on HTTP/1.1's 6-connection limit.
+
+    Supports both video_ids and channel_ids in the request body.
     """
     data = request.json
     if not data:
         return jsonify({}), 200
 
     video_ids = data.get('video_ids', [])
-    if not video_ids:
+    channel_ids = data.get('channel_ids', [])
+
+    if not video_ids and not channel_ids:
         return jsonify({}), 200
 
     # Limit to prevent abuse (50 thumbnails * ~20KB = ~1MB response)
     video_ids = video_ids[:50]
+    channel_ids = channel_ids[:50]
 
     result = {}
     downloads_folder = get_downloads_folder()
 
     with get_session(_session_factory) as session:
-        # Batch query all videos at once
-        videos = session.query(Video).filter(Video.id.in_(video_ids)).all()
+        # Batch query videos
+        if video_ids:
+            videos = session.query(Video).filter(Video.id.in_(video_ids)).all()
 
-        for video in videos:
-            thumb_path = None
+            for video in videos:
+                thumb_path = None
 
-            # Determine thumbnail path based on thumb_url or construct from channel/yt_id
-            if video.thumb_url:
-                if video.thumb_url.startswith('http'):
-                    # External URL - skip, let browser fetch directly
-                    continue
-                else:
-                    # Local path - normalize and construct full path
-                    relative_path = video.thumb_url.replace('/api/media/', '').replace('\\', '/')
-                    thumb_path = os.path.join(downloads_folder, relative_path)
-            elif video.channel and video.yt_id:
-                # Construct from channel folder + video ID
-                thumb_path = os.path.join(downloads_folder, video.channel.folder_name, f"{video.yt_id}.jpg")
+                # Determine thumbnail path based on thumb_url or construct from channel/yt_id
+                if video.thumb_url:
+                    if video.thumb_url.startswith('http'):
+                        # External URL - skip, let browser fetch directly
+                        continue
+                    else:
+                        # Local path - normalize and construct full path
+                        relative_path = video.thumb_url.replace('/api/media/', '').replace('\\', '/')
+                        thumb_path = os.path.join(downloads_folder, relative_path)
+                elif video.channel and video.yt_id:
+                    # Construct from channel folder + video ID
+                    thumb_path = os.path.join(downloads_folder, video.channel.folder_name, f"{video.yt_id}.jpg")
 
-            if thumb_path and os.path.exists(thumb_path):
-                try:
-                    with open(thumb_path, 'rb') as f:
-                        encoded = base64.b64encode(f.read()).decode('utf-8')
-                        result[video.id] = f'data:image/jpeg;base64,{encoded}'
-                except Exception as e:
-                    logger.debug(f"Failed to read thumbnail {thumb_path}: {e}")
-                    # Skip failed thumbnails - browser will fall back to URL
+                if thumb_path and os.path.exists(thumb_path):
+                    try:
+                        with open(thumb_path, 'rb') as f:
+                            encoded = base64.b64encode(f.read()).decode('utf-8')
+                            result[video.id] = f'data:image/jpeg;base64,{encoded}'
+                    except Exception as e:
+                        logger.debug(f"Failed to read thumbnail {thumb_path}: {e}")
+
+        # Batch query channels
+        if channel_ids:
+            channels = session.query(Channel).filter(Channel.id.in_(channel_ids)).all()
+
+            for channel in channels:
+                if channel.thumbnail:
+                    # Channel thumbnails stored as relative path like "thumbnails/UCxxx.jpg"
+                    thumb_path = os.path.join(downloads_folder, channel.thumbnail.replace('\\', '/'))
+
+                    if os.path.exists(thumb_path):
+                        try:
+                            with open(thumb_path, 'rb') as f:
+                                encoded = base64.b64encode(f.read()).decode('utf-8')
+                                result[f'channel_{channel.id}'] = f'data:image/jpeg;base64,{encoded}'
+                        except Exception as e:
+                            logger.debug(f"Failed to read channel thumbnail {thumb_path}: {e}")
 
     return jsonify(result)

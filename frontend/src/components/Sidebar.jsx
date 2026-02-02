@@ -1,6 +1,6 @@
 import { useState, memo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useQueue, useFavoriteChannels, useSettings } from '../api/queries';
+import { useQueue, useFavoriteChannels, useSettings, useChannelThumbnailBatch } from '../api/queries';
 import {
   SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon,
   MenuIcon, CollapseIcon, HeartIcon, HistoryIcon
@@ -35,6 +35,10 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
     }
     return true;
   });
+
+  // Batch fetch all channel thumbnails in one request (8-10 requests -> 1)
+  const channelIds = favoriteLibraries?.map(ch => ch.id) || [];
+  const { data: channelThumbnails } = useChannelThumbnailBatch(channelIds);
 
   // Check if any favorite has NEW unacknowledged videos
   // Heart clears when user clicks Favorites, but fills again for new channels with videos
@@ -128,6 +132,7 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
                 alt="YT and Chill"
                 className="h-10 w-auto object-contain"
                 onError={() => setLogoFailed(true)}
+                fetchpriority="low"
               />
             ) : (
               <span className="text-sm font-medium text-text-secondary">YTandChill</span>
@@ -178,7 +183,7 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
                   <div className="w-7 h-7 rounded-full overflow-hidden bg-dark-tertiary flex items-center justify-center">
                     {channel.thumbnail ? (
                       <img
-                        src={channel.thumbnail}
+                        src={channelThumbnails?.[`channel_${channel.id}`] || channel.thumbnail}
                         alt={channel.title}
                         className="w-full h-full object-cover"
                       />
@@ -230,7 +235,7 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
                     <div className="w-5 h-5 rounded-full overflow-hidden bg-dark-tertiary flex-shrink-0 flex items-center justify-center">
                       {channel.thumbnail ? (
                         <img
-                          src={channel.thumbnail}
+                          src={channelThumbnails?.[`channel_${channel.id}`] || channel.thumbnail}
                           alt={channel.title}
                           className="w-full h-full object-cover"
                         />
