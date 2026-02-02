@@ -44,23 +44,21 @@ def get_downloads_folder():
 @media_bp.route('/api/media/<path:filename>')
 @media_bp.route('/media/<path:filename>')
 def serve_media(filename):
-    """Serve media files with path traversal protection and HTTP range request support for iOS"""
+    """Serve media files with range request support via Flask's send_file.
+
+    Uses Flask/Werkzeug's native range request handling which leverages
+    OS-level sendfile() for much faster large file transfers.
+    """
     downloads_folder = get_downloads_folder()
 
-    # Convert URL forward slashes to OS path separator (important for Windows)
+    # Convert URL forward slashes to OS path separator
     filename_normalized = filename.replace('/', os.sep)
-
-    # Build the full path manually to handle Windows paths correctly
     safe_path = os.path.normpath(os.path.join(downloads_folder, filename_normalized))
 
-    # Normalize paths for consistent comparison
+    # Security check
     downloads_abs = os.path.normpath(os.path.abspath(downloads_folder))
     file_abs = os.path.normpath(os.path.abspath(safe_path))
 
-    logger.debug(f"Media request: filename={filename}, normalized={filename_normalized}")
-    logger.debug(f"Paths: downloads_abs={downloads_abs}, file_abs={file_abs}")
-
-    # Security check: ensure the resolved path is actually within downloads directory
     if not file_abs.startswith(downloads_abs + os.sep) and file_abs != downloads_abs:
         logger.warning(f"Path traversal attempt blocked: {filename}")
         return jsonify({'error': 'Access denied'}), 403
@@ -69,98 +67,27 @@ def serve_media(filename):
         logger.warning(f"File not found: {file_abs}")
         return jsonify({'error': 'File not found'}), 404
 
-    # Get file stats for size, modification time, and ETag generation
-    file_stat = os.stat(file_abs)
-    file_size = file_stat.st_size
-    file_mtime = int(file_stat.st_mtime)
-
-    # Generate ETag from size and modification time (cache busting if file changes)
-    etag = f'"{file_size}-{file_mtime}"'
-
-    # Check If-None-Match header for cache validation
-    if_none_match = request.headers.get('If-None-Match')
-    if if_none_match and if_none_match == etag:
-        # File hasn't changed - return 304 Not Modified
-        return Response(status=304, headers={
-            'ETag': etag,
-            'Cache-Control': 'public, max-age=86400'
-        })
-
     mime_type, _ = mimetypes.guess_type(file_abs)
     if not mime_type:
-        mime_type = 'video/mp4'  # Default fallback
+        mime_type = 'video/mp4'
 
-    # Check if this is a range request (required for iOS video playback)
-    range_header = request.headers.get('Range', None)
+    # Let Flask handle range requests natively (uses sendfile for speed)
+    response = send_file(
+        file_abs,
+        mimetype=mime_type,
+        conditional=True  # Enables range requests + ETag/If-Modified-Since
+    )
 
-    if not range_header:
-        # No range request - send full file with Accept-Ranges header for iOS
-        response = send_file(file_abs, mimetype=mime_type, conditional=True)
-        response.headers['Accept-Ranges'] = 'bytes'
-        response.headers['Content-Length'] = str(file_size)
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['ETag'] = etag
+    # Add CORS and cache headers
+    response.headers['Accept-Ranges'] = 'bytes'
+    response.headers['Access-Control-Allow-Origin'] = '*'
 
-        # Add cache headers based on content type
-        if mime_type and mime_type.startswith('image/'):
-            if filename.startswith('thumbnails/'):
-                # Channel thumbnails rarely change - cache for 1 week
-                response.headers['Cache-Control'] = 'public, max-age=604800'
-            else:
-                # Video thumbnails - cache for 1 day
-                response.headers['Cache-Control'] = 'public, max-age=86400'
-        elif mime_type and mime_type.startswith('video/'):
-            # Video files - cache for 1 day, revalidate with ETag
-            response.headers['Cache-Control'] = 'public, max-age=86400'
+    if mime_type.startswith('image/'):
+        response.headers['Cache-Control'] = 'public, max-age=604800'  # 1 week
+    else:
+        response.headers['Cache-Control'] = 'public, max-age=86400'  # 1 day
 
-        return response
-
-    # Parse range header (e.g., "bytes=0-1023")
-    try:
-        byte_range = range_header.replace('bytes=', '').split('-')
-        start = int(byte_range[0]) if byte_range[0] else 0
-        end = int(byte_range[1]) if len(byte_range) > 1 and byte_range[1] else file_size - 1
-
-        # Ensure end doesn't exceed file size
-        end = min(end, file_size - 1)
-        length = end - start + 1
-
-        # Generator function to stream file in chunks
-        def generate():
-            with open(file_abs, 'rb') as f:
-                f.seek(start)
-                remaining = length
-                chunk_size = 1048576  # 1MB chunks for faster video streaming
-                while remaining > 0:
-                    chunk = f.read(min(chunk_size, remaining))
-                    if not chunk:
-                        break
-                    remaining -= len(chunk)
-                    yield chunk
-
-        # Create 206 Partial Content response with streaming
-        response = Response(generate(), 206, mimetype=mime_type)
-        response.headers['Content-Range'] = f'bytes {start}-{end}/{file_size}'
-        response.headers['Accept-Ranges'] = 'bytes'
-        response.headers['Content-Length'] = str(length)
-        response.headers['Content-Type'] = mime_type
-        response.headers['Cache-Control'] = 'public, max-age=86400'
-        response.headers['ETag'] = etag
-        # Connection header removed - WSGI servers (Waitress) manage this automatically per PEP 3333
-        response.headers['Access-Control-Allow-Origin'] = '*'
-
-        logger.info(f"Serving range: {filename} ({mime_type}) bytes {start}-{end}/{file_size}")
-        return response
-
-    except Exception as e:
-        logger.error(f"Error handling range request for {filename}: {e}")
-        # Fallback to regular send if range parsing fails
-        response = send_file(file_abs, mimetype=mime_type, conditional=True)
-        response.headers['Accept-Ranges'] = 'bytes'
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['ETag'] = etag
-        response.headers['Cache-Control'] = 'public, max-age=86400'
-        return response
+    return response
 
 
 @media_bp.route('/api/thumbnails/batch', methods=['POST'])
