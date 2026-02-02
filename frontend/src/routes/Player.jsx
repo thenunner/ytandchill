@@ -20,7 +20,6 @@ export default function Player() {
 
   // Track mount time for accurate timing
   const mountTimeRef = useRef(performance.now());
-  console.log('[Player] Component mounted');
 
   // PRIORITY: Fast playback data for instant video start
   const { data: playbackData, isLoading: playbackLoading } = useVideoPlayback(videoId);
@@ -28,18 +27,23 @@ export default function Player() {
   // PARALLEL: Full metadata for UI (title, channel, etc.) - loads alongside playback
   const { data: video, isLoading: metadataLoading, isFetching } = useVideo(videoId);
 
+  // Log mount once (not on every re-render)
+  useEffect(() => {
+    console.log('[Timing] Player mounted');
+  }, []);
+
   // Log timing for both requests
   useEffect(() => {
     if (playbackData) {
-      console.log('[Player] Playback data received:', `(${(performance.now() - mountTimeRef.current).toFixed(0)}ms since mount)`);
+      console.log('[Timing] mount_to_playback_api:', `${(performance.now() - mountTimeRef.current).toFixed(0)}ms`);
     }
   }, [playbackData]);
 
   useEffect(() => {
     if (video) {
-      console.log('[Player] Full metadata received:', video.title, `(${(performance.now() - mountTimeRef.current).toFixed(0)}ms since mount)`, { metadataLoading, isFetching });
+      console.log('[Timing] mount_to_full_metadata:', `${(performance.now() - mountTimeRef.current).toFixed(0)}ms`, video.title);
     }
-  }, [video, metadataLoading, isFetching]);
+  }, [video]);
 
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();

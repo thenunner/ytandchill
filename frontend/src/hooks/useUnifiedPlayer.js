@@ -280,11 +280,14 @@ export function useUnifiedPlayer({
 
     // Build video source with media fragment for instant seeking
     // Media fragments (#t=seconds) tell the browser to seek at the network level,
-    // avoiding the need to wait for loadedmetadata before setting currentTime
+    // forcing byte-range requests that start playback faster
+    // ALWAYS use a fragment - even #t=0.01 triggers faster loading than no fragment
     let videoSrc = `/media/${relativePath}`;
-    if (effectiveStartTime >= 5) {
-      videoSrc += `#t=${effectiveStartTime.toFixed(1)}`;
-      console.log(`[useUnifiedPlayer] Using media fragment for instant seek to ${effectiveStartTime.toFixed(1)}s`);
+    const fragmentTime = Math.max(0.01, effectiveStartTime);
+    videoSrc += `#t=${fragmentTime.toFixed(2)}`;
+    console.log(`[useUnifiedPlayer] Using media fragment #t=${fragmentTime.toFixed(2)}`);
+    if (effectiveStartTime > 0) {
+      console.log(`[useUnifiedPlayer] Resuming from ${effectiveStartTime.toFixed(1)}s`);
     }
 
     console.log('[Timing] api_to_source_set:', `${(performance.now() - initTime).toFixed(0)}ms`);
