@@ -571,7 +571,7 @@ export default function PlaylistPlayer() {
       playerRef.current = null;
       setPlayerReady(false);
     };
-  }, [isMobile, handleTheaterModeChange]);
+  }, [isMobile, isTheaterMode, handleTheaterModeChange]);
 
   // Desktop: Set video source when currentVideo changes
   useEffect(() => {
@@ -727,32 +727,6 @@ export default function PlaylistPlayer() {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [goToNext, goToPrevious, toggleLoop, shufflePlaylist, isLooping, showNotification, handleBack]);
 
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
-  if (!currentVideo) {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-400 text-lg">No video selected</p>
-        <button onClick={() => navigate(-1)} className="btn btn-primary mt-4">
-          Go Back
-        </button>
-      </div>
-    );
-  }
-
-  if (!currentVideo.file_path || currentVideo.status !== 'library') {
-    return (
-      <div className="text-center py-12">
-        <p className="text-gray-400 text-lg">Video not downloaded yet</p>
-        <button onClick={() => navigate(-1)} className="btn btn-primary mt-4">
-          Go Back
-        </button>
-      </div>
-    );
-  }
-
   // Desktop layout with sidebar
   if (!isMobile) {
     return (
@@ -765,6 +739,29 @@ export default function PlaylistPlayer() {
 
         {/* Main Content Area */}
         <div className="flex-1 bg-dark-primary min-h-0 overflow-y-auto pl-4">
+          {/* Loading/Error Overlays */}
+          {isLoading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-dark-primary z-10">
+              <LoadingSpinner />
+            </div>
+          )}
+          {!isLoading && !currentVideo && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-dark-primary z-10">
+              <p className="text-gray-400 text-lg">No video selected</p>
+              <button onClick={() => navigate(-1)} className="btn btn-primary mt-4">
+                Go Back
+              </button>
+            </div>
+          )}
+          {!isLoading && currentVideo && (!currentVideo.file_path || currentVideo.status !== 'library') && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-dark-primary z-10">
+              <p className="text-gray-400 text-lg">Video not downloaded yet</p>
+              <button onClick={() => navigate(-1)} className="btn btn-primary mt-4">
+                Go Back
+              </button>
+            </div>
+          )}
+
           {/* ===== THEATER MODE ===== */}
           {isTheaterMode && (
             <div>
@@ -780,6 +777,7 @@ export default function PlaylistPlayer() {
               </div>
 
               {/* Video Info under video */}
+              {currentVideo && (
               <div className="bg-dark-primary py-4 px-6">
                 <h1 className="text-2xl font-bold text-text-primary leading-tight">
                   {currentVideo.title}
@@ -824,6 +822,7 @@ export default function PlaylistPlayer() {
                   addToPlaylistButtonRef={addToPlaylistButtonRef}
                 />
               </div>
+              )}
 
               {/* Horizontal Queue */}
               <div className="bg-surface mx-6 mb-6 rounded-xl shadow-card overflow-hidden">
@@ -984,6 +983,7 @@ export default function PlaylistPlayer() {
                   />
 
                   {/* Video Info */}
+                  {currentVideo && (
                   <div className="mt-4 space-y-3">
                     <h1 className="text-xl font-bold text-text-primary leading-tight">
                       {currentVideo.title}
@@ -1028,6 +1028,7 @@ export default function PlaylistPlayer() {
                       addToPlaylistButtonRef={addToPlaylistButtonRef}
                     />
                   </div>
+                  )}
                 </div>
 
                 {/* RIGHT: Queue Sidebar */}
@@ -1132,6 +1133,21 @@ export default function PlaylistPlayer() {
   // Mobile layout with bottom navigation
   return (
     <div className="flex flex-col h-screen bg-dark-primary animate-fade-in">
+      {/* Loading/Error Overlays */}
+      {isLoading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-dark-primary z-10">
+          <LoadingSpinner />
+        </div>
+      )}
+      {!isLoading && !currentVideo && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-dark-primary z-10">
+          <p className="text-gray-400 text-lg">No video selected</p>
+          <button onClick={() => navigate(-1)} className="btn btn-primary mt-4">
+            Go Back
+          </button>
+        </div>
+      )}
+
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto">
         {/* Video Player - video.js (same as desktop) */}
@@ -1141,6 +1157,7 @@ export default function PlaylistPlayer() {
         />
 
         {/* Video Info with Prev/Next Controls - hidden in landscape via CSS */}
+        {currentVideo && (
         <div className="player-video-info px-4 py-3 space-y-3">
           {/* Title with Prev/Next buttons */}
           <div className="flex items-start gap-2">
@@ -1207,6 +1224,7 @@ export default function PlaylistPlayer() {
             </button>
           </div>
         </div>
+        )}
       </div>
 
       {/* Full-Screen Playlist Overlay */}
