@@ -581,6 +581,12 @@ export default function PlaylistPlayer() {
     if (!currentVideo?.file_path) return;
 
     const videoSrc = getVideoSource(currentVideo.file_path);
+    console.log('[PlaylistPlayer] Setting source:', {
+      id: currentVideo.id,
+      title: currentVideo.title,
+      file_path: currentVideo.file_path,
+      videoSrc
+    });
     if (!videoSrc) return;
 
     hasMarkedWatchedRef.current = false;
@@ -661,13 +667,26 @@ export default function PlaylistPlayer() {
       goToNextRef.current?.();
     };
 
+    const handleError = () => {
+      const error = player.error();
+      console.error('[PlaylistPlayer] Video error:', {
+        code: error?.code,
+        message: error?.message,
+        currentSrc: player.currentSrc(),
+        videoId: currentVideo?.id,
+        title: currentVideo?.title
+      });
+    };
+
     player.on('timeupdate', handleTimeUpdate);
     player.on('ended', handleEnded);
+    player.on('error', handleError);
 
     return () => {
       if (player && !player.isDisposed()) {
         player.off('timeupdate', handleTimeUpdate);
         player.off('ended', handleEnded);
+        player.off('error', handleError);
       }
     };
   }, [playerReady, currentVideo?.id, handleWatched, isMobile]);
