@@ -223,6 +223,8 @@ def get_video_playback(video_id):
 
     Full metadata (title, channel, etc.) can be fetched in parallel via /api/videos/<id>
     """
+    import json
+
     with get_session(_session_factory) as session:
         # Minimal query - no joins needed
         video = session.query(
@@ -236,11 +238,19 @@ def get_video_playback(video_id):
         if not video:
             return jsonify({'error': 'Video not found'}), 404
 
+        # Parse sponsorblock_segments from JSON string to list
+        sponsorblock_segments = []
+        if video.sponsorblock_segments:
+            try:
+                sponsorblock_segments = json.loads(video.sponsorblock_segments)
+            except (json.JSONDecodeError, TypeError):
+                pass
+
         return jsonify({
             'id': video.id,
             'file_path': video.file_path,
             'playback_seconds': video.playback_seconds or 0,
-            'sponsorblock_segments': video.sponsorblock_segments or [],
+            'sponsorblock_segments': sponsorblock_segments,
             'status': video.status
         })
 
