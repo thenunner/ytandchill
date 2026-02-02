@@ -29,6 +29,7 @@ def get_downloads_folder():
 # =============================================================================
 
 @media_bp.route('/api/media/<path:filename>')
+@media_bp.route('/media/<path:filename>')
 def serve_media(filename):
     """Serve media files with path traversal protection and HTTP range request support for iOS"""
     downloads_folder = get_downloads_folder()

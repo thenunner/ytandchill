@@ -10,6 +10,10 @@ export default defineConfig({
       '/api': {
         target: 'http://192.168.168.245:4099',
         changeOrigin: true
+      },
+      '/media': {
+        target: 'http://192.168.168.245:4100',
+        changeOrigin: true
       }
     }
   },
@@ -20,10 +24,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          'video-vendor': ['video.js'],
           'query-vendor': ['@tanstack/react-query'],
           'router-vendor': ['react-router-dom']
-          // NO plyr-vendor - Plyr was removed in Tier 2
         }
       }
     },

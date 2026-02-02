@@ -172,7 +172,10 @@ export function useVideo(id) {
     queryKey: ['video', id],
     queryFn: () => api.getVideo(id),
     enabled: !!id,
-    staleTime: 30000,  // Cache for 30 seconds to prevent unnecessary refetches
+    staleTime: 60000,  // Cache for 60 seconds
+    refetchOnWindowFocus: false,  // Don't refetch when window regains focus
+    refetchOnMount: false,  // Don't refetch if data is fresh
+    refetchOnReconnect: false,  // Don't refetch on reconnect
   });
 }
 
@@ -180,9 +183,20 @@ export function useUpdateVideo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, data }) => api.updateVideo(id, data),
-    onSuccess: () => {
+    onSuccess: (updatedVideo, { id, data }) => {
+      // For playback_seconds updates (progress saves), just update cache silently
+      // Don't refetch - it causes connection queueing issues
+      if (data.playback_seconds !== undefined && Object.keys(data).length === 1) {
+        // Only updating progress - update cache directly without refetch
+        queryClient.setQueryData(['video', id], (old) =>
+          old ? { ...old, playback_seconds: data.playback_seconds } : old
+        );
+        return;
+      }
+
+      // For other updates (watched status, etc.), invalidate to refresh UI
       queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['video'] });
+      queryClient.invalidateQueries({ queryKey: ['video', id] });
     },
   });
 }

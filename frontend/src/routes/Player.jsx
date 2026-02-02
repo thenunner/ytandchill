@@ -1,39 +1,46 @@
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import 'video.js/dist/video-js.css';
 import { useVideo, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
-import { getVideoSource } from '../utils/videoUtils';
 import { ConfirmDialog } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { LoadingSpinner } from '../components/ListFeedback';
 import MobileBottomNav from '../components/MobileBottomNav';
-import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
-import { useNativeVideoPlayer } from '../hooks/useNativeVideoPlayer';
+import { useUnifiedPlayer } from '../hooks/useUnifiedPlayer';
+import PlayerControls from '../components/PlayerControls';
 import { useMediaQuery } from '../hooks/useMediaQuery';
-import { ArrowLeftIcon, EyeIcon, CheckmarkIcon } from '../components/Icons';
+import { EyeIcon, CheckmarkIcon } from '../components/Icons';
 import Sidebar from '../components/Sidebar';
 
 export default function Player() {
   const { videoId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { data: video, isLoading } = useVideo(videoId);
+
+  // Track mount time for accurate timing
+  const mountTimeRef = useRef(performance.now());
+
+  const { data: video, isLoading, isFetching } = useVideo(videoId);
+
+  // Log when video data arrives
+  useEffect(() => {
+    if (video) {
+      console.log('[Player] Video data received:', video.title, `(${(performance.now() - mountTimeRef.current).toFixed(0)}ms since mount)`, { isLoading, isFetching });
+    }
+  }, [video, isLoading, isFetching]);
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
   const { data: queueData } = useQueue();
   const queueCount = queueData?.queue_items?.filter(i => i.status === 'pending' || i.status === 'downloading').length || 0;
   const { showNotification } = useNotification();
 
-  // Player refs - separate refs for mobile (native) and desktop (Video.js)
-  const mobileVideoRef = useRef(null);
-  const desktopVideoRef = useRef(null);
+  // Player refs - single ref for unified native player
+  const videoRef = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
 
   // Refs to hold latest values for event handlers (avoid stale closures)
   const showNotificationRef = useRef(showNotification);
-  const videoDataRef = useRef(video);
 
   // State
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -54,7 +61,6 @@ export default function Player() {
   // Keep refs updated with latest values
   useEffect(() => {
     showNotificationRef.current = showNotification;
-    videoDataRef.current = video;
   });
 
   // Auto-collapse sidebar in theater mode
@@ -79,33 +85,17 @@ export default function Player() {
     }
   }, [video?.id, video?.watched, updateVideo]);
 
-  // Handle video error callback for native player
-  const handleVideoError = useCallback((message) => {
-    showNotificationRef.current(message, 'error');
-  }, []);
-
-  // Mobile: Native HTML5 video player (simple, reliable fullscreen)
-  useNativeVideoPlayer({
+  // Unified native player with custom controls - works on both mobile and desktop
+  const player = useUnifiedPlayer({
     video: video,
-    videoRef: mobileVideoRef,
-    saveProgress: true,
-    onEnded: null,
-    onWatched: handleWatched,
-    onError: handleVideoError,
-    updateVideoMutation: updateVideo,
-  });
-
-  // Desktop: Video.js player (rich features, theater mode, keyboard shortcuts)
-  const playerRef = useVideoJsPlayer({
-    video: video,
-    videoRef: desktopVideoRef,
+    videoRef: videoRef,
     saveProgress: true,
     onEnded: null,
     onWatched: handleWatched,
     updateVideoMutation: updateVideo,
     isTheaterMode: isTheaterMode,
     setIsTheaterMode: setIsTheaterMode,
-    autoplay: true, // Auto-play on desktop when entering player
+    autoplay: true,
   });
 
   if (isLoading) {
@@ -165,20 +155,41 @@ export default function Player() {
     }
   };
 
-  // Mobile layout with bottom navigation - uses native HTML5 video
+  // Mobile layout with bottom navigation - uses native HTML5 video with custom controls
   if (isMobile) {
     return (
       <div className="flex flex-col h-screen bg-dark-primary animate-fade-in">
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto">
-          {/* Video Wrapper - Native HTML5 video for reliable mobile fullscreen */}
-          <div className="player-wrapper-mobile">
+          {/* Video Wrapper - Native HTML5 video with custom controls */}
+          <div className="player-wrapper-mobile relative" onClick={player.togglePlay}>
             <video
-              ref={mobileVideoRef}
-              controls
+              ref={videoRef}
               playsInline
-              preload="metadata"
+              preload="auto"
               poster={video.thumb_url || ''}
+            />
+            <PlayerControls
+              isPlaying={player.isPlaying}
+              currentTime={player.currentTime}
+              duration={player.duration}
+              volume={player.volume}
+              isMuted={player.isMuted}
+              playbackRate={player.playbackRate}
+              isFullscreen={player.isFullscreen}
+              showControls={player.showControls}
+              isBuffering={player.isBuffering}
+              isTheaterMode={false}
+              sponsorSegments={player.sponsorSegments}
+              onTogglePlay={player.togglePlay}
+              onSeek={player.seek}
+              onSeekRelative={player.seekRelative}
+              onSetSpeed={player.setSpeed}
+              onToggleMute={player.toggleMute}
+              onSetVolume={player.setVolume}
+              onToggleFullscreen={player.toggleFullscreen}
+              onToggleTheaterMode={null}
+              isMobile={true}
             />
           </div>
 
@@ -279,20 +290,44 @@ export default function Player() {
                 : {}
             }
           >
-            {/* Video Wrapper - Video.js for desktop with rich features */}
+            {/* Video Wrapper - Native HTML5 with custom controls for desktop */}
             <div
-              className={`player-wrapper ${isTheaterMode ? '' : 'shadow-card-hover'}`}
+              className={`player-wrapper relative ${isTheaterMode ? '' : 'shadow-card-hover'}`}
               style={{
                 height: isTheaterMode ? '100vh' : 'calc(100vh - 180px)',
                 maxWidth: isTheaterMode ? '100%' : 'calc((100vh - 180px) * 16 / 9)',
                 width: '100%',
               }}
+              onMouseMove={player.showControlsTemporarily}
+              onClick={player.togglePlay}
             >
               <video
-                ref={desktopVideoRef}
-                className="video-js vjs-big-play-centered"
+                ref={videoRef}
+                className="w-full h-full object-contain bg-black"
                 playsInline
                 preload="auto"
+              />
+              <PlayerControls
+                isPlaying={player.isPlaying}
+                currentTime={player.currentTime}
+                duration={player.duration}
+                volume={player.volume}
+                isMuted={player.isMuted}
+                playbackRate={player.playbackRate}
+                isFullscreen={player.isFullscreen}
+                showControls={player.showControls}
+                isBuffering={player.isBuffering}
+                isTheaterMode={isTheaterMode}
+                sponsorSegments={player.sponsorSegments}
+                onTogglePlay={player.togglePlay}
+                onSeek={player.seek}
+                onSeekRelative={player.seekRelative}
+                onSetSpeed={player.setSpeed}
+                onToggleMute={player.toggleMute}
+                onSetVolume={player.setVolume}
+                onToggleFullscreen={player.toggleFullscreen}
+                onToggleTheaterMode={player.toggleTheaterMode}
+                isMobile={false}
               />
             </div>
 

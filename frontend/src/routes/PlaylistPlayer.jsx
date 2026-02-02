@@ -1,13 +1,12 @@
 import { useParams, useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQueries } from '@tanstack/react-query';
-import 'video.js/dist/video-js.css';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
 import { getVideoSource } from '../utils/videoUtils';
-import { useVideoJsPlayer } from '../hooks/useVideoJsPlayer';
-import { useNativeVideoPlayer } from '../hooks/useNativeVideoPlayer';
+import { useUnifiedPlayer } from '../hooks/useUnifiedPlayer';
+import PlayerControls from '../components/PlayerControls';
 import { ConfirmDialog } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { LoadingSpinner } from '../components/ListFeedback';
@@ -191,9 +190,8 @@ export default function PlaylistPlayer() {
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
   const isMobile = isTouchDevice || isSmallScreen;
 
-  // Refs - separate refs for mobile (native) and desktop (Video.js)
-  const mobileVideoRef = useRef(null);
-  const desktopVideoRef = useRef(null);
+  // Refs - single video ref for unified native player
+  const videoRef = useRef(null);
   const sidebarRef = useRef(null);
   const mobileQueueRef = useRef(null);
   const preloadVideoRef = useRef(null);
@@ -482,34 +480,17 @@ export default function PlaylistPlayer() {
     goToNextRef.current = goToNext;
   }, [goToNext]);
 
-  // Handle video error callback for native player
-  const handleVideoError = useCallback((message) => {
-    showNotification(message, 'error');
-  }, [showNotification]);
-
-  // Mobile: Native HTML5 video player (reliable fullscreen, playlist auto-advance)
-  useNativeVideoPlayer({
+  // Unified native player with custom controls - works on both mobile and desktop
+  const player = useUnifiedPlayer({
     video: currentVideo,
-    videoRef: mobileVideoRef,
+    videoRef: videoRef,
     saveProgress: false,  // Playlist mode doesn't save progress
     onEnded: () => goToNextRef.current?.(),  // Auto-advance to next video
-    onWatched: handleWatched,
-    onError: handleVideoError,
-    updateVideoMutation: updateVideo,
-  });
-
-  // Desktop: Video.js player with rich features (theater mode, keyboard shortcuts)
-  const playerRef = useVideoJsPlayer({
-    video: currentVideo,
-    videoRef: desktopVideoRef,
-    saveProgress: false,
-    onEnded: () => goToNextRef.current?.(),
     onWatched: handleWatched,
     updateVideoMutation: updateVideo,
     isTheaterMode: isTheaterMode,
     setIsTheaterMode: handleTheaterModeChange,
-    persistPlayer: true, // CRITICAL - prevents reinit on video change
-    autoplay: true, // Auto-play on desktop for faster video start
+    autoplay: true,
   });
 
   // Update URL when current video changes
@@ -519,18 +500,12 @@ export default function PlaylistPlayer() {
     }
   }, [currentVideo?.id, setSearchParams]);
 
-  // Keyboard shortcuts for playlist navigation
+  // Keyboard shortcuts for playlist navigation (N, P, O, S - player handles K, J, L, F, T, M, 0-9)
   useEffect(() => {
     const handleKeyPress = (e) => {
       // Don't trigger if user is typing in an input field
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         return;
-      }
-
-      // Check if fullscreen (delegate to video.js hotkeys)
-      const isPlayerFullscreen = playerRef.current?.isFullscreen?.();
-      if (isPlayerFullscreen) {
-        return; // Let video.js handle keyboard shortcuts in fullscreen
       }
 
       switch (e.key.toLowerCase()) {
@@ -547,7 +522,7 @@ export default function PlaylistPlayer() {
           showNotification('Previous video', 'info');
           break;
         case 'o':
-          // Toggle loop (use 'o' to avoid conflict with 'l' for seek forward in video.js)
+          // Toggle loop
           e.preventDefault();
           toggleLoop();
           showNotification(isLooping ? 'Loop disabled' : 'Loop enabled', 'info');
@@ -561,8 +536,8 @@ export default function PlaylistPlayer() {
         case 'escape':
           // Exit fullscreen or go back
           e.preventDefault();
-          if (isPlayerFullscreen) {
-            playerRef.current?.exitFullscreen?.();
+          if (player.isFullscreen) {
+            player.toggleFullscreen();
           } else {
             handleBack();
           }
@@ -574,7 +549,7 @@ export default function PlaylistPlayer() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [goToNext, goToPrevious, toggleLoop, shufflePlaylist, isLooping, showNotification, handleBack, playerRef]);
+  }, [goToNext, goToPrevious, toggleLoop, shufflePlaylist, isLooping, showNotification, handleBack, player]);
 
   // Preload next video
   useEffect(() => {
@@ -587,40 +562,6 @@ export default function PlaylistPlayer() {
     }
   }, [nextVideo?.id]);
 
-  // Update video source when currentVideo changes (desktop Video.js only)
-  // Mobile native player handles its own source via useNativeVideoPlayer hook
-  useEffect(() => {
-    // Skip on mobile - native player handles its own source
-    if (isMobile) return;
-
-    if (!currentVideo || !playerRef.current) {
-      return;
-    }
-
-    // Safety check: don't operate on disposed player
-    if (playerRef.current.isDisposed && playerRef.current.isDisposed()) {
-      return;
-    }
-
-    let videoSrc;
-    try {
-      videoSrc = getVideoSource(currentVideo.file_path);
-      if (!videoSrc) {
-        return;
-      }
-
-      playerRef.current.src({
-        src: videoSrc,
-        type: 'video/mp4'
-      });
-
-      // Explicitly load and play immediately (don't wait for loadedmetadata)
-      playerRef.current.load();
-      playerRef.current.play().catch(() => {});
-    } catch (error) {
-      // Silently handle errors
-    }
-  }, [currentVideo?.id, playerRef, isMobile]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -667,14 +608,39 @@ export default function PlaylistPlayer() {
               <div className="bg-black flex justify-center">
                 <div style={{ width: '100%', maxWidth: 'calc(100vh * 16 / 9)' }}>
                   <div
-                    className="player-wrapper"
+                    className="player-wrapper relative"
                     style={{ height: '100vh', width: '100%' }}
+                    onMouseMove={player.showControlsTemporarily}
+                    onClick={player.togglePlay}
                   >
                     <video
-                      ref={desktopVideoRef}
-                      className="video-js vjs-big-play-centered"
+                      ref={videoRef}
+                      className="w-full h-full object-contain bg-black"
                       playsInline
                       preload="auto"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <PlayerControls
+                      isPlaying={player.isPlaying}
+                      currentTime={player.currentTime}
+                      duration={player.duration}
+                      volume={player.volume}
+                      isMuted={player.isMuted}
+                      playbackRate={player.playbackRate}
+                      isFullscreen={player.isFullscreen}
+                      showControls={player.showControls}
+                      isBuffering={player.isBuffering}
+                      isTheaterMode={isTheaterMode}
+                      sponsorSegments={player.sponsorSegments}
+                      onTogglePlay={player.togglePlay}
+                      onSeek={player.seek}
+                      onSeekRelative={player.seekRelative}
+                      onSetSpeed={player.setSpeed}
+                      onToggleMute={player.toggleMute}
+                      onSetVolume={player.setVolume}
+                      onToggleFullscreen={player.toggleFullscreen}
+                      onToggleTheaterMode={player.toggleTheaterMode}
+                      isMobile={false}
                     />
                   </div>
                 </div>
@@ -879,12 +845,39 @@ export default function PlaylistPlayer() {
                 {/* LEFT: Player + Info */}
                 <div className="flex-1 min-w-0">
                   {/* Video Wrapper */}
-                  <div className="player-wrapper shadow-card-hover">
+                  <div
+                    className="player-wrapper relative shadow-card-hover"
+                    onMouseMove={player.showControlsTemporarily}
+                    onClick={player.togglePlay}
+                  >
                     <video
-                      ref={desktopVideoRef}
-                      className="video-js vjs-big-play-centered"
+                      ref={videoRef}
+                      className="w-full h-full object-contain bg-black"
                       playsInline
                       preload="auto"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <PlayerControls
+                      isPlaying={player.isPlaying}
+                      currentTime={player.currentTime}
+                      duration={player.duration}
+                      volume={player.volume}
+                      isMuted={player.isMuted}
+                      playbackRate={player.playbackRate}
+                      isFullscreen={player.isFullscreen}
+                      showControls={player.showControls}
+                      isBuffering={player.isBuffering}
+                      isTheaterMode={isTheaterMode}
+                      sponsorSegments={player.sponsorSegments}
+                      onTogglePlay={player.togglePlay}
+                      onSeek={player.seek}
+                      onSeekRelative={player.seekRelative}
+                      onSetSpeed={player.setSpeed}
+                      onToggleMute={player.toggleMute}
+                      onSetVolume={player.setVolume}
+                      onToggleFullscreen={player.toggleFullscreen}
+                      onToggleTheaterMode={player.toggleTheaterMode}
+                      isMobile={false}
                     />
                   </div>
 
@@ -1046,14 +1039,36 @@ export default function PlaylistPlayer() {
     <div className="flex flex-col h-screen bg-dark-primary animate-fade-in">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto">
-        {/* Video Player - Native HTML5 for reliable mobile fullscreen */}
-        <div className="player-wrapper-mobile">
+        {/* Video Player - Native HTML5 with custom controls */}
+        <div className="player-wrapper-mobile relative" onClick={player.togglePlay}>
           <video
-            ref={mobileVideoRef}
-            controls
+            ref={videoRef}
             playsInline
-            preload="metadata"
+            preload="auto"
             poster={currentVideo.thumb_url || ''}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <PlayerControls
+            isPlaying={player.isPlaying}
+            currentTime={player.currentTime}
+            duration={player.duration}
+            volume={player.volume}
+            isMuted={player.isMuted}
+            playbackRate={player.playbackRate}
+            isFullscreen={player.isFullscreen}
+            showControls={player.showControls}
+            isBuffering={player.isBuffering}
+            isTheaterMode={false}
+            sponsorSegments={player.sponsorSegments}
+            onTogglePlay={player.togglePlay}
+            onSeek={player.seek}
+            onSeekRelative={player.seekRelative}
+            onSetSpeed={player.setSpeed}
+            onToggleMute={player.toggleMute}
+            onSetVolume={player.setVolume}
+            onToggleFullscreen={player.toggleFullscreen}
+            onToggleTheaterMode={null}
+            isMobile={true}
           />
         </div>
 

@@ -1285,22 +1285,79 @@ def serve_frontend(path):
         return send_from_directory(app.static_folder, path)
     return send_from_directory(app.static_folder, 'index.html')
 
+def run_media_server():
+    """Run dedicated media server on port 4100 for faster video loading.
+
+    Running media on a separate port gives it its own browser connection pool (6 connections),
+    avoiding queueing behind API requests. This is how Plex/Jellyfin achieve fast video start.
+    """
+    from flask import Flask as MediaFlask
+    from waitress import serve as media_serve
+    from routes.media import media_bp
+
+    media_port = int(os.environ.get('MEDIA_PORT', 4100))
+
+    # Create minimal Flask app just for media serving
+    media_app = MediaFlask(__name__)
+
+    # Copy CORS handling from main app
+    @media_app.after_request
+    def add_cors_headers(response):
+        origin = request.headers.get('Origin')
+        if origin:
+            response.headers['Access-Control-Allow-Origin'] = origin
+            response.headers['Access-Control-Allow-Credentials'] = 'true'
+            response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+            response.headers['Access-Control-Allow-Headers'] = 'Range'
+        return response
+
+    # Handle OPTIONS preflight
+    @media_app.before_request
+    def handle_options():
+        if request.method == 'OPTIONS':
+            return media_app.make_default_options_response()
+        return None
+
+    # Register media blueprint - handles both /media/* and /api/media/* URLs
+    media_app.register_blueprint(media_bp)
+
+    logger.info(f"Starting media server on 0.0.0.0:{media_port}")
+
+    media_serve(
+        media_app,
+        host='0.0.0.0',
+        port=media_port,
+        threads=8,                # Dedicated threads for video streaming
+        channel_timeout=600,      # 10 minute timeout for large videos
+        cleanup_interval=30,
+        asyncore_use_poll=True
+    )
+
+
 if __name__ == '__main__':
     from waitress import serve
 
     # Use Waitress production WSGI server instead of Flask dev server
     # Benefits: Better concurrency, proper thread pooling, handles byte-range requests well
     port = int(os.environ.get('PORT', 4099))
+    media_port = int(os.environ.get('MEDIA_PORT', 4100))
 
     # Ensure required directories exist with 777 permissions for remote access
     downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
     makedirs_777(os.path.join(downloads_dir, 'imports'))
     makedirs_777(os.path.join(downloads_dir, 'thumbnails'))
 
+    # Start media server in background thread
+    # This runs on port 4100 and only serves video/media files
+    # Separating media from API prevents video requests from queueing behind API calls
+    media_thread = threading.Thread(target=run_media_server, daemon=True)
+    media_thread.start()
+
     logger.info(f"Starting Waitress server on 0.0.0.0:{port}")
     print(f"\n🚀 Server started! Open in your browser:")
     print(f"   Local:   http://localhost:{port}")
     print(f"   Network: http://<your-ip>:{port}")
+    print(f"   Media:   http://<your-ip>:{media_port} (dedicated video streaming)")
     print("")
 
     serve(
