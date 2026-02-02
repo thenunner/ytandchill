@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited, useSettings } from '../api/queries';
+import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited, useSettings, useThumbnailBatch } from '../api/queries';
 import VideoCard from '../components/VideoCard';
 import { LoadingSpinner, EmptyState, Pagination } from '../components/ListFeedback';
 import { HeartIcon } from '../components/Icons';
@@ -82,6 +82,10 @@ export default function Favs() {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredVideos.slice(start, start + itemsPerPage);
   }, [filteredVideos, currentPage, itemsPerPage, isMobile]);
+
+  // Batch fetch thumbnails for current page (reduces 20+ HTTP requests to 1)
+  const videoIds = useMemo(() => paginatedVideos.map(v => v.id), [paginatedVideos]);
+  const { data: thumbnails } = useThumbnailBatch(videoIds);
 
   // Reset page when search/sort changes
   useEffect(() => {
@@ -219,8 +223,8 @@ export default function Favs() {
                   <div className="bg-dark-secondary rounded-xl overflow-hidden">
                     {/* Thumbnail */}
                     <div className="relative aspect-video bg-dark-tertiary">
-                      {video.thumb_url && (
-                        <img src={video.thumb_url} className="w-full h-full object-cover" alt="" loading="lazy" />
+                      {(thumbnails?.[video.id] || video.thumb_url) && (
+                        <img src={thumbnails?.[video.id] || video.thumb_url} className="w-full h-full object-cover" alt="" loading={thumbnails?.[video.id] ? 'eager' : 'lazy'} />
                       )}
                       {/* Duration badge */}
                       {video.duration_sec && (
@@ -324,6 +328,7 @@ export default function Favs() {
               isLibraryView={true}
               showChannel={true}
               effectiveCardSize={cardSize}
+              thumbnailDataUrl={thumbnails?.[video.id]}
             />
           ))}
         </div>

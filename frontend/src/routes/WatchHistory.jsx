@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useWatchHistory, useClearWatchHistory, useChannels, useSettings } from '../api/queries';
+import { useWatchHistory, useClearWatchHistory, useChannels, useSettings, useThumbnailBatch } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/PreferencesContext';
 import { StickyBar, CollapsibleSearch } from '../components/stickybar';
@@ -61,6 +61,10 @@ export default function WatchHistory() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return historyVideos.slice(startIndex, startIndex + itemsPerPage);
   }, [historyVideos, currentPage, itemsPerPage, loadedPages, isMobile]);
+
+  // Batch fetch thumbnails for current page (reduces 20+ HTTP requests to 1)
+  const videoIds = useMemo(() => paginatedVideos.map(v => v.id), [paginatedVideos]);
+  const { data: thumbnails } = useThumbnailBatch(videoIds);
 
   // Format relative time for last watched
   const formatLastWatched = (dateString) => {
@@ -196,11 +200,12 @@ export default function WatchHistory() {
                 >
                   {/* Thumbnail */}
                   <div className="relative aspect-video bg-dark-tertiary rounded-t-xl rounded-b-xl group-hover:rounded-b-none overflow-hidden transition-all">
-                    {video.thumb_url ? (
+                    {(thumbnails?.[video.id] || video.thumb_url) ? (
                       <img
-                        src={video.thumb_url}
+                        src={thumbnails?.[video.id] || video.thumb_url}
                         alt={video.title}
                         className="w-full h-full object-cover"
+                        loading={thumbnails?.[video.id] ? 'eager' : 'lazy'}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">

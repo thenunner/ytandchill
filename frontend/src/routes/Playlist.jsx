@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
-import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings, useDeletePlaylist, useUpdatePlaylist } from '../api/queries';
+import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings, useDeletePlaylist, useUpdatePlaylist, useThumbnailBatch } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getEffectiveCardSize, getBooleanSetting, getNumericSetting } from '../utils/utils';
 import { parsePlaylistVideoDate } from '../utils/videoUtils';
@@ -200,6 +200,10 @@ export default function Playlist() {
     const startIndex = (currentPage - 1) * itemsPerPage;
     return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedVideos, currentPage, itemsPerPage, loadedPages, isMobile]);
+
+  // Batch fetch thumbnails for current page (reduces 20+ HTTP requests to 1)
+  const videoIds = useMemo(() => paginatedVideos.map(v => v.id), [paginatedVideos]);
+  const { data: thumbnails } = useThumbnailBatch(videoIds);
 
   // Playlist action handlers
   const handlePlayAll = () => {
@@ -447,6 +451,7 @@ export default function Playlist() {
               isSelected={selectedVideos.includes(video.id)}
               onToggleSelect={editMode ? toggleVideoSelection : undefined}
               effectiveCardSize={effectiveCardSize}
+              thumbnailDataUrl={thumbnails?.[video.id]}
             />
           ))}
           </div>

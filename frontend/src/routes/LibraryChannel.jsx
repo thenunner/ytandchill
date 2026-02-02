@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { useVideos, useChannels, useBulkDeleteVideos, useQueue, useSettings, useMarkChannelVisited } from '../api/queries';
+import { useVideos, useChannels, useBulkDeleteVideos, useQueue, useSettings, useMarkChannelVisited, useThumbnailBatch } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getEffectiveCardSize, getBooleanSetting, getNumericSetting, getStringSetting } from '../utils/utils';
 import { useCardSize } from '../contexts/PreferencesContext';
@@ -220,6 +220,10 @@ export default function LibraryChannel() {
     return sortedVideos.slice(startIndex, startIndex + itemsPerPage);
   }, [sortedVideos, currentPage, itemsPerPage, loadedPages, isMobile]);
 
+  // Batch fetch thumbnails for current page (reduces 20+ HTTP requests to 1)
+  const videoIds = useMemo(() => paginatedVideos.map(v => v.id), [paginatedVideos]);
+  const { data: thumbnails } = useThumbnailBatch(videoIds);
+
   const handleDurationChange = (value) => {
     const newParams = new URLSearchParams(searchParams);
     if (value && value !== 'all') {
@@ -433,6 +437,7 @@ export default function LibraryChannel() {
                   editMode={editMode}
                   isLibraryView={true}
                   effectiveCardSize={effectiveCardSize}
+                  thumbnailDataUrl={thumbnails?.[video.id]}
                 />
               ))}
             </div>

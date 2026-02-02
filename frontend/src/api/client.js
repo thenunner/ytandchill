@@ -534,6 +534,14 @@ class APIClient {
       body: JSON.stringify({ file }),
     });
   }
+
+  // Thumbnails - batch fetch to reduce HTTP connections
+  batchThumbnails(videoIds) {
+    return this.request('/thumbnails/batch', {
+      method: 'POST',
+      body: JSON.stringify({ video_ids: videoIds }),
+    });
+  }
 }
 
 export default new APIClient();

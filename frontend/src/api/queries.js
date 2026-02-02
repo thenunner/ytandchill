@@ -792,3 +792,16 @@ export function useSkipPendingItem() {
   });
 }
 
+// Thumbnails - batch fetch to reduce HTTP connections (20 requests -> 1)
+export function useThumbnailBatch(videoIds) {
+  return useQuery({
+    queryKey: ['thumbnails', videoIds?.length > 0 ? videoIds.slice().sort().join(',') : ''],
+    queryFn: () => api.batchThumbnails(videoIds),
+    enabled: videoIds && videoIds.length > 0,
+    staleTime: 5 * 60 * 1000, // Cache 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep in cache 10 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+}
+

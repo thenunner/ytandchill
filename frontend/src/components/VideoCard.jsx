@@ -18,6 +18,7 @@ const VideoCard = memo(function VideoCard({
   isLibraryView = false, // New prop for library view (shows 3-column layout with file size)
   showChannel = false, // Show channel name in metadata
   effectiveCardSize, // Required: card size for text sizing
+  thumbnailDataUrl, // Pre-fetched thumbnail as base64 data URL (from batch fetch)
 }) {
   const { data: settings } = useSettings();
   const textSizes = getTextSizes(effectiveCardSize);
@@ -39,8 +40,11 @@ const VideoCard = memo(function VideoCard({
   const previewTimeoutRef = useRef(null);
   const progressAnimationRef = useRef(null);
 
-  // Prefetch thumbnail 500px before it becomes visible
-  const prefetchRef = usePrefetchImage(video.thumb_url);
+  // Prefetch thumbnail 500px before it becomes visible (skip if batch-fetched)
+  const prefetchRef = usePrefetchImage(thumbnailDataUrl ? null : video.thumb_url);
+
+  // Determine thumbnail source: batch-fetched data URL or regular URL
+  const thumbSrc = thumbnailDataUrl || video.thumb_url;
 
   const handleDelete = async () => {
     try {
@@ -314,12 +318,12 @@ const VideoCard = memo(function VideoCard({
         {/* Thumbnail Image */}
         {!previewPlaying && (
           <>
-            {video.thumb_url && !imageError ? (
+            {thumbSrc && !imageError ? (
               <img
-                src={video.thumb_url}
+                src={thumbSrc}
                 alt={video.title}
                 className="w-full h-full object-cover"
-                loading="lazy"
+                loading={thumbnailDataUrl ? 'eager' : 'lazy'}
                 onError={() => setImageError(true)}
               />
             ) : (

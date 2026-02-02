@@ -8,7 +8,7 @@ Each module handles a specific domain of the API.
 from .settings import settings_bp, init_settings_routes
 from .queue import queue_bp, init_queue_routes
 from .video_tools import video_tools_bp, init_video_tools_routes
-from .media import media_bp
+from .media import media_bp, init_media_routes
 from .videos import videos_bp, init_videos_routes
 from .library import library_bp, init_library_routes
 from .channels import channels_bp, init_channels_routes
@@ -57,7 +57,8 @@ def register_blueprints(app, session_factory, settings_manager, scheduler, downl
         init_video_tools_routes(session_factory, limiter, serialize_video)
         app.register_blueprint(video_tools_bp)
 
-    # Register media blueprint (no init needed - stateless file serving)
+    # Initialize and register media blueprint
+    init_media_routes(session_factory)
     app.register_blueprint(media_bp)
 
     # Initialize and register videos blueprint (YouTube import - Videos tab)

@@ -3,17 +3,30 @@ Media Routes
 
 Handles:
 - GET /api/media/<path:filename> - Serve video/media files
+- POST /api/thumbnails/batch - Batch fetch thumbnails as base64
 """
 
 from flask import Blueprint, send_file, request, Response, jsonify
 import logging
 import os
 import mimetypes
+import base64
+
+from database import Video, get_session
 
 logger = logging.getLogger(__name__)
 
 # Create Blueprint
 media_bp = Blueprint('media', __name__)
+
+# Module-level references to shared dependencies
+_session_factory = None
+
+
+def init_media_routes(session_factory):
+    """Initialize the media routes with required dependencies."""
+    global _session_factory
+    _session_factory = session_factory
 
 
 def get_downloads_folder():
@@ -148,3 +161,56 @@ def serve_media(filename):
         response.headers['ETag'] = etag
         response.headers['Cache-Control'] = 'public, max-age=86400'
         return response
+
+
+@media_bp.route('/api/thumbnails/batch', methods=['POST'])
+def batch_thumbnails():
+    """Return multiple thumbnails as base64 data URLs in one request.
+
+    This reduces HTTP connections from N (one per thumbnail) to 1,
+    preventing connection exhaustion on HTTP/1.1's 6-connection limit.
+    """
+    data = request.json
+    if not data:
+        return jsonify({}), 200
+
+    video_ids = data.get('video_ids', [])
+    if not video_ids:
+        return jsonify({}), 200
+
+    # Limit to prevent abuse (50 thumbnails * ~20KB = ~1MB response)
+    video_ids = video_ids[:50]
+
+    result = {}
+    downloads_folder = get_downloads_folder()
+
+    with get_session(_session_factory) as session:
+        # Batch query all videos at once
+        videos = session.query(Video).filter(Video.id.in_(video_ids)).all()
+
+        for video in videos:
+            thumb_path = None
+
+            # Determine thumbnail path based on thumb_url or construct from channel/yt_id
+            if video.thumb_url:
+                if video.thumb_url.startswith('http'):
+                    # External URL - skip, let browser fetch directly
+                    continue
+                else:
+                    # Local path - normalize and construct full path
+                    relative_path = video.thumb_url.replace('/api/media/', '').replace('\\', '/')
+                    thumb_path = os.path.join(downloads_folder, relative_path)
+            elif video.channel and video.yt_id:
+                # Construct from channel folder + video ID
+                thumb_path = os.path.join(downloads_folder, video.channel.folder_name, f"{video.yt_id}.jpg")
+
+            if thumb_path and os.path.exists(thumb_path):
+                try:
+                    with open(thumb_path, 'rb') as f:
+                        encoded = base64.b64encode(f.read()).decode('utf-8')
+                        result[video.id] = f'data:image/jpeg;base64,{encoded}'
+                except Exception as e:
+                    logger.debug(f"Failed to read thumbnail {thumb_path}: {e}")
+                    # Skip failed thumbnails - browser will fall back to URL
+
+    return jsonify(result)
