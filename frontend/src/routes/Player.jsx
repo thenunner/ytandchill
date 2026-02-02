@@ -163,30 +163,6 @@ export default function Player() {
   };
   const videoSrc = playbackData?.file_path ? getVideoSource(playbackData.file_path) : null;
 
-  // Add preload link to document head for high priority loading
-  useEffect(() => {
-    if (!videoSrc) return;
-
-    // Check if preload link already exists
-    const existingLink = document.querySelector(`link[rel="preload"][href="${videoSrc}"]`);
-    if (existingLink) return;
-
-    const link = document.createElement('link');
-    link.rel = 'preload';
-    link.as = 'video';
-    link.href = videoSrc;
-    link.setAttribute('fetchpriority', 'high');
-    document.head.appendChild(link);
-
-    console.log('[Timing] Added preload link for video:', videoSrc);
-
-    return () => {
-      if (link.parentNode) {
-        link.parentNode.removeChild(link);
-      }
-    };
-  }, [videoSrc]);
-
   // Only wait for playback data (fast), not full metadata
   if (playbackLoading) {
     return <LoadingSpinner />;
@@ -258,7 +234,7 @@ export default function Player() {
               ref={videoRefCallback}
               src={videoSrc || undefined}
               playsInline
-              preload="auto"
+              preload="metadata"
               poster={video?.thumb_url || ''}
               fetchpriority="high"
             />
@@ -408,7 +384,7 @@ export default function Player() {
                 src={videoSrc || undefined}
                 className="w-full h-full object-contain bg-black"
                 playsInline
-                preload="auto"
+                preload="metadata"
                 fetchpriority="high"
               />
               <PlayerControls
