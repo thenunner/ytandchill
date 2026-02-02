@@ -52,9 +52,9 @@ export function useQueueSSE() {
           }
           if (data.channels) {
             queryClient.setQueryData(['channels'], data.channels);
-            // Also set favorite-channels by filtering
-            const favorites = data.channels.filter(ch => ch.is_favorite);
-            queryClient.setQueryData(['favorite-channels'], favorites);
+            // Invalidate favorite-channels to refetch with proper sorting from dedicated endpoint
+            // Don't set directly from channels - favorites have special sort order
+            queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
           }
         } catch (parseError) {
           console.warn('Failed to parse SSE init data:', parseError);
