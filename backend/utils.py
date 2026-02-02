@@ -208,6 +208,106 @@ def get_random_video_thumbnail(playlist_videos):
 
 
 # =============================================================================
+# SSL Certificate Generation
+# =============================================================================
+
+def ensure_ssl_certs(cert_dir='data/certs'):
+    """Auto-generate self-signed SSL certs if they don't exist.
+
+    Creates a self-signed certificate valid for 10 years with localhost
+    and 127.0.0.1 as Subject Alternative Names.
+
+    Args:
+        cert_dir: Directory to store certificates (default: data/certs)
+
+    Returns:
+        tuple: (cert_path, key_path) as strings, or (None, None) if generation fails
+    """
+    from pathlib import Path
+
+    cert_path = Path(cert_dir) / 'localhost.pem'
+    key_path = Path(cert_dir) / 'localhost-key.pem'
+
+    # Return existing certs if they exist
+    if cert_path.exists() and key_path.exists():
+        logger.info(f"Using existing SSL certificates from {cert_dir}")
+        return str(cert_path), str(key_path)
+
+    try:
+        from cryptography import x509
+        from cryptography.x509.oid import NameOID
+        from cryptography.hazmat.primitives import hashes, serialization
+        from cryptography.hazmat.primitives.asymmetric import rsa
+        from datetime import datetime, timedelta
+        import ipaddress
+
+        # Ensure directory exists
+        Path(cert_dir).mkdir(parents=True, exist_ok=True)
+
+        # Generate RSA private key
+        key = rsa.generate_private_key(
+            public_exponent=65537,
+            key_size=2048
+        )
+
+        # Build certificate subject/issuer
+        subject = issuer = x509.Name([
+            x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'YT and Chill'),
+            x509.NameAttribute(NameOID.COMMON_NAME, 'localhost'),
+        ])
+
+        # Subject Alternative Names for localhost access
+        san_list = [
+            x509.DNSName('localhost'),
+            x509.IPAddress(ipaddress.IPv4Address('127.0.0.1')),
+        ]
+
+        # Build the certificate
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(issuer)
+            .public_key(key.public_key())
+            .serial_number(x509.random_serial_number())
+            .not_valid_before(datetime.utcnow())
+            .not_valid_after(datetime.utcnow() + timedelta(days=365 * 10))  # 10 years
+            .add_extension(
+                x509.SubjectAlternativeName(san_list),
+                critical=False
+            )
+            .add_extension(
+                x509.BasicConstraints(ca=False, path_length=None),
+                critical=True
+            )
+            .sign(key, hashes.SHA256())
+        )
+
+        # Write private key
+        with open(key_path, 'wb') as f:
+            f.write(key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=serialization.NoEncryption()
+            ))
+
+        # Write certificate
+        with open(cert_path, 'wb') as f:
+            f.write(cert.public_bytes(serialization.Encoding.PEM))
+
+        logger.info(f"Generated self-signed SSL certificates in {cert_dir}")
+        logger.info("Note: Browser will show a security warning - click 'Advanced' -> 'Proceed' to accept")
+        return str(cert_path), str(key_path)
+
+    except ImportError:
+        logger.warning("cryptography package not installed - SSL cert generation unavailable")
+        logger.warning("Install with: pip install cryptography")
+        return None, None
+    except Exception as e:
+        logger.error(f"Failed to generate SSL certificates: {e}")
+        return None, None
+
+
+# =============================================================================
 # Authentication Helpers
 # =============================================================================
 

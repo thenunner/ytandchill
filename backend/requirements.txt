@@ -5,5 +5,9 @@ SQLAlchemy==2.0.23
 yt-dlp[default]
 APScheduler==3.10.4
 python-dotenv==1.0.0
-waitress==3.0.2
 psutil==5.9.8
+# HTTP/2 server (replaces waitress)
+hypercorn==0.17.3
+asgiref==3.8.1
+# SSL certificate generation
+cryptography==44.0.0

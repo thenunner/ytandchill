@@ -4,7 +4,6 @@ import { useQueries } from '@tanstack/react-query';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
-import { getVideoSource } from '../utils/videoUtils';
 import { useUnifiedPlayer } from '../hooks/useUnifiedPlayer';
 import PlayerControls from '../components/PlayerControls';
 import { ConfirmDialog } from '../components/ui/SharedModals';
@@ -194,7 +193,6 @@ export default function PlaylistPlayer() {
   const videoRef = useRef(null);
   const sidebarRef = useRef(null);
   const mobileQueueRef = useRef(null);
-  const preloadVideoRef = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
   const horizontalQueueRef = useRef(null);
 
@@ -265,16 +263,6 @@ export default function PlaylistPlayer() {
     }
     return videos[actualIndex];
   }, [videos, displayOrder, currentIndex]);
-
-  // Next video for preloading
-  const nextVideo = useMemo(() => {
-    if (videos.length === 0) return null;
-    const nextIndex = currentIndex + 1;
-    if (nextIndex >= displayOrder.length) {
-      return isLooping ? videos[displayOrder[0]] : null;
-    }
-    return videos[displayOrder[nextIndex]];
-  }, [videos, displayOrder, currentIndex, isLooping]);
 
   // Set initial index based on startVideoId (ONLY on first load, not on URL updates during navigation)
   useEffect(() => {
@@ -611,7 +599,7 @@ export default function PlaylistPlayer() {
                     className="player-wrapper relative"
                     style={{ height: '100vh', width: '100%' }}
                     onMouseMove={player.showControlsTemporarily}
-                    onClick={player.togglePlay}
+                    onClick={player.handleVideoClick}
                   >
                     <video
                       ref={videoRef}
@@ -848,7 +836,7 @@ export default function PlaylistPlayer() {
                   <div
                     className="player-wrapper relative shadow-card-hover"
                     onMouseMove={player.showControlsTemporarily}
-                    onClick={player.togglePlay}
+                    onClick={player.handleVideoClick}
                   >
                     <video
                       ref={videoRef}
@@ -1002,13 +990,6 @@ export default function PlaylistPlayer() {
           )}
         </div>
 
-        {/* Hidden Preload Video */}
-        <video
-          ref={preloadVideoRef}
-          style={{ display: 'none' }}
-          preload="auto"
-        />
-
         {/* Delete Confirmation Dialog */}
         <ConfirmDialog
           isOpen={showDeleteConfirm}
@@ -1040,7 +1021,7 @@ export default function PlaylistPlayer() {
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto">
         {/* Video Player - Native HTML5 with custom controls */}
-        <div className="player-wrapper-mobile relative" onClick={player.togglePlay}>
+        <div className="player-wrapper-mobile relative" onClick={player.handleVideoClick}>
           <video
             ref={videoRef}
             playsInline
@@ -1254,13 +1235,6 @@ export default function PlaylistPlayer() {
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav queueCount={queueCount} />
-
-      {/* Hidden Preload Video */}
-      <video
-        ref={preloadVideoRef}
-        style={{ display: 'none' }}
-        preload="auto"
-      />
 
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog

@@ -162,7 +162,7 @@ export default function Player() {
         {/* Scrollable Content Area */}
         <div className="flex-1 overflow-y-auto">
           {/* Video Wrapper - Native HTML5 video with custom controls */}
-          <div className="player-wrapper-mobile relative" onClick={player.togglePlay}>
+          <div className="player-wrapper-mobile relative" onClick={player.handleVideoClick}>
             <video
               ref={videoRef}
               playsInline
@@ -299,7 +299,7 @@ export default function Player() {
                 width: '100%',
               }}
               onMouseMove={player.showControlsTemporarily}
-              onClick={player.togglePlay}
+              onClick={player.handleVideoClick}
             >
               <video
                 ref={videoRef}

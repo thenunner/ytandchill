@@ -40,6 +40,8 @@ export function useUnifiedPlayer({
   const onEndedRef = useRef(onEnded);
   const onWatchedRef = useRef(onWatched);
   const autoplayRef = useRef(autoplay);
+  const clickTimeoutRef = useRef(null);
+  const lastClickTimeRef = useRef(0);
 
   // Keep refs updated
   useEffect(() => {
@@ -184,6 +186,37 @@ export function useUnifiedPlayer({
     }, 2500);
   }, [videoRef]);
 
+  // Smart click handler: single-click = play/pause, double-click = fullscreen
+  // Uses a small delay to distinguish between single and double clicks
+  const handleVideoClick = useCallback((e) => {
+    // Prevent click from propagating to parent elements
+    e.stopPropagation();
+
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTimeRef.current;
+
+    if (timeSinceLastClick < 300) {
+      // Double-click detected - toggle fullscreen
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+        clickTimeoutRef.current = null;
+      }
+      toggleFullscreen();
+    } else {
+      // Single-click - delay to check for double-click
+      if (clickTimeoutRef.current) {
+        clearTimeout(clickTimeoutRef.current);
+      }
+      clickTimeoutRef.current = setTimeout(() => {
+        togglePlay();
+        clickTimeoutRef.current = null;
+      }, 200);
+    }
+
+    lastClickTimeRef.current = now;
+    showControlsTemporarily();
+  }, [togglePlay, toggleFullscreen, showControlsTemporarily]);
+
   // SponsorBlock skip check
   const checkSponsorBlock = useCallback((time) => {
     const segments = videoDataRef.current?.sponsorblock_segments || [];
@@ -216,16 +249,42 @@ export function useUnifiedPlayer({
     const startTime = performance.now();
     console.log('[useUnifiedPlayer] === START INIT ===');
 
-    // Build video source URL inline to avoid dependency issues
-    // Uses /media/ endpoint which routes to dedicated media server (port 4100)
-    // This prevents video requests from queueing behind API calls
+    // Build video source URL
+    // Uses /media/ endpoint - HTTP/2 multiplexes all requests, no separate port needed
     const filePath = video.file_path;
     const pathParts = filePath.replace(/\\/g, '/').split('/');
     const downloadsIndex = pathParts.indexOf('downloads');
     const relativePath = downloadsIndex >= 0
       ? pathParts.slice(downloadsIndex + 1).join('/')
       : pathParts.slice(-2).join('/');
-    const videoSrc = `/media/${relativePath}`;
+
+    // Get saved position and SponsorBlock segments
+    let savedTime = video.playback_seconds || 0;
+    const segments = video.sponsorblock_segments || [];
+
+    // SponsorBlock pre-skip: if resuming near the start and there's an intro sponsor, skip it
+    // This allows the video to start past the sponsor segment at the network level
+    let effectiveStartTime = savedTime;
+    if (savedTime < 5 && segments.length > 0) {
+      // Sort segments by start time to find the first one
+      const sortedSegments = [...segments].sort((a, b) => a.start - b.start);
+      const firstSegment = sortedSegments[0];
+
+      // If first segment starts within 1 second of video start, skip past it
+      if (firstSegment && firstSegment.start <= 1) {
+        effectiveStartTime = Math.max(savedTime, firstSegment.end);
+        console.log(`[useUnifiedPlayer] SponsorBlock pre-skip: ${firstSegment.category} (0-${firstSegment.end.toFixed(1)}s)`);
+      }
+    }
+
+    // Build video source with media fragment for instant seeking
+    // Media fragments (#t=seconds) tell the browser to seek at the network level,
+    // avoiding the need to wait for loadedmetadata before setting currentTime
+    let videoSrc = `/media/${relativePath}`;
+    if (effectiveStartTime >= 5) {
+      videoSrc += `#t=${effectiveStartTime.toFixed(1)}`;
+      console.log(`[useUnifiedPlayer] Using media fragment for instant seek to ${effectiveStartTime.toFixed(1)}s`);
+    }
 
     console.log('[useUnifiedPlayer] Setting video source:', videoSrc, `(${(performance.now() - startTime).toFixed(0)}ms)`);
 
@@ -249,8 +308,8 @@ export function useUnifiedPlayer({
       }
     }
 
-    // Get saved position from video data
-    const savedTime = video.playback_seconds || 0;
+    // Track the effective start time for the metadata handler
+    const targetStartTime = effectiveStartTime;
 
     // Event handlers
     const handleLoadedMetadata = () => {
@@ -259,12 +318,17 @@ export function useUnifiedPlayer({
       setDuration(videoEl.duration);
       setIsBuffering(false);
 
-      // Restore saved position
-      if (savedTime >= 5 && savedTime < videoEl.duration * 0.95) {
-        videoEl.currentTime = savedTime;
+      // With media fragments, the browser already positioned us at the target time
+      // Only manually seek if we didn't use a fragment (targetStartTime < 5)
+      // or if the fragment didn't work (currentTime is far from target)
+      const currentPos = videoEl.currentTime;
+      if (targetStartTime >= 5 && Math.abs(currentPos - targetStartTime) > 2) {
+        // Fragment didn't work, manually seek
+        console.log(`[useUnifiedPlayer] Fragment seek fallback: ${currentPos.toFixed(1)}s -> ${targetStartTime.toFixed(1)}s`);
+        videoEl.currentTime = targetStartTime;
       }
 
-      // Autoplay
+      // Autoplay immediately after metadata
       if (autoplayRef.current) {
         videoEl.play().catch((err) => {
           console.log('[useUnifiedPlayer] Autoplay blocked:', err.message);
@@ -360,6 +424,14 @@ export function useUnifiedPlayer({
     const handleCanPlay = () => {
       console.log('[useUnifiedPlayer] Can play', `(${(performance.now() - startTime).toFixed(0)}ms since init)`);
       setIsBuffering(false);
+
+      // Aggressive autoplay - try as soon as data is available
+      // This can fire before loadedmetadata on some browsers
+      if (autoplayRef.current && videoEl.paused) {
+        videoEl.play().catch(() => {
+          // Silently ignore - loadedmetadata handler will try again
+        });
+      }
     };
 
     const handleLoadStart = () => {
@@ -521,6 +593,7 @@ export function useUnifiedPlayer({
     toggleFullscreen,
     toggleTheaterMode,
     showControlsTemporarily,
+    handleVideoClick,  // Smart click: single=play/pause, double=fullscreen
 
     // Data
     sponsorSegments: video?.sponsorblock_segments || [],
