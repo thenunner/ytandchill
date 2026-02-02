@@ -1504,8 +1504,12 @@ def purge_deleted_channels():
 
 
 # =============================================================================
-# Low Quality Video Detection
+# Video Issue Detection (Resolution & Codec)
 # =============================================================================
+
+# Codecs not supported on iOS/Safari - these need re-download with H.264
+MOBILE_INCOMPATIBLE_CODECS = {'vp9', 'vp09', 'av1', 'av01'}
+
 
 def get_video_resolution(file_path):
     """
@@ -1529,35 +1533,69 @@ def get_video_resolution(file_path):
     return None
 
 
+def get_video_codec(file_path):
+    """
+    Get video codec name using ffprobe.
+    Returns None if file doesn't exist or ffprobe fails.
+    """
+    if not file_path or not os.path.exists(file_path):
+        return None
+
+    try:
+        result = subprocess.run(
+            ['ffprobe', '-v', 'error', '-select_streams', 'v:0',
+             '-show_entries', 'stream=codec_name', '-of', 'csv=p=0', file_path],
+            capture_output=True, text=True, timeout=10
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip().lower()
+    except (subprocess.TimeoutExpired, ValueError, Exception) as e:
+        logger.warning(f"ffprobe codec check failed for {file_path}: {e}")
+
+    return None
+
+
+def is_mobile_incompatible_codec(codec):
+    """Check if codec is not supported on iOS/Safari."""
+    if not codec:
+        return False
+    return codec.lower() in MOBILE_INCOMPATIBLE_CODECS
+
+
 @settings_bp.route('/api/settings/low-quality-videos', methods=['GET'])
 def get_low_quality_videos():
     """
-    Find library videos under 1080p resolution.
-    Excludes Singles channel (one-off downloads).
-    Uses ffprobe to check actual file resolution.
+    Find library videos with issues:
+    1. Low resolution (under 1080p) - excludes Singles channel
+    2. Mobile incompatible codec (VP9, AV1) - includes ALL videos including Singles
+
+    Uses ffprobe to check actual file resolution and codec.
     """
     global _session_factory
 
     downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
 
     with get_session(_session_factory) as session:
-        # Get all library videos with file paths, excluding Singles channel
-        # Singles channel identified by folder_name='Singles' or title='Singles'
-        videos = session.query(Video).join(Channel).filter(
+        # Get ALL library videos with file paths (including Singles for codec check)
+        all_videos = session.query(Video).join(Channel).filter(
             Video.status == 'library',
             Video.file_path.isnot(None),
-            Video.file_path != '',
-            Channel.folder_name != 'Singles',
-            Channel.title != 'Singles'
+            Video.file_path != ''
         ).all()
 
-        total_count = len(videos)
-        low_quality_videos = []
+        issue_videos = []
         scanned_count = 0
         errors_count = 0
+        low_resolution_count = 0
+        mobile_incompatible_count = 0
 
-        for video in videos:
+        for video in all_videos:
             scanned_count += 1
+
+            # Check if this is a Singles video
+            is_singles = (video.channel and
+                         (video.channel.folder_name == 'Singles' or
+                          video.channel.title == 'Singles'))
 
             # Build full path
             if video.file_path.startswith('/'):
@@ -1565,7 +1603,28 @@ def get_low_quality_videos():
             else:
                 full_path = os.path.join(downloads_folder, video.file_path)
 
-            # Get resolution via ffprobe
+            # Check codec for ALL videos (including Singles)
+            codec = get_video_codec(full_path)
+            if codec and is_mobile_incompatible_codec(codec):
+                mobile_incompatible_count += 1
+                issue_videos.append({
+                    'id': video.id,
+                    'yt_id': video.yt_id,
+                    'title': video.title,
+                    'channel_id': video.channel_id,
+                    'channel_title': video.channel.title if video.channel else None,
+                    'file_path': video.file_path,
+                    'file_size_bytes': video.file_size_bytes,
+                    'issue': 'mobile_incompatible',
+                    'codec': codec
+                })
+                continue  # Don't also report as low quality
+
+            # Skip resolution check for Singles
+            if is_singles:
+                continue
+
+            # Get resolution via ffprobe (non-Singles only)
             height = get_video_resolution(full_path)
 
             if height is None:
@@ -1574,6 +1633,7 @@ def get_low_quality_videos():
 
             # Check if under 1080p
             if height < 1080:
+                low_resolution_count += 1
                 # Determine resolution label
                 if height >= 720:
                     resolution_label = '720p'
@@ -1586,7 +1646,7 @@ def get_low_quality_videos():
                 else:
                     resolution_label = f'{height}p'
 
-                low_quality_videos.append({
+                issue_videos.append({
                     'id': video.id,
                     'yt_id': video.yt_id,
                     'title': video.title,
@@ -1595,17 +1655,21 @@ def get_low_quality_videos():
                     'height': height,
                     'resolution': resolution_label,
                     'file_path': video.file_path,
-                    'file_size_bytes': video.file_size_bytes
+                    'file_size_bytes': video.file_size_bytes,
+                    'issue': 'low_resolution'
                 })
 
-        logger.info(f"Low quality scan complete: {len(low_quality_videos)} videos under 1080p "
+        logger.info(f"Video issues scan complete: {low_resolution_count} low resolution, "
+                    f"{mobile_incompatible_count} mobile incompatible "
                     f"(scanned {scanned_count}, errors {errors_count})")
 
         return jsonify({
-            'count': len(low_quality_videos),
-            'videos': low_quality_videos,
+            'count': len(issue_videos),
+            'videos': issue_videos,
             'total_scanned': scanned_count,
-            'errors': errors_count
+            'errors': errors_count,
+            'low_resolution_count': low_resolution_count,
+            'mobile_incompatible_count': mobile_incompatible_count
         })
 
 

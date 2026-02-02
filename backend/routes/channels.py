@@ -336,13 +336,13 @@ def get_favorite_channels():
     Uses SQL aggregation instead of loading all videos for better performance.
 
     Sorting priority:
-    1. Channels with new (unwatched) videos first
-    2. Then by total library video count (most videos first)
+    1. Channels with new (unwatched) videos first, sorted by new video count (most new first)
+    2. Then by most recently added video (latest_downloaded_at descending)
     """
     from sqlalchemy import func, case
 
     with get_session(_session_factory) as session:
-        # Subquery for video counts using SQL aggregation
+        # Subquery for video counts and latest download using SQL aggregation
         video_counts = session.query(
             Video.channel_id,
             func.count(case((Video.status == 'library', 1))).label('downloaded_count'),
@@ -350,14 +350,16 @@ def get_favorite_channels():
                 (Video.status == 'library') &
                 (Video.downloaded_at > Channel.last_visited_at),
                 1
-            ))).label('new_video_count')
+            ))).label('new_video_count'),
+            func.max(case((Video.status == 'library', Video.downloaded_at))).label('latest_downloaded_at')
         ).join(Channel).group_by(Video.channel_id).subquery()
 
         # Get favorite channels with counts
         channels = session.query(
             Channel,
             func.coalesce(video_counts.c.downloaded_count, 0).label('downloaded_count'),
-            func.coalesce(video_counts.c.new_video_count, 0).label('new_video_count')
+            func.coalesce(video_counts.c.new_video_count, 0).label('new_video_count'),
+            video_counts.c.latest_downloaded_at.label('latest_downloaded_at')
         ).outerjoin(
             video_counts, Channel.id == video_counts.c.channel_id
         ).filter(
@@ -366,7 +368,7 @@ def get_favorite_channels():
         ).all()
 
         result = []
-        for channel, downloaded_count, new_video_count in channels:
+        for channel, downloaded_count, new_video_count, latest_downloaded_at in channels:
             # Convert thumbnail path to URL
             thumbnail_url = None
             if channel.thumbnail:
@@ -385,14 +387,18 @@ def get_favorite_channels():
                 'title': channel.title,
                 'thumbnail': thumbnail_url,
                 'downloaded_count': downloaded_count,
-                'has_new_videos': new_video_count > 0
+                'new_video_count': new_video_count,
+                'has_new_videos': new_video_count > 0,
+                'latest_downloaded_at': latest_downloaded_at.isoformat() if latest_downloaded_at else None
             })
 
-        # Sort: channels with new videos first, then by downloaded_count (most videos)
+        # Sort: channels with new videos first (by count, most new first),
+        # then by most recently added video
+        from datetime import datetime
         result.sort(key=lambda c: (
-            -1 if c.get('has_new_videos', False) else 0,
-            -c.get('downloaded_count', 0),
-            c.get('title', '').lower()
+            -c.get('new_video_count', 0),  # Most new videos first
+            -(datetime.fromisoformat(c['latest_downloaded_at']).timestamp() if c.get('latest_downloaded_at') else 0),  # Most recent first
+            c.get('title', '').lower()  # Alphabetical as tiebreaker
         ))
 
         return jsonify(result)

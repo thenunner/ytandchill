@@ -226,7 +226,7 @@ export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
                 <span className="text-xs font-medium uppercase tracking-wider">Favorites</span>
               </Link>
               <div className="space-y-0.5">
-                {favoriteLibraries.map(channel => (
+                {favoriteLibraries.slice(0, 10).map(channel => (
                   <Link
                     key={channel.id}
                     to={`/library/channel/${channel.id}`}
