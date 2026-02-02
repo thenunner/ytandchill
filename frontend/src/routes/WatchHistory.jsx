@@ -191,6 +191,7 @@ export default function WatchHistory() {
                 <Link
                   key={video.id}
                   to={`/player/${video.id}`}
+                  state={{ video }}
                   className="group transition-colors rounded overflow-hidden"
                 >
                   {/* Thumbnail */}

@@ -213,6 +213,7 @@ export default function Favs() {
                 <Link
                   key={video.id}
                   to={`/player/${video.id}`}
+                  state={{ video }}
                   className="block"
                 >
                   <div className="bg-dark-secondary rounded-xl overflow-hidden">

@@ -68,7 +68,7 @@ const VideoCard = memo(function VideoCard({
     // Otherwise, play the video (only if it's downloaded)
     if (video.status === 'library') {
       navigate(`/player/${video.id}`, {
-        state: { from: location.pathname + location.search }
+        state: { from: location.pathname + location.search, video }
       });
     }
   };

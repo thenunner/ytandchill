@@ -259,35 +259,16 @@ export function useUnifiedPlayer({
       ? pathParts.slice(downloadsIndex + 1).join('/')
       : pathParts.slice(-2).join('/');
 
-    // Get saved position and SponsorBlock segments
-    let savedTime = video.playback_seconds || 0;
-    const segments = video.sponsorblock_segments || [];
+    // Resume logic: only resume if watched more than 1 minute, otherwise start fresh
+    const savedTime = video.playback_seconds || 0;
+    const resumeTime = savedTime >= 60 ? savedTime : 0;
 
-    // SponsorBlock pre-skip: if resuming near the start and there's an intro sponsor, skip it
-    // This allows the video to start past the sponsor segment at the network level
-    let effectiveStartTime = savedTime;
-    if (savedTime < 5 && segments.length > 0) {
-      // Sort segments by start time to find the first one
-      const sortedSegments = [...segments].sort((a, b) => a.start - b.start);
-      const firstSegment = sortedSegments[0];
-
-      // If first segment starts within 1 second of video start, skip past it
-      if (firstSegment && firstSegment.start <= 1) {
-        effectiveStartTime = Math.max(savedTime, firstSegment.end);
-        console.log(`[useUnifiedPlayer] SponsorBlock pre-skip: ${firstSegment.category} (0-${firstSegment.end.toFixed(1)}s)`);
-      }
-    }
-
-    // Build video source with media fragment for instant seeking
-    // Media fragments (#t=seconds) tell the browser to seek at the network level,
-    // forcing byte-range requests that start playback faster
-    // ALWAYS use a fragment - even #t=0.01 triggers faster loading than no fragment
+    // Media fragment for fast byte-range loading (#t=0.01 minimum)
     let videoSrc = `/media/${relativePath}`;
-    const fragmentTime = Math.max(0.01, effectiveStartTime);
-    videoSrc += `#t=${fragmentTime.toFixed(2)}`;
-    console.log(`[useUnifiedPlayer] Using media fragment #t=${fragmentTime.toFixed(2)}`);
-    if (effectiveStartTime > 0) {
-      console.log(`[useUnifiedPlayer] Resuming from ${effectiveStartTime.toFixed(1)}s`);
+    videoSrc += `#t=${Math.max(0.01, resumeTime).toFixed(2)}`;
+
+    if (resumeTime > 0) {
+      console.log(`[Timing] Resuming from ${resumeTime.toFixed(0)}s`);
     }
 
     console.log('[Timing] api_to_source_set:', `${(performance.now() - initTime).toFixed(0)}ms`);

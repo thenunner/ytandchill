@@ -21,29 +21,36 @@ export default function Player() {
   // Track mount time for accurate timing
   const mountTimeRef = useRef(performance.now());
 
-  // PRIORITY: Fast playback data for instant video start
-  const { data: playbackData, isLoading: playbackLoading } = useVideoPlayback(videoId);
+  // INSTANT: Use video data from route state if available (passed from library/list views)
+  // This eliminates the API wait entirely when navigating from within the app
+  const routeVideo = location.state?.video;
 
-  // PARALLEL: Full metadata for UI (title, channel, etc.) - loads alongside playback
-  const { data: video, isLoading: metadataLoading, isFetching } = useVideo(videoId);
+  // BACKUP: Fetch from API if no route state (direct URL access, refresh, etc.)
+  const { data: apiPlaybackData, isLoading: playbackLoading } = useVideoPlayback(videoId);
+  const { data: apiVideo } = useVideo(videoId);
 
-  // Log mount once (not on every re-render)
+  // Use route state immediately, fall back to API data
+  const video = routeVideo || apiVideo;
+  const playbackData = routeVideo ? {
+    id: routeVideo.id,
+    file_path: routeVideo.file_path,
+    playback_seconds: routeVideo.playback_seconds,
+    sponsorblock_segments: routeVideo.sponsorblock_segments,
+    status: routeVideo.status,
+  } : apiPlaybackData;
+
+  // Log timing
   useEffect(() => {
-    console.log('[Timing] Player mounted');
-  }, []);
-
-  // Log timing for both requests
-  useEffect(() => {
-    if (playbackData) {
-      console.log('[Timing] mount_to_playback_api:', `${(performance.now() - mountTimeRef.current).toFixed(0)}ms`);
+    if (routeVideo) {
+      console.log('[Timing] Using route state - instant start');
     }
-  }, [playbackData]);
+  }, [routeVideo]);
 
   useEffect(() => {
-    if (video) {
-      console.log('[Timing] mount_to_full_metadata:', `${(performance.now() - mountTimeRef.current).toFixed(0)}ms`, video.title);
+    if (apiPlaybackData && !routeVideo) {
+      console.log('[Timing] mount_to_api:', `${(performance.now() - mountTimeRef.current).toFixed(0)}ms`);
     }
-  }, [video]);
+  }, [apiPlaybackData, routeVideo]);
 
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
