@@ -1123,21 +1123,15 @@ def serialize_video(video):
                 playlist_names.append(pv.playlist.name)
                 playlist_ids.append(pv.playlist.id)
 
-    # Convert local thumbnail path to URL, or construct from folder if not set
+    # Use YouTube CDN for thumbnails to avoid HTTP/1.1 connection competition
+    # Local thumbnails would compete with video/API for 6-connection limit
     thumb_url = None
-    if video.thumb_url:
-        if video.thumb_url.startswith('http'):
-            # YouTube URL - keep as fallback
-            thumb_url = video.thumb_url
-        else:
-            # Local path - convert to API URL
-            normalized_path = video.thumb_url.replace('\\', '/')
-            thumb_url = f"/api/media/{normalized_path}"
-    elif video.channel and video.yt_id:
-        # Construct local path from channel folder and video ID
-        folder = video.channel.folder_name
-        local_path = f"{folder}/{video.yt_id}.jpg"
-        thumb_url = f"/api/media/{local_path}"
+    if video.yt_id:
+        # Always use YouTube CDN - it's fast, reliable, and doesn't compete for connections
+        thumb_url = f"https://img.youtube.com/vi/{video.yt_id}/hqdefault.jpg"
+    elif video.thumb_url and video.thumb_url.startswith('http'):
+        # Fallback to stored URL if no yt_id
+        thumb_url = video.thumb_url
 
     # Parse SponsorBlock segments from JSON
     sponsorblock_segments = []
