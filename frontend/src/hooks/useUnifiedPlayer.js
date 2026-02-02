@@ -307,9 +307,20 @@ export function useUnifiedPlayer({
     // Track source set time for first-frame timing
     const sourceSetTime = performance.now();
 
-    // Set source and load
-    videoEl.src = videoSrc;
-    videoEl.load();
+    // Only set source if different (JSX may have already set it for priority)
+    const currentSrc = videoEl.src ? new URL(videoEl.src, window.location.origin).pathname : null;
+    const targetPath = videoSrc.split('#')[0]; // Remove fragment
+    if (currentSrc !== targetPath) {
+      console.log('[Timing] Source changed, reloading');
+      videoEl.src = videoSrc;
+      videoEl.load();
+    } else {
+      console.log('[Timing] Source already set via JSX, skipping reload');
+      // Still need to handle resume time via fragment or seek
+      if (resumeTime > 0 && !videoSrc.includes('#t=')) {
+        videoEl.currentTime = resumeTime;
+      }
+    }
 
     // Load default playback speed from localStorage
     const savedSpeed = localStorage.getItem('playbackSpeed');
