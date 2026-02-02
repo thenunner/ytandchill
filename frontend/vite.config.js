@@ -8,14 +8,12 @@ export default defineConfig({
     host: true, // Listen on all network interfaces (0.0.0.0)
     proxy: {
       '/api': {
-        target: process.env.VITE_API_URL || 'https://localhost:4099',
-        changeOrigin: true,
-        secure: false  // Accept self-signed certificates
+        target: process.env.VITE_API_URL || 'http://localhost:4099',
+        changeOrigin: true
       },
       '/media': {
-        target: process.env.VITE_API_URL || 'https://localhost:4099',
-        changeOrigin: true,
-        secure: false  // Accept self-signed certificates
+        target: process.env.VITE_API_URL || 'http://localhost:4099',
+        changeOrigin: true
       }
     }
   },

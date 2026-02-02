@@ -119,6 +119,11 @@ class APIClient {
     return this.request(`/videos/${id}`);
   }
 
+  // Fast endpoint for immediate video playback - returns only essential data
+  getVideoPlayback(id) {
+    return this.request(`/videos/${id}/playback`);
+  }
+
   updateVideo(id, data) {
     return this.request(`/videos/${id}`, {
       method: 'PATCH',

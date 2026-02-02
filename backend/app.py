@@ -1286,65 +1286,29 @@ def serve_frontend(path):
     return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
-    import asyncio
-    from asgiref.wsgi import WsgiToAsgi
-    from hypercorn.config import Config
-    from hypercorn.asyncio import serve as hypercorn_serve
-    from utils import ensure_ssl_certs
+    from waitress import serve
 
-    # Use Hypercorn ASGI server for HTTP/2 support
-    # HTTP/2 multiplexes all requests over a single TCP connection,
-    # eliminating the browser's 6-connection limit that causes video delays
+    # Use Waitress production WSGI server
     port = int(os.environ.get('PORT', 4099))
 
     # Ensure required directories exist with 777 permissions for remote access
     downloads_dir = os.environ.get('DOWNLOADS_DIR', 'downloads')
-    data_dir = os.environ.get('DATA_DIR', 'data')
     makedirs_777(os.path.join(downloads_dir, 'imports'))
     makedirs_777(os.path.join(downloads_dir, 'thumbnails'))
 
-    # Wrap Flask WSGI app for ASGI/HTTP2 compatibility
-    asgi_app = WsgiToAsgi(app)
-
-    # Configure Hypercorn
-    config = Config()
-    config.bind = [f"0.0.0.0:{port}"]
-    config.workers = 1  # Single worker for single-user system
-    config.graceful_timeout = 10
-    config.keep_alive_timeout = 600  # 10 minutes for long video streams
-
-    # Check if SSL should be disabled (for debugging)
-    disable_ssl = os.environ.get('DISABLE_SSL', '').lower() in ('true', '1', 'yes')
-
-    if disable_ssl:
-        cert_path, key_path = None, None
-        logger.info("SSL disabled via DISABLE_SSL environment variable")
-    else:
-        # Auto-generate SSL certificates for HTTPS/HTTP2
-        cert_dir = os.path.join(data_dir, 'certs')
-        cert_path, key_path = ensure_ssl_certs(cert_dir)
-
-    if cert_path and key_path and not disable_ssl:
-        config.certfile = cert_path
-        config.keyfile = key_path
-        config.alpn_protocols = ["h2", "http/1.1"]  # Prefer HTTP/2, fallback to HTTP/1.1
-        protocol = "https"
-        http_version = "HTTP/2"
-    else:
-        protocol = "http"
-        http_version = "HTTP/1.1"
-        logger.warning("SSL certificates not available - running in HTTP/1.1 mode")
-        logger.warning("For HTTP/2 support, install cryptography: pip install cryptography")
-
-    logger.info(f"Starting Hypercorn server on 0.0.0.0:{port} ({http_version})")
-    print(f"\n🚀 Server started with {http_version}! Open in your browser:")
-    print(f"   Local:   {protocol}://localhost:{port}")
-    print(f"   Network: {protocol}://<your-ip>:{port}")
-    if protocol == "https":
-        print(f"\n⚠️  First visit: Accept the self-signed certificate warning")
-        print(f"   Click 'Advanced' -> 'Proceed to localhost' (one-time per device)")
+    logger.info(f"Starting Waitress server on 0.0.0.0:{port}")
+    print(f"\n🚀 Server started! Open in your browser:")
+    print(f"   Local:   http://localhost:{port}")
+    print(f"   Network: http://<your-ip>:{port}")
     print("")
 
-    # Run the async server
-    asyncio.run(hypercorn_serve(asgi_app, config))
+    serve(
+        app,
+        host='0.0.0.0',
+        port=port,
+        threads=16,
+        channel_timeout=600,      # 10 minutes for SSE and large videos
+        cleanup_interval=30,
+        asyncore_use_poll=True
+    )
 

@@ -181,6 +181,19 @@ export function useVideo(id) {
   });
 }
 
+// Fast playback data - minimal query for instant video start
+export function useVideoPlayback(id) {
+  return useQuery({
+    queryKey: ['video-playback', id],
+    queryFn: () => api.getVideoPlayback(id),
+    enabled: !!id,
+    staleTime: 30000,  // Cache for 30 seconds
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
+  });
+}
+
 export function useUpdateVideo() {
   const queryClient = useQueryClient();
   return useMutation({

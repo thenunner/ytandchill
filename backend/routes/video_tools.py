@@ -211,6 +211,40 @@ def get_video(video_id):
         return jsonify(result)
 
 
+@video_tools_bp.route('/api/videos/<int:video_id>/playback', methods=['GET'])
+def get_video_playback(video_id):
+    """Fast endpoint returning only data needed to start video playback.
+
+    Returns minimal data for instant video start:
+    - file_path: to construct media URL
+    - playback_seconds: resume position
+    - sponsorblock_segments: for pre-skip
+    - status: to verify video is playable
+
+    Full metadata (title, channel, etc.) can be fetched in parallel via /api/videos/<id>
+    """
+    with get_session(_session_factory) as session:
+        # Minimal query - no joins needed
+        video = session.query(
+            Video.id,
+            Video.file_path,
+            Video.playback_seconds,
+            Video.sponsorblock_segments,
+            Video.status
+        ).filter(Video.id == video_id).first()
+
+        if not video:
+            return jsonify({'error': 'Video not found'}), 404
+
+        return jsonify({
+            'id': video.id,
+            'file_path': video.file_path,
+            'playback_seconds': video.playback_seconds or 0,
+            'sponsorblock_segments': video.sponsorblock_segments or [],
+            'status': video.status
+        })
+
+
 @video_tools_bp.route('/api/videos/<int:video_id>', methods=['PATCH'])
 def update_video(video_id):
     data = request.json

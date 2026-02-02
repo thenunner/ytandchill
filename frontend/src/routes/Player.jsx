@@ -1,6 +1,6 @@
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { useVideo, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queries';
+import { useVideo, useVideoPlayback, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
 import { ConfirmDialog } from '../components/ui/SharedModals';
@@ -20,15 +20,27 @@ export default function Player() {
 
   // Track mount time for accurate timing
   const mountTimeRef = useRef(performance.now());
+  console.log('[Player] Component mounted');
 
-  const { data: video, isLoading, isFetching } = useVideo(videoId);
+  // PRIORITY: Fast playback data for instant video start
+  const { data: playbackData, isLoading: playbackLoading } = useVideoPlayback(videoId);
 
-  // Log when video data arrives
+  // PARALLEL: Full metadata for UI (title, channel, etc.) - loads alongside playback
+  const { data: video, isLoading: metadataLoading, isFetching } = useVideo(videoId);
+
+  // Log timing for both requests
+  useEffect(() => {
+    if (playbackData) {
+      console.log('[Player] Playback data received:', `(${(performance.now() - mountTimeRef.current).toFixed(0)}ms since mount)`);
+    }
+  }, [playbackData]);
+
   useEffect(() => {
     if (video) {
-      console.log('[Player] Video data received:', video.title, `(${(performance.now() - mountTimeRef.current).toFixed(0)}ms since mount)`, { isLoading, isFetching });
+      console.log('[Player] Full metadata received:', video.title, `(${(performance.now() - mountTimeRef.current).toFixed(0)}ms since mount)`, { metadataLoading, isFetching });
     }
-  }, [video, isLoading, isFetching]);
+  }, [video, metadataLoading, isFetching]);
+
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
   const { data: queueData } = useQueue();
@@ -70,11 +82,12 @@ export default function Player() {
     }
   }, [isTheaterMode]);
 
-  // Handle watched callback
+  // Handle watched callback - use full video data when available
   const handleWatched = useCallback(() => {
-    if (!video?.watched) {
+    const vid = video || playbackData;
+    if (vid && !video?.watched) {
       updateVideo.mutateAsync({
-        id: video.id,
+        id: vid.id,
         data: { watched: true },
       }).then(() => {
         showNotificationRef.current('Video marked as watched', 'success');
@@ -83,11 +96,24 @@ export default function Player() {
         showNotificationRef.current('Failed to mark as watched', 'error');
       });
     }
-  }, [video?.id, video?.watched, updateVideo]);
+  }, [video, playbackData, updateVideo]);
+
+  // Combine playback data with full video data for the player
+  // Player can start with just playbackData, UI elements use full video when available
+  const playerVideoData = playbackData ? {
+    id: playbackData.id,
+    file_path: playbackData.file_path,
+    playback_seconds: playbackData.playback_seconds,
+    sponsorblock_segments: playbackData.sponsorblock_segments,
+    status: playbackData.status,
+    // Merge in full video data when available (for watched status tracking)
+    watched: video?.watched,
+  } : null;
 
   // Unified native player with custom controls - works on both mobile and desktop
+  // Uses playbackData for fast start, full video data loads in parallel
   const player = useUnifiedPlayer({
-    video: video,
+    video: playerVideoData,
     videoRef: videoRef,
     saveProgress: true,
     onEnded: null,
@@ -98,11 +124,12 @@ export default function Player() {
     autoplay: true,
   });
 
-  if (isLoading) {
+  // Only wait for playback data (fast), not full metadata
+  if (playbackLoading) {
     return <LoadingSpinner />;
   }
 
-  if (!video) {
+  if (!playbackData) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-400 text-lg">Video not found</p>
@@ -113,7 +140,7 @@ export default function Player() {
     );
   }
 
-  if (!video.file_path || video.status !== 'library') {
+  if (!playbackData.file_path || playbackData.status !== 'library') {
     return (
       <div className="text-center py-12">
         <p className="text-gray-400 text-lg">Video not downloaded yet</p>
@@ -126,7 +153,7 @@ export default function Player() {
 
   const handleDelete = async () => {
     try {
-      await deleteVideo.mutateAsync(video.id);
+      await deleteVideo.mutateAsync(playbackData.id);
       showNotification('Video deleted', 'success');
       setShowDeleteConfirm(false);
       navigate(-1);
@@ -136,14 +163,15 @@ export default function Player() {
   };
 
   const handleBack = () => {
-    const referrer = location.state?.from || `/channel/${video.channel_id}/library`;
+    const referrer = location.state?.from || `/channel/${video?.channel_id}/library`;
     navigate(referrer);
   };
 
   const toggleWatched = async () => {
+    if (!video) return; // Need full metadata for watched status
     try {
       await updateVideo.mutateAsync({
-        id: video.id,
+        id: playbackData.id,
         data: { watched: !video.watched },
       });
       showNotification(
@@ -166,8 +194,8 @@ export default function Player() {
             <video
               ref={videoRef}
               playsInline
-              preload="auto"
-              poster={video.thumb_url || ''}
+              preload="metadata"
+              poster={video?.thumb_url || ''}
             />
             <PlayerControls
               isPlaying={player.isPlaying}
@@ -193,21 +221,29 @@ export default function Player() {
             />
           </div>
 
-          {/* Video Info - hidden in landscape via CSS */}
+          {/* Video Info - hidden in landscape via CSS, shows loading state until metadata arrives */}
           <div className="player-video-info px-4 py-3 space-y-3">
             <h1 className="text-base font-semibold text-text-primary leading-tight line-clamp-2">
-              {video.title}
+              {video?.title || 'Loading...'}
             </h1>
 
             <div className="flex items-center gap-2 text-xs text-text-secondary">
-              <Link
-                to={`/channel/${video.channel_id}/library`}
-                className="hover:text-text-primary transition-colors font-medium"
-              >
-                {video.channel_title}
-              </Link>
-              <span>•</span>
-              <span>{formatDuration(video.duration_sec)}</span>
+              {video?.channel_id ? (
+                <Link
+                  to={`/channel/${video.channel_id}/library`}
+                  className="hover:text-text-primary transition-colors font-medium"
+                >
+                  {video.channel_title}
+                </Link>
+              ) : (
+                <span>Loading...</span>
+              )}
+              {video?.duration_sec && (
+                <>
+                  <span>•</span>
+                  <span>{formatDuration(video.duration_sec)}</span>
+                </>
+              )}
             </div>
 
             {/* Action Buttons - Mobile */}
@@ -221,11 +257,12 @@ export default function Player() {
               </button>
               <button
                 onClick={toggleWatched}
+                disabled={!video}
                 className={`flex items-center justify-center px-5 py-3 border rounded-lg text-sm font-medium transition-colors ${
-                  video.watched
+                  video?.watched
                     ? 'bg-accent border-accent text-white'
                     : 'bg-dark-secondary border-dark-border text-text-primary'
-                }`}
+                } ${!video ? 'opacity-50' : ''}`}
               >
                 <EyeIcon className="w-5 h-5" />
               </button>
@@ -248,15 +285,15 @@ export default function Player() {
           onClose={() => setShowDeleteConfirm(false)}
           onConfirm={handleDelete}
           title="Delete Video"
-          message={`Are you sure you want to delete "${video.title}"?`}
+          message={`Are you sure you want to delete "${video?.title || 'this video'}"?`}
           confirmText="Delete"
           cancelText="Cancel"
           isDanger={true}
         />
         {showPlaylistMenu && (
           <AddToPlaylistMenu
-            videoId={video.id}
-            video={video}
+            videoId={playbackData.id}
+            video={video || playbackData}
             triggerRef={addToPlaylistButtonRef}
             onClose={() => setShowPlaylistMenu(false)}
           />
@@ -305,7 +342,7 @@ export default function Player() {
                 ref={videoRef}
                 className="w-full h-full object-contain bg-black"
                 playsInline
-                preload="auto"
+                preload="metadata"
               />
               <PlayerControls
                 isPlaying={player.isPlaying}
@@ -334,29 +371,39 @@ export default function Player() {
             {/* Info Section - in theater mode, stays with video; in normal mode, separate */}
             <div className={`${isTheaterMode ? 'bg-dark-primary py-3 px-1' : 'py-3'}`}>
               <h1 className="text-lg font-bold text-text-primary leading-tight line-clamp-2">
-                {video.title}
+                {video?.title || 'Loading...'}
               </h1>
 
               <div className="flex items-center gap-2 mt-1 text-sm text-text-secondary">
-                <Link
-                  to={`/channel/${video.channel_id}/library`}
-                  className="hover:text-text-primary transition-colors font-medium"
-                >
-                  {video.channel_title}
-                </Link>
-                <span>•</span>
-                <span>{formatDuration(video.duration_sec)}</span>
-                <span>•</span>
-                <span>
-                  {video.upload_date
-                    ? new Date(
+                {video?.channel_id ? (
+                  <Link
+                    to={`/channel/${video.channel_id}/library`}
+                    className="hover:text-text-primary transition-colors font-medium"
+                  >
+                    {video.channel_title}
+                  </Link>
+                ) : (
+                  <span>Loading...</span>
+                )}
+                {video?.duration_sec && (
+                  <>
+                    <span>•</span>
+                    <span>{formatDuration(video.duration_sec)}</span>
+                  </>
+                )}
+                {video?.upload_date && (
+                  <>
+                    <span>•</span>
+                    <span>
+                      {new Date(
                         video.upload_date.slice(0, 4),
                         video.upload_date.slice(4, 6) - 1,
                         video.upload_date.slice(6, 8)
-                      ).toLocaleDateString()
-                    : 'Unknown date'}
-                </span>
-                {video.watched && (
+                      ).toLocaleDateString()}
+                    </span>
+                  </>
+                )}
+                {video?.watched && (
                   <>
                     <span>•</span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/20 text-accent-text text-xs font-semibold">
@@ -386,14 +433,15 @@ export default function Player() {
 
                 <button
                   onClick={toggleWatched}
+                  disabled={!video}
                   className={`flex items-center gap-2 px-4 py-2 border rounded-lg transition-colors text-sm font-medium ${
-                    video.watched
+                    video?.watched
                       ? 'bg-accent border-accent text-dark-primary'
                       : 'bg-dark-surface border-dark-border text-text-secondary hover:bg-accent hover:border-accent hover:text-dark-primary'
-                  }`}
+                  } ${!video ? 'opacity-50' : ''}`}
                 >
                   <EyeIcon />
-                  <span>{video.watched ? 'Watched' : 'Mark Watched'}</span>
+                  <span>{video?.watched ? 'Watched' : 'Mark Watched'}</span>
                 </button>
 
                 <button
@@ -414,7 +462,7 @@ export default function Player() {
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleDelete}
         title="Delete Video"
-        message={`Are you sure you want to delete "${video.title}"? This will permanently remove the video file from your system.`}
+        message={`Are you sure you want to delete "${video?.title || 'this video'}"? This will permanently remove the video file from your system.`}
         confirmText="Delete"
         cancelText="Cancel"
         isDanger={true}
@@ -422,8 +470,8 @@ export default function Player() {
 
       {showPlaylistMenu && (
         <AddToPlaylistMenu
-          videoId={video.id}
-          video={video}
+          videoId={playbackData.id}
+          video={video || playbackData}
           triggerRef={addToPlaylistButtonRef}
           onClose={() => setShowPlaylistMenu(false)}
         />

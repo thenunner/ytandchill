@@ -246,8 +246,9 @@ export function useUnifiedPlayer({
       return;
     }
 
-    const startTime = performance.now();
-    console.log('[useUnifiedPlayer] === START INIT ===');
+    const initTime = performance.now();
+    console.log('[Timing] === PLAYER INIT ===');
+    console.log('[Timing] api_to_source_set: Starting (playback data received)');
 
     // Build video source URL
     // Uses /media/ endpoint - HTTP/2 multiplexes all requests, no separate port needed
@@ -286,13 +287,17 @@ export function useUnifiedPlayer({
       console.log(`[useUnifiedPlayer] Using media fragment for instant seek to ${effectiveStartTime.toFixed(1)}s`);
     }
 
-    console.log('[useUnifiedPlayer] Setting video source:', videoSrc, `(${(performance.now() - startTime).toFixed(0)}ms)`);
+    console.log('[Timing] api_to_source_set:', `${(performance.now() - initTime).toFixed(0)}ms`);
+    console.log('[Timing] Setting video source:', videoSrc);
 
     // Reset state for new video
     setIsBuffering(true);
     setCurrentTime(0);
     setDuration(0);
     hasMarkedWatchedRef.current = false;
+
+    // Track source set time for first-frame timing
+    const sourceSetTime = performance.now();
 
     // Set source and load
     videoEl.src = videoSrc;
@@ -311,9 +316,12 @@ export function useUnifiedPlayer({
     // Track the effective start time for the metadata handler
     const targetStartTime = effectiveStartTime;
 
+    // Track if first frame has been logged
+    let firstFrameLogged = false;
+
     // Event handlers
     const handleLoadedMetadata = () => {
-      console.log('[useUnifiedPlayer] Metadata loaded, duration:', videoEl.duration, `(${(performance.now() - startTime).toFixed(0)}ms since init)`);
+      console.log('[Timing] loadedmetadata:', `${(performance.now() - sourceSetTime).toFixed(0)}ms since source set`);
       metadataLoaded = true;
       setDuration(videoEl.duration);
       setIsBuffering(false);
@@ -422,7 +430,7 @@ export function useUnifiedPlayer({
     };
 
     const handleCanPlay = () => {
-      console.log('[useUnifiedPlayer] Can play', `(${(performance.now() - startTime).toFixed(0)}ms since init)`);
+      console.log('[Timing] canplay:', `${(performance.now() - sourceSetTime).toFixed(0)}ms since source set`);
       setIsBuffering(false);
 
       // Aggressive autoplay - try as soon as data is available
@@ -434,8 +442,17 @@ export function useUnifiedPlayer({
       }
     };
 
+    // Track first frame - "playing" event fires when playback actually starts
+    const handlePlaying = () => {
+      if (!firstFrameLogged) {
+        firstFrameLogged = true;
+        console.log('[Timing] source_set_to_first_frame:', `${(performance.now() - sourceSetTime).toFixed(0)}ms`);
+        console.log('[Timing] total_init_to_first_frame:', `${(performance.now() - initTime).toFixed(0)}ms`);
+      }
+    };
+
     const handleLoadStart = () => {
-      console.log('[useUnifiedPlayer] Load started', `(${(performance.now() - startTime).toFixed(0)}ms since init)`);
+      console.log('[Timing] loadstart:', `${(performance.now() - sourceSetTime).toFixed(0)}ms since source set`);
     };
 
     const handleVolumeChange = () => {
@@ -452,6 +469,7 @@ export function useUnifiedPlayer({
     videoEl.addEventListener('loadedmetadata', handleLoadedMetadata);
     videoEl.addEventListener('timeupdate', handleTimeUpdate);
     videoEl.addEventListener('play', handlePlay);
+    videoEl.addEventListener('playing', handlePlaying);
     videoEl.addEventListener('pause', handlePause);
     videoEl.addEventListener('ended', handleEnded);
     videoEl.addEventListener('seeked', handleSeeked);
@@ -467,6 +485,7 @@ export function useUnifiedPlayer({
       videoEl.removeEventListener('loadedmetadata', handleLoadedMetadata);
       videoEl.removeEventListener('timeupdate', handleTimeUpdate);
       videoEl.removeEventListener('play', handlePlay);
+      videoEl.removeEventListener('playing', handlePlaying);
       videoEl.removeEventListener('pause', handlePause);
       videoEl.removeEventListener('ended', handleEnded);
       videoEl.removeEventListener('seeked', handleSeeked);

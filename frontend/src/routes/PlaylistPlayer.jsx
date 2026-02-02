@@ -605,7 +605,7 @@ export default function PlaylistPlayer() {
                       ref={videoRef}
                       className="w-full h-full object-contain bg-black"
                       playsInline
-                      preload="auto"
+                      preload="metadata"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <PlayerControls
@@ -842,7 +842,7 @@ export default function PlaylistPlayer() {
                       ref={videoRef}
                       className="w-full h-full object-contain bg-black"
                       playsInline
-                      preload="auto"
+                      preload="metadata"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <PlayerControls
@@ -1025,7 +1025,7 @@ export default function PlaylistPlayer() {
           <video
             ref={videoRef}
             playsInline
-            preload="auto"
+            preload="metadata"
             poster={currentVideo.thumb_url || ''}
             onClick={(e) => e.stopPropagation()}
           />
