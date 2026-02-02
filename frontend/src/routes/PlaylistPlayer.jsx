@@ -538,7 +538,7 @@ export default function PlaylistPlayer() {
         controls: true,
         fill: true,
         preload: 'metadata',
-        autoplay: true,
+        autoplay: false,  // Don't autoplay - iOS blocks it and it causes issues
         playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         controlBar: {
           children: controlBarChildren,
@@ -626,7 +626,10 @@ export default function PlaylistPlayer() {
         }
       }
 
-      player.play().catch(() => {});
+      // Only autoplay on desktop - iOS blocks autoplay without user interaction
+      if (!isMobile) {
+        player.play().catch(() => {});
+      }
     });
 
     // Event handlers
@@ -667,7 +670,7 @@ export default function PlaylistPlayer() {
         player.off('ended', handleEnded);
       }
     };
-  }, [playerReady, currentVideo?.id, handleWatched]);
+  }, [playerReady, currentVideo?.id, handleWatched, isMobile]);
 
   // Update URL when current video changes
   useEffect(() => {
