@@ -1106,19 +1106,21 @@ export default function PlaylistPlayer() {
         </div>
 
         {/* Delete Confirmation Dialog */}
-        <ConfirmDialog
-          isOpen={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-          onConfirm={handleDelete}
-          title="Delete Video"
-          message={`Are you sure you want to delete "${currentVideo.title}"? This will permanently remove the video file from your system.`}
-          confirmText="Delete"
-          cancelText="Cancel"
-          isDanger={true}
-        />
+        {currentVideo && (
+          <ConfirmDialog
+            isOpen={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            onConfirm={handleDelete}
+            title="Delete Video"
+            message={`Are you sure you want to delete "${currentVideo.title}"? This will permanently remove the video file from your system.`}
+            confirmText="Delete"
+            cancelText="Cancel"
+            isDanger={true}
+          />
+        )}
 
         {/* Add to Playlist Menu */}
-        {showPlaylistMenu && (
+        {currentVideo && showPlaylistMenu && (
           <AddToPlaylistMenu
             videoId={currentVideo.id}
             video={currentVideo}
@@ -1342,19 +1344,21 @@ export default function PlaylistPlayer() {
       <MobileBottomNav queueCount={queueCount} />
 
       {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={handleDelete}
-        title="Delete Video"
-        message={`Are you sure you want to delete "${currentVideo.title}"? This will permanently remove the video file from your system.`}
-        confirmText="Delete"
-        cancelText="Cancel"
-        isDanger={true}
-      />
+      {currentVideo && (
+        <ConfirmDialog
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+          title="Delete Video"
+          message={`Are you sure you want to delete "${currentVideo.title}"? This will permanently remove the video file from your system.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+          isDanger={true}
+        />
+      )}
 
       {/* Add to Playlist Menu */}
-      {showPlaylistMenu && (
+      {currentVideo && showPlaylistMenu && (
         <AddToPlaylistMenu
           videoId={currentVideo.id}
           video={currentVideo}
