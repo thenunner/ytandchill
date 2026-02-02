@@ -1,7 +1,5 @@
-import { useEffect, useRef, useCallback } from 'react';
-
-const PROGRESS_SAVE_DEBOUNCE_MS = 3000;
-const WATCHED_THRESHOLD = 0.9;
+import { useEffect, useRef } from 'react';
+import { PROGRESS_SAVE_DEBOUNCE_MS, WATCHED_THRESHOLD } from '../utils/videoUtils';
 
 // Wake Lock helper (from Stash)
 let wakeLock = null;
@@ -63,37 +61,11 @@ export function useNativeMobilePlayer({
     onWatchedRef.current = onWatched;
   }, [video, updateVideoMutation, onEnded, onWatched]);
 
-  // Get video source URL
-  const getVideoSource = useCallback((filePath) => {
-    if (!filePath) return null;
-    const pathParts = filePath.replace(/\\/g, '/').split('/');
-    const downloadsIndex = pathParts.indexOf('downloads');
-    const relativePath = downloadsIndex >= 0
-      ? pathParts.slice(downloadsIndex + 1).join('/')
-      : pathParts.slice(-2).join('/');
-    return `/media/${relativePath}`;
-  }, []);
-
-  // Initialize video element
+  // Attach event listeners to video element
+  // Note: Video source is set via JSX src attribute, not here (to avoid duplicate loading)
   useEffect(() => {
     const videoEl = videoRef.current;
     if (!videoEl || !video?.file_path) return;
-
-    // Build video source with resume time
-    const savedTime = video.playback_seconds || 0;
-    const resumeTime = savedTime >= 60 ? savedTime : 0;
-    let videoSrc = getVideoSource(video.file_path);
-    if (resumeTime > 0) {
-      videoSrc += `#t=${resumeTime.toFixed(2)}`;
-    }
-
-    // Set source if different
-    const currentSrc = videoEl.src ? new URL(videoEl.src, window.location.origin).pathname : null;
-    const targetPath = videoSrc.split('#')[0];
-    if (currentSrc !== targetPath) {
-      videoEl.src = videoSrc;
-      videoEl.load();
-    }
 
     hasMarkedWatchedRef.current = false;
 
@@ -209,7 +181,7 @@ export function useNativeMobilePlayer({
         clearTimeout(saveProgressTimeout.current);
       }
     };
-  }, [video?.id, video?.file_path, videoRef, saveProgress, getVideoSource]);
+  }, [video?.id, video?.file_path, videoRef, saveProgress]);
 
   // Save on page unload
   useEffect(() => {
@@ -241,6 +213,4 @@ export function useNativeMobilePlayer({
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [videoRef]);
-
-  return { getVideoSource };
 }
