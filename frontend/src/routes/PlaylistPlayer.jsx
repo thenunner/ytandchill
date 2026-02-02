@@ -1,11 +1,12 @@
 import { useParams, useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQueries } from '@tanstack/react-query';
+import videojs from 'video.js';
+import 'video.js/dist/video-js.css';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
-import { useUnifiedPlayer } from '../hooks/useUnifiedPlayer';
-import PlayerControls from '../components/PlayerControls';
+import { getVideoSource, WATCHED_THRESHOLD, initVideoJsComponents } from '../utils/videoUtils';
 import { ConfirmDialog } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { LoadingSpinner } from '../components/ListFeedback';
@@ -13,6 +14,11 @@ import MobileBottomNav from '../components/MobileBottomNav';
 import { ArrowLeftIcon, PlusIcon, EyeIcon, TrashIcon, CheckmarkIcon, PlayIcon } from '../components/Icons';
 import Sidebar from '../components/Sidebar';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+
+// Import video.js plugins
+import '../plugins/videojs/wake-sentinel';
+import '../plugins/videojs/persist-volume';
+import '../plugins/videojs/media-session';
 
 // Local helper components to avoid duplicate JSX
 
@@ -189,8 +195,9 @@ export default function PlaylistPlayer() {
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
   const isMobile = isTouchDevice || isSmallScreen;
 
-  // Refs - single video ref for unified native player
-  const videoRef = useRef(null);
+  // Refs
+  const videoContainerRef = useRef(null);  // Container for video.js (desktop)
+  const videoRef = useRef(null);           // Native video element (mobile)
   const sidebarRef = useRef(null);
   const mobileQueueRef = useRef(null);
   const addToPlaylistButtonRef = useRef(null);
@@ -265,15 +272,6 @@ export default function PlaylistPlayer() {
   }, [videos, displayOrder, currentIndex]);
 
   // Compute video source URL early so we can set it in JSX for high priority
-  const getVideoSource = (filePath) => {
-    if (!filePath) return null;
-    const pathParts = filePath.replace(/\\/g, '/').split('/');
-    const downloadsIndex = pathParts.indexOf('downloads');
-    const relativePath = downloadsIndex >= 0
-      ? pathParts.slice(downloadsIndex + 1).join('/')
-      : pathParts.slice(-2).join('/');
-    return `/media/${relativePath}`;
-  };
   const videoSrc = currentVideo?.file_path ? getVideoSource(currentVideo.file_path) : null;
 
   // Set initial index based on startVideoId (ONLY on first load, not on URL updates during navigation)
@@ -480,18 +478,196 @@ export default function PlaylistPlayer() {
     goToNextRef.current = goToNext;
   }, [goToNext]);
 
-  // Unified native player with custom controls - works on both mobile and desktop
-  const player = useUnifiedPlayer({
-    video: currentVideo,
-    videoRef: videoRef,
-    saveProgress: false,  // Playlist mode doesn't save progress
-    onEnded: () => goToNextRef.current?.(),  // Auto-advance to next video
-    onWatched: handleWatched,
-    updateVideoMutation: updateVideo,
-    isTheaterMode: isTheaterMode,
-    setIsTheaterMode: handleTheaterModeChange,
-    autoplay: true,
-  });
+  // Video.js player state
+  const [playerReady, setPlayerReady] = useState(false);
+  const playerRef = useRef(null);
+  const hasMarkedWatchedRef = useRef(false);
+
+  // ==================== VIDEO.JS INITIALIZATION (Desktop + Mobile) ====================
+  // Following Stash's pattern: use video.js everywhere
+  useEffect(() => {
+    const container = videoContainerRef.current;
+    if (!container) return;
+
+    let vjs = null;
+    let videoEl = null;
+    let disposed = false;
+
+    (async () => {
+      await initVideoJsComponents();
+
+      if (disposed) return;
+
+      videoEl = document.createElement('video-js');
+      videoEl.className = 'video-js vjs-big-play-centered';
+      videoEl.setAttribute('playsinline', 'true');
+      container.appendChild(videoEl);
+
+      // Different control bar for mobile vs desktop
+      // Mobile: seekbar hidden in non-fullscreen (via CSS), shown in fullscreen
+      const controlBarChildren = isMobile
+        ? [
+            'seekBackward10Button',
+            'playToggle',
+            'seekForward10Button',
+            'volumePanel',
+            'currentTimeDisplay',
+            'timeDivider',
+            'durationDisplay',
+            'progressControl',  // Hidden via CSS when not fullscreen
+            'playbackRateMenuButton',
+            'pictureInPictureToggle',
+            'fullscreenToggle',
+          ]
+        : [
+            'playToggle',
+            'seekBackward10Button',
+            'seekForward10Button',
+            'volumePanel',
+            'currentTimeDisplay',
+            'timeDivider',
+            'durationDisplay',
+            'progressControl',
+            'remainingTimeDisplay',
+            'playbackRateMenuButton',
+            'theaterButton',
+            'fullscreenToggle',
+          ];
+
+      vjs = videojs(videoEl, {
+        controls: true,
+        fill: true,
+        preload: 'metadata',
+        autoplay: true,
+        playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+        controlBar: {
+          children: controlBarChildren,
+        },
+      });
+
+      playerRef.current = vjs;
+
+      // Add theater button callback
+      const theaterBtn = vjs.controlBar.getChild('theaterButton');
+      if (theaterBtn) {
+        theaterBtn.onToggleCallback = handleTheaterModeChange;
+      }
+
+      vjs.wakeSentinel();
+      vjs.persistVolume();
+      vjs.mediaSession();
+
+      setPlayerReady(true);
+    })();
+
+    return () => {
+      disposed = true;
+      if (vjs && !vjs.isDisposed()) {
+        vjs.dispose();
+      }
+      if (videoEl) {
+        videoEl.remove();
+      }
+      playerRef.current = null;
+      setPlayerReady(false);
+    };
+  }, [isMobile, handleTheaterModeChange]);
+
+  // Desktop: Set video source when currentVideo changes
+  useEffect(() => {
+    const player = playerRef.current;
+
+    if (!playerReady || !player || player.isDisposed()) return;
+    if (!currentVideo?.file_path) return;
+
+    const videoSrc = getVideoSource(currentVideo.file_path);
+    if (!videoSrc) return;
+
+    hasMarkedWatchedRef.current = false;
+
+    player.poster(currentVideo.thumb_url || '');
+    player.src({ src: videoSrc, type: 'video/mp4' });
+
+    try {
+      const mediaSession = player.mediaSession?.();
+      if (mediaSession && currentVideo.title) {
+        mediaSession.setMetadata(currentVideo.title, currentVideo.channel_title || '', currentVideo.thumb_url || '');
+      }
+    } catch (e) {}
+
+    player.one('loadedmetadata', () => {
+      const duration = player.duration();
+
+      // Add SponsorBlock segment markers to progress bar
+      const segments = currentVideo.sponsorblock_segments || [];
+      if (segments.length > 0 && duration > 0) {
+        const progressHolder = player.el().querySelector('.vjs-progress-holder');
+        if (progressHolder) {
+          // Remove any existing markers
+          progressHolder.querySelectorAll('.sponsorblock-marker').forEach(el => el.remove());
+
+          // Add markers for each segment
+          segments.forEach(segment => {
+            const marker = document.createElement('div');
+            marker.className = 'sponsorblock-marker';
+            const startPercent = (segment.start / duration) * 100;
+            const widthPercent = ((segment.end - segment.start) / duration) * 100;
+            marker.style.cssText = `
+              position: absolute;
+              left: ${startPercent}%;
+              width: ${widthPercent}%;
+              height: 100%;
+              background: rgba(0, 212, 0, 0.5);
+              pointer-events: none;
+              z-index: 1;
+            `;
+            progressHolder.appendChild(marker);
+          });
+        }
+      }
+
+      player.play().catch(() => {});
+    });
+
+    // Event handlers
+    const handleTimeUpdate = () => {
+      // Watched threshold
+      if (!hasMarkedWatchedRef.current) {
+        const currentTime = player.currentTime();
+        const duration = player.duration();
+        if (duration > 0 && currentTime / duration >= WATCHED_THRESHOLD) {
+          hasMarkedWatchedRef.current = true;
+          handleWatched();
+        }
+      }
+
+      // SponsorBlock skip
+      const segments = currentVideo.sponsorblock_segments || [];
+      if (segments.length > 0 && !player.seeking() && !player.paused()) {
+        const time = player.currentTime();
+        for (const seg of segments) {
+          if (time >= seg.start && time < seg.end - 0.5) {
+            player.currentTime(seg.end);
+            break;
+          }
+        }
+      }
+    };
+
+    const handleEnded = () => {
+      goToNextRef.current?.();
+    };
+
+    player.on('timeupdate', handleTimeUpdate);
+    player.on('ended', handleEnded);
+
+    return () => {
+      if (player && !player.isDisposed()) {
+        player.off('timeupdate', handleTimeUpdate);
+        player.off('ended', handleEnded);
+      }
+    };
+  }, [playerReady, currentVideo?.id, handleWatched]);
 
   // Update URL when current video changes
   useEffect(() => {
@@ -536,8 +712,8 @@ export default function PlaylistPlayer() {
         case 'escape':
           // Exit fullscreen or go back
           e.preventDefault();
-          if (player.isFullscreen) {
-            player.toggleFullscreen();
+          if (document.fullscreenElement) {
+            document.exitFullscreen();
           } else {
             handleBack();
           }
@@ -549,19 +725,7 @@ export default function PlaylistPlayer() {
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [goToNext, goToPrevious, toggleLoop, shufflePlaylist, isLooping, showNotification, handleBack, player]);
-
-  // Preload next video
-  useEffect(() => {
-    if (nextVideo && preloadVideoRef.current) {
-      const nextSrc = getVideoSource(nextVideo.file_path);
-      if (nextSrc) {
-        preloadVideoRef.current.src = nextSrc;
-        preloadVideoRef.current.load();
-      }
-    }
-  }, [nextVideo?.id]);
-
+  }, [goToNext, goToPrevious, toggleLoop, shufflePlaylist, isLooping, showNotification, handleBack]);
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -608,43 +772,10 @@ export default function PlaylistPlayer() {
               <div className="bg-black flex justify-center">
                 <div style={{ width: '100%', maxWidth: 'calc(100vh * 16 / 9)' }}>
                   <div
+                    ref={videoContainerRef}
                     className="player-wrapper relative"
                     style={{ height: '100vh', width: '100%' }}
-                    onMouseMove={player.showControlsTemporarily}
-                    onClick={player.handleVideoClick}
-                  >
-                    <video
-                      ref={videoRef}
-                      src={videoSrc || undefined}
-                      className="w-full h-full object-contain bg-black"
-                      playsInline
-                      preload="metadata"
-                      fetchpriority="high"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <PlayerControls
-                      isPlaying={player.isPlaying}
-                      currentTime={player.currentTime}
-                      duration={player.duration}
-                      volume={player.volume}
-                      isMuted={player.isMuted}
-                      playbackRate={player.playbackRate}
-                      isFullscreen={player.isFullscreen}
-                      showControls={player.showControls}
-                      isBuffering={player.isBuffering}
-                      isTheaterMode={isTheaterMode}
-                      sponsorSegments={player.sponsorSegments}
-                      onTogglePlay={player.togglePlay}
-                      onSeek={player.seek}
-                      onSeekRelative={player.seekRelative}
-                      onSetSpeed={player.setSpeed}
-                      onToggleMute={player.toggleMute}
-                      onSetVolume={player.setVolume}
-                      onToggleFullscreen={player.toggleFullscreen}
-                      onToggleTheaterMode={player.toggleTheaterMode}
-                      isMobile={false}
-                    />
-                  </div>
+                  />
                 </div>
               </div>
 
@@ -846,44 +977,11 @@ export default function PlaylistPlayer() {
               <div className="flex gap-4 items-start max-w-[1600px]">
                 {/* LEFT: Player + Info */}
                 <div className="flex-1 min-w-0">
-                  {/* Video Wrapper */}
+                  {/* Video Wrapper - hook creates video element dynamically */}
                   <div
+                    ref={videoContainerRef}
                     className="player-wrapper relative shadow-card-hover"
-                    onMouseMove={player.showControlsTemporarily}
-                    onClick={player.handleVideoClick}
-                  >
-                    <video
-                      ref={videoRef}
-                      src={videoSrc || undefined}
-                      className="w-full h-full object-contain bg-black"
-                      playsInline
-                      preload="metadata"
-                      fetchpriority="high"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                    <PlayerControls
-                      isPlaying={player.isPlaying}
-                      currentTime={player.currentTime}
-                      duration={player.duration}
-                      volume={player.volume}
-                      isMuted={player.isMuted}
-                      playbackRate={player.playbackRate}
-                      isFullscreen={player.isFullscreen}
-                      showControls={player.showControls}
-                      isBuffering={player.isBuffering}
-                      isTheaterMode={isTheaterMode}
-                      sponsorSegments={player.sponsorSegments}
-                      onTogglePlay={player.togglePlay}
-                      onSeek={player.seek}
-                      onSeekRelative={player.seekRelative}
-                      onSetSpeed={player.setSpeed}
-                      onToggleMute={player.toggleMute}
-                      onSetVolume={player.setVolume}
-                      onToggleFullscreen={player.toggleFullscreen}
-                      onToggleTheaterMode={player.toggleTheaterMode}
-                      isMobile={false}
-                    />
-                  </div>
+                  />
 
                   {/* Video Info */}
                   <div className="mt-4 space-y-3">
@@ -1036,40 +1134,11 @@ export default function PlaylistPlayer() {
     <div className="flex flex-col h-screen bg-dark-primary animate-fade-in">
       {/* Scrollable Content Area */}
       <div className="flex-1 overflow-y-auto">
-        {/* Video Player - Native HTML5 with custom controls */}
-        <div className="player-wrapper-mobile relative" onClick={player.handleVideoClick}>
-          <video
-            ref={videoRef}
-            src={videoSrc || undefined}
-            playsInline
-            preload="metadata"
-            poster={currentVideo.thumb_url || ''}
-            fetchpriority="high"
-            onClick={(e) => e.stopPropagation()}
-          />
-          <PlayerControls
-            isPlaying={player.isPlaying}
-            currentTime={player.currentTime}
-            duration={player.duration}
-            volume={player.volume}
-            isMuted={player.isMuted}
-            playbackRate={player.playbackRate}
-            isFullscreen={player.isFullscreen}
-            showControls={player.showControls}
-            isBuffering={player.isBuffering}
-            isTheaterMode={false}
-            sponsorSegments={player.sponsorSegments}
-            onTogglePlay={player.togglePlay}
-            onSeek={player.seek}
-            onSeekRelative={player.seekRelative}
-            onSetSpeed={player.setSpeed}
-            onToggleMute={player.toggleMute}
-            onSetVolume={player.setVolume}
-            onToggleFullscreen={player.toggleFullscreen}
-            onToggleTheaterMode={null}
-            isMobile={true}
-          />
-        </div>
+        {/* Video Player - video.js (same as desktop) */}
+        <div
+          ref={videoContainerRef}
+          className="player-wrapper-mobile"
+        />
 
         {/* Video Info with Prev/Next Controls - hidden in landscape via CSS */}
         <div className="player-video-info px-4 py-3 space-y-3">

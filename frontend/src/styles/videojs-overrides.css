@@ -199,6 +199,49 @@
   background: #000;
 }
 
+/* ===== NATIVE HTML5 VIDEO CONTROLS STYLING (WebKit) ===== */
+/* These pseudo-elements only work on WebKit browsers (iOS Safari, Chrome) */
+
+/* Make the entire control panel larger */
+.player-wrapper-mobile video::-webkit-media-controls-panel {
+  padding: 8px 4px;
+  min-height: 48px;
+}
+
+/* Larger play button */
+.player-wrapper-mobile video::-webkit-media-controls-play-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+}
+
+/* Larger timeline/scrubber */
+.player-wrapper-mobile video::-webkit-media-controls-timeline {
+  height: 8px;
+  padding: 16px 0;
+}
+
+/* Larger fullscreen button */
+.player-wrapper-mobile video::-webkit-media-controls-fullscreen-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+}
+
+/* Larger mute button */
+.player-wrapper-mobile video::-webkit-media-controls-mute-button {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+}
+
+/* Time display - larger font */
+.player-wrapper-mobile video::-webkit-media-controls-time-remaining-display,
+.player-wrapper-mobile video::-webkit-media-controls-current-time-display {
+  font-size: 14px;
+  min-width: 50px;
+}
+
 /* Portrait: micro buffer prevents iOS repaint issues */
 @media (orientation: portrait) {
   .player-wrapper-mobile {
@@ -595,5 +638,109 @@
     min-height: 44px;
     line-height: 44px;
     padding: 0 20px;
+  }
+}
+
+/* ===== MOBILE-SPECIFIC CONTROLS ===== */
+/* On mobile (non-fullscreen): hide progress bar, always show controls */
+@media (pointer: coarse), (max-width: 767px) {
+  /* Hide progress bar when NOT in fullscreen */
+  .player-wrapper-mobile .video-js:not(.vjs-fullscreen) .vjs-progress-control {
+    display: none !important;
+  }
+
+  /* Always show controls when NOT in fullscreen */
+  .player-wrapper-mobile .video-js:not(.vjs-fullscreen) .vjs-control-bar {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  /* Disable auto-hide when NOT in fullscreen */
+  .player-wrapper-mobile .video-js:not(.vjs-fullscreen).vjs-user-inactive .vjs-control-bar {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  /* In fullscreen: show progress bar and allow auto-hide */
+  .player-wrapper-mobile .video-js.vjs-fullscreen .vjs-progress-control {
+    display: flex !important;
+  }
+
+  /* Compact time display on mobile: "0:00 / 2:05:32" */
+  .player-wrapper-mobile .video-js .vjs-current-time,
+  .player-wrapper-mobile .video-js .vjs-duration {
+    display: flex !important;
+    padding: 0 2px !important;
+    min-width: auto !important;
+    font-size: 11px !important;
+  }
+
+  .player-wrapper-mobile .video-js .vjs-time-divider {
+    display: flex !important;
+    padding: 0 !important;
+    min-width: auto !important;
+    font-size: 11px !important;
+  }
+
+  /* Ensure fullscreen and PiP buttons are always visible */
+  .player-wrapper-mobile .video-js .vjs-fullscreen-control,
+  .player-wrapper-mobile .video-js .vjs-picture-in-picture-control {
+    display: flex !important;
+    width: 36px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Control bar spans full width, distributes items */
+  .player-wrapper-mobile .video-js .vjs-control-bar {
+    width: 100% !important;
+    padding: 0 8px !important;
+    justify-content: space-between !important;
+    height: 48px !important;
+  }
+
+  /* Buttons fill available space equally */
+  .player-wrapper-mobile .video-js .vjs-button {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+  }
+
+  /* All controls same height */
+  .player-wrapper-mobile .video-js .vjs-control {
+    height: 48px !important;
+    margin: 0 !important;
+  }
+
+  /* Icons sized for touch */
+  .player-wrapper-mobile .video-js .vjs-icon-placeholder:before {
+    font-size: 22px !important;
+    line-height: 48px !important;
+  }
+
+  /* Volume panel compact */
+  .player-wrapper-mobile .video-js .vjs-volume-panel {
+    width: 32px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Playback rate */
+  .player-wrapper-mobile .video-js .vjs-playback-rate {
+    width: auto !important;
+    min-width: 40px !important;
+  }
+
+  .player-wrapper-mobile .video-js .vjs-playback-rate-value {
+    font-size: 13px !important;
+    line-height: 48px !important;
+  }
+
+  /* SVG icons (seek buttons) sized for touch */
+  .player-wrapper-mobile .video-js .vjs-seek-backward-10 svg,
+  .player-wrapper-mobile .video-js .vjs-seek-forward-10 svg {
+    width: 24px !important;
+    height: 24px !important;
   }
 }

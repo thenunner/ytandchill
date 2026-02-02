@@ -161,3 +161,191 @@ export const detectDeviceType = () => {
 
   return { isMobile: isMobileDevice(), isIOS: isIOSDevice };
 };
+
+// ============================================================================
+// VIDEO.JS COMPONENTS (lazy loaded)
+// ============================================================================
+
+// These are only loaded when video.js is used (desktop)
+let videojs = null;
+let theaterButtonRegistered = false;
+let seekButtonsRegistered = false;
+
+/**
+ * Initialize video.js components (theater button, seek buttons)
+ * Call this before using video.js player
+ */
+export async function initVideoJsComponents() {
+  if (!videojs) {
+    videojs = (await import('video.js')).default;
+  }
+
+  // Register theater button
+  if (!theaterButtonRegistered) {
+    const Button = videojs.getComponent('Button');
+
+    class TheaterButton extends Button {
+      constructor(player, options) {
+        super(player, options);
+        this.addClass('vjs-theater-button');
+        this.onToggleCallback = options?.onToggle;
+
+        const isTheaterMode = localStorage.getItem('theaterMode') === 'true';
+        if (isTheaterMode) {
+          this.addClass('vjs-theater-mode-active');
+          this.controlText('Default view');
+        } else {
+          this.controlText('Theater mode');
+        }
+      }
+
+      buildCSSClass() {
+        return `vjs-theater-button ${super.buildCSSClass()}`;
+      }
+
+      handleClick() {
+        const currentMode = localStorage.getItem('theaterMode') === 'true';
+        const newMode = !currentMode;
+        localStorage.setItem('theaterMode', String(newMode));
+
+        if (newMode) {
+          this.addClass('vjs-theater-mode-active');
+          this.controlText('Default view');
+        } else {
+          this.removeClass('vjs-theater-mode-active');
+          this.controlText('Theater mode');
+        }
+
+        if (this.onToggleCallback) {
+          this.onToggleCallback(newMode);
+        }
+      }
+
+      createEl() {
+        const el = super.createEl('button', {
+          className: this.buildCSSClass(),
+        });
+
+        const iconPlaceholder = el.querySelector('.vjs-icon-placeholder');
+        if (iconPlaceholder) {
+          iconPlaceholder.innerHTML = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theater-icon-expand">
+              <line x1="2" y1="5" x2="2" y2="19"></line>
+              <line x1="11" y1="12" x2="4" y2="12"></line>
+              <polyline points="7,9 4,12 7,15"></polyline>
+              <line x1="13" y1="12" x2="20" y2="12"></line>
+              <polyline points="17,9 20,12 17,15"></polyline>
+              <line x1="22" y1="5" x2="22" y2="19"></line>
+            </svg>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theater-icon-contract">
+              <line x1="1" y1="12" x2="6" y2="12"></line>
+              <polyline points="3,9 6,12 3,15"></polyline>
+              <line x1="9" y1="5" x2="9" y2="19"></line>
+              <line x1="15" y1="5" x2="15" y2="19"></line>
+              <line x1="23" y1="12" x2="18" y2="12"></line>
+              <polyline points="21,9 18,12 21,15"></polyline>
+            </svg>
+          `;
+        }
+
+        return el;
+      }
+    }
+
+    videojs.registerComponent('TheaterButton', TheaterButton);
+    theaterButtonRegistered = true;
+  }
+
+  // Register seek buttons
+  if (!seekButtonsRegistered) {
+    const Button = videojs.getComponent('Button');
+
+    class SeekBackward10Button extends Button {
+      constructor(player, options) {
+        super(player, options);
+        this.controlText('Seek backward 10 seconds');
+      }
+
+      buildCSSClass() {
+        return `vjs-seek-backward-10 ${super.buildCSSClass()}`;
+      }
+
+      handleClick() {
+        const player = this.player();
+        player.currentTime(player.currentTime() - 10);
+      }
+
+      createEl() {
+        const el = super.createEl('button', {
+          className: 'vjs-seek-backward-10 vjs-control vjs-button',
+        });
+
+        el.innerHTML = `
+          <span class="vjs-icon-placeholder" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+              <text x="12" y="16" text-anchor="middle" font-size="7" font-weight="bold" fill="currentColor">10</text>
+            </svg>
+          </span>
+        `;
+
+        return el;
+      }
+    }
+
+    class SeekForward10Button extends Button {
+      constructor(player, options) {
+        super(player, options);
+        this.controlText('Seek forward 10 seconds');
+      }
+
+      buildCSSClass() {
+        return `vjs-seek-forward-10 ${super.buildCSSClass()}`;
+      }
+
+      handleClick() {
+        const player = this.player();
+        player.currentTime(player.currentTime() + 10);
+      }
+
+      createEl() {
+        const el = super.createEl('button', {
+          className: 'vjs-seek-forward-10 vjs-control vjs-button',
+        });
+
+        el.innerHTML = `
+          <span class="vjs-icon-placeholder" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+              <text x="12" y="16" text-anchor="middle" font-size="7" font-weight="bold" fill="currentColor">10</text>
+            </svg>
+          </span>
+        `;
+
+        return el;
+      }
+    }
+
+    videojs.registerComponent('SeekBackward10Button', SeekBackward10Button);
+    videojs.registerComponent('SeekForward10Button', SeekForward10Button);
+    seekButtonsRegistered = true;
+  }
+}
+
+/**
+ * Updates theater button visual state based on current mode
+ * @param {Object} player - Video.js player instance
+ * @param {boolean} isTheaterMode - Current theater mode state
+ */
+export function updateTheaterButtonState(player, isTheaterMode) {
+  const theaterButton = player.controlBar?.getChild('TheaterButton');
+  if (!theaterButton) return;
+
+  if (isTheaterMode) {
+    theaterButton.addClass('vjs-theater-mode-active');
+    theaterButton.controlText('Default view');
+  } else {
+    theaterButton.removeClass('vjs-theater-mode-active');
+    theaterButton.controlText('Theater mode');
+  }
+}
