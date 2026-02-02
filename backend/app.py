@@ -1313,11 +1313,18 @@ if __name__ == '__main__':
     config.graceful_timeout = 10
     config.keep_alive_timeout = 600  # 10 minutes for long video streams
 
-    # Auto-generate SSL certificates for HTTPS/HTTP2
-    cert_dir = os.path.join(data_dir, 'certs')
-    cert_path, key_path = ensure_ssl_certs(cert_dir)
+    # Check if SSL should be disabled (for debugging)
+    disable_ssl = os.environ.get('DISABLE_SSL', '').lower() in ('true', '1', 'yes')
 
-    if cert_path and key_path:
+    if disable_ssl:
+        cert_path, key_path = None, None
+        logger.info("SSL disabled via DISABLE_SSL environment variable")
+    else:
+        # Auto-generate SSL certificates for HTTPS/HTTP2
+        cert_dir = os.path.join(data_dir, 'certs')
+        cert_path, key_path = ensure_ssl_certs(cert_dir)
+
+    if cert_path and key_path and not disable_ssl:
         config.certfile = cert_path
         config.keyfile = key_path
         config.alpn_protocols = ["h2", "http/1.1"]  # Prefer HTTP/2, fallback to HTTP/1.1

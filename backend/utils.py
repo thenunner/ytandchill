@@ -256,11 +256,46 @@ def ensure_ssl_certs(cert_dir='data/certs'):
             x509.NameAttribute(NameOID.COMMON_NAME, 'localhost'),
         ])
 
-        # Subject Alternative Names for localhost access
+        # Subject Alternative Names - include all local IPs for LAN access
         san_list = [
             x509.DNSName('localhost'),
+            x509.DNSName('*.local'),  # mDNS names
             x509.IPAddress(ipaddress.IPv4Address('127.0.0.1')),
         ]
+
+        # Auto-detect local network IPs and add them
+        try:
+            import socket
+            hostname = socket.gethostname()
+            san_list.append(x509.DNSName(hostname))
+
+            # Get all local IPs
+            for ip_info in socket.getaddrinfo(hostname, None, socket.AF_INET):
+                ip = ip_info[4][0]
+                if ip != '127.0.0.1':
+                    try:
+                        san_list.append(x509.IPAddress(ipaddress.IPv4Address(ip)))
+                        logger.info(f"Added {ip} to SSL certificate SANs")
+                    except Exception:
+                        pass
+
+            # Also try to get IPs from network interfaces
+            try:
+                import subprocess
+                result = subprocess.run(['hostname', '-I'], capture_output=True, text=True, timeout=5)
+                if result.returncode == 0:
+                    for ip in result.stdout.strip().split():
+                        try:
+                            ip_obj = ipaddress.IPv4Address(ip)
+                            if x509.IPAddress(ip_obj) not in san_list:
+                                san_list.append(x509.IPAddress(ip_obj))
+                                logger.info(f"Added {ip} to SSL certificate SANs")
+                        except Exception:
+                            pass
+            except Exception:
+                pass
+        except Exception as e:
+            logger.warning(f"Could not auto-detect local IPs: {e}")
 
         # Build the certificate
         cert = (
