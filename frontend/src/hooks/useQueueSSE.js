@@ -13,7 +13,6 @@ export function useQueueSSE() {
   const eventSourceRef = useRef(null);
   const reconnectTimeoutRef = useRef(null);
   const [isConnected, setIsConnected] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000; // 1 second
@@ -35,7 +34,6 @@ export function useQueueSSE() {
       eventSourceRef.current = eventSource;
 
       eventSource.onopen = () => {
-        console.log('[SSE] Connected - using 1 HTTP connection slot');
         setIsConnected(true);
         reconnectAttempts.current = 0;
       };
@@ -177,26 +175,5 @@ export function useQueueSSE() {
     };
   }, [connect]);
 
-  // Pause SSE connection (e.g., when viewing video to free connection slot)
-  const pause = useCallback(() => {
-    setIsPaused(true);
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-      setIsConnected(false);
-    }
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-  }, []);
-
-  // Resume SSE connection
-  const resume = useCallback(() => {
-    setIsPaused(false);
-    reconnectAttempts.current = 0;
-    connect();
-  }, [connect]);
-
-  return { isConnected, isPaused, pause, resume };
+  return { isConnected };
 }

@@ -1,7 +1,6 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
 import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels, useFavoriteChannels, useSettings } from './api/queries';
 import { useQueueSSE } from './hooks/useQueueSSE';
-import { SSEProvider } from './contexts/SSEContext';
 import { useNotification } from './contexts/NotificationContext';
 import { useSelectionBar } from './contexts/PreferencesContext';
 import { useToastManager } from './hooks/useToastManager';
@@ -80,8 +79,7 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   // SSE keeps queue data updated in real-time across all components
-  const sseState = useQueueSSE();
-  const { isConnected: sseConnected } = sseState;
+  const { isConnected: sseConnected } = useQueueSSE();
   const { data: queueData } = useQueue({ sseConnected });
   const { data: channelsData } = useChannels();
   const { data: favoriteLibrariesRaw } = useFavoriteChannels();
@@ -219,20 +217,18 @@ function App() {
   // Auth pages and player pages get their own layouts
   if (isAuthPage || isPlayerPage) {
     return (
-      <SSEProvider value={sseState}>
-        <div className="min-h-screen bg-dark-primary">
-          <ErrorBoundary>
-            <Routes>
-              <Route path="/setup" element={<Auth mode="setup" />} />
-              <Route path="/login" element={<Auth mode="login" />} />
-              <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
-              <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
-              <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
-            </Routes>
-          </ErrorBoundary>
-          <Toast />
-        </div>
-      </SSEProvider>
+      <div className="min-h-screen bg-dark-primary">
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/setup" element={<Auth mode="setup" />} />
+            <Route path="/login" element={<Auth mode="login" />} />
+            <Route path="/player/:videoId" element={isAuthenticated ? <Player /> : <Navigate to="/login" replace />} />
+            <Route path="/play/playlist/:playlistId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
+            <Route path="/play/category/:categoryId" element={isAuthenticated ? <PlaylistPlayer /> : <Navigate to="/login" replace />} />
+          </Routes>
+        </ErrorBoundary>
+        <Toast />
+      </div>
     );
   }
 

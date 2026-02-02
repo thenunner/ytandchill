@@ -264,6 +264,18 @@ export default function PlaylistPlayer() {
     return videos[actualIndex];
   }, [videos, displayOrder, currentIndex]);
 
+  // Compute video source URL early so we can set it in JSX for high priority
+  const getVideoSource = (filePath) => {
+    if (!filePath) return null;
+    const pathParts = filePath.replace(/\\/g, '/').split('/');
+    const downloadsIndex = pathParts.indexOf('downloads');
+    const relativePath = downloadsIndex >= 0
+      ? pathParts.slice(downloadsIndex + 1).join('/')
+      : pathParts.slice(-2).join('/');
+    return `/media/${relativePath}`;
+  };
+  const videoSrc = currentVideo?.file_path ? getVideoSource(currentVideo.file_path) : null;
+
   // Set initial index based on startVideoId (ONLY on first load, not on URL updates during navigation)
   useEffect(() => {
     // Only run once when videos first load
@@ -603,9 +615,11 @@ export default function PlaylistPlayer() {
                   >
                     <video
                       ref={videoRef}
+                      src={videoSrc || undefined}
                       className="w-full h-full object-contain bg-black"
                       playsInline
                       preload="metadata"
+                      fetchpriority="high"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <PlayerControls
@@ -840,9 +854,11 @@ export default function PlaylistPlayer() {
                   >
                     <video
                       ref={videoRef}
+                      src={videoSrc || undefined}
                       className="w-full h-full object-contain bg-black"
                       playsInline
                       preload="metadata"
+                      fetchpriority="high"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <PlayerControls
@@ -1024,9 +1040,11 @@ export default function PlaylistPlayer() {
         <div className="player-wrapper-mobile relative" onClick={player.handleVideoClick}>
           <video
             ref={videoRef}
+            src={videoSrc || undefined}
             playsInline
             preload="metadata"
             poster={currentVideo.thumb_url || ''}
+            fetchpriority="high"
             onClick={(e) => e.stopPropagation()}
           />
           <PlayerControls

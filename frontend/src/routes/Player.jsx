@@ -2,7 +2,6 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useVideo, useVideoPlayback, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
-import { useSSE } from '../contexts/SSEContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
 import { ConfirmDialog } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
@@ -18,14 +17,6 @@ export default function Player() {
   const { videoId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-
-  // Pause SSE connection while viewing video to free up HTTP connection slot
-  // This reduces queueing time for video loading from ~6s to near-instant
-  const { pause: pauseSSE, resume: resumeSSE } = useSSE();
-  useEffect(() => {
-    pauseSSE();
-    return () => resumeSSE();
-  }, [pauseSSE, resumeSSE]);
 
   // Track mount time for accurate timing
   const mountTimeRef = useRef(performance.now());
