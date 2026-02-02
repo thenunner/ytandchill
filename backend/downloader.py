@@ -682,8 +682,9 @@ class DownloadWorker:
         """
         # yt-dlp options - Works with HLS/m3u8 streams
         ydl_opts = {
-            # Prefer H.264 High profile (avc1.64) for better seeking in Chrome/Edge, fallback to any H.264
-            'format': 'bestvideo[vcodec~="^avc1.64"][ext=mp4][height<=1080]+bestaudio[ext=m4a]/bestvideo[ext=mp4][height<=1080]+bestaudio[ext=m4a]/bestvideo[height<=1080]+bestaudio/best[height<=1080]/best',
+            # Force H.264 (avc1) codec for universal mobile/desktop compatibility
+            # Fallbacks all require H.264 - may get 720p instead of 1080p if H.264 1080p unavailable
+            'format': 'bestvideo[vcodec~="^avc1"][height<=1080]+bestaudio[ext=m4a]/bestvideo[vcodec~="^avc1"]+bestaudio[ext=m4a]/bestvideo[vcodec~="^avc1"]+bestaudio/best[vcodec~="^avc1"]',
             'outtmpl': os.path.join(channel_dir, f'{video_yt_id}.%(ext)s'),
             'quiet': False,  # Enable output for logging
             'verbose': True,  # Verbose output for debugging
