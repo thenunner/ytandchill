@@ -13,7 +13,7 @@ import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, Plus
 import { SORT_OPTIONS } from '../utils/stickyBarOptions';
 
 export default function Library() {
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const { cardSize, setCardSize} = useCardSize('library');
   const { data: settings } = useSettings();
@@ -71,11 +71,25 @@ export default function Library() {
   const [renameCategoryValue, setRenameCategoryValue] = useState('');
   const [showRenameCategoryModal, setShowRenameCategoryModal] = useState(false);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  // Pagination state - Initialize page from URL (preserves position on back navigation)
+  const initialPage = parseInt(searchParams.get('page'), 10) || 1;
+  const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
+
+  // Wrapper to persist page to URL
+  const setCurrentPage = (page) => {
+    setCurrentPageState(page);
+    const newParams = new URLSearchParams(searchParams);
+    if (page > 1) {
+      newParams.set('page', page.toString());
+    } else {
+      newParams.delete('page');
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+  const currentPage = currentPageState;
 
   // Sync activeTab with URL parameter
   useEffect(() => {

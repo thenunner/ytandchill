@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useFavoriteChannels, useFavoriteVideos, useMarkChannelVisited, useSettings, useThumbnailBatch } from '../api/queries';
 import VideoCard from '../components/VideoCard';
 import { LoadingSpinner, EmptyState, Pagination } from '../components/ListFeedback';
@@ -13,6 +13,7 @@ import { StickyBar, CollapsibleSearch, StickyBarRightSection } from '../componen
 export default function Favs() {
   // Mobile detection
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const [searchParams, setSearchParams] = useSearchParams();
 
   // Mobile-specific state
   const [selectedChannelId, setSelectedChannelId] = useState(null);
@@ -22,8 +23,24 @@ export default function Favs() {
   const gridColumns = useGridColumns(cardSize);
   const [searchInput, setSearchInput] = useState('');
   const [sortBy, setSortBy] = useState('date-desc');
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // Initialize page from URL (preserves position on back navigation)
+  const initialPage = parseInt(searchParams.get('page'), 10) || 1;
+  const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1);
+
+  // Wrapper to persist page to URL
+  const setCurrentPage = (page) => {
+    setCurrentPageState(page);
+    const newParams = new URLSearchParams(searchParams);
+    if (page > 1) {
+      newParams.set('page', page.toString());
+    } else {
+      newParams.delete('page');
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+  const currentPage = currentPageState;
 
   const { data: favoriteLibrariesRaw, isLoading: channelsLoading } = useFavoriteChannels();
   // For mobile, filter by selected channel; for desktop, get all videos (null)

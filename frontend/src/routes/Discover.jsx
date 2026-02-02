@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/PreferencesContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, getNumericSetting, formatChannelScanTime, formatChannelVideoDate, formatChannelLastScan, formatFullDateTime } from '../utils/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import api from '../api/client';
@@ -28,6 +28,7 @@ export default function Discover() {
   const { showNotification } = useNotification();
   const { cardSize, setCardSize } = useCardSize('channels');
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const gridColumns = useGridColumns(cardSize, 'channels');
 
@@ -69,11 +70,25 @@ export default function Discover() {
   // Track which scan type was last initiated ('new' or 'all')
   const [lastScanType, setLastScanType] = useState(null);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  // Pagination state - Initialize page from URL (preserves position on back navigation)
+  const initialPage = parseInt(searchParams.get('page'), 10) || 1;
+  const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
+
+  // Wrapper to persist page to URL
+  const setCurrentPage = (page) => {
+    setCurrentPageState(page);
+    const newParams = new URLSearchParams(searchParams);
+    if (page > 1) {
+      newParams.set('page', page.toString());
+    } else {
+      newParams.delete('page');
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+  const currentPage = currentPageState;
 
   // Watch for scan completion and refetch channels
   const currentOperation = queueData?.current_operation;

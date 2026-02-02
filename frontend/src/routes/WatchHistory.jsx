@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useWatchHistory, useClearWatchHistory, useChannels, useSettings, useThumbnailBatch } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/PreferencesContext';
@@ -12,6 +12,7 @@ import { TrashIcon } from '../components/Icons';
 
 export default function WatchHistory() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { cardSize } = useCardSize('library');
   const { data: settings } = useSettings();
   const { showNotification } = useNotification();
@@ -21,11 +22,25 @@ export default function WatchHistory() {
   const [channelFilter, setChannelFilter] = useState('');
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
+  // Pagination state - Initialize page from URL (preserves position on back navigation)
+  const initialPage = parseInt(searchParams.get('page'), 10) || 1;
+  const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1);
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
+
+  // Wrapper to persist page to URL
+  const setCurrentPage = (page) => {
+    setCurrentPageState(page);
+    const newParams = new URLSearchParams(searchParams);
+    if (page > 1) {
+      newParams.set('page', page.toString());
+    } else {
+      newParams.delete('page');
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+  const currentPage = currentPageState;
 
   // Fetch watch history
   const { data: historyVideos, isLoading } = useWatchHistory({

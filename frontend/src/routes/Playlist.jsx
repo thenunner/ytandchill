@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings, useDeletePlaylist, useUpdatePlaylist, useThumbnailBatch } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getEffectiveCardSize, getBooleanSetting, getNumericSetting } from '../utils/utils';
@@ -17,6 +17,7 @@ export default function Playlist() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: playlist, isLoading } = usePlaylist(id);
   const { data: settings } = useSettings();
   const removeVideo = useRemoveVideoFromPlaylist();
@@ -36,8 +37,24 @@ export default function Playlist() {
   const [editMode, setEditMode] = useState(false);
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [showBulkPlaylistOptions, setShowBulkPlaylistOptions] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // Initialize page from URL (preserves position on back navigation)
+  const initialPage = parseInt(searchParams.get('page'), 10) || 1;
+  const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
+
+  // Wrapper to persist page to URL
+  const setCurrentPage = (page) => {
+    setCurrentPageState(page);
+    const newParams = new URLSearchParams(searchParams);
+    if (page > 1) {
+      newParams.set('page', page.toString());
+    } else {
+      newParams.delete('page');
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+  const currentPage = currentPageState;
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete' | 'deletePlaylist', count: number }

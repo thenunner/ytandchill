@@ -54,10 +54,26 @@ export default function DiscoverChannel() {
   const [showDurationSettings, setShowDurationSettings] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  // Initialize page from URL (preserves position on back navigation)
+  const initialPage = parseInt(searchParams.get('page'), 10) || 1;
+  const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1);
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
   const isMobile = window.innerWidth < 640;
+
+  // Wrapper to persist page to URL
+  const setCurrentPage = (page) => {
+    setCurrentPageState(page);
+    const newParams = new URLSearchParams(searchParams);
+    if (page > 1) {
+      newParams.set('page', page.toString());
+    } else {
+      newParams.delete('page');
+    }
+    setSearchParams(newParams, { replace: true });
+  };
+  const currentPage = currentPageState;
 
   const channel = channels?.find(c => c.id === Number(channelId));
 
