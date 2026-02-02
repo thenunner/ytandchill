@@ -581,12 +581,20 @@ export default function PlaylistPlayer() {
     if (!currentVideo?.file_path) return;
 
     const videoSrc = getVideoSource(currentVideo.file_path);
-    console.log('[PlaylistPlayer] Setting source:', {
+    // Debug logging to localStorage
+    const logEntry = {
+      time: new Date().toISOString(),
+      action: 'setSource',
       id: currentVideo.id,
       title: currentVideo.title,
       file_path: currentVideo.file_path,
       videoSrc
-    });
+    };
+    const logs = JSON.parse(localStorage.getItem('videoDebugLogs') || '[]');
+    logs.push(logEntry);
+    if (logs.length > 50) logs.shift(); // Keep last 50 entries
+    localStorage.setItem('videoDebugLogs', JSON.stringify(logs));
+
     if (!videoSrc) return;
 
     hasMarkedWatchedRef.current = false;
@@ -669,13 +677,22 @@ export default function PlaylistPlayer() {
 
     const handleError = () => {
       const error = player.error();
-      console.error('[PlaylistPlayer] Video error:', {
+      const errorInfo = {
+        time: new Date().toISOString(),
+        action: 'error',
         code: error?.code,
         message: error?.message,
         currentSrc: player.currentSrc(),
         videoId: currentVideo?.id,
-        title: currentVideo?.title
-      });
+        title: currentVideo?.title,
+        file_path: currentVideo?.file_path
+      };
+      // Log to localStorage
+      const logs = JSON.parse(localStorage.getItem('videoDebugLogs') || '[]');
+      logs.push(errorInfo);
+      localStorage.setItem('videoDebugLogs', JSON.stringify(logs));
+      // Show notification with details
+      showNotification(`Error: ${error?.message || 'Unknown'} | Src: ${player.currentSrc()} | Path: ${currentVideo?.file_path}`, 'error');
     };
 
     player.on('timeupdate', handleTimeUpdate);
