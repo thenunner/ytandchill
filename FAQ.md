@@ -106,6 +106,8 @@ If you're getting low-quality (360p/480p) downloads for age-restricted videos, y
 
 **Note:** Age verification is tied to your Google account, not your cookies. Once verified, the account stays verified.
 
+**Firefox Integration Users:** If using Firefox cookie integration (Docker), make sure you're logged into the age-verified YT account in your Firefox browser. The container reads cookies directly from Firefox, so any age-restricted content requires the Firefox session to be logged in with a verified account.
+
 ## Common yt-dlp Errors
 
 ### Error: "Video unavailable" or "This video is not available"
@@ -176,6 +178,33 @@ If you're getting low-quality (360p/480p) downloads for age-restricted videos, y
 1. Use a VPN to change your apparent location
 2. Use a VPN server in a country where the content is available
 3. Export cookies while connected to the VPN
+
+## Mobile Playback and Video Compatibility
+
+### Videos won't play on iPhone/iPad (iOS)
+
+**Cause:** The video was downloaded with a codec that iOS/Safari doesn't support, typically VP9 or AV1.
+
+**Symptoms:**
+- Video plays fine on desktop browsers
+- Video shows error or won't load on iPhone/iPad
+- Error message: "The media could not be loaded" or "Format not supported"
+
+**Solution:**
+
+1. Go to **Settings → Database Maintenance → Video Issues**
+2. Click to scan your library - this detects videos with incompatible codecs
+3. Videos using VP9 or AV1 codecs will be flagged with a red badge
+4. Select the incompatible videos and click "Fix" to re-download with H.264 codec
+
+**Prevention:** By default, yt-dlp may download VP9/AV1 formats when available (often higher quality). The re-download process uses H.264 (AVC) which is universally compatible with all devices.
+
+**Supported codecs by platform:**
+| Codec | Desktop | iOS/Safari | Android |
+|-------|---------|------------|---------|
+| H.264 (AVC) | ✅ | ✅ | ✅ |
+| VP9 | ✅ | ❌ | ✅ |
+| AV1 | ✅ | ❌ | Partial |
 
 ## Performance and Optimization
 

@@ -30,7 +30,8 @@ YT channel downloader and video library manager. Monitor channels, queue downloa
 - **Toast Notifications** - Non-blocking status updates throughout the app
 - **Favorites** - Quick access to your favorite channels and their videos
 - **Watch History** - Track watched videos with resume playback support
-- **Mobile Support** - Touch-optimized interface with gesture controls
+- **Mobile Support** - Touch-optimized interface with universal video playback
+- **Video Issues Detection** - Find and fix low-resolution videos and mobile-incompatible codecs (VP9/AV1)
 - **[SponsorBlock](https://sponsor.ajay.app/)** - Auto-skip sponsor segments, intros, outros, and self-promotions
 
 ## Screenshots
@@ -143,6 +144,7 @@ Have existing YT videos? Import them into your library:
 | Port already in use | Set `PORT` environment variable to a different port |
 | Docker issues | Check logs with `docker logs ytandchill` |
 | Slow channel scanning | Add YT API key in Settings |
+| Videos won't play on iOS | Use Video Issues to find VP9/AV1 videos and re-download with H.264 |
 
 For detailed troubleshooting, see [FAQ.md](FAQ.md).
 
