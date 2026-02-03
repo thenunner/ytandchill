@@ -194,7 +194,7 @@ limiter = Limiter(
 @limiter.request_filter
 def exempt_media_routes():
     """Skip rate limiting for media file requests."""
-    return request.path.startswith('/api/media/')
+    return request.path.startswith('/api/media/') or request.path.startswith('/media/')
 
 # Authentication helper functions
 # Auth helper functions moved to utils.py to avoid duplication
