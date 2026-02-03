@@ -150,7 +150,6 @@ export default function Player() {
             'durationDisplay',
             'progressControl',  // Hidden via CSS when not fullscreen
             'playbackRateMenuButton',
-            'pictureInPictureToggle',
             'fullscreenToggle',
           ]
         : [

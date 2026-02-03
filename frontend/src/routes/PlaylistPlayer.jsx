@@ -533,7 +533,6 @@ export default function PlaylistPlayer() {
             'durationDisplay',
             'progressControl',  // Hidden via CSS when not fullscreen
             'playbackRateMenuButton',
-            'pictureInPictureToggle',
             'fullscreenToggle',
           ]
         : [
