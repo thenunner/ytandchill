@@ -168,21 +168,29 @@ export default function Player() {
             'fullscreenToggle',
           ];
 
-      vjs = videojs(videoEl, {
-        controls: true,
-        fill: true,
-        preload: 'metadata',
-        autoplay: true,
-        experimentalSvgIcons: true,
-        playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
-        userActions: {
-          click: true,      // Enable click/tap to play/pause
-          doubleClick: true // Enable double-click/tap for fullscreen
-        },
-        controlBar: {
-          children: controlBarChildren,
-        },
-      });
+      // Mobile: use video.js defaults for proper touch handling
+      // Desktop: custom control bar with extra features
+      const playerOptions = mobile
+        ? {
+            controls: true,
+            fill: true,
+            preload: 'metadata',
+            autoplay: false,
+            experimentalSvgIcons: true,
+          }
+        : {
+            controls: true,
+            fill: true,
+            preload: 'metadata',
+            autoplay: true,
+            experimentalSvgIcons: true,
+            playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+            controlBar: {
+              children: controlBarChildren,
+            },
+          };
+
+      vjs = videojs(videoEl, playerOptions);
 
       playerRef.current = vjs;
 

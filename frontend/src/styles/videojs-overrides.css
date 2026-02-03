@@ -1,24 +1,4 @@
-/* iOS-specific fixes for video.js controls */
-@supports (-webkit-touch-callout: none) {
-  /* Force controls to be visible and clickable on iOS */
-  .video-js .vjs-control-bar {
-    display: flex !important;
-    pointer-events: auto !important;
-    z-index: 100 !important;
-  }
-
-  /* Keep controls visible when user is active (mouse/touch interaction) */
-  .video-js.vjs-user-active .vjs-control-bar {
-    opacity: 1 !important;
-  }
-
-  /* Hide loading spinner after video loads - but ONLY the spinner, not controls */
-  .video-js.vjs-has-started:not(.vjs-waiting) .vjs-loading-spinner {
-    display: none !important;
-  }
-
-  /* Note: Removed pointer-events:none from .vjs-tech to allow tap-to-play */
-}
+/* iOS - use video.js defaults, minimal overrides */
 
 /* ===== VIDEO.JS CUSTOM THEMING ===== */
 /* Override video.js default blue with our accent color */
@@ -638,106 +618,14 @@
   }
 }
 
-/* ===== MOBILE-SPECIFIC CONTROLS ===== */
-/* On mobile (non-fullscreen): hide progress bar, always show controls */
+/* ===== MOBILE - Slightly larger controls for touch ===== */
 @media (pointer: coarse), (max-width: 767px) {
-  /* Hide progress bar when NOT in fullscreen */
-  .player-wrapper-mobile .video-js:not(.vjs-fullscreen) .vjs-progress-control {
-    display: none !important;
+  .video-js .vjs-control-bar {
+    height: 44px;
   }
 
-  /* Always show controls when NOT in fullscreen */
-  .player-wrapper-mobile .video-js:not(.vjs-fullscreen) .vjs-control-bar {
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-  }
-
-  /* Disable auto-hide when NOT in fullscreen */
-  .player-wrapper-mobile .video-js:not(.vjs-fullscreen).vjs-user-inactive .vjs-control-bar {
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  /* In fullscreen: show progress bar and allow auto-hide */
-  .player-wrapper-mobile .video-js.vjs-fullscreen .vjs-progress-control {
-    display: flex !important;
-  }
-
-  /* Compact time display on mobile: "0:00 / 2:05:32" */
-  .player-wrapper-mobile .video-js .vjs-current-time,
-  .player-wrapper-mobile .video-js .vjs-duration {
-    display: flex !important;
-    padding: 0 2px !important;
-    min-width: auto !important;
-    font-size: 11px !important;
-  }
-
-  .player-wrapper-mobile .video-js .vjs-time-divider {
-    display: flex !important;
-    padding: 0 !important;
-    min-width: auto !important;
-    font-size: 11px !important;
-  }
-
-  /* Ensure fullscreen and PiP buttons are always visible */
-  .player-wrapper-mobile .video-js .vjs-fullscreen-control,
-  .player-wrapper-mobile .video-js .vjs-picture-in-picture-control {
-    display: flex !important;
-    width: 36px !important;
-    flex-shrink: 0 !important;
-  }
-
-  /* Control bar spans full width, distributes items */
-  .player-wrapper-mobile .video-js .vjs-control-bar {
-    width: 100% !important;
-    padding: 0 8px !important;
-    justify-content: space-between !important;
-    height: 48px !important;
-  }
-
-  /* Buttons fill available space equally */
-  .player-wrapper-mobile .video-js .vjs-button {
-    width: 44px !important;
-    height: 44px !important;
-    min-width: 44px !important;
-    flex: 0 0 auto !important;
-    margin: 0 !important;
-  }
-
-  /* All controls same height */
-  .player-wrapper-mobile .video-js .vjs-control {
-    height: 48px !important;
-    margin: 0 !important;
-  }
-
-  /* Icons sized for touch */
-  .player-wrapper-mobile .video-js .vjs-icon-placeholder:before {
-    font-size: 22px !important;
-    line-height: 48px !important;
-  }
-
-  /* Volume panel compact */
-  .player-wrapper-mobile .video-js .vjs-volume-panel {
-    width: 32px !important;
-    flex-shrink: 0 !important;
-  }
-
-  /* Playback rate */
-  .player-wrapper-mobile .video-js .vjs-playback-rate {
-    width: auto !important;
-    min-width: 40px !important;
-  }
-
-  .player-wrapper-mobile .video-js .vjs-playback-rate-value {
-    font-size: 13px !important;
-    line-height: 48px !important;
-  }
-
-  /* SVG icons (seek buttons) sized for touch */
-  .player-wrapper-mobile .video-js .vjs-seek-backward-10 svg,
-  .player-wrapper-mobile .video-js .vjs-seek-forward-10 svg {
-    width: 24px !important;
-    height: 24px !important;
+  .video-js .vjs-button {
+    width: 44px;
+    height: 44px;
   }
 }
