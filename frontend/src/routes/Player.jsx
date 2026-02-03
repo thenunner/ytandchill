@@ -170,7 +170,7 @@ export default function Player() {
             'fullscreenToggle',
           ];
 
-      // Mobile: use video.js defaults + mobile-ui plugin for touch handling
+      // Mobile: custom control bar + mobile-ui plugin for touch handling
       // Desktop: custom control bar with extra features
       const playerOptions = mobile
         ? {
@@ -179,7 +179,19 @@ export default function Player() {
             preload: 'metadata',
             autoplay: false,
             experimentalSvgIcons: true,
-            // Let videojs-mobile-ui handle touch interactions
+            controlBar: {
+              children: [
+                'seekBackward10Button',
+                'playToggle',
+                'seekForward10Button',
+                'volumePanel',
+                'currentTimeDisplay',
+                'timeDivider',
+                'durationDisplay',
+                'pictureInPictureToggle',
+                'fullscreenToggle',
+              ],
+            },
           }
         : {
             controls: true,
