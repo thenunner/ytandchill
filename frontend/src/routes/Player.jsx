@@ -20,6 +20,10 @@ import '../plugins/videojs/persist-volume';
 import '../plugins/videojs/media-session';
 
 export default function Player() {
+  // Debug timing - use ref to avoid re-render issues
+  const mountTimeRef = useRef(performance.now());
+  console.log('[Player] Mount at', mountTimeRef.current);
+
   const { videoId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -118,7 +122,9 @@ export default function Player() {
     // Async init to register components first
     (async () => {
       // Register theater button and seek buttons
+      console.log('[Player] initVideoJsComponents START', performance.now() - mountTimeRef.current, 'ms');
       await initVideoJsComponents();
+      console.log('[Player] initVideoJsComponents END', performance.now() - mountTimeRef.current, 'ms');
 
       if (disposed) return; // Check if cleanup already ran
 
@@ -185,6 +191,7 @@ export default function Player() {
       vjs.persistVolume();
       vjs.mediaSession();
 
+      console.log('[Player] playerReady=true', performance.now() - mountTimeRef.current, 'ms');
       setPlayerReady(true);
     })();
 
@@ -219,6 +226,9 @@ export default function Player() {
 
   // ==================== SET VIDEO SOURCE ====================
   useEffect(() => {
+    console.log('[Player] Source effect triggered', performance.now() - mountTimeRef.current, 'ms',
+      { playerReady, hasPlayer: !!playerRef.current, hasFilePath: !!playerVideoData?.file_path });
+
     const player = playerRef.current;
 
     if (!playerReady || !player || player.isDisposed()) return;
@@ -227,12 +237,15 @@ export default function Player() {
     const videoSrc = getVideoSource(playerVideoData.file_path);
     if (!videoSrc) return;
 
+    console.log('[Player] Setting source', performance.now() - mountTimeRef.current, 'ms', videoSrc);
+
     // Reset watched flag for new video
     hasMarkedWatchedRef.current = false;
 
     // Set poster and source
     player.poster(playerVideoData.thumb_url || '');
     player.src({ src: videoSrc, type: 'video/mp4' });
+    console.log('[Player] player.src() called', performance.now() - mountTimeRef.current, 'ms');
 
     // Update media session
     try {
@@ -248,6 +261,7 @@ export default function Player() {
 
     // Restore progress when metadata loads
     player.one('loadedmetadata', () => {
+      console.log('[Player] loadedmetadata', performance.now() - mountTimeRef.current, 'ms');
       const duration = player.duration();
       const startTime = playerVideoData.playback_seconds &&
         playerVideoData.playback_seconds >= 5 &&
