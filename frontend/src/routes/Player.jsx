@@ -2,6 +2,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
+import { useQueryClient } from '@tanstack/react-query';
 import { useVideo, useVideoPlayback, useUpdateVideo, useDeleteVideo, useQueue, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
@@ -25,6 +26,13 @@ export default function Player() {
   console.log('[Player] Mount at', mountTimeRef.current);
 
   const { videoId } = useParams();
+  const queryClient = useQueryClient();
+
+  // Cancel all pending queries on mount to free up connections for video
+  useEffect(() => {
+    console.log('[Player] Cancelling pending queries');
+    queryClient.cancelQueries();
+  }, [queryClient]);
   const navigate = useNavigate();
   const location = useLocation();
 

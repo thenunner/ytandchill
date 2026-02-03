@@ -1,6 +1,6 @@
 import { useParams, useNavigate, useSearchParams, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { useQueries } from '@tanstack/react-query';
+import { useQueries, useQueryClient } from '@tanstack/react-query';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue, useSettings } from '../api/queries';
@@ -127,6 +127,12 @@ export default function PlaylistPlayer() {
   const navigate = useNavigate();
   const location = useLocation();
   const { showNotification } = useNotification();
+  const queryClient = useQueryClient();
+
+  // Cancel all pending queries on mount to free up connections for video
+  useEffect(() => {
+    queryClient.cancelQueries();
+  }, [queryClient]);
 
   // Get starting video from URL if provided
   const startVideoId = searchParams.get('v');
