@@ -583,6 +583,31 @@ export default function PlaylistPlayer() {
       // Enable mobile UI plugin for touch-friendly experience
       if (mobile) {
         vjs.mobileUi();
+
+        // Add double-tap center for fullscreen toggle
+        let lastTapTime = 0;
+        const handleDoubleTapFullscreen = (e) => {
+          const rect = vjs.el().getBoundingClientRect();
+          const tapX = e.changedTouches[0].clientX - rect.left;
+          const width = rect.width;
+
+          // Only trigger on center third of video
+          if (tapX > width / 3 && tapX < (width * 2) / 3) {
+            const now = Date.now();
+            if (now - lastTapTime < 300) {
+              // Double tap detected - toggle fullscreen
+              if (vjs.isFullscreen()) {
+                vjs.exitFullscreen();
+              } else {
+                vjs.requestFullscreen();
+              }
+              lastTapTime = 0; // Reset to prevent triple-tap
+            } else {
+              lastTapTime = now;
+            }
+          }
+        };
+        vjs.el().addEventListener('touchend', handleDoubleTapFullscreen);
       }
 
       // Add theater button callback
