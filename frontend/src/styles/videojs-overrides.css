@@ -618,7 +618,7 @@
   }
 }
 
-/* ===== MOBILE - Slightly larger controls for touch ===== */
+/* ===== MOBILE - Touch-friendly controls ===== */
 @media (pointer: coarse), (max-width: 767px) {
   .video-js .vjs-control-bar {
     height: 44px;
@@ -627,5 +627,10 @@
   .video-js .vjs-button {
     width: 44px;
     height: 44px;
+  }
+
+  /* Hide progress bar when not fullscreen - too wide for mobile */
+  .video-js:not(.vjs-fullscreen) .vjs-progress-control {
+    display: none !important;
   }
 }
