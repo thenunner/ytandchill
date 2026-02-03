@@ -20,10 +20,6 @@ import '../plugins/videojs/persist-volume';
 import '../plugins/videojs/media-session';
 
 export default function Player() {
-  // Debug timing
-  const mountTime = performance.now();
-  console.log('[Player] Component mounted');
-
   const { videoId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -65,10 +61,15 @@ export default function Player() {
     return localStorage.getItem('theaterMode') === 'true';
   });
 
-  // Media queries
+  // Media queries - use ref to prevent player reinit on media query changes
   const isTouchDevice = useMediaQuery('(pointer: coarse)');
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
   const isMobile = isTouchDevice || isSmallScreen;
+  const isMobileRef = useRef(isMobile);
+  // Only update ref on actual device changes (not initial settling)
+  useEffect(() => {
+    isMobileRef.current = isMobile;
+  }, [isMobile]);
 
   // Combine playback data with video metadata
   const playerVideoData = playbackData ? {
@@ -105,6 +106,7 @@ export default function Player() {
 
   // ==================== VIDEO.JS INITIALIZATION (Desktop + Mobile) ====================
   // Following Stash's pattern: use video.js everywhere
+  // Uses isMobileRef to avoid re-init when media query settles
   useEffect(() => {
     const container = videoContainerRef.current;
     if (!container) return;
@@ -116,9 +118,7 @@ export default function Player() {
     // Async init to register components first
     (async () => {
       // Register theater button and seek buttons
-      console.time('[Player] initVideoJsComponents');
       await initVideoJsComponents();
-      console.timeEnd('[Player] initVideoJsComponents');
 
       if (disposed) return; // Check if cleanup already ran
 
@@ -128,8 +128,9 @@ export default function Player() {
       container.appendChild(videoEl);
 
       // Different control bar for mobile vs desktop
-      // Mobile: seekbar hidden in non-fullscreen (via CSS), shown in fullscreen
-      const controlBarChildren = isMobile
+      // Use ref to get stable initial value (prevents re-init on media query settling)
+      const mobile = isMobileRef.current;
+      const controlBarChildren = mobile
         ? [
             'seekBackward10Button',
             'playToggle',
@@ -202,7 +203,7 @@ export default function Player() {
       playerRef.current = null;
       setPlayerReady(false);
     };
-  }, [isMobile]); // Runs once - container is always in DOM
+  }, []); // Runs once - uses isMobileRef for stable value
 
   // ==================== APPLY DEFAULT PLAYBACK SPEED ====================
   useEffect(() => {
@@ -217,31 +218,14 @@ export default function Player() {
   }, [playerReady, settings?.default_playback_speed]);
 
   // ==================== SET VIDEO SOURCE ====================
-  // Debug: log when dependencies change
-  useEffect(() => {
-    console.log('[Player] playerReady changed:', playerReady, 'time:', performance.now() - mountTime, 'ms');
-  }, [playerReady, mountTime]);
-
-  useEffect(() => {
-    console.log('[Player] playerVideoData changed:', !!playerVideoData?.file_path, 'time:', performance.now() - mountTime, 'ms');
-  }, [playerVideoData?.file_path, mountTime]);
-
   useEffect(() => {
     const player = playerRef.current;
 
-    if (!playerReady || !player || player.isDisposed()) {
-      console.log('[Player] Source effect: waiting for player', { playerReady, hasPlayer: !!player });
-      return;
-    }
-    if (!playerVideoData?.file_path) {
-      console.log('[Player] Source effect: waiting for data', { hasFilePath: !!playerVideoData?.file_path });
-      return;
-    }
+    if (!playerReady || !player || player.isDisposed()) return;
+    if (!playerVideoData?.file_path) return;
 
     const videoSrc = getVideoSource(playerVideoData.file_path);
     if (!videoSrc) return;
-
-    console.log('[Player] Setting source, time since mount:', performance.now() - mountTime, 'ms');
 
     // Reset watched flag for new video
     hasMarkedWatchedRef.current = false;
@@ -264,7 +248,6 @@ export default function Player() {
 
     // Restore progress when metadata loads
     player.one('loadedmetadata', () => {
-      console.log('[Player] loadedmetadata, time since mount:', performance.now() - mountTime, 'ms');
       const duration = player.duration();
       const startTime = playerVideoData.playback_seconds &&
         playerVideoData.playback_seconds >= 5 &&

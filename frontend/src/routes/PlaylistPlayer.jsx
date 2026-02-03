@@ -122,10 +122,6 @@ function ActionButtons({ handleBack, setShowPlaylistMenu, toggleWatched, setShow
 }
 
 export default function PlaylistPlayer() {
-  // Debug timing
-  const mountTime = performance.now();
-  console.log('[PlaylistPlayer] Component mounted');
-
   const { playlistId, categoryId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -196,9 +192,14 @@ export default function PlaylistPlayer() {
   // Media query for mobile vs desktop - use touch detection for reliable native video
   // pointer: coarse = touch device (use native HTML5 video)
   // pointer: fine = mouse device (use Video.js)
+  // Use ref to prevent player reinit on media query changes
   const isTouchDevice = useMediaQuery('(pointer: coarse)');
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
   const isMobile = isTouchDevice || isSmallScreen;
+  const isMobileRef = useRef(isMobile);
+  useEffect(() => {
+    isMobileRef.current = isMobile;
+  }, [isMobile]);
 
   // Refs
   const videoContainerRef = useRef(null);  // Container for video.js (desktop)
@@ -490,6 +491,7 @@ export default function PlaylistPlayer() {
 
   // ==================== VIDEO.JS INITIALIZATION (Desktop + Mobile) ====================
   // Following Stash's pattern: use video.js everywhere
+  // Uses isMobileRef to avoid re-init when media query settles
   useEffect(() => {
     const container = videoContainerRef.current;
     if (!container) return;
@@ -499,9 +501,7 @@ export default function PlaylistPlayer() {
     let disposed = false;
 
     (async () => {
-      console.time('[PlaylistPlayer] initVideoJsComponents');
       await initVideoJsComponents();
-      console.timeEnd('[PlaylistPlayer] initVideoJsComponents');
 
       if (disposed) return;
 
@@ -511,8 +511,9 @@ export default function PlaylistPlayer() {
       container.appendChild(videoEl);
 
       // Different control bar for mobile vs desktop
-      // Mobile: seekbar hidden in non-fullscreen (via CSS), shown in fullscreen
-      const controlBarChildren = isMobile
+      // Use ref to get stable initial value (prevents re-init on media query settling)
+      const mobile = isMobileRef.current;
+      const controlBarChildren = mobile
         ? [
             'seekBackward10Button',
             'playToggle',
@@ -578,7 +579,7 @@ export default function PlaylistPlayer() {
       playerRef.current = null;
       setPlayerReady(false);
     };
-  }, [isMobile, isTheaterMode, handleTheaterModeChange]);
+  }, [handleTheaterModeChange]); // Runs once - uses isMobileRef for stable value
 
   // Apply default playback speed from settings
   useEffect(() => {
@@ -600,7 +601,6 @@ export default function PlaylistPlayer() {
     if (!currentVideo?.file_path) return;
 
     const videoSrc = getVideoSource(currentVideo.file_path);
-    console.log('[PlaylistPlayer] Setting source, time since mount:', performance.now() - mountTime, 'ms');
     // Debug logging to localStorage
     const logEntry = {
       time: new Date().toISOString(),
@@ -630,7 +630,6 @@ export default function PlaylistPlayer() {
     } catch (e) {}
 
     player.one('loadedmetadata', () => {
-      console.log('[PlaylistPlayer] loadedmetadata, time since mount:', performance.now() - mountTime, 'ms');
       const duration = player.duration();
 
       // Add SponsorBlock segment markers to progress bar
