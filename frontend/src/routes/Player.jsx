@@ -2,7 +2,7 @@ import { useParams, useNavigate, Link, useLocation } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
-import { useVideo, useVideoPlayback, useUpdateVideo, useDeleteVideo, useQueue } from '../api/queries';
+import { useVideo, useVideoPlayback, useUpdateVideo, useDeleteVideo, useQueue, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
 import { getVideoSource, PROGRESS_SAVE_DEBOUNCE_MS, WATCHED_THRESHOLD, initVideoJsComponents } from '../utils/videoUtils';
@@ -20,6 +20,10 @@ import '../plugins/videojs/persist-volume';
 import '../plugins/videojs/media-session';
 
 export default function Player() {
+  // Debug timing
+  const mountTime = performance.now();
+  console.log('[Player] Component mounted');
+
   const { videoId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -41,6 +45,7 @@ export default function Player() {
   const updateVideo = useUpdateVideo();
   const deleteVideo = useDeleteVideo();
   const { data: queueData } = useQueue();
+  const { data: settings } = useSettings();
   const queueCount = queueData?.queue_items?.filter(i => i.status === 'pending' || i.status === 'downloading').length || 0;
   const { showNotification } = useNotification();
 
@@ -111,7 +116,9 @@ export default function Player() {
     // Async init to register components first
     (async () => {
       // Register theater button and seek buttons
+      console.time('[Player] initVideoJsComponents');
       await initVideoJsComponents();
+      console.timeEnd('[Player] initVideoJsComponents');
 
       if (disposed) return; // Check if cleanup already ran
 
@@ -197,6 +204,18 @@ export default function Player() {
     };
   }, [isMobile]); // Runs once - container is always in DOM
 
+  // ==================== APPLY DEFAULT PLAYBACK SPEED ====================
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!playerReady || !player || player.isDisposed()) return;
+    if (!settings?.default_playback_speed) return;
+
+    const speed = parseFloat(settings.default_playback_speed);
+    if (!isNaN(speed) && speed > 0) {
+      player.playbackRate(speed);
+    }
+  }, [playerReady, settings?.default_playback_speed]);
+
   // ==================== SET VIDEO SOURCE ====================
   useEffect(() => {
     const player = playerRef.current;
@@ -206,6 +225,8 @@ export default function Player() {
 
     const videoSrc = getVideoSource(playerVideoData.file_path);
     if (!videoSrc) return;
+
+    console.log('[Player] Setting source, time since mount:', performance.now() - mountTime, 'ms');
 
     // Reset watched flag for new video
     hasMarkedWatchedRef.current = false;
@@ -228,6 +249,7 @@ export default function Player() {
 
     // Restore progress when metadata loads
     player.one('loadedmetadata', () => {
+      console.log('[Player] loadedmetadata, time since mount:', performance.now() - mountTime, 'ms');
       const duration = player.duration();
       const startTime = playerVideoData.playback_seconds &&
         playerVideoData.playback_seconds >= 5 &&

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQueries } from '@tanstack/react-query';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
-import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue } from '../api/queries';
+import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
 import { getVideoSource, WATCHED_THRESHOLD, initVideoJsComponents } from '../utils/videoUtils';
@@ -122,6 +122,10 @@ function ActionButtons({ handleBack, setShowPlaylistMenu, toggleWatched, setShow
 }
 
 export default function PlaylistPlayer() {
+  // Debug timing
+  const mountTime = performance.now();
+  console.log('[PlaylistPlayer] Component mounted');
+
   const { playlistId, categoryId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -138,6 +142,7 @@ export default function PlaylistPlayer() {
   const { data: playlist, isLoading: isLoadingPlaylist } = usePlaylist(playlistId, { enabled: !!playlistId });
   const { data: playlistsData, isLoading: isLoadingCategory } = usePlaylists({ enabled: !!categoryId });
   const { data: queueData } = useQueue();
+  const { data: settings } = useSettings();
   const queueCount = queueData?.queue_items?.filter(i => i.status === 'pending' || i.status === 'downloading').length || 0;
 
   // For category mode, get all playlists in this category
@@ -494,7 +499,9 @@ export default function PlaylistPlayer() {
     let disposed = false;
 
     (async () => {
+      console.time('[PlaylistPlayer] initVideoJsComponents');
       await initVideoJsComponents();
+      console.timeEnd('[PlaylistPlayer] initVideoJsComponents');
 
       if (disposed) return;
 
@@ -573,6 +580,18 @@ export default function PlaylistPlayer() {
     };
   }, [isMobile, isTheaterMode, handleTheaterModeChange]);
 
+  // Apply default playback speed from settings
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!playerReady || !player || player.isDisposed()) return;
+    if (!settings?.default_playback_speed) return;
+
+    const speed = parseFloat(settings.default_playback_speed);
+    if (!isNaN(speed) && speed > 0) {
+      player.playbackRate(speed);
+    }
+  }, [playerReady, settings?.default_playback_speed]);
+
   // Desktop: Set video source when currentVideo changes
   useEffect(() => {
     const player = playerRef.current;
@@ -581,6 +600,7 @@ export default function PlaylistPlayer() {
     if (!currentVideo?.file_path) return;
 
     const videoSrc = getVideoSource(currentVideo.file_path);
+    console.log('[PlaylistPlayer] Setting source, time since mount:', performance.now() - mountTime, 'ms');
     // Debug logging to localStorage
     const logEntry = {
       time: new Date().toISOString(),
@@ -610,6 +630,7 @@ export default function PlaylistPlayer() {
     } catch (e) {}
 
     player.one('loadedmetadata', () => {
+      console.log('[PlaylistPlayer] loadedmetadata, time since mount:', performance.now() - mountTime, 'ms');
       const duration = player.duration();
 
       // Add SponsorBlock segment markers to progress bar
