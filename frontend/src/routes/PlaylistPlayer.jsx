@@ -3,6 +3,8 @@ import { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
+import 'videojs-mobile-ui';
+import 'videojs-mobile-ui/dist/videojs-mobile-ui.css';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
@@ -551,7 +553,7 @@ export default function PlaylistPlayer() {
             'fullscreenToggle',
           ];
 
-      // Mobile: use video.js defaults for proper touch handling
+      // Mobile: use video.js defaults + mobile-ui plugin for touch handling
       // Desktop: custom control bar with extra features
       const playerOptions = mobile
         ? {
@@ -560,9 +562,7 @@ export default function PlaylistPlayer() {
             preload: 'metadata',
             autoplay: false,
             experimentalSvgIcons: true,
-            userActions: {
-              doubleClick: true,  // Double-tap for fullscreen
-            },
+            // Let videojs-mobile-ui handle touch interactions
           }
         : {
             controls: true,
@@ -579,6 +579,11 @@ export default function PlaylistPlayer() {
       vjs = videojs(videoEl, playerOptions);
 
       playerRef.current = vjs;
+
+      // Enable mobile UI plugin for touch-friendly experience
+      if (mobile) {
+        vjs.mobileUi();
+      }
 
       // Add theater button callback
       const theaterBtn = vjs.controlBar.getChild('theaterButton');

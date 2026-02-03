@@ -46,19 +46,7 @@
   display: flex !important;
 }
 
-/* Hide controls when user is inactive (after video has started) */
-.video-js.vjs-has-started.vjs-user-inactive .vjs-control-bar {
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
-}
-
-/* Show controls when user is active */
-.video-js.vjs-has-started.vjs-user-active .vjs-control-bar {
-  opacity: 1;
-  pointer-events: auto;
-  transition: opacity 0.3s ease;
-}
+/* Control visibility is handled by video.js and videojs-mobile-ui plugin */
 
 /* Progress bar */
 .video-js .vjs-play-progress,
@@ -618,19 +606,4 @@
   }
 }
 
-/* ===== MOBILE - Touch-friendly controls ===== */
-@media (pointer: coarse), (max-width: 767px) {
-  .video-js .vjs-control-bar {
-    height: 44px;
-  }
-
-  .video-js .vjs-button {
-    width: 44px;
-    height: 44px;
-  }
-
-  /* Hide progress bar when not fullscreen - too wide for mobile */
-  .video-js:not(.vjs-fullscreen) .vjs-progress-control {
-    display: none !important;
-  }
-}
+/* Mobile touch handling is provided by videojs-mobile-ui plugin */
