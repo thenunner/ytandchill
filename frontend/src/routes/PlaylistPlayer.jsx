@@ -547,6 +547,7 @@ export default function PlaylistPlayer() {
             'progressControl',
             'remainingTimeDisplay',
             'playbackRateMenuButton',
+            'pictureInPictureToggle',
             'theaterButton',
             'fullscreenToggle',
           ];
@@ -601,6 +602,71 @@ export default function PlaylistPlayer() {
       player.playbackRate(speed);
     }
   }, [playerReady, settings?.default_playback_speed]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    if (!playerReady) return;
+
+    const handleKeyDown = (e) => {
+      const player = playerRef.current;
+      if (!player || player.isDisposed()) return;
+
+      // Don't handle if user is typing in an input
+      const tag = e.target.tagName.toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || e.target.isContentEditable) return;
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+        case 'k':
+          e.preventDefault();
+          if (player.paused()) {
+            player.play();
+          } else {
+            player.pause();
+          }
+          break;
+        case 'j':
+          e.preventDefault();
+          player.currentTime(player.currentTime() - 10);
+          break;
+        case 'l':
+          e.preventDefault();
+          player.currentTime(player.currentTime() + 10);
+          break;
+        case 'm':
+          e.preventDefault();
+          player.muted(!player.muted());
+          break;
+        case 'f':
+          e.preventDefault();
+          if (player.isFullscreen()) {
+            player.exitFullscreen();
+          } else {
+            player.requestFullscreen();
+          }
+          break;
+        case 'arrowleft':
+          e.preventDefault();
+          player.currentTime(player.currentTime() - 5);
+          break;
+        case 'arrowright':
+          e.preventDefault();
+          player.currentTime(player.currentTime() + 5);
+          break;
+        case 'arrowup':
+          e.preventDefault();
+          player.volume(Math.min(1, player.volume() + 0.1));
+          break;
+        case 'arrowdown':
+          e.preventDefault();
+          player.volume(Math.max(0, player.volume() - 0.1));
+          break;
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [playerReady]);
 
   // Desktop: Set video source when currentVideo changes
   useEffect(() => {
