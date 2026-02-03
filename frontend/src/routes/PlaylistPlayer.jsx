@@ -582,7 +582,11 @@ export default function PlaylistPlayer() {
 
       // Enable mobile UI plugin for touch-friendly experience
       if (mobile) {
-        vjs.mobileUi();
+        vjs.mobileUi({
+          fullscreen: {
+            exitOnRotate: false  // Stay fullscreen when rotating back to portrait
+          }
+        });
 
         // Add double-tap center for fullscreen toggle
         let lastTapTime = 0;
