@@ -177,6 +177,9 @@ export default function Player() {
             preload: 'metadata',
             autoplay: false,
             experimentalSvgIcons: true,
+            userActions: {
+              doubleClick: true,  // Double-tap for fullscreen
+            },
           }
         : {
             controls: true,
