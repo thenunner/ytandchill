@@ -217,11 +217,26 @@ export default function Player() {
   }, [playerReady, settings?.default_playback_speed]);
 
   // ==================== SET VIDEO SOURCE ====================
+  // Debug: log when dependencies change
+  useEffect(() => {
+    console.log('[Player] playerReady changed:', playerReady, 'time:', performance.now() - mountTime, 'ms');
+  }, [playerReady, mountTime]);
+
+  useEffect(() => {
+    console.log('[Player] playerVideoData changed:', !!playerVideoData?.file_path, 'time:', performance.now() - mountTime, 'ms');
+  }, [playerVideoData?.file_path, mountTime]);
+
   useEffect(() => {
     const player = playerRef.current;
 
-    if (!playerReady || !player || player.isDisposed()) return;
-    if (!playerVideoData?.file_path) return;
+    if (!playerReady || !player || player.isDisposed()) {
+      console.log('[Player] Source effect: waiting for player', { playerReady, hasPlayer: !!player });
+      return;
+    }
+    if (!playerVideoData?.file_path) {
+      console.log('[Player] Source effect: waiting for data', { hasFilePath: !!playerVideoData?.file_path });
+      return;
+    }
 
     const videoSrc = getVideoSource(playerVideoData.file_path);
     if (!videoSrc) return;
