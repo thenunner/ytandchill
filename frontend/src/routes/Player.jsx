@@ -239,6 +239,12 @@ export default function Player() {
 
     console.log('[Player] Setting source', performance.now() - mountTimeRef.current, 'ms', videoSrc);
 
+    // Test network fetch speed independently
+    const fetchStart = performance.now();
+    fetch(videoSrc, { method: 'HEAD' })
+      .then(() => console.log('[Player] HEAD request completed in', performance.now() - fetchStart, 'ms'))
+      .catch(e => console.log('[Player] HEAD request failed', e));
+
     // Reset watched flag for new video
     hasMarkedWatchedRef.current = false;
 
@@ -258,6 +264,11 @@ export default function Player() {
         );
       }
     } catch (e) {}
+
+    // Debug: track video loading events
+    player.one('loadstart', () => console.log('[Player] loadstart', performance.now() - mountTimeRef.current, 'ms'));
+    player.one('progress', () => console.log('[Player] first progress', performance.now() - mountTimeRef.current, 'ms'));
+    player.one('canplay', () => console.log('[Player] canplay', performance.now() - mountTimeRef.current, 'ms'));
 
     // Restore progress when metadata loads
     player.one('loadedmetadata', () => {
