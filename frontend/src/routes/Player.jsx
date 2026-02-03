@@ -28,9 +28,13 @@ export default function Player() {
   const { videoId } = useParams();
   const queryClient = useQueryClient();
 
-  // Cancel all pending queries on mount to free up connections for video
+  // Cancel all pending requests on mount to free up connections for video
   useEffect(() => {
-    console.log('[Player] Cancelling pending queries');
+    console.log('[Player] Stopping all pending loads');
+    // window.stop() aborts all in-flight requests (images, fetches, etc.)
+    // This frees up connection slots for the video to load immediately
+    window.stop();
+    // Re-enable queries we need
     queryClient.cancelQueries();
   }, [queryClient]);
   const navigate = useNavigate();

@@ -129,8 +129,11 @@ export default function PlaylistPlayer() {
   const { showNotification } = useNotification();
   const queryClient = useQueryClient();
 
-  // Cancel all pending queries on mount to free up connections for video
+  // Cancel all pending requests on mount to free up connections for video
   useEffect(() => {
+    // window.stop() aborts all in-flight requests (images, fetches, etc.)
+    // This frees up connection slots for the video to load immediately
+    window.stop();
     queryClient.cancelQueries();
   }, [queryClient]);
 
