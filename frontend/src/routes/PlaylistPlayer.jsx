@@ -556,6 +556,7 @@ export default function PlaylistPlayer() {
         fill: true,
         preload: 'metadata',
         autoplay: false,  // Don't autoplay - iOS blocks it and it causes issues
+        experimentalSvgIcons: true,
         playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
         controlBar: {
           children: controlBarChildren,
