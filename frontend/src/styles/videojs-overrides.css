@@ -17,10 +17,7 @@
     display: none !important;
   }
 
-  /* Ensure video element doesn't block controls */
-  .video-js .vjs-tech {
-    pointer-events: none !important;
-  }
+  /* Note: Removed pointer-events:none from .vjs-tech to allow tap-to-play */
 }
 
 /* ===== VIDEO.JS CUSTOM THEMING ===== */
