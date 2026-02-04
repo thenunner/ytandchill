@@ -223,12 +223,11 @@ export async function initVideoJsComponents() {
 
       createEl() {
         const el = super.createEl('button', {
-          className: this.buildCSSClass(),
+          className: 'vjs-theater-button vjs-control vjs-button',
         });
 
-        const iconPlaceholder = el.querySelector('.vjs-icon-placeholder');
-        if (iconPlaceholder) {
-          iconPlaceholder.innerHTML = `
+        el.innerHTML = `
+          <span class="vjs-icon-placeholder" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="theater-icon-expand">
               <line x1="2" y1="5" x2="2" y2="19"></line>
               <line x1="11" y1="12" x2="4" y2="12"></line>
@@ -245,14 +244,14 @@ export async function initVideoJsComponents() {
               <line x1="23" y1="12" x2="18" y2="12"></line>
               <polyline points="21,9 18,12 21,15"></polyline>
             </svg>
-          `;
-        }
+          </span>
+        `;
 
         return el;
       }
     }
 
-    videojs.registerComponent('TheaterButton', TheaterButton);
+    videojs.registerComponent('theaterButton', TheaterButton);
     theaterButtonRegistered = true;
   }
 
