@@ -166,7 +166,7 @@ export default function Player() {
             'remainingTimeDisplay',
             'playbackRateMenuButton',
             'pictureInPictureToggle',
-            'theaterButton',
+            'TheaterButton',
             'fullscreenToggle',
           ];
 
