@@ -126,6 +126,16 @@ export function useQueueSSE() {
         }
       });
 
+      // Listen for format choice events (video without H.264 available)
+      eventSource.addEventListener('format-choice', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          queryClient.setQueryData(['formatChoice'], data);
+        } catch (parseError) {
+          console.warn('Failed to parse format-choice SSE data:', parseError);
+        }
+      });
+
       eventSource.onerror = () => {
         setIsConnected(false);
         eventSource.close();

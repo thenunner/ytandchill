@@ -87,6 +87,11 @@ class DownloadWorker:
         self.last_error_message = None  # Last download error for UI display
         self.cookie_warning_message = None  # Persistent cookie warning (cleared on user interaction)
 
+        # Format choice state - for videos without H.264 format available
+        self.format_choice_pending = None  # {video_id, yt_id, title, queue_item_id} or None
+        self._format_choice_event = threading.Event()  # Signal when user responds
+        self._format_choice_result = None  # 'reencode' or 'skip'
+
         # Ensure download directory exists with proper permissions
         makedirs_777(download_dir)
 
@@ -174,6 +179,221 @@ class DownloadWorker:
             # They will be cleared automatically when a download actually succeeds
 
         self._emit_queue_update(force=True)
+
+    def handle_format_choice(self, choice):
+        """
+        Handle user's format choice for a video without H.264 format.
+
+        Args:
+            choice: 'reencode' to download and re-encode, 'skip' to mark as ignored
+        """
+        logger.info(f"Format choice received: {choice}")
+        self._format_choice_result = choice
+        self._format_choice_event.set()
+
+    def _check_format_compatibility(self, video_url):
+        """
+        Check if H.264 format is available for the video.
+
+        Returns:
+            tuple: (has_h264, info_dict) - whether H.264 is available and the video info
+        """
+        try:
+            ydl_opts = {
+                'quiet': True,
+                'no_warnings': True,
+            }
+
+            # Add cookies if available
+            data_dir = os.environ.get('DATA_DIR', 'data')
+            cookies_path = os.path.join(data_dir, 'cookies.txt')
+            cookie_source = self.settings_manager.get('cookie_source', 'file')
+
+            if cookie_source == 'file' and os.path.exists(cookies_path):
+                ydl_opts['cookiefile'] = cookies_path
+            elif cookie_source == 'browser':
+                browser_type = self.settings_manager.get('cookie_browser', 'firefox')
+                if os.path.exists('/.dockerenv'):
+                    ydl_opts['cookiesfrombrowser'] = (browser_type, '/firefox_profile', None, None)
+                else:
+                    ydl_opts['cookiesfrombrowser'] = (browser_type, None, None, None)
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(video_url, download=False)
+                formats = info.get('formats', [])
+
+                # Check for H.264/avc1 formats with video
+                h264_formats = [
+                    f for f in formats
+                    if f.get('vcodec', '').startswith('avc1') and f.get('vcodec') != 'none'
+                ]
+
+                has_h264 = len(h264_formats) > 0
+                logger.info(f"Format check for {info.get('id', 'unknown')}: H.264 available = {has_h264}, total formats = {len(formats)}, H.264 formats = {len(h264_formats)}")
+
+                return has_h264, info
+
+        except Exception as e:
+            logger.error(f"Error checking format compatibility: {e}")
+            # On error, assume H.264 is available to avoid blocking
+            return True, None
+
+    def _download_and_reencode(self, session, video, queue_item, channel_dir, progress_hook):
+        """
+        Download best available format and re-encode to H.264.
+
+        Returns:
+            tuple: (success, ext) - whether download succeeded and file extension
+        """
+        import subprocess
+
+        video_url = f'https://www.youtube.com/watch?v={video.yt_id}'
+        temp_output = os.path.join(channel_dir, f'{video.yt_id}_temp.%(ext)s')
+        final_output = os.path.join(channel_dir, f'{video.yt_id}.mp4')
+
+        # Configure yt-dlp for best quality (no codec restriction)
+        ydl_opts = {
+            'format': 'bestvideo+bestaudio/best',
+            'outtmpl': temp_output,
+            'quiet': False,
+            'verbose': True,
+            'no_warnings': False,
+            'logger': YtDlpLogger(activity_callback=self._on_ytdlp_activity),
+            'progress_hooks': [progress_hook],
+            'nocheckcertificate': True,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+            'socket_timeout': 30,
+            'retries': 3,
+            'continue': True,
+            'noprogress': True,
+            'concurrent_fragment_downloads': 4,
+            'merge_output_format': 'mkv',  # Use MKV for intermediate (handles more codecs)
+            'postprocessor_hooks': [self._postprocessor_hook],
+        }
+
+        # Add cookies
+        data_dir = os.environ.get('DATA_DIR', 'data')
+        cookies_path = os.path.join(data_dir, 'cookies.txt')
+        cookie_source = self.settings_manager.get('cookie_source', 'file')
+
+        if cookie_source == 'file' and os.path.exists(cookies_path):
+            ydl_opts['cookiefile'] = cookies_path
+        elif cookie_source == 'browser':
+            browser_type = self.settings_manager.get('cookie_browser', 'firefox')
+            if os.path.exists('/.dockerenv'):
+                ydl_opts['cookiesfrombrowser'] = (browser_type, '/firefox_profile', None, None)
+            else:
+                ydl_opts['cookiesfrombrowser'] = (browser_type, None, None, None)
+
+        try:
+            # Step 1: Download with best available format
+            logger.info(f"Re-encode: Downloading best available format for {video.yt_id}")
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(video_url, download=True)
+                downloaded_ext = info.get('ext', 'mkv')
+
+            # Find the downloaded file
+            downloaded_file = os.path.join(channel_dir, f'{video.yt_id}_temp.{downloaded_ext}')
+            if not os.path.exists(downloaded_file):
+                # Try common extensions
+                for ext in ['mkv', 'webm', 'mp4']:
+                    test_path = os.path.join(channel_dir, f'{video.yt_id}_temp.{ext}')
+                    if os.path.exists(test_path):
+                        downloaded_file = test_path
+                        break
+
+            if not os.path.exists(downloaded_file):
+                logger.error(f"Re-encode: Downloaded file not found for {video.yt_id}")
+                return False, None
+
+            logger.info(f"Re-encode: Downloaded file: {downloaded_file}")
+
+            # Step 2: Re-encode to H.264/AAC MP4
+            logger.info(f"Re-encode: Starting ffmpeg re-encode for {video.yt_id}")
+
+            # Update phase to show re-encoding in UI
+            with self._download_lock:
+                if self.current_download:
+                    self.current_download['phase'] = 'postprocessing'
+                    self.current_download['postprocessor'] = 'Re-encoding to H.264'
+                    self.current_download['postprocess_start_time'] = time.time()
+
+            self._emit_queue_update(force=True)
+
+            ffmpeg_cmd = [
+                'ffmpeg', '-i', downloaded_file,
+                '-c:v', 'libx264',
+                '-preset', 'medium',
+                '-crf', '23',
+                '-c:a', 'aac',
+                '-b:a', '192k',
+                '-movflags', '+faststart',
+                '-y',  # Overwrite output
+                final_output
+            ]
+
+            logger.info(f"Re-encode: Running ffmpeg command: {' '.join(ffmpeg_cmd)}")
+
+            process = subprocess.Popen(
+                ffmpeg_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
+
+            # Wait for ffmpeg to complete, checking for cancellation
+            while process.poll() is None:
+                with self._download_lock:
+                    if self.current_download and self.current_download.get('cancelled'):
+                        logger.info("Re-encode: Cancellation requested, killing ffmpeg")
+                        process.kill()
+                        # Clean up temp file
+                        if os.path.exists(downloaded_file):
+                            os.remove(downloaded_file)
+                        if os.path.exists(final_output):
+                            os.remove(final_output)
+                        raise Exception('Download cancelled by user')
+
+                    # Update activity timestamp
+                    if self.current_download:
+                        self.current_download['last_progress_time'] = time.time()
+                        self.current_download['last_file_size_change'] = time.time()
+
+                time.sleep(1)
+
+            stdout, stderr = process.communicate()
+
+            if process.returncode != 0:
+                logger.error(f"Re-encode: ffmpeg failed with code {process.returncode}: {stderr.decode()}")
+                # Clean up temp file
+                if os.path.exists(downloaded_file):
+                    os.remove(downloaded_file)
+                return False, None
+
+            # Step 3: Clean up temp file
+            if os.path.exists(downloaded_file):
+                os.remove(downloaded_file)
+                logger.info(f"Re-encode: Removed temp file {downloaded_file}")
+
+            logger.info(f"Re-encode: Successfully re-encoded {video.yt_id} to H.264")
+            return True, 'mp4'
+
+        except Exception as e:
+            error_str = str(e)
+            logger.error(f"Re-encode: Error during download/re-encode for {video.yt_id}: {error_str}")
+
+            # Clean up any temp files
+            for ext in ['mkv', 'webm', 'mp4']:
+                temp_path = os.path.join(channel_dir, f'{video.yt_id}_temp.{ext}')
+                if os.path.exists(temp_path):
+                    try:
+                        os.remove(temp_path)
+                    except:
+                        pass
+
+            if 'cancelled' in error_str.lower():
+                raise
+
+            return False, None
     
     def cancel_current(self):
         with self._download_lock:
@@ -1111,25 +1331,115 @@ class DownloadWorker:
         if not video:
             return
 
-        # 2. Setup progress tracking and watchdog
+        # 2. Check format compatibility before proceeding
+        video_url = f'https://www.youtube.com/watch?v={video.yt_id}'
+        has_h264, _info = self._check_format_compatibility(video_url)
+
+        if not has_h264:
+            logger.warning(f"No H.264 format available for {video.yt_id} - {video.title}")
+
+            # Set pending state and pause for user decision
+            self.format_choice_pending = {
+                'video_id': video.id,
+                'yt_id': video.yt_id,
+                'title': video.title,
+                'queue_item_id': queue_item.id,
+                'thumb_url': video.thumb_url,
+            }
+
+            # Reset video status back to queued while waiting
+            video.status = 'queued'
+            session.commit()
+
+            # Emit SSE event to notify frontend
+            self._emit_queue_update(force=True)
+            queue_events.emit('format-choice', self.format_choice_pending)
+
+            logger.info(f"Waiting for user format choice for {video.yt_id}")
+
+            # Wait for user response (blocking)
+            self._format_choice_event.clear()
+            self._format_choice_result = None
+
+            # Wait indefinitely until user responds
+            while not self._format_choice_event.is_set():
+                # Check if cancelled or paused
+                if not self.running:
+                    logger.info("Worker stopped while waiting for format choice")
+                    self.format_choice_pending = None
+                    return
+                self._format_choice_event.wait(timeout=1)
+
+            # Process user choice
+            choice = self._format_choice_result
+            self.format_choice_pending = None
+            self._emit_queue_update(force=True)
+
+            if choice == 'skip':
+                logger.info(f"User chose to skip {video.yt_id}, marking as ignored")
+                video.status = 'ignored'
+                session.delete(queue_item)
+                session.commit()
+                queue_events.emit('video:changed')
+                return
+
+            elif choice == 'reencode':
+                logger.info(f"User chose to re-encode {video.yt_id}")
+                # Update status back to downloading
+                video.status = 'downloading'
+                session.commit()
+                self._emit_queue_update(force=True)
+
+                # Setup progress tracking for re-encode
+                watchdog_thread, progress_hook = self._setup_progress_tracking(queue_item, video, channel_dir)
+
+                # Download thumbnail
+                self._download_thumbnail(video, channel_dir)
+
+                # Execute re-encode download
+                try:
+                    success, ext = self._download_and_reencode(session, video, queue_item, channel_dir, progress_hook)
+                    cancelled = False
+                    timed_out = False
+                    already_handled = False
+                except Exception as e:
+                    if 'cancelled' in str(e).lower():
+                        success = False
+                        cancelled = True
+                        timed_out = False
+                        already_handled = False
+                        ext = None
+                    else:
+                        raise
+
+                # Finalize
+                self._finalize_download(
+                    session, video, queue_item, channel, channel_dir,
+                    success, cancelled, timed_out, already_handled, ext
+                )
+                self._apply_inter_download_delay(success)
+                return
+
+        # Normal H.264 download path
+        # 3. Setup progress tracking and watchdog
         watchdog_thread, progress_hook = self._setup_progress_tracking(queue_item, video, channel_dir)
 
-        # 3. Download thumbnail
+        # 4. Download thumbnail
         self._download_thumbnail(video, channel_dir)
 
-        # 4. Configure yt-dlp options (pass duration for SponsorBlock skip check)
+        # 5. Configure yt-dlp options (pass duration for SponsorBlock skip check)
         ydl_opts, cookies_path = self._configure_download_options(channel_dir, video.yt_id, progress_hook, video.duration_sec)
 
-        # 5. Execute download with retries
+        # 6. Execute download with retries
         success, cancelled, _rate_limited, timed_out, already_handled, ext = self._execute_download(
             session, video, queue_item, channel_dir, ydl_opts, cookies_path
         )
 
-        # 6. Finalize download (update status, file info, etc.)
+        # 7. Finalize download (update status, file info, etc.)
         self._finalize_download(
             session, video, queue_item, channel, channel_dir,
             success, cancelled, timed_out, already_handled, ext
         )
 
-        # 7. Apply delay before next download
+        # 8. Apply delay before next download
         self._apply_inter_download_delay(success)

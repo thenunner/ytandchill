@@ -107,6 +107,9 @@ def get_queue():
         # Get cookie warning message from download worker
         cookie_warning_message = _download_worker.cookie_warning_message if hasattr(_download_worker, 'cookie_warning_message') else None
 
+        # Get format choice pending state from download worker
+        format_choice_pending = _download_worker.format_choice_pending if hasattr(_download_worker, 'format_choice_pending') else None
+
         return jsonify({
             'queue_items': queue_items,
             'current_download': current_download,
@@ -118,7 +121,8 @@ def get_queue():
             'auto_refresh_enabled': auto_refresh_enabled,
             'rate_limit_message': rate_limit_message,
             'last_error_message': last_error_message,
-            'cookie_warning_message': cookie_warning_message
+            'cookie_warning_message': cookie_warning_message,
+            'format_choice_pending': format_choice_pending
         })
 
 
@@ -181,6 +185,9 @@ def _get_queue_state():
         last_error_message = _download_worker.last_error_message if hasattr(_download_worker, 'last_error_message') else None
         cookie_warning_message = _download_worker.cookie_warning_message if hasattr(_download_worker, 'cookie_warning_message') else None
 
+        # Get format choice pending state from download worker
+        format_choice_pending = _download_worker.format_choice_pending if hasattr(_download_worker, 'format_choice_pending') else None
+
         return {
             'queue_items': queue_items,
             'current_download': current_download,
@@ -192,7 +199,8 @@ def _get_queue_state():
             'auto_refresh_enabled': auto_refresh_enabled,
             'rate_limit_message': rate_limit_message,
             'last_error_message': last_error_message,
-            'cookie_warning_message': cookie_warning_message
+            'cookie_warning_message': cookie_warning_message,
+            'format_choice_pending': format_choice_pending
         }
 
 
@@ -241,6 +249,9 @@ def queue_stream():
                     elif event['type'] == 'toast:dismissed':
                         # Broadcast toast dismissal to all clients for cross-device sync
                         yield f"event: toast\ndata: {json.dumps({'action': 'dismiss', 'id': event.get('data', {}).get('id')})}\n\n"
+                    elif event['type'] == 'format-choice':
+                        # Send format choice modal data to all clients
+                        yield f"event: format-choice\ndata: {json.dumps(event.get('data', {}))}\n\n"
                 except Empty:
                     # Send heartbeat comment to keep connection alive
                     yield ": heartbeat\n\n"
@@ -404,6 +415,32 @@ def resume_queue():
 def cancel_current_download():
     _download_worker.cancel_current()
     return jsonify({'status': 'cancelled'})
+
+
+@queue_bp.route('/api/queue/format-choice', methods=['POST'])
+def handle_format_choice():
+    """Handle user's format choice for videos without H.264 format available."""
+    data = request.json
+    video_id = data.get('video_id')
+    choice = data.get('choice')  # 'reencode' or 'skip'
+
+    if not video_id:
+        return jsonify({'error': 'video_id is required'}), 400
+
+    if choice not in ['reencode', 'skip']:
+        return jsonify({'error': 'choice must be "reencode" or "skip"'}), 400
+
+    # Verify this is the video we're waiting for
+    pending = _download_worker.format_choice_pending
+    if not pending or pending.get('video_id') != video_id:
+        return jsonify({'error': 'No format choice pending for this video'}), 400
+
+    logger.info(f"Format choice received for video {video_id}: {choice}")
+
+    # Signal the download worker with the user's choice
+    _download_worker.handle_format_choice(choice)
+
+    return jsonify({'status': 'accepted', 'choice': choice})
 
 
 @queue_bp.route('/api/queue/<int:item_id>', methods=['DELETE'])

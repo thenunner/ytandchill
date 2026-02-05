@@ -570,6 +570,30 @@ export function useClearQueue() {
   });
 }
 
+// Format choice - for videos without H.264 format available
+export function useFormatChoice() {
+  return useQuery({
+    queryKey: ['formatChoice'],
+    queryFn: () => null,  // Set via SSE only, no direct API call
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+}
+
+export function useFormatChoiceMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ videoId, choice }) => api.submitFormatChoice(videoId, choice),
+    onSuccess: () => {
+      // Clear the format choice state
+      queryClient.setQueryData(['formatChoice'], null);
+      queryClient.invalidateQueries({ queryKey: ['queue'] });
+      queryClient.invalidateQueries({ queryKey: ['videos'] });
+    },
+  });
+}
+
 // Settings - SSE init populates cache, SSE events invalidate on changes
 export function useSettings() {
   return useQuery({

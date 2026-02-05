@@ -1,10 +1,11 @@
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels, useFavoriteChannels, useSettings } from './api/queries';
+import { useQueue, useHealth, useAuthCheck, useFirstRunCheck, useChannels, useFavoriteChannels, useSettings, useFormatChoice, useFormatChoiceMutation } from './api/queries';
 import { useQueueSSE } from './hooks/useQueueSSE';
 import { useNotification } from './contexts/NotificationContext';
 import { useSelectionBar } from './contexts/PreferencesContext';
 import { useToastManager } from './hooks/useToastManager';
 import { useEffect, useState, useRef } from 'react';
+import { FormatChoiceModal } from './components/ui/QueueModals';
 import Discover from './routes/Discover';
 import Library from './routes/Library';
 import DiscoverChannel from './routes/DiscoverChannel';
@@ -85,6 +86,10 @@ function App() {
   const { data: favoriteLibrariesRaw } = useFavoriteChannels();
   const { data: settings } = useSettings();
   const { data: health } = useHealth();
+
+  // Format choice modal state - for videos without H.264 format
+  const { data: formatChoiceData } = useFormatChoice();
+  const formatChoiceMutation = useFormatChoiceMutation();
 
   // Filter favorites based on hide_empty_libraries setting
   const hideEmptyLibraries = settings?.hide_empty_libraries === 'true';
@@ -284,6 +289,19 @@ function App() {
 
       {/* Toast Notifications */}
       <Toast />
+
+      {/* Format Choice Modal - appears when video lacks H.264 format */}
+      <FormatChoiceModal
+        isOpen={!!(formatChoiceData || queueData?.format_choice_pending)}
+        data={formatChoiceData || queueData?.format_choice_pending}
+        onChoice={(choice) => {
+          const pending = formatChoiceData || queueData?.format_choice_pending;
+          if (pending?.video_id) {
+            formatChoiceMutation.mutate({ videoId: pending.video_id, choice });
+          }
+        }}
+        isLoading={formatChoiceMutation.isPending}
+      />
     </div>
   );
 }

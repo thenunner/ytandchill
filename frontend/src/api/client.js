@@ -363,6 +363,13 @@ class APIClient {
     });
   }
 
+  submitFormatChoice(videoId, choice) {
+    return this.request('/queue/format-choice', {
+      method: 'POST',
+      body: JSON.stringify({ video_id: videoId, choice }),
+    });
+  }
+
   // Toast sync (cross-device dismissal)
   dismissToast(toastId) {
     return this.request('/toast/dismiss', {
