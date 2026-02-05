@@ -516,9 +516,13 @@
     height: 18px;
   }
 
-  /* Progress control - smaller */
+  /* Progress control - smaller with distinct background */
   .video-js .vjs-progress-control {
     height: 40px;
+    background: hsla(var(--bg-primary) / 0.6);
+    border-radius: 6px;
+    margin: 0 4px;
+    padding: 0 8px;
   }
 
   .video-js .vjs-progress-holder {
@@ -534,6 +538,29 @@
     height: 40px;
     font-size: 12px;
     padding: 0 3px;
+  }
+
+  /* Time display group - compact spacing (0:00/0:00:00 style) */
+  .video-js .vjs-current-time,
+  .video-js .vjs-duration {
+    padding: 0 2px;
+    font-size: 12px;
+  }
+
+  .video-js .vjs-time-divider {
+    padding: 0;
+    min-width: auto;
+    font-size: 12px;
+  }
+
+  /* Tighter spacing for left-side controls to give seekbar more room */
+  .video-js .vjs-play-toggle,
+  .video-js .vjs-seek-forward-10 {
+    margin: 0;
+  }
+
+  .video-js .vjs-volume-panel {
+    margin: 0 2px 0 0;
   }
 
 }
