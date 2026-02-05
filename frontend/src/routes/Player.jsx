@@ -385,15 +385,32 @@ export default function Player() {
     // Restore progress when metadata loads
     player.one('loadedmetadata', () => {
       const duration = player.duration();
-      const startTime = playerVideoData.playback_seconds &&
-        playerVideoData.playback_seconds >= 5 &&
-        playerVideoData.playback_seconds < duration * 0.95
-          ? playerVideoData.playback_seconds
-          : 0;
+
+      // Check localStorage for more recent position (survives page refresh)
+      let startTime = 0;
+      const localData = localStorage.getItem(`video_progress_${playerVideoData.id}`);
+      if (localData) {
+        try {
+          const { time, timestamp } = JSON.parse(localData);
+          // Use localStorage if it's from last 24 hours and valid
+          if (Date.now() - timestamp < 24 * 60 * 60 * 1000 && time >= 5 && time < duration * 0.95) {
+            startTime = time;
+          }
+        } catch (e) {}
+      }
+
+      // Fall back to API data if no valid localStorage
+      if (startTime === 0 && playerVideoData.playback_seconds >= 5 &&
+          playerVideoData.playback_seconds < duration * 0.95) {
+        startTime = playerVideoData.playback_seconds;
+      }
 
       if (startTime > 0) {
         player.currentTime(startTime);
       }
+
+      // Clear localStorage after successful resume (API will have synced by now)
+      localStorage.removeItem(`video_progress_${playerVideoData.id}`);
 
       // Add SponsorBlock segment markers to progress bar
       const segments = playerVideoData.sponsorblock_segments || [];
@@ -429,7 +446,17 @@ export default function Player() {
 
     // Progress saving
     const handleTimeUpdate = () => {
-      // Save progress (debounced)
+      const currentTime = Math.floor(player.currentTime());
+
+      // Save to localStorage immediately (synchronous - survives refresh)
+      if (currentTime > 0 && playerVideoData?.id) {
+        localStorage.setItem(
+          `video_progress_${playerVideoData.id}`,
+          JSON.stringify({ time: currentTime, timestamp: Date.now() })
+        );
+      }
+
+      // Save to API (debounced)
       if (saveProgressTimeoutRef.current) {
         clearTimeout(saveProgressTimeoutRef.current);
       }
@@ -502,17 +529,24 @@ export default function Player() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerReady, playerVideoData?.id]); // Only re-run when player ready or video changes
 
-  // Save progress on page unload (refresh/close) - uses fetch with keepalive for reliable delivery
+  // Save progress on page unload (refresh/close)
+  // Uses localStorage as synchronous backup since fetch/keepalive may not complete before unload
   useEffect(() => {
     const handleBeforeUnload = () => {
       if (playerRef.current && !playerRef.current.isDisposed() && playerVideoData?.id) {
         const currentTime = Math.floor(playerRef.current.currentTime());
         if (currentTime > 0) {
+          // localStorage is synchronous - guaranteed to complete before unload
+          localStorage.setItem(
+            `video_progress_${playerVideoData.id}`,
+            JSON.stringify({ time: currentTime, timestamp: Date.now() })
+          );
+          // Also try fetch with keepalive as backup
           fetch(`/api/videos/${playerVideoData.id}`, {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ playback_seconds: currentTime }),
-            keepalive: true,  // Ensures request completes even after page unload
+            keepalive: true,
           });
         }
       }
@@ -521,6 +555,24 @@ export default function Player() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [playerVideoData?.id]);
+
+  // Clean up stale localStorage entries older than 7 days
+  useEffect(() => {
+    const prefix = 'video_progress_';
+    const maxAge = 7 * 24 * 60 * 60 * 1000;
+    Object.keys(localStorage)
+      .filter(k => k.startsWith(prefix))
+      .forEach(k => {
+        try {
+          const { timestamp } = JSON.parse(localStorage.getItem(k));
+          if (Date.now() - timestamp > maxAge) {
+            localStorage.removeItem(k);
+          }
+        } catch (e) {
+          localStorage.removeItem(k);
+        }
+      });
+  }, []);
 
   // Compute video source for mobile
   const videoSrc = playbackData?.file_path ? getVideoSource(playbackData.file_path) : null;
