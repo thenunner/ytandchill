@@ -516,17 +516,16 @@
     height: 18px;
   }
 
-  /* Progress control - smaller with distinct background */
+  /* Progress control - smaller */
   .video-js .vjs-progress-control {
     height: 40px;
-    background: hsla(var(--bg-primary) / 0.6);
-    border-radius: 6px;
     margin: 0 4px;
-    padding: 0 8px;
   }
 
+  /* Seekbar track - lighter color for visibility */
   .video-js .vjs-progress-holder {
     height: 5px;
+    background-color: hsla(var(--text-primary) / 0.3);
   }
 
   .video-js .vjs-play-progress:before {
