@@ -143,14 +143,13 @@ export default function Player() {
       const mobile = isMobileRef.current;
       const controlBarChildren = mobile
         ? [
-            'seekBackward10Button',
             'playToggle',
             'seekForward10Button',
             'volumePanel',
             'currentTimeDisplay',
             'timeDivider',
             'durationDisplay',
-            'progressControl',  // Hidden via CSS when not fullscreen
+            'progressControl',
             'playbackRateMenuButton',
             'fullscreenToggle',
           ]
@@ -179,16 +178,17 @@ export default function Player() {
             preload: 'metadata',
             autoplay: false,
             experimentalSvgIcons: true,
+            playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
             controlBar: {
               children: [
-                'seekBackward10Button',
                 'playToggle',
                 'seekForward10Button',
                 'volumePanel',
                 'currentTimeDisplay',
                 'timeDivider',
                 'durationDisplay',
-                'pictureInPictureToggle',
+                'progressControl',
+                'playbackRateMenuButton',
                 'fullscreenToggle',
               ],
             },
