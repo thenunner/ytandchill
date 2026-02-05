@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChannelsIcon, LibraryIcon, QueueIcon, SettingsIcon, HeartIcon, HistoryIcon } from './Icons';
+import { useClickOutside } from '../hooks/useClickOutside';
 
 // User/Me icon
 const UserIcon = ({ className = "w-5 h-5" }) => (
@@ -27,23 +28,8 @@ export default memo(function MobileBottomNav({ queueCount = 0, reviewCount = 0, 
   const popupRef = useRef(null);
 
   // Close popup when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (popupRef.current && !popupRef.current.contains(e.target)) {
-        setShowMePopup(false);
-      }
-    };
-
-    if (showMePopup) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
-    };
-  }, [showMePopup]);
+  const closePopup = useCallback(() => setShowMePopup(false), []);
+  useClickOutside(popupRef, closePopup, showMePopup);
 
   // Close popup on navigation
   useEffect(() => {

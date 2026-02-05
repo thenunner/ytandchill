@@ -6,6 +6,7 @@ import { useSelectionBar } from './contexts/PreferencesContext';
 import { useToastManager } from './hooks/useToastManager';
 import { useEffect, useState, useRef } from 'react';
 import { FormatChoiceModal } from './components/ui/QueueModals';
+import { SINGLES_CHANNEL_ID } from './constants';
 import Discover from './routes/Discover';
 import Library from './routes/Library';
 import DiscoverChannel from './routes/DiscoverChannel';
@@ -197,7 +198,7 @@ function App() {
 
   // Calculate total videos needing review across all channels (excluding Singles pseudo-channel)
   const reviewCount = channelsData
-    ?.filter(channel => channel.yt_id !== '__singles__')
+    ?.filter(channel => channel.yt_id !== SINGLES_CHANNEL_ID)
     ?.reduce((total, channel) => total + (channel.video_count || 0), 0) || 0;
 
   // Show loading screen while checking auth
@@ -245,6 +246,7 @@ function App() {
         collapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         reviewCount={reviewCount}
+        queueCount={queueCount}
       />
 
       {/* Main Content Area */}

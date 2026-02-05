@@ -9,7 +9,7 @@ services:
       - bridge
     ports:
       - "${PORT:-4099}:4099"
-      - "4098:4098"  # Dev server port
+      # - "4098:4098"  # Dev server port (uncomment for development only)
     environment:
       - PORT=4099
       - PUID=99   # Change to your UID (run 'id -u')

@@ -12,6 +12,7 @@ import { useGridColumns } from '../hooks/useGridColumns';
 import { SORT_OPTIONS } from '../utils/stickyBarOptions';
 import { DurationSettingsModal, CategoryManagementModal, SingleCategoryModal } from '../components/ui/DiscoverModals';
 import { ConfirmModal } from '../components/ui/SharedModals';
+import { SINGLES_CHANNEL_ID } from '../constants';
 
 export default function Discover() {
   const { data: channels, isLoading } = useChannels();
@@ -294,7 +295,7 @@ export default function Discover() {
     // Use selected channels if any, otherwise scan all (excluding Singles pseudo-channel)
     const channelsToScan = selectedChannels.length > 0
       ? channels.filter(c => selectedChannels.includes(c.id))
-      : channels.filter(c => c.yt_id !== '__singles__');
+      : channels.filter(c => c.yt_id !== SINGLES_CHANNEL_ID);
 
     if (channelsToScan.length === 0) {
       showNotification('No channels selected', 'info');
@@ -407,7 +408,7 @@ export default function Discover() {
   const filteredAndSortedChannels = useMemo(() => {
     // First filter by search (and exclude Singles pseudo-channel)
     let filtered = channels?.filter(channel =>
-      channel.yt_id !== '__singles__' &&
+      channel.yt_id !== SINGLES_CHANNEL_ID &&
       (channel.title || '').toLowerCase().includes(searchInput.toLowerCase())
     ) || [];
 

@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, memo, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDeleteVideo, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getTextSizes, formatDuration, formatDate, formatDateTime, formatFileSize, getStringSetting } from '../utils/utils';
 import { usePrefetchImage } from '../hooks/usePrefetchImage';
+import { useClickOutside } from '../hooks/useClickOutside';
 import AddToPlaylistMenu from './AddToPlaylistMenu';
 import { ConfirmDialog } from './ui/SharedModals';
 import { ThreeDotsIcon, CheckmarkIcon, TrashIcon, PlusIcon } from './Icons';
@@ -83,18 +84,8 @@ const VideoCard = memo(function VideoCard({
   }, [video.id, video.thumb_url]);
 
   // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setShowMenu(false);
-      }
-    };
-
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
-    }
-  }, [showMenu]);
+  const closeMenu = useCallback(() => setShowMenu(false), []);
+  useClickOutside(menuRef, closeMenu, showMenu);
 
   // Cleanup preview on unmount
   useEffect(() => {

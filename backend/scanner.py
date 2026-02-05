@@ -28,6 +28,39 @@ def get_cookies_path():
     return None
 
 
+def _extract_channel_thumbnail(info_dict, include_fallback=False):
+    """
+    Extract channel thumbnail URL from yt-dlp info dict.
+
+    Args:
+        info_dict: Dictionary from yt-dlp containing video/channel metadata
+        include_fallback: If True, fall back to video thumbnail when no channel avatar found
+
+    Returns:
+        Thumbnail URL string or None
+    """
+    # Check for channel thumbnails array (preferred)
+    thumb_fields = ['channel_thumbnails', 'uploader_thumbnails']
+    if include_fallback:
+        thumb_fields.append('thumbnails')
+
+    for thumb_field in thumb_fields:
+        thumbs = info_dict.get(thumb_field)
+        if thumbs and isinstance(thumbs, list):
+            # Get the highest quality thumbnail (last in list is usually highest)
+            for t in reversed(thumbs):
+                if isinstance(t, dict) and t.get('url'):
+                    return t['url']
+
+    # Fallback to video thumbnail if requested and no channel avatar found
+    if include_fallback:
+        video_id = info_dict.get('id')
+        if video_id:
+            return f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg'
+
+    return None
+
+
 def _run_ytdlp(args, timeout=300):
     """Run yt-dlp with common options and error handling.
 
@@ -113,22 +146,10 @@ def scan_channel_videos(channel_url, max_results=250):
 
         # Extract channel info from first video
         if not channel_info and data.get('channel_id'):
-            # Try to get channel avatar from thumbnails
-            channel_thumb = None
-            for thumb_field in ['channel_thumbnails', 'uploader_thumbnails']:
-                thumbs = data.get(thumb_field)
-                if thumbs and isinstance(thumbs, list):
-                    for t in reversed(thumbs):
-                        if isinstance(t, dict) and t.get('url'):
-                            channel_thumb = t['url']
-                            break
-                if channel_thumb:
-                    break
-
             channel_info = {
                 'id': data.get('channel_id'),
                 'title': data.get('channel') or data.get('uploader'),
-                'thumbnail': channel_thumb,  # May be None, will fallback to video thumb
+                'thumbnail': _extract_channel_thumbnail(data),  # May be None, will fallback to video thumb
             }
 
         video_id = data.get('id')
@@ -217,22 +238,10 @@ def scan_channel_videos_full(channel_url, max_results=50, progress_callback=None
 
         # Extract channel info from first entry
         if not channel_info and data.get('channel_id'):
-            # Try to get channel avatar from thumbnails
-            channel_thumb = None
-            for thumb_field in ['channel_thumbnails', 'uploader_thumbnails']:
-                thumbs = data.get(thumb_field)
-                if thumbs and isinstance(thumbs, list):
-                    for t in reversed(thumbs):
-                        if isinstance(t, dict) and t.get('url'):
-                            channel_thumb = t['url']
-                            break
-                if channel_thumb:
-                    break
-
             channel_info = {
                 'id': data.get('channel_id'),
                 'title': data.get('channel') or data.get('uploader'),
-                'thumbnail': channel_thumb,
+                'thumbnail': _extract_channel_thumbnail(data),
             }
 
         video_id = data.get('id')
@@ -340,26 +349,8 @@ def get_channel_info(channel_url):
         # Get channel title from available fields
         channel_title = data.get('channel') or data.get('playlist_channel') or data.get('uploader') or data.get('playlist_uploader') or 'Unknown'
 
-        # Try to get channel avatar/thumbnail from various fields
-        thumbnail = None
-
-        # Check for channel thumbnails array (yt-dlp sometimes includes this)
-        for thumb_field in ['channel_thumbnails', 'uploader_thumbnails', 'thumbnails']:
-            thumbs = data.get(thumb_field)
-            if thumbs and isinstance(thumbs, list):
-                # Get the highest quality thumbnail (last in list is usually highest)
-                for t in reversed(thumbs):
-                    if isinstance(t, dict) and t.get('url'):
-                        thumbnail = t['url']
-                        break
-            if thumbnail:
-                break
-
-        # Fallback to video thumbnail if no channel avatar found
-        if not thumbnail:
-            video_id = data.get('id')
-            if video_id:
-                thumbnail = f'https://img.youtube.com/vi/{video_id}/hqdefault.jpg'
+        # Get channel thumbnail with fallback to video thumbnail
+        thumbnail = _extract_channel_thumbnail(data, include_fallback=True)
 
         return {
             'id': channel_id,

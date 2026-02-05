@@ -1,6 +1,6 @@
 import { useState, memo } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useQueue, useFavoriteChannels, useSettings, useChannelThumbnailBatch } from '../api/queries';
+import { useFavoriteChannels, useSettings, useChannelThumbnailBatch } from '../api/queries';
 import {
   SettingsIcon, ChannelsIcon, LibraryIcon, QueueIcon, LogoutIcon,
   MenuIcon, CollapseIcon, HeartIcon, HistoryIcon
@@ -13,15 +13,12 @@ import {
  * @param {boolean} collapsed - Whether sidebar is collapsed
  * @param {function} onToggle - Callback to toggle collapsed state
  * @param {number} reviewCount - Badge count for Channels (videos to review)
+ * @param {number} queueCount - Badge count for Queue (passed from App.jsx to avoid duplicate fetch)
  */
-export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0 }) {
+export default memo(function Sidebar({ collapsed, onToggle, reviewCount = 0, queueCount = 0 }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [logoFailed, setLogoFailed] = useState(false);
-
-  // Fetch queue count for badge
-  const { data: queueData } = useQueue({});
-  const queueCount = queueData?.queue_items?.length || 0;
 
   // Fetch favorite channels and settings for filtering
   const { data: favoriteLibrariesRaw } = useFavoriteChannels();

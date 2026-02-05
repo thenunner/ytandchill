@@ -15,6 +15,59 @@ from events import queue_events
 logger = logging.getLogger(__name__)
 
 
+def _get_cookie_options(settings_manager, verbose=False):
+    """
+    Build yt-dlp cookie options based on settings.
+
+    Args:
+        settings_manager: Settings manager instance
+        verbose: If True, log information about cookie source
+
+    Returns:
+        dict: Cookie-related yt-dlp options (cookiefile or cookiesfrombrowser)
+    """
+    data_dir = os.environ.get('DATA_DIR', 'data')
+    cookies_path = os.path.join(data_dir, 'cookies.txt')
+    cookie_source = settings_manager.get('cookie_source', 'file')
+
+    opts = {}
+
+    if cookie_source == 'none':
+        if verbose:
+            logger.info('Downloads using anonymous access (no cookies)')
+
+    elif cookie_source == 'browser':
+        browser_type = settings_manager.get('cookie_browser', 'firefox')
+        if os.path.exists('/.dockerenv'):
+            opts['cookiesfrombrowser'] = (browser_type, '/firefox_profile', None, None)
+            if verbose:
+                logger.info(f'Using cookies from {browser_type} browser at /firefox_profile')
+        else:
+            opts['cookiesfrombrowser'] = (browser_type, None, None, None)
+            if verbose:
+                logger.info(f'Using cookies from {browser_type} browser (auto-detect profile)')
+
+    elif cookie_source == 'file':
+        if os.path.exists(cookies_path):
+            opts['cookiefile'] = cookies_path
+            if verbose:
+                logger.info('Using cookies.txt file for authentication')
+        elif verbose:
+            logger.warning('No cookies.txt file found - downloads may be rate-limited')
+
+    else:
+        if verbose:
+            logger.warning(f'Unknown cookie_source: {cookie_source}, using anonymous access')
+
+    return opts
+
+
+def _get_cookies_path():
+    """Get the path to the cookies.txt file."""
+    data_dir = os.environ.get('DATA_DIR', 'data')
+    return os.path.join(data_dir, 'cookies.txt')
+
+
 class YtDlpLogger:
     """Custom logger for yt-dlp that routes output to our logging system."""
 
@@ -202,21 +255,8 @@ class DownloadWorker:
             ydl_opts = {
                 'quiet': True,
                 'no_warnings': True,
+                **_get_cookie_options(self.settings_manager),
             }
-
-            # Add cookies if available
-            data_dir = os.environ.get('DATA_DIR', 'data')
-            cookies_path = os.path.join(data_dir, 'cookies.txt')
-            cookie_source = self.settings_manager.get('cookie_source', 'file')
-
-            if cookie_source == 'file' and os.path.exists(cookies_path):
-                ydl_opts['cookiefile'] = cookies_path
-            elif cookie_source == 'browser':
-                browser_type = self.settings_manager.get('cookie_browser', 'firefox')
-                if os.path.exists('/.dockerenv'):
-                    ydl_opts['cookiesfrombrowser'] = (browser_type, '/firefox_profile', None, None)
-                else:
-                    ydl_opts['cookiesfrombrowser'] = (browser_type, None, None, None)
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(video_url, download=False)
@@ -269,21 +309,8 @@ class DownloadWorker:
             'concurrent_fragment_downloads': 4,
             'merge_output_format': 'mkv',  # Use MKV for intermediate (handles more codecs)
             'postprocessor_hooks': [self._postprocessor_hook],
+            **_get_cookie_options(self.settings_manager),
         }
-
-        # Add cookies
-        data_dir = os.environ.get('DATA_DIR', 'data')
-        cookies_path = os.path.join(data_dir, 'cookies.txt')
-        cookie_source = self.settings_manager.get('cookie_source', 'file')
-
-        if cookie_source == 'file' and os.path.exists(cookies_path):
-            ydl_opts['cookiefile'] = cookies_path
-        elif cookie_source == 'browser':
-            browser_type = self.settings_manager.get('cookie_browser', 'firefox')
-            if os.path.exists('/.dockerenv'):
-                ydl_opts['cookiesfrombrowser'] = (browser_type, '/firefox_profile', None, None)
-            else:
-                ydl_opts['cookiesfrombrowser'] = (browser_type, None, None, None)
 
         try:
             # Step 1: Download with best available format
@@ -944,47 +971,9 @@ class DownloadWorker:
         if sponsorblock_categories:
             ydl_opts['sponsorblock_mark'] = sponsorblock_categories
 
-        # Add cookies if available
-        data_dir = os.environ.get('DATA_DIR', 'data')
-        cookies_path = os.path.join(data_dir, 'cookies.txt')
-
-        # Check cookie source setting (default: 'file' for backward compatibility)
-        cookie_source = self.settings_manager.get('cookie_source', 'file')
-
-        if cookie_source == 'none':
-            logger.info('Downloads using anonymous access (no cookies)')
-            # Don't set cookiefile or cookiesfrombrowser - yt-dlp will use anonymous access
-
-        elif cookie_source == 'browser':
-            browser_type = self.settings_manager.get('cookie_browser', 'firefox')
-            try:
-                # yt-dlp format: (browser_name, profile, keyring, container)
-                # Platform-specific handling:
-                # - Docker: use /firefox_profile mount point
-                # - Windows/Linux native: let yt-dlp auto-detect browser profile
-                if os.path.exists('/.dockerenv'):
-                    # Docker container - use mounted Firefox profile
-                    firefox_profile_path = '/firefox_profile'
-                    ydl_opts['cookiesfrombrowser'] = (browser_type, firefox_profile_path, None, None)
-                    logger.info(f'Using cookies from {browser_type} browser at {firefox_profile_path}')
-                else:
-                    # Native Windows/Linux - let yt-dlp auto-detect
-                    ydl_opts['cookiesfrombrowser'] = (browser_type, None, None, None)
-                    logger.info(f'Using cookies from {browser_type} browser (auto-detect profile)')
-            except Exception as e:
-                logger.warning(f'Failed to extract cookies from browser: {e}')
-                logger.warning('Browser cookie extraction failed - continuing without cookies')
-
-        elif cookie_source == 'file':
-            if os.path.exists(cookies_path):
-                ydl_opts['cookiefile'] = cookies_path
-                logger.info('Using cookies.txt file for authentication')
-            else:
-                logger.warning('No cookies.txt file found - downloads may be rate-limited')
-
-        else:
-            # Fallback for unknown values (shouldn't happen)
-            logger.warning(f'Unknown cookie_source: {cookie_source}, using anonymous access')
+        # Add cookies based on settings (with verbose logging for downloads)
+        ydl_opts.update(_get_cookie_options(self.settings_manager, verbose=True))
+        cookies_path = _get_cookies_path()
 
         # SponsorBlock: We fetch segments from API after download (not during)
         # Segments are stored in the database and skipped during playback

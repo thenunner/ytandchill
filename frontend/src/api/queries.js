@@ -281,14 +281,6 @@ export function useCategories() {
   });
 }
 
-export function useCategory(id) {
-  return useQuery({
-    queryKey: ['category', id],
-    queryFn: () => api.getCategory(id),
-    enabled: !!id,
-  });
-}
-
 export function useCreateCategory() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -497,12 +489,6 @@ export function useAddToQueueBulk() {
   });
 }
 
-export function usePauseQueue() {
-  return useMutation({
-    mutationFn: () => api.pauseQueue(),
-  });
-}
-
 export function useResumeQueue() {
   return useMutation({
     mutationFn: () => api.resumeQueue(),
@@ -697,36 +683,6 @@ export function useImportState() {
     queryFn: () => api.getImportState(),
     refetchInterval: 5000, // SSE handles real-time updates, polling is fallback
     staleTime: 2000,
-  });
-}
-
-export function useAddImportChannel() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (url) => api.addImportChannel(url),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
-    },
-  });
-}
-
-export function useFetchImportChannel() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (channelIdx) => api.fetchImportChannel(channelIdx),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
-    },
-  });
-}
-
-export function useMatchImportFiles() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (channelIdx) => api.matchImportFiles(channelIdx),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['import', 'state'] });
-    },
   });
 }
 

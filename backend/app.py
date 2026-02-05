@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, send_from_directory, session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 import secrets
+import time
 from datetime import datetime, timezone, timedelta
 import os
 import yt_dlp
@@ -1067,7 +1068,6 @@ def queue_channel_scan(channel_id, force_full=False, reset_counters=False, is_ba
         True if added, 'pending' if auto-scan queued, False if rejected
     """
     global scan_total_channels, scan_current_channel, scan_last_queue_time
-    import time
 
     # Use lock to prevent race condition where two threads both check queue,
     # both see channel is not queued, and both add it (resulting in duplicate scan)

@@ -396,17 +396,6 @@ class APIClient {
     });
   }
 
-  // Queue Database Repair
-  checkOrphanedQueue() {
-    return this.request('/queue/check-orphaned');
-  }
-
-  cleanupOrphanedQueue() {
-    return this.request('/queue/cleanup-orphaned', {
-      method: 'POST',
-    });
-  }
-
   // Auth
   checkAuth() {
     return this.request('/auth/check');

@@ -8,6 +8,19 @@ import os
 
 Base = declarative_base()
 
+
+class VideoStatus:
+    """Constants for video status values to avoid magic strings."""
+    DISCOVERED = 'discovered'
+    QUEUED = 'queued'
+    DOWNLOADING = 'downloading'
+    LIBRARY = 'library'
+    IGNORED = 'ignored'
+    SHORTS = 'shorts'
+    NOT_FOUND = 'not_found'
+    REMOVED = 'removed'
+    GEOBLOCKED = 'geoblocked'
+
 class Channel(Base):
     __tablename__ = 'channels'
     
