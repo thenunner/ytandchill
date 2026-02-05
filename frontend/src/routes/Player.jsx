@@ -480,6 +480,20 @@ export default function Player() {
     player.on('pause', handlePause);
 
     return () => {
+      // Flush pending debounced save immediately
+      if (saveProgressTimeoutRef.current) {
+        clearTimeout(saveProgressTimeoutRef.current);
+      }
+      // Save current position before cleanup
+      if (player && !player.isDisposed() && playerVideoData?.id) {
+        const currentTime = Math.floor(player.currentTime());
+        if (currentTime > 0) {
+          updateVideo.mutate({
+            id: playerVideoData.id,
+            data: { playback_seconds: currentTime },
+          });
+        }
+      }
       if (player && !player.isDisposed()) {
         player.off('timeupdate', handleTimeUpdate);
         player.off('pause', handlePause);
@@ -487,6 +501,26 @@ export default function Player() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playerReady, playerVideoData?.id]); // Only re-run when player ready or video changes
+
+  // Save progress on page unload (refresh/close) - uses fetch with keepalive for reliable delivery
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (playerRef.current && !playerRef.current.isDisposed() && playerVideoData?.id) {
+        const currentTime = Math.floor(playerRef.current.currentTime());
+        if (currentTime > 0) {
+          fetch(`/api/videos/${playerVideoData.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ playback_seconds: currentTime }),
+            keepalive: true,  // Ensures request completes even after page unload
+          });
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [playerVideoData?.id]);
 
   // Compute video source for mobile
   const videoSrc = playbackData?.file_path ? getVideoSource(playbackData.file_path) : null;
