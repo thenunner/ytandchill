@@ -547,9 +547,12 @@
   }
 
   .video-js .vjs-time-divider {
-    padding: 0;
+    padding: 0 1px;
     min-width: auto;
     font-size: 12px;
+    display: flex;
+    align-items: center;
+    color: hsl(var(--text-primary));
   }
 
   /* Tighter spacing for left-side controls to give seekbar more room */
