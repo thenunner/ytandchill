@@ -51,7 +51,7 @@ class EventBus:
                 dropped_count += 1
 
         if dropped_count > 0:
-            logger.warning(f"SSE: Dropped event for {dropped_count} subscriber(s) (queue full)")
+            logger.debug(f"SSE: Dropped event for {dropped_count} subscriber(s) (queue full)")
 
     @property
     def subscriber_count(self):
