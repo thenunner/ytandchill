@@ -188,6 +188,12 @@ def batch_thumbnails():
 
     result = {}
     downloads_folder = get_downloads_folder()
+    downloads_abs = os.path.normpath(os.path.abspath(downloads_folder))
+
+    def is_safe_path(path):
+        """Validate path stays within downloads folder (path traversal protection)"""
+        abs_path = os.path.normpath(os.path.abspath(path))
+        return abs_path.startswith(downloads_abs + os.sep) or abs_path == downloads_abs
 
     with get_session(_session_factory) as session:
         # Batch query videos
@@ -210,13 +216,15 @@ def batch_thumbnails():
                     # Construct from channel folder + video ID
                     thumb_path = os.path.join(downloads_folder, video.channel.folder_name, f"{video.yt_id}.jpg")
 
-                if thumb_path and os.path.exists(thumb_path):
+                if thumb_path and is_safe_path(thumb_path) and os.path.exists(thumb_path):
                     try:
                         with open(thumb_path, 'rb') as f:
                             encoded = base64.b64encode(f.read()).decode('utf-8')
                             result[video.id] = f'data:image/jpeg;base64,{encoded}'
                     except Exception as e:
                         logger.debug(f"Failed to read thumbnail {thumb_path}: {e}")
+                elif thumb_path and not is_safe_path(thumb_path):
+                    logger.warning(f"Path traversal blocked in batch thumbnail: {thumb_path}")
 
         # Batch query channels
         if channel_ids:
@@ -227,12 +235,14 @@ def batch_thumbnails():
                     # Channel thumbnails stored as relative path like "thumbnails/UCxxx.jpg"
                     thumb_path = os.path.join(downloads_folder, channel.thumbnail.replace('\\', '/'))
 
-                    if os.path.exists(thumb_path):
+                    if is_safe_path(thumb_path) and os.path.exists(thumb_path):
                         try:
                             with open(thumb_path, 'rb') as f:
                                 encoded = base64.b64encode(f.read()).decode('utf-8')
                                 result[f'channel_{channel.id}'] = f'data:image/jpeg;base64,{encoded}'
                         except Exception as e:
                             logger.debug(f"Failed to read channel thumbnail {thumb_path}: {e}")
+                    elif not is_safe_path(thumb_path):
+                        logger.warning(f"Path traversal blocked in batch channel thumbnail: {thumb_path}")
 
     return jsonify(result)

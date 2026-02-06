@@ -264,8 +264,11 @@ def csrf_protection():
 @app.before_request
 def require_authentication():
     """Require session-based authentication for all requests except auth/setup endpoints"""
-    # Allow auth endpoints without authentication
-    if request.path.startswith('/api/auth/'):
+    # Allow specific auth endpoints without authentication
+    # /api/auth/reset and /api/auth/change require authentication (not listed here)
+    auth_public_endpoints = ['/api/auth/login', '/api/auth/logout', '/api/auth/setup',
+                             '/api/auth/check', '/api/auth/check-first-run']
+    if request.path in auth_public_endpoints:
         return None
 
     # Allow static files without auth (CSS, JS, etc.)

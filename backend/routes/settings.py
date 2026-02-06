@@ -1158,6 +1158,10 @@ def logout():
 @settings_bp.route('/api/auth/setup', methods=['POST'])
 def setup_auth():
     """Complete first-run setup with new credentials"""
+    # Prevent credential override after initial setup
+    if not _settings_manager.get_bool('first_run'):
+        return jsonify({'error': 'Setup already completed'}), 403
+
     data = request.json
     username = data.get('username', '').strip()
     password = data.get('password', '').strip()

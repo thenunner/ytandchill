@@ -220,12 +220,30 @@ export function useDeleteVideo() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id) => api.deleteVideo(id),
-    onSuccess: () => {
+    onMutate: async (id) => {
+      // Capture video data before deletion to know which caches to invalidate
+      const videos = queryClient.getQueryData(['videos']);
+      const video = videos?.find(v => v.id === id);
+      return { deletedVideo: video };
+    },
+    onSuccess: (_, __, context) => {
+      // Always invalidate videos and channels (video counts)
       queryClient.invalidateQueries({ queryKey: ['videos'] });
-      queryClient.invalidateQueries({ queryKey: ['playlists'] });
-      queryClient.invalidateQueries({ queryKey: ['channels'] }); // Update channel video counts
-      queryClient.invalidateQueries({ queryKey: ['favorite-channels'] }); // Update favorite libraries
-      queryClient.invalidateQueries({ queryKey: ['favorite-videos'] }); // Update mobile Favs
+      queryClient.invalidateQueries({ queryKey: ['channels'] });
+
+      // Conditionally invalidate based on deleted video's properties
+      const video = context?.deletedVideo;
+      if (video?.playlist_ids?.length > 0) {
+        queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      }
+      if (video?.is_favorite) {
+        queryClient.invalidateQueries({ queryKey: ['favorite-videos'] });
+      }
+      // Favorite channels need update if video was from a favorite channel
+      const favoriteChannels = queryClient.getQueryData(['favorite-channels']);
+      if (favoriteChannels?.some(c => c.id === video?.channel_id)) {
+        queryClient.invalidateQueries({ queryKey: ['favorite-channels'] });
+      }
     },
   });
 }

@@ -240,6 +240,12 @@ export default function LibraryChannel() {
   const videoIds = useMemo(() => paginatedVideos.map(v => v.id), [paginatedVideos]);
   const { data: thumbnails } = useThumbnailBatch(videoIds);
 
+  // Memoize effectiveCardSize to prevent VideoCard re-renders (memo() optimization)
+  const effectiveCardSize = useMemo(
+    () => getEffectiveCardSize(cardSize, paginatedVideos.length),
+    [cardSize, paginatedVideos.length]
+  );
+
   const handleDurationChange = (value) => {
     const newParams = new URLSearchParams(searchParams);
     if (value && value !== 'all') {
@@ -438,28 +444,25 @@ export default function LibraryChannel() {
             ? 'Remove filter to see them'
             : 'No downloaded videos yet'}
         />
-      ) : (() => {
-        const effectiveCardSize = getEffectiveCardSize(cardSize, paginatedVideos.length);
-        return (
-          <div className="px-0 sm:px-6 lg:px-12 xl:px-16">
-            <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
-              {paginatedVideos.map(video => (
-                <VideoCard
-                  key={video.id}
-                  video={video}
-                  isSelected={selectedVideos.includes(video.id)}
-                  onToggleSelect={editMode ? toggleSelectVideo : undefined}
-                  isQueued={queueVideoIds.has(video.id)}
-                  editMode={editMode}
-                  isLibraryView={true}
-                  effectiveCardSize={effectiveCardSize}
-                  thumbnailDataUrl={thumbnails?.[video.id]}
-                />
-              ))}
-            </div>
+      ) : (
+        <div className="px-0 sm:px-6 lg:px-12 xl:px-16">
+          <div className={`grid ${getGridClass(gridColumns, paginatedVideos.length)} gap-4 w-full [&>*]:min-w-0`}>
+            {paginatedVideos.map(video => (
+              <VideoCard
+                key={video.id}
+                video={video}
+                isSelected={selectedVideos.includes(video.id)}
+                onToggleSelect={editMode ? toggleSelectVideo : undefined}
+                isQueued={queueVideoIds.has(video.id)}
+                editMode={editMode}
+                isLibraryView={true}
+                effectiveCardSize={effectiveCardSize}
+                thumbnailDataUrl={thumbnails?.[video.id]}
+              />
+            ))}
           </div>
-        );
-      })()}
+        </div>
+      )}
 
       {/* Bottom Pagination (desktop) or Load More (mobile) */}
       {sortedVideos.length > 0 && (
