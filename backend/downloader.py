@@ -458,7 +458,8 @@ class DownloadWorker:
         'SponsorBlock', 'ModifyChapters', 'FFmpegMerger', 'FFmpegMetadata',
         'FFmpegExtractAudio', 'FFmpegEmbedSubtitle', 'FFmpegVideoConvertor',
         'FFmpegFixupM3u8', 'FFmpegFixupM4a', 'FFmpegFixupDuplicateMoov',
-        'FFmpegFixupStretchedPP', 'FFmpegFixupTimestamp', 'MoveFiles'
+        'FFmpegFixupStretchedPP', 'FFmpegFixupTimestamp', 'MoveFiles',
+        'VideoRemuxer', 'Metadata'
     }
 
     # Map postprocessor names to user-friendly display names
@@ -469,6 +470,8 @@ class DownloadWorker:
         'FFmpegMerger': 'Merging',
         'FFmpegMetadata': 'Metadata',
         'FFmpegVideoRemuxer': 'Processing',
+        'VideoRemuxer': 'Processing',
+        'Metadata': 'Metadata',
         'MoveFiles': 'Finalizing',
     }
 

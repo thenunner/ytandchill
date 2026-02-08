@@ -549,7 +549,7 @@ const VideoCard = memo(function VideoCard({
                   <InfoField label="Channel" value={video.channel_title || '-'} />
                   <InfoField
                     label="SponsorBlock"
-                    value={video.sponsorblock_segments === 'cut' ? 'Removed' : (Array.isArray(video.sponsorblock_segments) && video.sponsorblock_segments.length > 0 ? 'Stored' : 'No')}
+                    value={video.sponsorblock_segments === 'cut' ? 'Yes, Trimmed' : (Array.isArray(video.sponsorblock_segments) && video.sponsorblock_segments.length > 0 ? 'Yes, Stored' : 'No')}
                     highlight={video.sponsorblock_segments === 'cut' || (Array.isArray(video.sponsorblock_segments) && video.sponsorblock_segments.length > 0)}
                   />
                 </div>
@@ -597,7 +597,7 @@ const VideoCard = memo(function VideoCard({
                 <InfoField label="Channel" value={video.channel_title || '-'} />
                 <InfoField
                   label="SponsorBlock"
-                  value={video.sponsorblock_segments === 'cut' ? 'Removed' : (Array.isArray(video.sponsorblock_segments) && video.sponsorblock_segments.length > 0 ? 'Stored' : 'No')}
+                  value={video.sponsorblock_segments === 'cut' ? 'Yes, Trimmed' : (Array.isArray(video.sponsorblock_segments) && video.sponsorblock_segments.length > 0 ? 'Yes, Stored' : 'No')}
                   highlight={video.sponsorblock_segments === 'cut' || (Array.isArray(video.sponsorblock_segments) && video.sponsorblock_segments.length > 0)}
                 />
               </div>

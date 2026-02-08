@@ -8,6 +8,7 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
   const [showMetadataFixModal, setShowMetadataFixModal] = useState(false);
   const [showSponsorblockModal, setShowSponsorblockModal] = useState(false);
   const [showLowQualityModal, setShowLowQualityModal] = useState(false);
+  const [showSponsorblockCutModal, setShowSponsorblockCutModal] = useState(false);
 
   // Data
   const [repairData, setRepairData] = useState(null);
@@ -17,6 +18,8 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
   const [selectedChannels, setSelectedChannels] = useState([]);
   const [lowQualityData, setLowQualityData] = useState(null);
   const [selectedLowQualityVideos, setSelectedLowQualityVideos] = useState([]);
+  const [sponsorblockCutData, setSponsorblockCutData] = useState(null);
+  const [selectedSponsorblockCutVideos, setSelectedSponsorblockCutVideos] = useState([]);
 
   // Loading states
   const [isCheckingRepair, setIsCheckingRepair] = useState(false);
@@ -25,19 +28,22 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
   const [isFixingSponsorblock, setIsFixingSponsorblock] = useState(false);
   const [isCheckingQuality, setIsCheckingQuality] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
+  const [isCuttingSponsorblock, setIsCuttingSponsorblock] = useState(false);
 
   const handleQueueRepair = async () => {
     setIsCheckingRepair(true);
     try {
-      const [repairResponse, metadataResponse, sponsorblockResponse] = await Promise.all([
+      const [repairResponse, metadataResponse, sponsorblockResponse, sbCutResponse] = await Promise.all([
         fetch('/api/queue/check-orphaned', { credentials: 'include' }),
         fetch('/api/settings/missing-metadata', { credentials: 'include' }),
-        fetch('/api/settings/missing-sponsorblock-chapters', { credentials: 'include' })
+        fetch('/api/settings/missing-sponsorblock-chapters', { credentials: 'include' }),
+        fetch('/api/settings/sponsorblock-cut-check', { credentials: 'include' })
       ]);
 
       const data = await repairResponse.json();
       const metadataData = await metadataResponse.json();
       const sbData = await sponsorblockResponse.json();
+      const sbCutData = await sbCutResponse.json();
 
       if (data.error) {
         showNotification(data.error, 'error');
@@ -47,6 +53,7 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
       setRepairData(data);
       setMissingMetadataData(metadataData);
       setSponsorblockData(sbData);
+      setSponsorblockCutData(sbCutData);
       setShowRepairModal(true);
     } catch (error) {
       showNotification(`Failed to check database: ${error.message}`, 'error');
@@ -271,6 +278,61 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     }
   };
 
+  const handleCutSponsorblockSegments = async () => {
+    if (selectedSponsorblockCutVideos.length === 0) {
+      showNotification('No videos selected', 'warning');
+      return;
+    }
+
+    setIsCuttingSponsorblock(true);
+    try {
+      const response = await fetch('/api/settings/sponsorblock-cut-segments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ video_ids: selectedSponsorblockCutVideos }),
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        showNotification(data.error, 'error');
+        return;
+      }
+
+      const parts = [];
+      if (data.segments_fetched > 0) {
+        parts.push(`${data.segments_fetched} fetched`);
+      }
+      if (data.segments_cut > 0) {
+        parts.push(`${data.segments_cut} cut`);
+      }
+      if (data.no_data > 0) {
+        parts.push(`${data.no_data} no SB data`);
+      }
+
+      let message;
+      if (parts.length > 0) {
+        message = parts.join(', ');
+        if (data.failed > 0) {
+          message += ` (${data.failed} failed)`;
+        }
+      } else {
+        message = 'No videos needed processing';
+      }
+
+      showNotification(message, data.failed > 0 ? 'warning' : 'success');
+
+      setShowSponsorblockCutModal(false);
+      setShowRepairModal(false);
+      setSelectedSponsorblockCutVideos([]);
+      setSponsorblockCutData(null);
+    } catch (error) {
+      showNotification('Failed to cut SponsorBlock segments', 'error');
+    } finally {
+      setIsCuttingSponsorblock(false);
+    }
+  };
+
   const openNotFoundModal = () => {
     setShowRepairModal(false);
     setShowNotFoundModal(true);
@@ -298,12 +360,19 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     handleCheckLowQuality();
   };
 
+  const openSponsorblockCutModal = () => {
+    setShowRepairModal(false);
+    setShowSponsorblockCutModal(true);
+    setSelectedSponsorblockCutVideos([]);
+  };
+
   const closeAllModals = () => {
     setShowRepairModal(false);
     setShowNotFoundModal(false);
     setShowShrinkDBModal(false);
     setShowMetadataFixModal(false);
     setShowSponsorblockModal(false);
+    setShowSponsorblockCutModal(false);
     setShowLowQualityModal(false);
   };
 
@@ -321,11 +390,14 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     setShowSponsorblockModal,
     showLowQualityModal,
     setShowLowQualityModal,
+    showSponsorblockCutModal,
+    setShowSponsorblockCutModal,
 
     // Data
     repairData,
     missingMetadataData,
     sponsorblockData,
+    sponsorblockCutData,
     selectedNotFoundVideos,
     setSelectedNotFoundVideos,
     selectedChannels,
@@ -333,12 +405,15 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     lowQualityData,
     selectedLowQualityVideos,
     setSelectedLowQualityVideos,
+    selectedSponsorblockCutVideos,
+    setSelectedSponsorblockCutVideos,
 
     // Loading states
     isCheckingRepair,
     isRemoving,
     isFixingMetadata,
     isFixingSponsorblock,
+    isCuttingSponsorblock,
     isCheckingQuality,
     isUpgrading,
 
@@ -348,6 +423,7 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     handlePurgeChannels,
     handleFixMetadata,
     handleFixSponsorblockChapters,
+    handleCutSponsorblockSegments,
     handleCheckLowQuality,
     handleUpgradeVideos,
 
@@ -356,6 +432,7 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     openShrinkDBModal,
     openMetadataFixModal,
     openSponsorblockModal,
+    openSponsorblockCutModal,
     openLowQualityModal,
     closeAllModals,
 

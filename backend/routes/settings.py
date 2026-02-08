@@ -871,6 +871,394 @@ def fix_sponsorblock_chapters():
     })
 
 
+@settings_bp.route('/api/settings/sponsorblock-cut-check', methods=['GET'])
+def get_sponsorblock_cut_check():
+    """Get count of library videos eligible for SponsorBlock segment cutting.
+
+    Video states:
+    - sponsorblock_segments is NULL or '' → Never checked, needs API fetch
+    - sponsorblock_segments is '[]' → No data exists (skip)
+    - sponsorblock_segments has data → Can be cut
+    - sponsorblock_segments is 'cut' → Already cut (skip)
+    """
+    global _session_factory, _settings_manager
+    import json as json_module
+
+    # Check if SponsorBlock is enabled
+    sponsorblock_categories = _settings_manager.get_sponsorblock_categories()
+    if not sponsorblock_categories:
+        return jsonify({
+            'count': 0,
+            'videos': [],
+            'never_checked': 0,
+            'can_cut': 0,
+            'already_cut': 0,
+            'no_data': 0,
+            'message': 'SponsorBlock is not enabled in Settings'
+        })
+
+    with get_session(_session_factory) as session:
+        all_library_videos = session.query(Video).filter(
+            Video.status == 'library',
+            Video.file_path.isnot(None),
+            Video.yt_id.isnot(None)
+        ).all()
+
+        never_checked_list = []
+        can_cut_list = []
+        already_cut_count = 0
+        no_data_count = 0
+
+        for video in all_library_videos:
+            segments_value = video.sponsorblock_segments
+
+            # Never checked
+            if not segments_value or segments_value == '':
+                never_checked_list.append({
+                    'id': video.id,
+                    'yt_id': video.yt_id,
+                    'title': video.title,
+                    'channel_title': video.channel.title if video.channel else None,
+                    'needs': 'fetch'
+                })
+                continue
+
+            # No data
+            if segments_value == '[]':
+                no_data_count += 1
+                continue
+
+            # Already cut
+            if segments_value == 'cut':
+                already_cut_count += 1
+                continue
+
+            # Has segment data - can be cut
+            try:
+                segments = json_module.loads(segments_value)
+                if segments and isinstance(segments, list):
+                    total_cut_time = sum(seg.get('end', 0) - seg.get('start', 0) for seg in segments)
+                    can_cut_list.append({
+                        'id': video.id,
+                        'yt_id': video.yt_id,
+                        'title': video.title,
+                        'channel_title': video.channel.title if video.channel else None,
+                        'needs': 'cut',
+                        'segment_count': len(segments),
+                        'cut_seconds': round(total_cut_time)
+                    })
+            except Exception:
+                continue
+
+        all_videos = never_checked_list + can_cut_list
+        total_count = len(all_videos)
+
+        return jsonify({
+            'count': total_count,
+            'videos': all_videos[:100],
+            'never_checked': len(never_checked_list),
+            'can_cut': len(can_cut_list),
+            'already_cut': already_cut_count,
+            'no_data': no_data_count
+        })
+
+
+@settings_bp.route('/api/settings/sponsorblock-cut-segments', methods=['POST'])
+def cut_sponsorblock_segments():
+    """Cut SponsorBlock segments from selected video files using ffmpeg stream copy.
+
+    Expects JSON body: { "video_ids": [1, 2, 3] }
+    """
+    global _session_factory, _settings_manager
+    import json as json_module
+    import tempfile
+
+    downloads_folder = os.environ.get('DOWNLOADS_DIR', 'downloads')
+
+    # Check if SponsorBlock is enabled
+    sponsorblock_categories = _settings_manager.get_sponsorblock_categories()
+    if not sponsorblock_categories:
+        return jsonify({
+            'success': False,
+            'error': 'SponsorBlock is not enabled in Settings'
+        })
+
+    data = request.get_json() or {}
+    video_ids = data.get('video_ids', [])
+    if not video_ids:
+        return jsonify({
+            'success': False,
+            'error': 'No videos selected'
+        })
+
+    segments_fetched = 0
+    segments_cut = 0
+    no_data_count = 0
+    failed_count = 0
+    errors = []
+
+    with get_session(_session_factory) as session:
+        videos = session.query(Video).filter(
+            Video.id.in_(video_ids),
+            Video.status == 'library',
+            Video.file_path.isnot(None),
+            Video.yt_id.isnot(None)
+        ).all()
+
+        logger.info(f"Processing {len(videos)} videos for SponsorBlock segment cutting")
+
+        for video in videos:
+            segments_value = video.sponsorblock_segments
+
+            # Skip already cut
+            if segments_value == 'cut':
+                continue
+
+            # Skip no data
+            if segments_value == '[]':
+                no_data_count += 1
+                continue
+
+            # Fetch from API if never checked
+            if not segments_value or segments_value == '':
+                try:
+                    url = f"https://sponsor.ajay.app/api/skipSegments?videoID={video.yt_id}&categories={json_module.dumps(sponsorblock_categories)}"
+                    response = requests.get(url, timeout=10)
+
+                    if response.status_code == 200:
+                        api_segments = response.json()
+                        segments = [
+                            {
+                                "start": seg["segment"][0],
+                                "end": seg["segment"][1],
+                                "category": seg["category"]
+                            }
+                            for seg in api_segments
+                        ]
+                        if segments:
+                            video.sponsorblock_segments = json_module.dumps(segments)
+                            session.commit()
+                            segments_fetched += 1
+                        else:
+                            video.sponsorblock_segments = '[]'
+                            session.commit()
+                            no_data_count += 1
+                            continue
+                    elif response.status_code == 404:
+                        video.sponsorblock_segments = '[]'
+                        session.commit()
+                        no_data_count += 1
+                        continue
+                    else:
+                        logger.warning(f"SponsorBlock API returned {response.status_code} for {video.title}")
+                        continue
+                except Exception as e:
+                    logger.warning(f"Failed to fetch segments for {video.title}: {e}")
+                    continue
+
+            # Parse segments
+            try:
+                segments = json_module.loads(video.sponsorblock_segments)
+                if not segments:
+                    continue
+            except Exception as e:
+                logger.warning(f"Failed to parse segments for {video.title}: {e}")
+                failed_count += 1
+                continue
+
+            # Resolve file path
+            file_path = video.file_path
+            if not os.path.isabs(file_path):
+                file_path = os.path.join(downloads_folder, file_path)
+
+            if not os.path.exists(file_path):
+                failed_count += 1
+                errors.append(f"{video.title}: file not found")
+                continue
+
+            # Cut segments using ffmpeg stream copy
+            try:
+                new_size, new_duration = _cut_segments_from_file(file_path, segments)
+                if new_size:
+                    video.file_size_bytes = new_size
+                    if new_duration:
+                        video.duration_sec = new_duration
+                    video.sponsorblock_segments = 'cut'
+                    session.commit()
+                    segments_cut += 1
+                    logger.info(f"Cut SponsorBlock segments from {video.title}")
+                else:
+                    failed_count += 1
+                    errors.append(f"{video.title}: cutting failed")
+            except Exception as e:
+                failed_count += 1
+                errors.append(f"{video.title}: {str(e)}")
+                logger.warning(f"Failed to cut segments from {video.title}: {e}")
+
+    logger.info(f"SponsorBlock cut complete: {segments_fetched} fetched, {segments_cut} cut, {no_data_count} no data, {failed_count} failed")
+
+    return jsonify({
+        'success': True,
+        'segments_fetched': segments_fetched,
+        'segments_cut': segments_cut,
+        'no_data': no_data_count,
+        'failed': failed_count,
+        'errors': errors[:10]
+    })
+
+
+def _cut_segments_from_file(video_file_path, segments):
+    """Cut SponsorBlock segments from a video file using ffmpeg stream copy (no re-encoding).
+
+    Extracts non-sponsor portions and concatenates them back together.
+    Falls back to keeping the original file if anything fails.
+
+    Args:
+        video_file_path: Absolute path to the video file
+        segments: List of dicts with 'start' and 'end' keys (seconds)
+
+    Returns:
+        tuple: (new_file_size, new_duration_sec) or (None, None) if cutting failed
+    """
+    if not segments or not os.path.exists(video_file_path):
+        return None, None
+
+    # Sort segments by start time and compute "keep" ranges
+    sorted_segments = sorted(segments, key=lambda s: s['start'])
+    keep_ranges = []
+    current = 0.0
+
+    for seg in sorted_segments:
+        if seg['start'] > current:
+            keep_ranges.append((current, seg['start']))
+        current = max(current, seg['end'])
+
+    # Add final segment (from last sponsor end to video end)
+    keep_ranges.append((current, None))
+
+    # Filter out tiny ranges (< 0.5s) that would produce empty files
+    keep_ranges = [(s, e) for s, e in keep_ranges if e is None or e - s >= 0.5]
+
+    if not keep_ranges:
+        logger.warning('SponsorBlock cut: No content would remain after cutting, skipping')
+        return None, None
+
+    file_dir = os.path.dirname(video_file_path)
+    file_base = os.path.splitext(os.path.basename(video_file_path))[0]
+    file_ext = os.path.splitext(video_file_path)[1]
+    part_files = []
+
+    try:
+        # Step 1: Extract each "keep" segment with stream copy
+        for i, (start, end) in enumerate(keep_ranges):
+            part_path = os.path.join(file_dir, f'{file_base}_cutpart_{i}{file_ext}')
+            part_files.append(part_path)
+
+            cmd = ['ffmpeg', '-y', '-ss', str(start)]
+            if end is not None:
+                cmd.extend(['-to', str(end)])
+            cmd.extend([
+                '-i', video_file_path,
+                '-c', 'copy',
+                '-avoid_negative_ts', 'make_zero',
+                part_path
+            ])
+
+            logger.debug(f'SponsorBlock cut: Extracting part {i+1}/{len(keep_ranges)} ({start:.1f}s - {end if end else "end"})')
+            result = subprocess.run(cmd, capture_output=True, timeout=120)
+            if result.returncode != 0:
+                logger.error(f'SponsorBlock cut: ffmpeg extract failed for part {i}: {result.stderr.decode()[-500:]}')
+                raise Exception(f'ffmpeg extract failed for part {i}')
+
+        # Step 2: Create concat demuxer list
+        concat_list_path = os.path.join(file_dir, f'{file_base}_cutlist.txt')
+        with open(concat_list_path, 'w') as f:
+            for part_path in part_files:
+                f.write(f"file '{os.path.basename(part_path)}'\n")
+
+        # Step 3: Concatenate all parts with stream copy
+        output_path = os.path.join(file_dir, f'{file_base}_cut{file_ext}')
+        concat_cmd = [
+            'ffmpeg', '-y',
+            '-f', 'concat', '-safe', '0',
+            '-i', concat_list_path,
+            '-c', 'copy',
+            '-movflags', '+faststart',
+            output_path
+        ]
+
+        logger.debug(f'SponsorBlock cut: Concatenating {len(part_files)} parts')
+        result = subprocess.run(concat_cmd, capture_output=True, timeout=120)
+        if result.returncode != 0:
+            logger.error(f'SponsorBlock cut: ffmpeg concat failed: {result.stderr.decode()[-500:]}')
+            raise Exception('ffmpeg concat failed')
+
+        # Step 4: Remux to fix container metadata (duration) after concat
+        remux_path = os.path.join(file_dir, f'{file_base}_remux{file_ext}')
+        remux_cmd = [
+            'ffmpeg', '-y',
+            '-i', output_path,
+            '-c', 'copy',
+            '-movflags', '+faststart',
+            remux_path
+        ]
+
+        logger.debug('SponsorBlock cut: Remuxing to fix container metadata')
+        result = subprocess.run(remux_cmd, capture_output=True, timeout=120)
+        if result.returncode == 0 and os.path.exists(remux_path) and os.path.getsize(remux_path) > 0:
+            os.replace(remux_path, output_path)
+        else:
+            logger.warning('SponsorBlock cut: Remux failed, using concat output as-is')
+            if os.path.exists(remux_path):
+                os.remove(remux_path)
+
+        # Step 5: Replace original with cut version
+        if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            os.replace(output_path, video_file_path)
+            new_size = os.path.getsize(video_file_path)
+            total_cut = sum(seg['end'] - seg['start'] for seg in sorted_segments)
+            logger.info(f'SponsorBlock cut: Removed ~{total_cut:.0f}s of segments from video ({len(segments)} segments)')
+
+            # Get actual duration of cut file via ffprobe
+            new_duration = None
+            try:
+                probe_cmd = [
+                    'ffprobe', '-v', 'error',
+                    '-show_entries', 'format=duration',
+                    '-of', 'default=noprint_wrappers=1:nokey=1',
+                    video_file_path
+                ]
+                probe_result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=30)
+                if probe_result.returncode == 0:
+                    new_duration = int(float(probe_result.stdout.strip()))
+            except Exception as probe_error:
+                logger.warning(f'SponsorBlock cut: Failed to probe duration: {probe_error}')
+
+            return new_size, new_duration
+        else:
+            logger.error('SponsorBlock cut: Output file is empty or missing')
+            raise Exception('Output file empty')
+
+    except Exception as e:
+        logger.warning(f'SponsorBlock cut failed, keeping original file: {e}')
+        return None, None
+
+    finally:
+        # Clean up temp files
+        for part_path in part_files:
+            if os.path.exists(part_path):
+                os.remove(part_path)
+        concat_list_path = os.path.join(file_dir, f'{file_base}_cutlist.txt')
+        if os.path.exists(concat_list_path):
+            os.remove(concat_list_path)
+        output_path = os.path.join(file_dir, f'{file_base}_cut{file_ext}')
+        if os.path.exists(output_path):
+            os.remove(output_path)
+        remux_path = os.path.join(file_dir, f'{file_base}_remux{file_ext}')
+        if os.path.exists(remux_path):
+            os.remove(remux_path)
+
+
 # =============================================================================
 # Health & Logs Endpoints
 # =============================================================================

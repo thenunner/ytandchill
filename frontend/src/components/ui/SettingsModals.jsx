@@ -9,10 +9,12 @@ export function DatabaseMaintenanceModal({
   repairData,
   missingMetadataData,
   sponsorblockData,
+  sponsorblockCutData,
   onOpenNotFound,
   onOpenShrinkDB,
   onOpenMetadataFix,
   onOpenSponsorblock,
+  onOpenSponsorblockCut,
   onOpenLowQuality
 }) {
   if (!repairData) return null;
@@ -24,6 +26,8 @@ export function DatabaseMaintenanceModal({
 
   const sponsorblockCount = sponsorblockData?.count || 0;
   const sponsorblockDisabled = sponsorblockData?.message && sponsorblockData.message.includes('not enabled');
+  const sponsorblockCutCount = sponsorblockCutData?.count || 0;
+  const sponsorblockCutDisabled = sponsorblockCutData?.message && sponsorblockCutData.message.includes('not enabled');
 
   return (
     <ResponsiveModal isOpen={isOpen} onClose={onClose} title="Database Maintenance">
@@ -125,6 +129,36 @@ export function DatabaseMaintenanceModal({
               <span className="text-xs px-2 py-0.5 bg-gray-500/20 text-gray-400 rounded-lg">Off</span>
             ) : (
               <span className="text-xs px-2 py-0.5 bg-green-500/20 text-green-400 rounded-lg">{sponsorblockCount}</span>
+            )}
+            <span className="text-text-muted">→</span>
+          </div>
+        </button>
+
+        <button
+          onClick={onOpenSponsorblockCut}
+          className={`flex items-center justify-between w-full p-3 sm:p-3 p-4 bg-white/5 rounded-xl sm:rounded-xl rounded-2xl transition-colors ${
+            sponsorblockCutDisabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-white/10 sm:hover:bg-white/10 active:bg-white/10'
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block" />
+            <div className={`sm:hidden w-10 h-10 rounded-xl flex items-center justify-center ${sponsorblockCutDisabled ? 'bg-gray-500/20' : 'bg-orange-500/20'}`}>
+              <svg className={`w-5 h-5 ${sponsorblockCutDisabled ? 'text-gray-500' : 'text-orange-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7.848 8.25l1.536.887M7.848 8.25a3 3 0 11-5.196-3 3 3 0 015.196 3zm1.536.887a2.165 2.165 0 011.083 1.839c.005.351.054.695.14 1.024M9.384 9.137l2.077 1.199M7.848 15.75l1.536-.887m-1.536.887a3 3 0 11-5.196 3 3 3 0 015.196-3zm1.536-.887a2.165 2.165 0 001.083-1.838c.005-.352.054-.695.14-1.025m-1.223 2.863l2.077-1.199m0-3.328a4.323 4.323 0 012.068-1.379l5.325-1.628a4.5 4.5 0 012.48-.044l.803.215-7.794 4.5m-2.882-1.664A4.331 4.331 0 0010.607 12m3.736 0l7.794 4.5-.803.215a4.5 4.5 0 01-2.48-.043l-5.326-1.629a4.324 4.324 0 01-2.068-1.379M14.343 12l-2.882 1.664" />
+              </svg>
+            </div>
+            <div className="text-left">
+              <p className={`text-sm font-medium ${sponsorblockCutDisabled ? 'text-text-muted' : 'text-text-primary'}`}>SponsorBlock Cut</p>
+              <p className="text-text-muted text-xs">
+                {sponsorblockCutDisabled ? 'SponsorBlock disabled in Settings' : 'Remove sponsor segments from files'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {sponsorblockCutDisabled ? (
+              <span className="text-xs px-2 py-0.5 bg-gray-500/20 text-gray-400 rounded-lg">Off</span>
+            ) : (
+              <span className="text-xs px-2 py-0.5 bg-orange-500/20 text-orange-400 rounded-lg">{sponsorblockCutCount}</span>
             )}
             <span className="text-text-muted">→</span>
           </div>
@@ -715,6 +749,385 @@ export function SponsorblockChaptersModal({
                     className="flex-1 py-3.5 bg-green-500 rounded-xl text-white font-semibold"
                   >
                     Fix {count}
+                  </button>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// SponsorBlock Cut Modal - Cut sponsor segments from already-downloaded files
+export function SponsorblockCutModal({
+  isOpen,
+  onClose,
+  data,
+  selectedVideos,
+  setSelectedVideos,
+  onCut,
+  isCutting
+}) {
+  // Handle ESC key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen && !isCutting) onClose();
+    };
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onClose, isCutting]);
+
+  if (!isOpen || !data) return null;
+
+  const isDisabled = data.message && data.message.includes('not enabled');
+  const count = data.count || 0;
+  const alreadyCut = data.already_cut || 0;
+  const noData = data.no_data || 0;
+  const videos = data.videos || [];
+
+  const allSelected = videos.length > 0 && selectedVideos.length === videos.length;
+  const someSelected = selectedVideos.length > 0 && selectedVideos.length < videos.length;
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedVideos([]);
+    } else {
+      setSelectedVideos(videos.map(v => v.id));
+    }
+  };
+
+  const toggleVideo = (videoId) => {
+    if (selectedVideos.includes(videoId)) {
+      setSelectedVideos(selectedVideos.filter(id => id !== videoId));
+    } else {
+      setSelectedVideos([...selectedVideos, videoId]);
+    }
+  };
+
+  const getBadge = (video) => {
+    if (video.needs === 'fetch') return { text: 'Fetch', className: 'bg-blue-500/20 text-blue-400' };
+    if (video.segment_count) return { text: `${video.segment_count} seg${video.segment_count !== 1 ? 's' : ''} · ${video.cut_seconds}s`, className: 'bg-orange-500/20 text-orange-400' };
+    return { text: 'Cut', className: 'bg-orange-500/20 text-orange-400' };
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Desktop - Glass Modal */}
+      <div
+        className="hidden sm:block relative w-full max-w-lg backdrop-blur-xl bg-dark-secondary/95 rounded-2xl shadow-2xl border border-white/10 max-h-[85vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between p-5 border-b border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-orange-500/15 flex items-center justify-center">
+              <svg className="w-5 h-5 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7.848 8.25l1.536.887M7.848 8.25a3 3 0 11-5.196-3 3 3 0 015.196 3zm1.536.887a2.165 2.165 0 011.083 1.839c.005.351.054.695.14 1.024M9.384 9.137l2.077 1.199M7.848 15.75l1.536-.887m-1.536.887a3 3 0 11-5.196 3 3 3 0 015.196-3zm1.536-.887a2.165 2.165 0 001.083-1.838c.005-.352.054-.695.14-1.025m-1.223 2.863l2.077-1.199m0-3.328a4.323 4.323 0 012.068-1.379l5.325-1.628a4.5 4.5 0 012.48-.044l.803.215-7.794 4.5m-2.882-1.664A4.331 4.331 0 0010.607 12m3.736 0l7.794 4.5-.803.215a4.5 4.5 0 01-2.48-.043l-5.326-1.629a4.324 4.324 0 01-2.068-1.379M14.343 12l-2.882 1.664" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-base font-medium text-text-primary">SponsorBlock Cut</h3>
+              <p className="text-xs text-text-muted">{count} video{count !== 1 ? 's' : ''} with segments to cut</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted hover:text-text-primary transition-colors">
+            <CloseIcon />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-5">
+          {isCutting ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-orange-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">Cutting {selectedVideos.length} video{selectedVideos.length !== 1 ? 's' : ''}...</p>
+              <p className="text-sm text-text-muted mt-1">Removing sponsor segments via stream copy</p>
+            </div>
+          ) : isDisabled ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-text-primary">SponsorBlock Disabled</p>
+              <p className="text-xs text-text-muted text-center mt-1">Enable SponsorBlock categories in Settings to use this feature</p>
+            </div>
+          ) : count === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">All Clear!</p>
+              <p className="text-sm text-text-muted">No videos need segment cutting</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-text-secondary">
+                Permanently removes sponsor segments from video files. Fast stream copy, no re-encoding.
+              </p>
+
+              {/* Summary stats */}
+              <div className="flex gap-2 text-xs">
+                {alreadyCut > 0 && (
+                  <div className="px-3 py-1.5 rounded-lg bg-green-500/10 text-green-400">
+                    <span className="font-medium">{alreadyCut}</span> already cut
+                  </div>
+                )}
+                {noData > 0 && (
+                  <div className="px-3 py-1.5 rounded-lg bg-white/5 text-text-muted">
+                    <span className="font-medium">{noData}</span> no SB data
+                  </div>
+                )}
+              </div>
+
+              {/* Select All Header */}
+              <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                <button
+                  onClick={toggleSelectAll}
+                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                    allSelected ? 'bg-orange-500 border-orange-500' : someSelected ? 'bg-orange-500/50 border-orange-500' : 'border-white/30 hover:border-white/50'
+                  }`}
+                >
+                  {(allSelected || someSelected) && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  )}
+                </button>
+                <span className="text-sm text-text-secondary">
+                  {selectedVideos.length === 0 ? 'Select all' : `${selectedVideos.length} selected`}
+                </span>
+              </div>
+
+              {/* Video List */}
+              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                {videos.map((video) => {
+                  const badge = getBadge(video);
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => toggleVideo(video.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
+                        selectedVideos.includes(video.id) ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-white/5 hover:bg-white/10'
+                      }`}
+                    >
+                      <button
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          selectedVideos.includes(video.id) ? 'bg-orange-500 border-orange-500' : 'border-white/30'
+                        }`}
+                      >
+                        {selectedVideos.includes(video.id) && (
+                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        )}
+                      </button>
+                      <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${badge.className}`}>
+                        {badge.text}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-text-primary truncate">{video.title}</p>
+                        {video.channel_title && <p className="text-xs text-text-muted truncate">{video.channel_title}</p>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-5 border-t border-white/10 flex items-center justify-between">
+          <p className="text-xs text-text-muted">
+            {isCutting ? 'Please wait...' : isDisabled ? 'Enable SponsorBlock in Settings' : count > 0 ? 'This permanently modifies video files' : ''}
+          </p>
+          <div className="flex gap-2">
+            {!isCutting && (
+              <button onClick={onClose} className="py-2.5 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors">
+                {isDisabled || count === 0 ? 'Close' : 'Cancel'}
+              </button>
+            )}
+            {count > 0 && !isDisabled && !isCutting && (
+              <button
+                onClick={onCut}
+                disabled={selectedVideos.length === 0}
+                className={`py-2.5 px-4 rounded-xl text-sm font-medium transition-colors flex items-center gap-2 ${
+                  selectedVideos.length > 0
+                    ? 'bg-orange-500/90 hover:bg-orange-500 text-white'
+                    : 'bg-white/5 text-text-muted cursor-not-allowed'
+                }`}
+              >
+                Cut {selectedVideos.length} Video{selectedVideos.length !== 1 ? 's' : ''}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile - Bottom Sheet */}
+      <div
+        className="sm:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl bg-dark-secondary rounded-t-3xl flex flex-col max-h-[85vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-white/20 rounded-full mx-auto mt-3" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+          <div>
+            <h3 className="font-semibold text-text-primary">SponsorBlock Cut</h3>
+            <p className="text-xs text-text-muted">{count} video{count !== 1 ? 's' : ''} with segments to cut</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+            <CloseIcon className="w-4 h-4 text-text-secondary" />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {isCutting ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-orange-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-orange-500 animate-spin" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">Cutting videos...</p>
+              <p className="text-xs text-text-muted mt-1">Removing sponsor segments</p>
+            </div>
+          ) : isDisabled ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-yellow-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">SponsorBlock Disabled</p>
+              <p className="text-xs text-text-muted text-center mt-1">Enable SponsorBlock in Settings</p>
+            </div>
+          ) : count === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <div className="w-16 h-16 rounded-full bg-green-500/15 flex items-center justify-center mb-4">
+                <svg className="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <p className="font-medium text-text-primary">All Clear!</p>
+              <p className="text-xs text-text-muted">No videos need segment cutting</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-text-secondary">
+                Permanently removes sponsor segments from files. No re-encoding.
+              </p>
+
+              {/* Summary stats */}
+              <div className="flex gap-2 text-xs">
+                {alreadyCut > 0 && (
+                  <div className="px-2 py-1 rounded bg-green-500/10 text-green-400">
+                    <span className="font-medium">{alreadyCut}</span> cut
+                  </div>
+                )}
+                {noData > 0 && (
+                  <div className="px-2 py-1 rounded bg-white/5 text-text-muted">
+                    <span className="font-medium">{noData}</span> no data
+                  </div>
+                )}
+              </div>
+
+              {/* Select All Header */}
+              <div className="flex items-center gap-3 pb-3 border-b border-white/10">
+                <button
+                  onClick={toggleSelectAll}
+                  className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                    allSelected ? 'bg-orange-500 border-orange-500' : someSelected ? 'bg-orange-500/50 border-orange-500' : 'border-white/30'
+                  }`}
+                >
+                  {(allSelected || someSelected) && (
+                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                    </svg>
+                  )}
+                </button>
+                <span className="text-sm text-text-secondary">
+                  {selectedVideos.length === 0 ? 'Select all' : `${selectedVideos.length} selected`}
+                </span>
+              </div>
+
+              {/* Video List */}
+              <div className="space-y-2">
+                {videos.map((video) => {
+                  const badge = getBadge(video);
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => toggleVideo(video.id)}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
+                        selectedVideos.includes(video.id) ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-white/5'
+                      }`}
+                    >
+                      <button
+                        className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          selectedVideos.includes(video.id) ? 'bg-orange-500 border-orange-500' : 'border-white/30'
+                        }`}
+                      >
+                        {selectedVideos.includes(video.id) && (
+                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        )}
+                      </button>
+                      <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${badge.className}`}>
+                        {badge.text}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-text-primary truncate">{video.title}</p>
+                        {video.channel_title && <p className="text-xs text-text-muted truncate">{video.channel_title}</p>}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-white/10 safe-area-bottom">
+          {isCutting ? (
+            <p className="text-xs text-text-muted text-center">Please wait...</p>
+          ) : (
+            <>
+              <p className="text-xs text-text-muted text-center mb-3">
+                {isDisabled ? 'Enable SponsorBlock in Settings' : count > 0 ? 'This permanently modifies video files' : ''}
+              </p>
+              <div className="flex gap-3">
+                <button onClick={onClose} className="flex-1 py-3.5 bg-white/5 rounded-xl text-text-secondary font-medium">
+                  {isDisabled || count === 0 ? 'Close' : 'Cancel'}
+                </button>
+                {count > 0 && !isDisabled && (
+                  <button
+                    onClick={onCut}
+                    disabled={selectedVideos.length === 0}
+                    className={`flex-1 py-3.5 rounded-xl font-semibold ${
+                      selectedVideos.length > 0
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-white/5 text-text-muted'
+                    }`}
+                  >
+                    Cut {selectedVideos.length}
                   </button>
                 )}
               </div>

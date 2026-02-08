@@ -11,6 +11,7 @@ import {
   DatabaseMaintenanceModal,
   MetadataFixModal,
   SponsorblockChaptersModal,
+  SponsorblockCutModal,
   LowQualityVideosModal
 } from '../components/ui/SettingsModals';
 import { useAutoScan } from '../hooks/useAutoScan';
@@ -1053,10 +1054,12 @@ export default function Settings() {
         repairData={dbMaintenance.repairData}
         missingMetadataData={dbMaintenance.missingMetadataData}
         sponsorblockData={dbMaintenance.sponsorblockData}
+        sponsorblockCutData={dbMaintenance.sponsorblockCutData}
         onOpenNotFound={dbMaintenance.openNotFoundModal}
         onOpenShrinkDB={dbMaintenance.openShrinkDBModal}
         onOpenMetadataFix={dbMaintenance.openMetadataFixModal}
         onOpenSponsorblock={dbMaintenance.openSponsorblockModal}
+        onOpenSponsorblockCut={dbMaintenance.openSponsorblockCutModal}
         onOpenLowQuality={dbMaintenance.openLowQualityModal}
       />
 
@@ -1110,6 +1113,16 @@ export default function Settings() {
         data={dbMaintenance.sponsorblockData}
         onFix={dbMaintenance.handleFixSponsorblockChapters}
         isFixing={dbMaintenance.isFixingSponsorblock}
+      />
+
+      <SponsorblockCutModal
+        isOpen={dbMaintenance.showSponsorblockCutModal}
+        onClose={() => dbMaintenance.setShowSponsorblockCutModal(false)}
+        data={dbMaintenance.sponsorblockCutData}
+        selectedVideos={dbMaintenance.selectedSponsorblockCutVideos}
+        setSelectedVideos={dbMaintenance.setSelectedSponsorblockCutVideos}
+        onCut={dbMaintenance.handleCutSponsorblockSegments}
+        isCutting={dbMaintenance.isCuttingSponsorblock}
       />
 
       <LowQualityVideosModal
