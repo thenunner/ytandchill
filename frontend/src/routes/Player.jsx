@@ -8,7 +8,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useVideo, useVideoPlayback, useUpdateVideo, useDeleteVideo, useQueue, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
-import { getVideoSource, PROGRESS_SAVE_DEBOUNCE_MS, WATCHED_THRESHOLD, initVideoJsComponents } from '../utils/videoUtils';
+import { getVideoSource, getVideoErrorMessage, PROGRESS_SAVE_DEBOUNCE_MS, WATCHED_THRESHOLD, initVideoJsComponents } from '../utils/videoUtils';
 import { ConfirmDialog } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { LoadingSpinner } from '../components/ListFeedback';
@@ -488,6 +488,29 @@ export default function Player() {
       }
     };
 
+    // Error recovery - reload source with cache buster to recover from stuck decoder
+    let errorRetryCount = 0;
+    const handleError = () => {
+      const error = player.error();
+      if (errorRetryCount >= 2) {
+        showNotification(getVideoErrorMessage(error?.code) + ' — please try refreshing the page', 'error');
+        return;
+      }
+      errorRetryCount++;
+      const savedTime = Math.floor(player.currentTime()) || 0;
+      const videoSrc = getVideoSource(playerVideoData.file_path);
+      if (videoSrc) {
+        player.error(null);
+        player.src({ src: `${videoSrc}?cb=${Date.now()}`, type: 'video/mp4' });
+        player.one('loadedmetadata', () => {
+          if (savedTime > 0) player.currentTime(savedTime);
+          player.play().catch(() => {});
+        });
+        showNotification('Playback error — reloading video', 'info');
+      }
+    };
+    player.on('error', handleError);
+
     player.on('timeupdate', handleTimeUpdate);
 
     // Save on pause
@@ -519,6 +542,7 @@ export default function Player() {
       if (player && !player.isDisposed()) {
         player.off('timeupdate', handleTimeUpdate);
         player.off('pause', handlePause);
+        player.off('error', handleError);
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

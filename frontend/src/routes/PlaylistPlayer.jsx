@@ -8,7 +8,7 @@ import 'videojs-mobile-ui/dist/videojs-mobile-ui.css';
 import { usePlaylist, useUpdateVideo, usePlaylists, useDeleteVideo, useQueue, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, formatDuration } from '../utils/utils';
-import { getVideoSource, WATCHED_THRESHOLD, initVideoJsComponents } from '../utils/videoUtils';
+import { getVideoSource, getVideoErrorMessage, WATCHED_THRESHOLD, initVideoJsComponents } from '../utils/videoUtils';
 import { ConfirmDialog } from '../components/ui/SharedModals';
 import AddToPlaylistMenu from '../components/AddToPlaylistMenu';
 import { LoadingSpinner } from '../components/ListFeedback';
@@ -829,24 +829,26 @@ export default function PlaylistPlayer() {
       goToNextRef.current?.();
     };
 
+    let errorRetryCount = 0;
     const handleError = () => {
       const error = player.error();
-      const errorInfo = {
-        time: new Date().toISOString(),
-        action: 'error',
-        code: error?.code,
-        message: error?.message,
-        currentSrc: player.currentSrc(),
-        videoId: currentVideo?.id,
-        title: currentVideo?.title,
-        file_path: currentVideo?.file_path
-      };
-      // Log to localStorage
-      const logs = JSON.parse(localStorage.getItem('videoDebugLogs') || '[]');
-      logs.push(errorInfo);
-      localStorage.setItem('videoDebugLogs', JSON.stringify(logs));
-      // Show notification with details
-      showNotification(`Error: ${error?.message || 'Unknown'} | Src: ${player.currentSrc()} | Path: ${currentVideo?.file_path}`, 'error');
+      if (errorRetryCount >= 2) {
+        showNotification(getVideoErrorMessage(error?.code) + ' — skipping to next video', 'error');
+        goToNextRef.current?.();
+        return;
+      }
+      errorRetryCount++;
+      const savedTime = Math.floor(player.currentTime()) || 0;
+      const videoSrc = currentVideo?.file_path ? getVideoSource(currentVideo.file_path) : null;
+      if (videoSrc) {
+        player.error(null);
+        player.src({ src: `${videoSrc}?cb=${Date.now()}`, type: 'video/mp4' });
+        player.one('loadedmetadata', () => {
+          if (savedTime > 0) player.currentTime(savedTime);
+          player.play().catch(() => {});
+        });
+        showNotification('Playback error — reloading video', 'info');
+      }
     };
 
     player.on('timeupdate', handleTimeUpdate);
