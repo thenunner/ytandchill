@@ -238,13 +238,16 @@ def get_video_playback(video_id):
         if not video:
             return jsonify({'error': 'Video not found'}), 404
 
-        # Parse sponsorblock_segments from JSON string to list
+        # Parse sponsorblock_segments from JSON string to list (or pass through 'cut' marker)
         sponsorblock_segments = []
         if video.sponsorblock_segments:
-            try:
-                sponsorblock_segments = json.loads(video.sponsorblock_segments)
-            except (json.JSONDecodeError, TypeError):
-                pass
+            if video.sponsorblock_segments == 'cut':
+                sponsorblock_segments = 'cut'
+            else:
+                try:
+                    sponsorblock_segments = json.loads(video.sponsorblock_segments)
+                except (json.JSONDecodeError, TypeError):
+                    pass
 
         return jsonify({
             'id': video.id,
@@ -347,6 +350,7 @@ def delete_video(video_id):
             video.file_path = None
             video.file_size_bytes = None
             video.downloaded_at = None
+            video.sponsorblock_segments = None
             # Reset thumb_url to YouTube URL so thumbnail shows in ignored list
             video.thumb_url = f"https://img.youtube.com/vi/{video.yt_id}/hqdefault.jpg"
 
@@ -427,6 +431,7 @@ def bulk_delete_videos():
             video.file_path = None
             video.file_size_bytes = None
             video.downloaded_at = None
+            video.sponsorblock_segments = None
             # Reset thumb_url to YouTube URL so thumbnail shows in ignored list
             video.thumb_url = f"https://img.youtube.com/vi/{video.yt_id}/hqdefault.jpg"
 

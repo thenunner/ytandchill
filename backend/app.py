@@ -1142,14 +1142,17 @@ def serialize_video(video):
         local_path = f"{folder}/{video.yt_id}.jpg"
         thumb_url = f"/api/media/{local_path}"
 
-    # Parse SponsorBlock segments from JSON
+    # Parse SponsorBlock segments from JSON (or pass through 'cut' marker)
     sponsorblock_segments = []
     if video.sponsorblock_segments:
-        try:
-            import json
-            sponsorblock_segments = json.loads(video.sponsorblock_segments)
-        except:
-            pass
+        if video.sponsorblock_segments == 'cut':
+            sponsorblock_segments = 'cut'
+        else:
+            try:
+                import json
+                sponsorblock_segments = json.loads(video.sponsorblock_segments)
+            except:
+                pass
 
     return {
         'id': video.id,

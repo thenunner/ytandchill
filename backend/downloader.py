@@ -1359,9 +1359,18 @@ class DownloadWorker:
                         # Cut segments from video file if enabled
                         if self.settings_manager.get_bool('sponsorblock_cut_segments'):
                             try:
+                                # Show toast during cut
+                                with self._download_lock:
+                                    if self.current_download:
+                                        self.current_download['phase'] = 'postprocessing'
+                                        self.current_download['postprocessor'] = 'Cutting Segments'
+                                        self.current_download['postprocess_start_time'] = time.time()
+                                self._emit_queue_update(force=True)
+
                                 new_size = self._cut_sponsorblock_segments(video_file_path, segments)
                                 if new_size:
                                     video.file_size_bytes = new_size
+                                    video.sponsorblock_segments = 'cut'  # Mark as cut, timestamps no longer valid
                             except Exception as cut_error:
                                 logger.warning(f'Failed to cut SponsorBlock segments: {cut_error}')
             except Exception as sb_error:

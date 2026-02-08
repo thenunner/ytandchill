@@ -104,6 +104,7 @@ function ToastItem({ toast, onDismiss }) {
   // Note: Backend now sends user-friendly names for common postprocessors
   const postprocessorDescriptions = {
     // Backend-friendly names (new)
+    'Cutting Segments': 'Removing sponsor segments from file',
     'SponsorBlock Encoding': 'Removing sponsor segments',
     'SponsorBlock': 'Fetching segments',
     'Merging': 'Combining audio/video',

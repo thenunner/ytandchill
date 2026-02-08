@@ -768,8 +768,8 @@ export default function PlaylistPlayer() {
     player.one('loadedmetadata', () => {
       const duration = player.duration();
 
-      // Add SponsorBlock segment markers to progress bar
-      const segments = currentVideo.sponsorblock_segments || [];
+      // Add SponsorBlock segment markers to progress bar (skip if segments were cut from file)
+      const segments = Array.isArray(currentVideo.sponsorblock_segments) ? currentVideo.sponsorblock_segments : [];
       if (segments.length > 0 && duration > 0) {
         const progressHolder = player.el().querySelector('.vjs-progress-holder');
         if (progressHolder) {
@@ -814,8 +814,8 @@ export default function PlaylistPlayer() {
         }
       }
 
-      // SponsorBlock skip
-      const segments = currentVideo.sponsorblock_segments || [];
+      // SponsorBlock skip (skip if segments were cut from file)
+      const segments = Array.isArray(currentVideo.sponsorblock_segments) ? currentVideo.sponsorblock_segments : [];
       if (segments.length > 0 && !player.seeking() && !player.paused()) {
         const time = player.currentTime();
         for (const seg of segments) {
