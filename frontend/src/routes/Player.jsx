@@ -489,6 +489,7 @@ export default function Player() {
     };
 
     // Error recovery - reload source with cache buster to recover from stuck decoder
+    // 1st retry: same position (transient issue), 2nd retry: reset to start (position-specific decode error)
     let errorRetryCount = 0;
     const handleError = () => {
       const error = player.error();
@@ -497,7 +498,8 @@ export default function Player() {
         return;
       }
       errorRetryCount++;
-      const savedTime = Math.floor(player.currentTime()) || 0;
+      const retryFromStart = errorRetryCount >= 2;
+      const savedTime = retryFromStart ? 0 : Math.floor(player.currentTime()) || 0;
       const videoSrc = getVideoSource(playerVideoData.file_path);
       if (videoSrc) {
         player.error(null);
@@ -506,7 +508,10 @@ export default function Player() {
           if (savedTime > 0) player.currentTime(savedTime);
           player.play().catch(() => {});
         });
-        showNotification('Playback error — reloading video', 'info');
+        showNotification(
+          retryFromStart ? 'Playback error — restarting from beginning' : 'Playback error — reloading video',
+          'info'
+        );
       }
     };
     player.on('error', handleError);

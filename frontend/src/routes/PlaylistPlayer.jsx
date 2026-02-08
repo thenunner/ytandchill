@@ -838,7 +838,8 @@ export default function PlaylistPlayer() {
         return;
       }
       errorRetryCount++;
-      const savedTime = Math.floor(player.currentTime()) || 0;
+      const retryFromStart = errorRetryCount >= 2;
+      const savedTime = retryFromStart ? 0 : Math.floor(player.currentTime()) || 0;
       const videoSrc = currentVideo?.file_path ? getVideoSource(currentVideo.file_path) : null;
       if (videoSrc) {
         player.error(null);
@@ -847,7 +848,10 @@ export default function PlaylistPlayer() {
           if (savedTime > 0) player.currentTime(savedTime);
           player.play().catch(() => {});
         });
-        showNotification('Playback error — reloading video', 'info');
+        showNotification(
+          retryFromStart ? 'Playback error — restarting from beginning' : 'Playback error — reloading video',
+          'info'
+        );
       }
     };
 
