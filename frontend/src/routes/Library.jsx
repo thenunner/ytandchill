@@ -196,6 +196,7 @@ export default function Library() {
 
   // Check if we should show empty libraries
   const hideEmptyLibraries = settings?.hide_empty_libraries === 'true';
+  const hideWatched = settings?.hide_watched === 'true';
 
   // Apply random thumbnail selection using stable seed
   const allChannelsList = useMemo(() => {
@@ -258,6 +259,8 @@ export default function Library() {
     const filtered = allChannelsList.filter(channel => {
       // Only show actual channel folders, not singles
       if (channel.isPlaylistFolder) return false;
+      // Hide fully-watched channels when setting is enabled
+      if (hideWatched && channel.allWatched && channel.videoCount > 0) return false;
       // Search filter
       if (!(channel.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
         return false;
@@ -286,7 +289,7 @@ export default function Library() {
     });
 
     return sorted;
-  }, [allChannelsList, searchInput, channelSortBy]);
+  }, [allChannelsList, searchInput, channelSortBy, hideWatched]);
 
   // Reset page when filters change
   useEffect(() => {

@@ -182,12 +182,12 @@ export default function Player() {
             preload: 'metadata',
             autoplay: false,
             experimentalSvgIcons: true,
-            playbackRates: [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+            playbackRates: [1, 1.5, 2, 2.5],
             controlBar: {
               children: [
                 'playToggle',
                 'seekForward10Button',
-                'volumePanel',
+                { name: 'volumePanel', inline: false },
                 'currentTimeDisplay',
                 'timeDivider',
                 'durationDisplay',
@@ -203,7 +203,7 @@ export default function Player() {
             preload: 'metadata',
             autoplay: true,
             experimentalSvgIcons: true,
-            playbackRates: [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2],
+            playbackRates: [1, 1.5, 2, 2.5],
             controlBar: {
               children: controlBarChildren,
             },
@@ -245,6 +245,26 @@ export default function Player() {
           }
         };
         vjs.el().addEventListener('touchend', handleDoubleTapFullscreen);
+
+        // Position playback rate menu below button in portrait mode
+        const rateBtn = vjs.controlBar.getChild('playbackRateMenuButton');
+        if (rateBtn) {
+          const menuEl = rateBtn.el().querySelector('.vjs-menu');
+          if (menuEl) {
+            const positionMenu = () => {
+              const rect = rateBtn.el().getBoundingClientRect();
+              menuEl.style.top = `${rect.bottom}px`;
+              menuEl.style.left = `${rect.left}px`;
+              menuEl.style.width = `${Math.max(rect.width, 60)}px`;
+            };
+            const observer = new MutationObserver(() => {
+              if (menuEl.classList.contains('vjs-lock-showing')) {
+                positionMenu();
+              }
+            });
+            observer.observe(menuEl, { attributes: true, attributeFilter: ['class'] });
+          }
+        }
       }
 
       // Add theater button with callback

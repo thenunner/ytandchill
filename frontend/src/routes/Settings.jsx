@@ -625,8 +625,8 @@ export default function Settings() {
             <div className="setting-row">
               <div className="setting-label">
                 <div>
-                  <div className="setting-name">Hide Watched Videos</div>
-                  <div className="setting-desc">Hide videos you've already watched from all video lists</div>
+                  <div className="setting-name">Hide Watched Videos/Channels</div>
+                  <div className="setting-desc">Hide watched videos and channels that are fully watched</div>
                 </div>
               </div>
               <label className="toggle-switch">
