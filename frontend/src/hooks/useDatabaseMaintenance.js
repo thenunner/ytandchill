@@ -44,16 +44,11 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
         const data = queryClient.getQueryData(['sponsorblock-cut-progress']);
         if (data) {
           setSponsorblockCutProgress(data);
-          showNotification(
-            `Cutting sponsors: ${data.current}/${data.total}`,
-            'info',
-            { id: 'sponsorblock-cut', persistent: true }
-          );
         }
       }
     });
     return unsubscribe;
-  }, [isCuttingSponsorblock, queryClient, showNotification]);
+  }, [isCuttingSponsorblock, queryClient]);
 
   const handleQueueRepair = async () => {
     setIsCheckingRepair(true);
@@ -325,38 +320,43 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
       }
 
       const parts = [];
-      if (data.segments_fetched > 0) {
-        parts.push(`${data.segments_fetched} fetched`);
-      }
       if (data.segments_cut > 0) {
         parts.push(`${data.segments_cut} cut`);
       }
       if (data.no_data > 0) {
         parts.push(`${data.no_data} no SB data`);
       }
-
-      let message;
-      if (parts.length > 0) {
-        message = parts.join(', ');
-        if (data.failed > 0) {
-          message += ` (${data.failed} failed)`;
-        }
-      } else {
-        message = 'No videos needed processing';
+      if (data.failed > 0) {
+        parts.push(`${data.failed} failed`);
+      }
+      if (data.cancelled) {
+        parts.push('cancelled');
       }
 
-      // Replace the persistent progress toast with the final result
-      showNotification(message, data.failed > 0 ? 'warning' : 'success', { id: 'sponsorblock-cut' });
+      const message = parts.length > 0 ? parts.join(', ') : 'No videos needed processing';
+      const level = data.failed > 0 ? 'warning' : data.cancelled ? 'info' : 'success';
+      showNotification(message, level);
 
       setShowSponsorblockCutModal(false);
       setShowRepairModal(false);
       setSelectedSponsorblockCutVideos([]);
       setSponsorblockCutData(null);
     } catch (error) {
-      showNotification('Failed to cut SponsorBlock segments', 'error', { id: 'sponsorblock-cut' });
+      showNotification('Failed to cut SponsorBlock segments', 'error');
     } finally {
       setIsCuttingSponsorblock(false);
       queryClient.removeQueries({ queryKey: ['sponsorblock-cut-progress'] });
+    }
+  };
+
+  const handleCancelSponsorblockCut = async () => {
+    try {
+      await fetch('/api/settings/sponsorblock-cut-cancel', {
+        method: 'POST',
+        credentials: 'include'
+      });
+    } catch (error) {
+      // Ignore - the cut response will handle the cancellation result
     }
   };
 
@@ -452,6 +452,7 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     handleFixMetadata,
     handleFixSponsorblockChapters,
     handleCutSponsorblockSegments,
+    handleCancelSponsorblockCut,
     handleCheckLowQuality,
     handleUpgradeVideos,
 

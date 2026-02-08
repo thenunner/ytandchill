@@ -1122,6 +1122,7 @@ export default function Settings() {
         selectedVideos={dbMaintenance.selectedSponsorblockCutVideos}
         setSelectedVideos={dbMaintenance.setSelectedSponsorblockCutVideos}
         onCut={dbMaintenance.handleCutSponsorblockSegments}
+        onCancel={dbMaintenance.handleCancelSponsorblockCut}
         isCutting={dbMaintenance.isCuttingSponsorblock}
         cutProgress={dbMaintenance.sponsorblockCutProgress}
       />

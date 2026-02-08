@@ -22,7 +22,11 @@ from sqlalchemy import or_
 from utils import update_log_level, get_stored_credentials, check_auth_credentials
 from youtube_api import test_api_key
 import glob
+import threading
 from events import queue_events
+
+# Cancel flag for long-running SponsorBlock cut operations
+_sponsorblock_cut_cancel = threading.Event()
 
 logger = logging.getLogger(__name__)
 
@@ -963,6 +967,13 @@ def get_sponsorblock_cut_check():
         })
 
 
+@settings_bp.route('/api/settings/sponsorblock-cut-cancel', methods=['POST'])
+def cancel_sponsorblock_cut():
+    """Signal cancellation of a running SponsorBlock cut operation."""
+    _sponsorblock_cut_cancel.set()
+    return jsonify({'success': True})
+
+
 @settings_bp.route('/api/settings/sponsorblock-cut-segments', methods=['POST'])
 def cut_sponsorblock_segments():
     """Cut SponsorBlock segments from selected video files using ffmpeg stream copy.
@@ -995,7 +1006,10 @@ def cut_sponsorblock_segments():
     segments_cut = 0
     no_data_count = 0
     failed_count = 0
+    cancelled = False
     errors = []
+
+    _sponsorblock_cut_cancel.clear()
 
     with get_session(_session_factory) as session:
         videos = session.query(Video).filter(
@@ -1010,6 +1024,12 @@ def cut_sponsorblock_segments():
         processed = 0
 
         for video in videos:
+            # Check for cancellation between videos
+            if _sponsorblock_cut_cancel.is_set():
+                cancelled = True
+                logger.info(f"SponsorBlock cut cancelled after {processed}/{total_videos} videos")
+                break
+
             processed += 1
             queue_events.emit('sponsorblock-cut:progress', {
                 'current': processed,
@@ -1111,6 +1131,7 @@ def cut_sponsorblock_segments():
 
     return jsonify({
         'success': True,
+        'cancelled': cancelled,
         'segments_fetched': segments_fetched,
         'segments_cut': segments_cut,
         'no_data': no_data_count,

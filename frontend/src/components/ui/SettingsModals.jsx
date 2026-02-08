@@ -768,6 +768,7 @@ export function SponsorblockCutModal({
   selectedVideos,
   setSelectedVideos,
   onCut,
+  onCancel,
   isCutting,
   cutProgress
 }) {
@@ -978,6 +979,12 @@ export function SponsorblockCutModal({
                 <p className="text-sm text-text-secondary mt-1 max-w-xs truncate text-center">{cutProgress.title}</p>
               )}
               <p className="text-xs text-text-muted mt-1">Removing sponsor segments via stream copy</p>
+              <button
+                onClick={onCancel}
+                className="mt-4 py-2 px-4 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           ) : isDisabled ? (
             <div className="flex flex-col items-center justify-center py-12">
@@ -1048,7 +1055,7 @@ export function SponsorblockCutModal({
 
         <div className="p-5 border-t border-white/10 flex items-center justify-between">
           <p className="text-xs text-text-muted">
-            {isCutting ? 'Please wait...' : isDisabled ? 'Enable SponsorBlock in Settings' : count > 0 ? 'This permanently modifies video files' : ''}
+            {isCutting ? '' : isDisabled ? 'Enable SponsorBlock in Settings' : count > 0 ? 'This permanently modifies video files' : ''}
           </p>
           <div className="flex gap-2">
             {!isCutting && (
@@ -1105,6 +1112,12 @@ export function SponsorblockCutModal({
                 <p className="text-sm text-text-secondary mt-1 max-w-[250px] truncate text-center">{cutProgress.title}</p>
               )}
               <p className="text-xs text-text-muted mt-1">Removing sponsor segments</p>
+              <button
+                onClick={onCancel}
+                className="mt-4 py-2.5 px-5 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm font-medium transition-colors"
+              >
+                Cancel
+              </button>
             </div>
           ) : isDisabled ? (
             <div className="flex flex-col items-center justify-center py-8">
@@ -1173,7 +1186,7 @@ export function SponsorblockCutModal({
 
         <div className="p-4 border-t border-white/10 safe-area-bottom">
           {isCutting ? (
-            <p className="text-xs text-text-muted text-center">Please wait...</p>
+            <div />
           ) : (
             <>
               <p className="text-xs text-text-muted text-center mb-3">
