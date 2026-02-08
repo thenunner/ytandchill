@@ -112,6 +112,7 @@ export default function Settings() {
   const [removeSponsor, setRemoveSponsor] = useState(false);
   const [removeSelfpromo, setRemoveSelfpromo] = useState(false);
   const [removeInteraction, setRemoveInteraction] = useState(false);
+  const [cutSegments, setCutSegments] = useState(false);
   const [libraryDateDisplay, setLibraryDateDisplay] = useState('downloaded');
   const [globalItemsPerPage, setGlobalItemsPerPage] = useState(50);
   const [hideWatched, setHideWatched] = useState(false);
@@ -165,6 +166,7 @@ export default function Settings() {
       setRemoveSponsor(settings.sponsorblock_remove_sponsor === 'true');
       setRemoveSelfpromo(settings.sponsorblock_remove_selfpromo === 'true');
       setRemoveInteraction(settings.sponsorblock_remove_interaction === 'true');
+      setCutSegments(settings.sponsorblock_cut_segments === 'true');
       setCookieSource(settings.cookie_source || 'file');
       setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
       setDownloadSubtitles(settings.download_subtitles === 'true');
@@ -435,9 +437,24 @@ export default function Settings() {
 
             <div className="setting-row mobile-stack">
               <div className="setting-label">
-                <div className="setting-name">SponsorBlock</div>
+                <div className="setting-name">
+                  SponsorBlock
+                  <span
+                    className="inline-flex items-center justify-center w-4 h-4 ml-1.5 text-[10px] font-bold text-text-muted border border-dark-border rounded-full cursor-help hover:text-text-secondary hover:border-text-muted transition-colors"
+                    title={"Selected categories are automatically skipped during playback. Enable Cut to permanently remove them from the video file instead.\n\n• Cut — Removes selected segments from the video file after download\n• Sponsors — Paid promotions and sponsored content\n• Promo — Self-promotion of own channels, products, social media\n• Like/Sub — Requests to like, subscribe, or follow"}
+                  >
+                    ?
+                  </span>
+                </div>
               </div>
               <div className="settings-toggle-group">
+                <button
+                  onClick={() => handleSponsorBlockToggle('sponsorblock_cut_segments', cutSegments, setCutSegments)}
+                  className={`settings-toggle-btn ${cutSegments ? 'active-cut' : ''}`}
+                  title="Removes selected segments from the video file after download"
+                >
+                  Cut
+                </button>
                 <button
                   onClick={() => handleSponsorBlockToggle('sponsorblock_remove_sponsor', removeSponsor, setRemoveSponsor)}
                   className={`settings-toggle-btn ${removeSponsor ? 'active' : ''}`}

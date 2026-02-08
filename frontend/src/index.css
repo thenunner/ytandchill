@@ -387,12 +387,21 @@
   @apply border-r-0;
 }
 
-.settings-toggle-btn:hover:not(.active) {
+.settings-toggle-btn:hover:not(.active):not(.active-cut) {
   @apply bg-dark-hover text-text-secondary;
 }
 
 .settings-toggle-btn.active {
   @apply bg-accent text-white;
+}
+
+.settings-toggle-btn.active-cut {
+  @apply text-white;
+  background-color: #e65100;
+}
+
+.settings-toggle-btn.active-cut:hover {
+  background-color: #bf4500;
 }
 
 /* Status Dot */

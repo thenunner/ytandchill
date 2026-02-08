@@ -567,6 +567,122 @@ class DownloadWorker:
             logger.warning(f'Failed to fetch SponsorBlock segments for {video_yt_id}: {e}')
             return []
 
+    def _cut_sponsorblock_segments(self, video_file_path, segments):
+        """
+        Cut SponsorBlock segments from video using ffmpeg stream copy (no re-encoding).
+
+        Extracts non-sponsor portions and concatenates them back together.
+        Falls back to keeping the original file if anything fails.
+
+        Args:
+            video_file_path: Absolute path to the video file
+            segments: List of dicts with 'start' and 'end' keys (seconds)
+
+        Returns:
+            New file size in bytes, or None if cutting failed
+        """
+        import subprocess
+
+        if not segments or not os.path.exists(video_file_path):
+            return None
+
+        # Sort segments by start time and compute "keep" ranges
+        sorted_segments = sorted(segments, key=lambda s: s['start'])
+        keep_ranges = []
+        current = 0.0
+
+        for seg in sorted_segments:
+            if seg['start'] > current:
+                keep_ranges.append((current, seg['start']))
+            current = max(current, seg['end'])
+
+        # Add final segment (from last sponsor end to video end)
+        keep_ranges.append((current, None))
+
+        # Filter out tiny ranges (< 0.5s) that would produce empty files
+        keep_ranges = [(s, e) for s, e in keep_ranges if e is None or e - s >= 0.5]
+
+        if not keep_ranges:
+            logger.warning('SponsorBlock cut: No content would remain after cutting, skipping')
+            return None
+
+        file_dir = os.path.dirname(video_file_path)
+        file_base = os.path.splitext(os.path.basename(video_file_path))[0]
+        file_ext = os.path.splitext(video_file_path)[1]
+        part_files = []
+
+        try:
+            # Step 1: Extract each "keep" segment with stream copy
+            for i, (start, end) in enumerate(keep_ranges):
+                part_path = os.path.join(file_dir, f'{file_base}_cutpart_{i}{file_ext}')
+                part_files.append(part_path)
+
+                cmd = ['ffmpeg', '-y', '-ss', str(start)]
+                if end is not None:
+                    cmd.extend(['-to', str(end)])
+                cmd.extend([
+                    '-i', video_file_path,
+                    '-c', 'copy',
+                    '-avoid_negative_ts', 'make_zero',
+                    part_path
+                ])
+
+                logger.debug(f'SponsorBlock cut: Extracting part {i+1}/{len(keep_ranges)} ({start:.1f}s - {end if end else "end"})')
+                result = subprocess.run(cmd, capture_output=True, timeout=120)
+                if result.returncode != 0:
+                    logger.error(f'SponsorBlock cut: ffmpeg extract failed for part {i}: {result.stderr.decode()[-500:]}')
+                    raise Exception(f'ffmpeg extract failed for part {i}')
+
+            # Step 2: Create concat demuxer list
+            concat_list_path = os.path.join(file_dir, f'{file_base}_cutlist.txt')
+            with open(concat_list_path, 'w') as f:
+                for part_path in part_files:
+                    f.write(f"file '{os.path.basename(part_path)}'\n")
+
+            # Step 3: Concatenate all parts with stream copy
+            output_path = os.path.join(file_dir, f'{file_base}_cut{file_ext}')
+            concat_cmd = [
+                'ffmpeg', '-y',
+                '-f', 'concat', '-safe', '0',
+                '-i', concat_list_path,
+                '-c', 'copy',
+                '-movflags', '+faststart',
+                output_path
+            ]
+
+            logger.debug(f'SponsorBlock cut: Concatenating {len(part_files)} parts')
+            result = subprocess.run(concat_cmd, capture_output=True, timeout=120)
+            if result.returncode != 0:
+                logger.error(f'SponsorBlock cut: ffmpeg concat failed: {result.stderr.decode()[-500:]}')
+                raise Exception('ffmpeg concat failed')
+
+            # Step 4: Replace original with cut version
+            if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+                os.replace(output_path, video_file_path)
+                new_size = os.path.getsize(video_file_path)
+                total_cut = sum(seg['end'] - seg['start'] for seg in sorted_segments)
+                logger.info(f'SponsorBlock cut: Removed ~{total_cut:.0f}s of segments from video ({len(segments)} segments)')
+                return new_size
+            else:
+                logger.error('SponsorBlock cut: Output file is empty or missing')
+                raise Exception('Output file empty')
+
+        except Exception as e:
+            logger.warning(f'SponsorBlock cut failed, keeping original file: {e}')
+            return None
+
+        finally:
+            # Clean up temp files
+            for part_path in part_files:
+                if os.path.exists(part_path):
+                    os.remove(part_path)
+            concat_list_path = os.path.join(file_dir, f'{file_base}_cutlist.txt')
+            if os.path.exists(concat_list_path):
+                os.remove(concat_list_path)
+            output_path = os.path.join(file_dir, f'{file_base}_cut{file_ext}')
+            if os.path.exists(output_path):
+                os.remove(output_path)
+
     def _cleanup_failed_video(self, session, video, queue_item, channel_dir, reason):
         """
         Cleanup files and set video to removed status (permanent error).
@@ -1239,6 +1355,15 @@ class DownloadWorker:
                     if segments:
                         video.sponsorblock_segments = json.dumps(segments)
                         logger.info(f'Stored {len(segments)} SponsorBlock segments for playback skipping')
+
+                        # Cut segments from video file if enabled
+                        if self.settings_manager.get_bool('sponsorblock_cut_segments'):
+                            try:
+                                new_size = self._cut_sponsorblock_segments(video_file_path, segments)
+                                if new_size:
+                                    video.file_size_bytes = new_size
+                            except Exception as cut_error:
+                                logger.warning(f'Failed to cut SponsorBlock segments: {cut_error}')
             except Exception as sb_error:
                 logger.warning(f'Failed to fetch SponsorBlock segments: {sb_error}')
 
