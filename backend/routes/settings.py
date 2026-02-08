@@ -1069,11 +1069,15 @@ def cut_sponsorblock_segments():
             # Resolve file path
             file_path = video.file_path
             if not os.path.isabs(file_path):
-                file_path = os.path.join(downloads_folder, file_path)
+                # file_path is stored as 'downloads/Channel/video.mp4' - already includes downloads prefix
+                # Only join with downloads_folder if file_path doesn't start with it
+                if not file_path.startswith(downloads_folder):
+                    file_path = os.path.join(downloads_folder, file_path)
 
             if not os.path.exists(file_path):
                 failed_count += 1
                 errors.append(f"{video.title}: file not found")
+                logger.warning(f"SponsorBlock cut: File not found: {file_path}")
                 continue
 
             # Cut segments using ffmpeg stream copy
