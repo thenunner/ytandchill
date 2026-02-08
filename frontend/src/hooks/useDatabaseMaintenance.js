@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 
 export function useDatabaseMaintenance(showNotification, hasApiKey) {
+  const queryClient = useQueryClient();
   // Modal visibility
   const [showRepairModal, setShowRepairModal] = useState(false);
   const [showNotFoundModal, setShowNotFoundModal] = useState(false);
@@ -29,6 +31,29 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
   const [isCheckingQuality, setIsCheckingQuality] = useState(false);
   const [isUpgrading, setIsUpgrading] = useState(false);
   const [isCuttingSponsorblock, setIsCuttingSponsorblock] = useState(false);
+  const [sponsorblockCutProgress, setSponsorblockCutProgress] = useState(null);
+
+  // Watch for SSE progress updates during SponsorBlock cutting
+  useEffect(() => {
+    if (!isCuttingSponsorblock) {
+      setSponsorblockCutProgress(null);
+      return;
+    }
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (event?.query?.queryKey?.[0] === 'sponsorblock-cut-progress') {
+        const data = queryClient.getQueryData(['sponsorblock-cut-progress']);
+        if (data) {
+          setSponsorblockCutProgress(data);
+          showNotification(
+            `Cutting sponsors: ${data.current}/${data.total}`,
+            'info',
+            { id: 'sponsorblock-cut', persistent: true }
+          );
+        }
+      }
+    });
+    return unsubscribe;
+  }, [isCuttingSponsorblock, queryClient, showNotification]);
 
   const handleQueueRepair = async () => {
     setIsCheckingRepair(true);
@@ -320,16 +345,18 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
         message = 'No videos needed processing';
       }
 
-      showNotification(message, data.failed > 0 ? 'warning' : 'success');
+      // Replace the persistent progress toast with the final result
+      showNotification(message, data.failed > 0 ? 'warning' : 'success', { id: 'sponsorblock-cut' });
 
       setShowSponsorblockCutModal(false);
       setShowRepairModal(false);
       setSelectedSponsorblockCutVideos([]);
       setSponsorblockCutData(null);
     } catch (error) {
-      showNotification('Failed to cut SponsorBlock segments', 'error');
+      showNotification('Failed to cut SponsorBlock segments', 'error', { id: 'sponsorblock-cut' });
     } finally {
       setIsCuttingSponsorblock(false);
+      queryClient.removeQueries({ queryKey: ['sponsorblock-cut-progress'] });
     }
   };
 
@@ -414,6 +441,7 @@ export function useDatabaseMaintenance(showNotification, hasApiKey) {
     isFixingMetadata,
     isFixingSponsorblock,
     isCuttingSponsorblock,
+    sponsorblockCutProgress,
     isCheckingQuality,
     isUpgrading,
 

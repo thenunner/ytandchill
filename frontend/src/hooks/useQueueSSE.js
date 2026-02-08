@@ -126,6 +126,16 @@ export function useQueueSSE() {
         }
       });
 
+      // Listen for SponsorBlock cut progress events
+      eventSource.addEventListener('sponsorblock-cut', (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          queryClient.setQueryData(['sponsorblock-cut-progress'], data);
+        } catch (parseError) {
+          console.warn('Failed to parse sponsorblock-cut SSE data:', parseError);
+        }
+      });
+
       // Listen for format choice events (video without H.264 available)
       eventSource.addEventListener('format-choice', (event) => {
         try {

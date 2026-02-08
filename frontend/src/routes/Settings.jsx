@@ -1123,6 +1123,7 @@ export default function Settings() {
         setSelectedVideos={dbMaintenance.setSelectedSponsorblockCutVideos}
         onCut={dbMaintenance.handleCutSponsorblockSegments}
         isCutting={dbMaintenance.isCuttingSponsorblock}
+        cutProgress={dbMaintenance.sponsorblockCutProgress}
       />
 
       <LowQualityVideosModal

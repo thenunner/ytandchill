@@ -823,7 +823,7 @@ export default function Library() {
                 </div>
                 <div className="text-sm text-text-secondary font-medium">
                   <span>
-                    {channel.videoCount} video{channel.videoCount !== 1 ? 's' : ''}
+                    {channel.videoCount - channel.watchedCount} unwatched / {channel.watchedCount} watched
                     {channel.videoCount > 0 && ` • ${formatFileSize(channel.totalSizeBytes)}`}
                   </span>
                 </div>

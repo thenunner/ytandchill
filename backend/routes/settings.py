@@ -1005,9 +1005,17 @@ def cut_sponsorblock_segments():
             Video.yt_id.isnot(None)
         ).all()
 
-        logger.info(f"Processing {len(videos)} videos for SponsorBlock segment cutting")
+        total_videos = len(videos)
+        logger.info(f"Processing {total_videos} videos for SponsorBlock segment cutting")
+        processed = 0
 
         for video in videos:
+            processed += 1
+            queue_events.emit('sponsorblock-cut:progress', {
+                'current': processed,
+                'total': total_videos,
+                'title': video.title
+            })
             segments_value = video.sponsorblock_segments
 
             # Skip already cut

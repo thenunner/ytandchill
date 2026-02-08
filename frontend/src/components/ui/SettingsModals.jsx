@@ -768,7 +768,8 @@ export function SponsorblockCutModal({
   selectedVideos,
   setSelectedVideos,
   onCut,
-  isCutting
+  isCutting,
+  cutProgress
 }) {
   // Handle ESC key
   useEffect(() => {
@@ -853,8 +854,13 @@ export function SponsorblockCutModal({
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                 </svg>
               </div>
-              <p className="font-medium text-text-primary">Cutting {selectedVideos.length} video{selectedVideos.length !== 1 ? 's' : ''}...</p>
-              <p className="text-sm text-text-muted mt-1">Removing sponsor segments via stream copy</p>
+              <p className="font-medium text-text-primary">
+                {cutProgress ? `Cutting ${cutProgress.current}/${cutProgress.total}...` : `Cutting ${selectedVideos.length} video${selectedVideos.length !== 1 ? 's' : ''}...`}
+              </p>
+              {cutProgress?.title && (
+                <p className="text-sm text-text-secondary mt-1 max-w-xs truncate text-center">{cutProgress.title}</p>
+              )}
+              <p className="text-xs text-text-muted mt-1">Removing sponsor segments via stream copy</p>
             </div>
           ) : isDisabled ? (
             <div className="flex flex-col items-center justify-center py-12">
@@ -1005,7 +1011,12 @@ export function SponsorblockCutModal({
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
                 </svg>
               </div>
-              <p className="font-medium text-text-primary">Cutting videos...</p>
+              <p className="font-medium text-text-primary">
+                {cutProgress ? `Cutting ${cutProgress.current}/${cutProgress.total}...` : 'Cutting videos...'}
+              </p>
+              {cutProgress?.title && (
+                <p className="text-sm text-text-secondary mt-1 max-w-[250px] truncate text-center">{cutProgress.title}</p>
+              )}
               <p className="text-xs text-text-muted mt-1">Removing sponsor segments</p>
             </div>
           ) : isDisabled ? (

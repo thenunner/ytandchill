@@ -252,6 +252,9 @@ def queue_stream():
                     elif event['type'] == 'format-choice':
                         # Send format choice modal data to all clients
                         yield f"event: format-choice\ndata: {json.dumps(event.get('data', {}))}\n\n"
+                    elif event['type'] == 'sponsorblock-cut:progress':
+                        # Send SponsorBlock cut progress to all clients
+                        yield f"event: sponsorblock-cut\ndata: {json.dumps(event.get('data', {}))}\n\n"
                 except Empty:
                     # Send heartbeat comment to keep connection alive
                     yield ": heartbeat\n\n"
