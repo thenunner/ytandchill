@@ -22,6 +22,13 @@ http {
     uwsgi_temp_path /tmp/nginx_uwsgi;
     scgi_temp_path /tmp/nginx_scgi;
 
+    # Cache control based on file type: videos revalidate, images cache long
+    map $uri $media_cache_control {
+        ~*\.(mp4|mkv|webm)$       "no-cache";
+        ~*\.(jpg|jpeg|png|webp)$  "public, max-age=604800";
+        default                   "public, max-age=86400";
+    }
+
     server {
         listen ${PORT};
 
@@ -32,21 +39,8 @@ http {
             tcp_nopush on;
             etag on;
             add_header Accept-Ranges bytes;
+            add_header Cache-Control $media_cache_control;
             add_header Access-Control-Allow-Origin *;
-
-            # Thumbnails — cache for 1 week
-            location ~* \.(jpg|jpeg|png|webp)$ {
-                alias /app/downloads/;
-                add_header Cache-Control "public, max-age=604800";
-                add_header Access-Control-Allow-Origin *;
-            }
-
-            # Videos — always revalidate via ETag (prevents stuck decoder from cached corrupt data)
-            location ~* \.(mp4|mkv|webm)$ {
-                alias /app/downloads/;
-                add_header Cache-Control "no-cache";
-                add_header Access-Control-Allow-Origin *;
-            }
         }
 
         # Also handle /api/media/ path
@@ -56,21 +50,8 @@ http {
             tcp_nopush on;
             etag on;
             add_header Accept-Ranges bytes;
+            add_header Cache-Control $media_cache_control;
             add_header Access-Control-Allow-Origin *;
-
-            # Thumbnails — cache for 1 week
-            location ~* \.(jpg|jpeg|png|webp)$ {
-                alias /app/downloads/;
-                add_header Cache-Control "public, max-age=604800";
-                add_header Access-Control-Allow-Origin *;
-            }
-
-            # Videos — always revalidate via ETag
-            location ~* \.(mp4|mkv|webm)$ {
-                alias /app/downloads/;
-                add_header Cache-Control "no-cache";
-                add_header Access-Control-Allow-Origin *;
-            }
         }
 
         # Everything else to Python backend (internal port, never exposed)
