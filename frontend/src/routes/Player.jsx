@@ -184,11 +184,9 @@ export default function Player() {
             experimentalSvgIcons: true,
             playbackRates: [1, 1.5, 2, 2.5],
             controlBar: {
-              volumePanel: { inline: false },
               children: [
                 'playToggle',
                 'seekForward10Button',
-                'volumePanel',
                 'currentTimeDisplay',
                 'timeDivider',
                 'durationDisplay',
@@ -246,21 +244,6 @@ export default function Player() {
           }
         };
         vjs.el().addEventListener('touchend', handleDoubleTapFullscreen);
-
-        // Volume panel: toggle vertical slider on tap (no hover on mobile)
-        const volumePanel = vjs.controlBar.getChild('volumePanel');
-        if (volumePanel) {
-          const vpEl = volumePanel.el();
-          vpEl.addEventListener('touchstart', () => {
-            vpEl.classList.toggle('vjs-hover');
-          });
-          // Close slider when tapping outside
-          document.addEventListener('touchstart', (e) => {
-            if (!vpEl.contains(e.target)) {
-              vpEl.classList.remove('vjs-hover');
-            }
-          });
-        }
       }
 
       // Add theater button with callback
