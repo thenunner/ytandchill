@@ -214,14 +214,24 @@ export default function Settings() {
     localStorage.setItem('logsVisible', newValue.toString());
   };
 
+  const sponsorBlockLabels = {
+    sponsorblock_cut_segments: 'SponsorBlock cut',
+    sponsorblock_remove_sponsor: 'Sponsor skip',
+    sponsorblock_remove_selfpromo: 'Self-promo skip',
+    sponsorblock_remove_interaction: 'Like/Sub skip',
+  };
+
   const handleSponsorBlockToggle = async (setting, currentValue, setValue) => {
     const newValue = !currentValue;
     setValue(newValue);
     try {
       await updateSettings.mutateAsync({ [setting]: newValue ? 'true' : 'false' });
+      const label = sponsorBlockLabels[setting] || setting;
+      showNotification(`${label} ${newValue ? 'enabled' : 'disabled'}`, 'success');
     } catch (error) {
       console.error(`Failed to save ${setting}:`, error);
       setValue(currentValue);
+      showNotification('Failed to save setting', 'error');
     }
   };
 
