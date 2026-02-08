@@ -499,6 +499,10 @@ export default function PlaylistPlayer() {
   const [playerReady, setPlayerReady] = useState(false);
   const playerRef = useRef(null);
   const hasMarkedWatchedRef = useRef(false);
+  const defaultSpeedRef = useRef(1);
+
+  // Keep default speed ref in sync with settings
+  defaultSpeedRef.current = parseFloat(settings?.default_playback_speed) || 1;
 
   // ==================== VIDEO.JS INITIALIZATION (Desktop + Mobile) ====================
   // Following Stash's pattern: use video.js everywhere
@@ -652,18 +656,6 @@ export default function PlaylistPlayer() {
     };
   }, [handleTheaterModeChange]); // Runs once - uses isMobileRef for stable value
 
-  // Apply default playback speed from settings
-  useEffect(() => {
-    const player = playerRef.current;
-    if (!playerReady || !player || player.isDisposed()) return;
-    if (!settings?.default_playback_speed) return;
-
-    const speed = parseFloat(settings.default_playback_speed);
-    if (!isNaN(speed) && speed > 0) {
-      player.playbackRate(speed);
-    }
-  }, [playerReady, settings?.default_playback_speed]);
-
   // Keyboard shortcuts
   useEffect(() => {
     if (!playerReady) return;
@@ -794,6 +786,11 @@ export default function PlaylistPlayer() {
             progressHolder.appendChild(marker);
           });
         }
+      }
+
+      // Apply default playback speed from settings
+      if (defaultSpeedRef.current > 0) {
+        player.playbackRate(defaultSpeedRef.current);
       }
 
       // Only autoplay on desktop - iOS blocks autoplay without user interaction

@@ -63,6 +63,7 @@ export default function Player() {
   const playerRef = useRef(null);          // video.js player instance
   const saveProgressTimeoutRef = useRef(null);
   const hasMarkedWatchedRef = useRef(false);
+  const defaultSpeedRef = useRef(1);
 
   // State - player state triggers re-renders when player is ready
   const [playerReady, setPlayerReady] = useState(false);
@@ -72,6 +73,9 @@ export default function Player() {
   const [isTheaterMode, setIsTheaterMode] = useState(() => {
     return localStorage.getItem('theaterMode') === 'true';
   });
+
+  // Keep default speed ref in sync with settings
+  defaultSpeedRef.current = parseFloat(settings?.default_playback_speed) || 1;
 
   // Media queries - use ref to prevent player reinit on media query changes
   const isTouchDevice = useMediaQuery('(pointer: coarse)');
@@ -276,18 +280,6 @@ export default function Player() {
     };
   }, []); // Runs once - uses isMobileRef for stable value
 
-  // ==================== APPLY DEFAULT PLAYBACK SPEED ====================
-  useEffect(() => {
-    const player = playerRef.current;
-    if (!playerReady || !player || player.isDisposed()) return;
-    if (!settings?.default_playback_speed) return;
-
-    const speed = parseFloat(settings.default_playback_speed);
-    if (!isNaN(speed) && speed > 0) {
-      player.playbackRate(speed);
-    }
-  }, [playerReady, settings?.default_playback_speed]);
-
   // ==================== KEYBOARD SHORTCUTS ====================
   useEffect(() => {
     if (!playerReady) return;
@@ -440,9 +432,13 @@ export default function Player() {
         }
       }
 
+      // Apply default playback speed from settings
+      if (defaultSpeedRef.current > 0) {
+        player.playbackRate(defaultSpeedRef.current);
+      }
+
       player.play().catch(() => {});
     });
-
 
     // Progress saving
     const handleTimeUpdate = () => {
