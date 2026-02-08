@@ -771,6 +771,8 @@ export function SponsorblockCutModal({
   isCutting,
   cutProgress
 }) {
+  const [expandedChannels, setExpandedChannels] = useState({});
+
   // Handle ESC key
   useEffect(() => {
     const handleEscape = (e) => {
@@ -794,6 +796,15 @@ export function SponsorblockCutModal({
   const noData = data.no_data || 0;
   const videos = data.videos || [];
 
+  // Group videos by channel
+  const channelGroups = videos.reduce((acc, video) => {
+    const key = video.channel_title || 'Singles';
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(video);
+    return acc;
+  }, {});
+  const channelNames = Object.keys(channelGroups).sort();
+
   const allSelected = videos.length > 0 && selectedVideos.length === videos.length;
   const someSelected = selectedVideos.length > 0 && selectedVideos.length < videos.length;
 
@@ -805,6 +816,21 @@ export function SponsorblockCutModal({
     }
   };
 
+  const toggleChannel = (channelName) => {
+    const channelVideoIds = channelGroups[channelName].map(v => v.id);
+    const allChannelSelected = channelVideoIds.every(id => selectedVideos.includes(id));
+    if (allChannelSelected) {
+      setSelectedVideos(selectedVideos.filter(id => !channelVideoIds.includes(id)));
+    } else {
+      const newSelected = new Set([...selectedVideos, ...channelVideoIds]);
+      setSelectedVideos([...newSelected]);
+    }
+  };
+
+  const toggleExpandChannel = (channelName) => {
+    setExpandedChannels(prev => ({ ...prev, [channelName]: !prev[channelName] }));
+  };
+
   const toggleVideo = (videoId) => {
     if (selectedVideos.includes(videoId)) {
       setSelectedVideos(selectedVideos.filter(id => id !== videoId));
@@ -813,11 +839,102 @@ export function SponsorblockCutModal({
     }
   };
 
+  const getChannelSelectionState = (channelName) => {
+    const channelVideoIds = channelGroups[channelName].map(v => v.id);
+    const selectedCount = channelVideoIds.filter(id => selectedVideos.includes(id)).length;
+    if (selectedCount === 0) return 'none';
+    if (selectedCount === channelVideoIds.length) return 'all';
+    return 'some';
+  };
+
   const getBadge = (video) => {
     if (video.needs === 'fetch') return { text: 'Fetch', className: 'bg-blue-500/20 text-blue-400' };
     if (video.segment_count) return { text: `${video.segment_count} seg${video.segment_count !== 1 ? 's' : ''} · ${video.cut_seconds}s`, className: 'bg-orange-500/20 text-orange-400' };
     return { text: 'Cut', className: 'bg-orange-500/20 text-orange-400' };
   };
+
+  // Shared channel list renderer (used by both desktop and mobile)
+  const renderChannelList = (compact = false) => (
+    <div className="space-y-2">
+      {channelNames.map((channelName) => {
+        const channelVideos = channelGroups[channelName];
+        const selState = getChannelSelectionState(channelName);
+        const isExpanded = expandedChannels[channelName];
+        const checkSize = compact ? 'w-6 h-6' : 'w-5 h-5';
+        const checkIconSize = compact ? 'w-4 h-4' : 'w-3 h-3';
+
+        return (
+          <div key={channelName} className="rounded-xl bg-white/5 overflow-hidden">
+            {/* Channel row */}
+            <div className="flex items-center gap-3 p-3">
+              <button
+                onClick={() => toggleChannel(channelName)}
+                className={`${checkSize} rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                  selState === 'all' ? 'bg-orange-500 border-orange-500' : selState === 'some' ? 'bg-orange-500/50 border-orange-500' : 'border-white/30 hover:border-white/50'
+                }`}
+              >
+                {selState !== 'none' && (
+                  <svg className={`${checkIconSize} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                  </svg>
+                )}
+              </button>
+              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleChannel(channelName)}>
+                <p className="text-sm font-medium text-text-primary truncate">{channelName}</p>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded-lg bg-orange-500/20 text-orange-400 flex-shrink-0">
+                {channelVideos.length}
+              </span>
+              <button
+                onClick={() => toggleExpandChannel(channelName)}
+                className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-text-muted transition-colors flex-shrink-0"
+              >
+                <svg className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+            </div>
+
+            {/* Expanded video list */}
+            {isExpanded && (
+              <div className="px-3 pb-3 space-y-1.5">
+                {channelVideos.map((video) => {
+                  const badge = getBadge(video);
+                  return (
+                    <div
+                      key={video.id}
+                      onClick={() => toggleVideo(video.id)}
+                      className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
+                        selectedVideos.includes(video.id) ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-dark-secondary/50 hover:bg-white/5'
+                      }`}
+                    >
+                      <button
+                        className={`${checkSize} rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
+                          selectedVideos.includes(video.id) ? 'bg-orange-500 border-orange-500' : 'border-white/30'
+                        }`}
+                      >
+                        {selectedVideos.includes(video.id) && (
+                          <svg className={`${checkIconSize} text-white`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        )}
+                      </button>
+                      <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${badge.className}`}>
+                        {badge.text}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-text-primary truncate">{video.title}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
@@ -921,39 +1038,9 @@ export function SponsorblockCutModal({
                 </span>
               </div>
 
-              {/* Video List */}
-              <div className="space-y-2 max-h-[40vh] overflow-y-auto">
-                {videos.map((video) => {
-                  const badge = getBadge(video);
-                  return (
-                    <div
-                      key={video.id}
-                      onClick={() => toggleVideo(video.id)}
-                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                        selectedVideos.includes(video.id) ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-white/5 hover:bg-white/10'
-                      }`}
-                    >
-                      <button
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                          selectedVideos.includes(video.id) ? 'bg-orange-500 border-orange-500' : 'border-white/30'
-                        }`}
-                      >
-                        {selectedVideos.includes(video.id) && (
-                          <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-                          </svg>
-                        )}
-                      </button>
-                      <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${badge.className}`}>
-                        {badge.text}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-text-primary truncate">{video.title}</p>
-                        {video.channel_title && <p className="text-xs text-text-muted truncate">{video.channel_title}</p>}
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* Channel-grouped list */}
+              <div className="max-h-[40vh] overflow-y-auto">
+                {renderChannelList(false)}
               </div>
             </div>
           )}
@@ -1078,40 +1165,8 @@ export function SponsorblockCutModal({
                 </span>
               </div>
 
-              {/* Video List */}
-              <div className="space-y-2">
-                {videos.map((video) => {
-                  const badge = getBadge(video);
-                  return (
-                    <div
-                      key={video.id}
-                      onClick={() => toggleVideo(video.id)}
-                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
-                        selectedVideos.includes(video.id) ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-white/5'
-                      }`}
-                    >
-                      <button
-                        className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                          selectedVideos.includes(video.id) ? 'bg-orange-500 border-orange-500' : 'border-white/30'
-                        }`}
-                      >
-                        {selectedVideos.includes(video.id) && (
-                          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
-                          </svg>
-                        )}
-                      </button>
-                      <span className={`text-xs px-2 py-1 rounded-lg font-semibold flex-shrink-0 ${badge.className}`}>
-                        {badge.text}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-text-primary truncate">{video.title}</p>
-                        {video.channel_title && <p className="text-xs text-text-muted truncate">{video.channel_title}</p>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              {/* Channel-grouped list */}
+              {renderChannelList(true)}
             </div>
           )}
         </div>
