@@ -565,6 +565,16 @@
     margin: 0 2px 0 0;
   }
 
+  /* Override video.js responsive layout hiding - we manage our own control bar */
+  .video-js.vjs-layout-small .vjs-volume-control,
+  .video-js.vjs-layout-x-small .vjs-volume-control,
+  .video-js.vjs-layout-tiny .vjs-volume-control,
+  .video-js.vjs-layout-small .vjs-playback-rate,
+  .video-js.vjs-layout-x-small .vjs-playback-rate,
+  .video-js.vjs-layout-tiny .vjs-playback-rate {
+    display: block !important;
+  }
+
 }
 
 /* ---------------------------------------------
