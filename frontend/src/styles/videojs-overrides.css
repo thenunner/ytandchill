@@ -575,6 +575,24 @@
     display: block !important;
   }
 
+  /* Vertical volume slider - make it work with touch (no hover on mobile) */
+  .video-js .vjs-volume-panel-vertical .vjs-volume-control.vjs-volume-vertical {
+    left: -3.5em !important;       /* Always position correctly (not -3000em) */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+
+  .video-js .vjs-volume-panel-vertical.vjs-hover .vjs-volume-control.vjs-volume-vertical,
+  .video-js .vjs-volume-panel-vertical:active .vjs-volume-control.vjs-volume-vertical,
+  .video-js .vjs-volume-panel-vertical .vjs-volume-control.vjs-volume-vertical.vjs-slider-active {
+    opacity: 1;
+    pointer-events: auto;
+    visibility: visible;
+    height: 8em;
+    width: 3em;
+  }
+
 }
 
 /* ---------------------------------------------
@@ -604,10 +622,11 @@
 .video-js .vjs-playback-rate .vjs-menu {
   width: auto;
   min-width: 60px;
+  margin-bottom: 0;  /* Remove default 1.5em gap */
 }
 
 .video-js .vjs-playback-rate .vjs-menu .vjs-menu-content {
-  bottom: 44px;  /* Position above control bar */
+  bottom: 0;
   max-height: none;
 }
 
@@ -634,7 +653,7 @@
   }
 
   .video-js .vjs-playback-rate .vjs-menu .vjs-menu-content {
-    bottom: 40px;
+    bottom: 0;
   }
 
   /* Ensure 44px touch targets on mobile */
