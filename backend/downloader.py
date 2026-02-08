@@ -656,7 +656,26 @@ class DownloadWorker:
                 logger.error(f'SponsorBlock cut: ffmpeg concat failed: {result.stderr.decode()[-500:]}')
                 raise Exception('ffmpeg concat failed')
 
-            # Step 4: Replace original with cut version
+            # Step 4: Remux to fix container metadata (duration) after concat
+            remux_path = os.path.join(file_dir, f'{file_base}_remux{file_ext}')
+            remux_cmd = [
+                'ffmpeg', '-y',
+                '-i', output_path,
+                '-c', 'copy',
+                '-movflags', '+faststart',
+                remux_path
+            ]
+
+            logger.debug('SponsorBlock cut: Remuxing to fix container metadata')
+            result = subprocess.run(remux_cmd, capture_output=True, timeout=120)
+            if result.returncode == 0 and os.path.exists(remux_path) and os.path.getsize(remux_path) > 0:
+                os.replace(remux_path, output_path)
+            else:
+                logger.warning('SponsorBlock cut: Remux failed, using concat output as-is')
+                if os.path.exists(remux_path):
+                    os.remove(remux_path)
+
+            # Step 5: Replace original with cut version
             if os.path.exists(output_path) and os.path.getsize(output_path) > 0:
                 os.replace(output_path, video_file_path)
                 new_size = os.path.getsize(video_file_path)
@@ -698,6 +717,9 @@ class DownloadWorker:
             output_path = os.path.join(file_dir, f'{file_base}_cut{file_ext}')
             if os.path.exists(output_path):
                 os.remove(output_path)
+            remux_path = os.path.join(file_dir, f'{file_base}_remux{file_ext}')
+            if os.path.exists(remux_path):
+                os.remove(remux_path)
 
     def _cleanup_failed_video(self, session, video, queue_item, channel_dir, reason):
         """
