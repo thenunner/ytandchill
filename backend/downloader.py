@@ -579,12 +579,12 @@ class DownloadWorker:
             segments: List of dicts with 'start' and 'end' keys (seconds)
 
         Returns:
-            New file size in bytes, or None if cutting failed
+            tuple: (new_file_size, new_duration_sec) or (None, None) if cutting failed
         """
         import subprocess
 
         if not segments or not os.path.exists(video_file_path):
-            return None
+            return None, None
 
         # Sort segments by start time and compute "keep" ranges
         sorted_segments = sorted(segments, key=lambda s: s['start'])
@@ -604,7 +604,7 @@ class DownloadWorker:
 
         if not keep_ranges:
             logger.warning('SponsorBlock cut: No content would remain after cutting, skipping')
-            return None
+            return None, None
 
         file_dir = os.path.dirname(video_file_path)
         file_base = os.path.splitext(os.path.basename(video_file_path))[0]
@@ -662,14 +662,30 @@ class DownloadWorker:
                 new_size = os.path.getsize(video_file_path)
                 total_cut = sum(seg['end'] - seg['start'] for seg in sorted_segments)
                 logger.info(f'SponsorBlock cut: Removed ~{total_cut:.0f}s of segments from video ({len(segments)} segments)')
-                return new_size
+
+                # Get actual duration of cut file via ffprobe
+                new_duration = None
+                try:
+                    probe_cmd = [
+                        'ffprobe', '-v', 'error',
+                        '-show_entries', 'format=duration',
+                        '-of', 'default=noprint_wrappers=1:nokey=1',
+                        video_file_path
+                    ]
+                    probe_result = subprocess.run(probe_cmd, capture_output=True, text=True, timeout=30)
+                    if probe_result.returncode == 0:
+                        new_duration = int(float(probe_result.stdout.strip()))
+                except Exception as probe_error:
+                    logger.warning(f'SponsorBlock cut: Failed to probe duration: {probe_error}')
+
+                return new_size, new_duration
             else:
                 logger.error('SponsorBlock cut: Output file is empty or missing')
                 raise Exception('Output file empty')
 
         except Exception as e:
             logger.warning(f'SponsorBlock cut failed, keeping original file: {e}')
-            return None
+            return None, None
 
         finally:
             # Clean up temp files
@@ -1367,9 +1383,11 @@ class DownloadWorker:
                                         self.current_download['postprocess_start_time'] = time.time()
                                 self._emit_queue_update(force=True)
 
-                                new_size = self._cut_sponsorblock_segments(video_file_path, segments)
+                                new_size, new_duration = self._cut_sponsorblock_segments(video_file_path, segments)
                                 if new_size:
                                     video.file_size_bytes = new_size
+                                    if new_duration:
+                                        video.duration_sec = new_duration
                                     video.sponsorblock_segments = 'cut'  # Mark as cut, timestamps no longer valid
                             except Exception as cut_error:
                                 logger.warning(f'Failed to cut SponsorBlock segments: {cut_error}')

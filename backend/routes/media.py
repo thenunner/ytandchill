@@ -83,7 +83,7 @@ def serve_media(filename):
         # File hasn't changed - return 304 Not Modified
         return Response(status=304, headers={
             'ETag': etag,
-            'Cache-Control': 'public, max-age=86400'
+            'Cache-Control': 'no-cache'
         })
 
     mime_type, _ = mimetypes.guess_type(file_abs)
@@ -110,8 +110,8 @@ def serve_media(filename):
                 # Video thumbnails - cache for 1 day
                 response.headers['Cache-Control'] = 'public, max-age=86400'
         elif mime_type and mime_type.startswith('video/'):
-            # Video files - cache for 1 day, revalidate with ETag
-            response.headers['Cache-Control'] = 'public, max-age=86400'
+            # Video files - always revalidate with ETag (handles re-downloads and SponsorBlock cuts)
+            response.headers['Cache-Control'] = 'no-cache'
 
         return response
 
@@ -144,7 +144,7 @@ def serve_media(filename):
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Content-Length'] = str(length)
         response.headers['Content-Type'] = mime_type
-        response.headers['Cache-Control'] = 'public, max-age=86400'
+        response.headers['Cache-Control'] = 'no-cache'
         response.headers['ETag'] = etag
         # Connection header removed - WSGI servers (Waitress) manage this automatically per PEP 3333
         response.headers['Access-Control-Allow-Origin'] = '*'
@@ -159,7 +159,7 @@ def serve_media(filename):
         response.headers['Accept-Ranges'] = 'bytes'
         response.headers['Access-Control-Allow-Origin'] = '*'
         response.headers['ETag'] = etag
-        response.headers['Cache-Control'] = 'public, max-age=86400'
+        response.headers['Cache-Control'] = 'no-cache'
         return response
 
 
