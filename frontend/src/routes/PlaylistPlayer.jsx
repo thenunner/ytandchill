@@ -568,11 +568,12 @@ export default function PlaylistPlayer() {
             experimentalSvgIcons: true,
             playbackRates: [1, 1.5, 2, 2.5],
             controlBar: {
+              volumePanel: { inline: false },
               children: [
                 'seekBackward10Button',
                 'playToggle',
                 'seekForward10Button',
-                { name: 'volumePanel', inline: false },
+                'volumePanel',
                 'currentTimeDisplay',
                 'timeDivider',
                 'durationDisplay',
@@ -629,26 +630,6 @@ export default function PlaylistPlayer() {
           }
         };
         vjs.el().addEventListener('touchend', handleDoubleTapFullscreen);
-
-        // Position playback rate menu below button in portrait mode
-        const rateBtn = vjs.controlBar.getChild('playbackRateMenuButton');
-        if (rateBtn) {
-          const menuEl = rateBtn.el().querySelector('.vjs-menu');
-          if (menuEl) {
-            const positionMenu = () => {
-              const rect = rateBtn.el().getBoundingClientRect();
-              menuEl.style.top = `${rect.bottom}px`;
-              menuEl.style.left = `${rect.left}px`;
-              menuEl.style.width = `${Math.max(rect.width, 60)}px`;
-            };
-            const observer = new MutationObserver(() => {
-              if (menuEl.classList.contains('vjs-lock-showing')) {
-                positionMenu();
-              }
-            });
-            observer.observe(menuEl, { attributes: true, attributeFilter: ['class'] });
-          }
-        }
       }
 
       // Add theater button callback

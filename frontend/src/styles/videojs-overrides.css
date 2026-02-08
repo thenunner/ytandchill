@@ -635,23 +635,4 @@
   }
 }
 
-/* Portrait only: playback rate menu opens below control bar via fixed positioning
- * This escapes the overflow:hidden wrapper. JS sets top/left coordinates. */
-@media (max-width: 1024px) and (orientation: portrait) {
-  .video-js .vjs-playback-rate .vjs-menu {
-    position: fixed;
-    z-index: 9999;
-  }
-
-  .video-js .vjs-playback-rate .vjs-menu .vjs-menu-content {
-    position: relative;
-    bottom: auto;
-    max-height: 50vh;
-    overflow-y: auto;
-    border-radius: 8px;
-    background-color: hsl(var(--bg-secondary));
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  }
-}
-
 /* Mobile touch handling is provided by videojs-mobile-ui plugin */
