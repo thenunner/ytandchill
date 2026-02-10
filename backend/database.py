@@ -169,9 +169,19 @@ def init_db(database_url=None):
             logger.info("Database migration complete")
 
         database_url = f'sqlite:///{new_db_path}'
-    engine = create_engine(database_url, echo=False)
+    engine = create_engine(
+        database_url,
+        echo=False,
+        connect_args={'timeout': 30},  # Wait up to 30s for locks (default is 5s)
+    )
     Base.metadata.create_all(engine)
     Session = sessionmaker(bind=engine)
+
+    # Enable WAL mode for concurrent read/write access
+    # WAL allows readers to proceed while a writer is active
+    with engine.connect() as conn:
+        conn.execute(text("PRAGMA journal_mode=WAL"))
+        conn.commit()
 
     # Run migrations for new columns on existing tables
     with engine.connect() as conn:
