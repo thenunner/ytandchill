@@ -516,7 +516,15 @@ export default function Player() {
     };
     player.on('error', handleError);
 
+    // Exit fullscreen when video ends (desktop/tablet only)
+    const handleEnded = () => {
+      if (!isMobileRef.current && player.isFullscreen()) {
+        player.exitFullscreen();
+      }
+    };
+
     player.on('timeupdate', handleTimeUpdate);
+    player.on('ended', handleEnded);
 
     // Save on pause
     const handlePause = () => {
@@ -546,6 +554,7 @@ export default function Player() {
       }
       if (player && !player.isDisposed()) {
         player.off('timeupdate', handleTimeUpdate);
+        player.off('ended', handleEnded);
         player.off('pause', handlePause);
         player.off('error', handleError);
       }
