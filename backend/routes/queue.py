@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 queue_bp = Blueprint('queue', __name__)
 
 # Sensitive settings keys that should not be exposed via API
-SENSITIVE_KEYS = {'password', 'youtube_api_key'}
+SENSITIVE_KEYS = {'auth_password_hash', 'youtube_api_key', 'secret_key'}
 
 # Module-level references to shared dependencies
 _session_factory = None

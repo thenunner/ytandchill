@@ -160,6 +160,14 @@ export default function Settings() {
     window.scrollTo({ top: 0, behavior: 'instant' });
   }, []);
 
+  // Fetch API key from dedicated endpoint (separate from settings to avoid SSE overwrite)
+  useEffect(() => {
+    fetch('/api/settings/youtube-api-key', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setYoutubeApiKey(data.youtube_api_key || ''))
+      .catch(() => {});
+  }, []);
+
   // Initialize settings
   useEffect(() => {
     if (settings) {
@@ -171,7 +179,6 @@ export default function Settings() {
       setCookieSource(settings.cookie_source || 'file');
       setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
       setDownloadSubtitles(settings.download_subtitles === 'true');
-      setYoutubeApiKey(settings.youtube_api_key || '');
       setHasApiKey(!!settings.has_youtube_api_key);
       setHideWatched(settings.hide_watched === 'true');
       setHidePlaylisted(settings.hide_playlisted === 'true');

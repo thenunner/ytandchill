@@ -96,16 +96,15 @@ def is_authenticated():
 # =============================================================================
 
 # Keys that should never be exposed to the frontend
-SENSITIVE_KEYS = {'auth_username', 'auth_password_hash', 'anthropic_api_key', 'secret_key'}
+SENSITIVE_KEYS = {'auth_username', 'auth_password_hash', 'youtube_api_key', 'secret_key'}
 
 @settings_bp.route('/api/settings', methods=['GET'])
 def get_settings():
     with get_session(_session_factory) as db_session:
         settings = db_session.query(Setting).all()
         result = {s.key: s.value for s in settings if s.key not in SENSITIVE_KEYS}
-        # Ensure youtube_api_key has a value (not None) for frontend display
-        api_key = result.get('youtube_api_key')
-        result['youtube_api_key'] = api_key or ''
+        # Only expose whether an API key exists, not the actual value
+        api_key = _settings_manager.get('youtube_api_key')
         result['has_youtube_api_key'] = bool(api_key and api_key.strip())
         return jsonify(result)
 
@@ -176,6 +175,13 @@ def clear_discoveries_flag():
     """Clear the new discoveries notification flag"""
     _settings_manager.set('new_discoveries_flag', 'false')
     return jsonify({'status': 'ok'})
+
+
+@settings_bp.route('/api/settings/youtube-api-key', methods=['GET'])
+def get_youtube_api_key():
+    """Return the YouTube API key for the Settings page (auth-protected)."""
+    api_key = _settings_manager.get('youtube_api_key')
+    return jsonify({'youtube_api_key': api_key or ''})
 
 
 @settings_bp.route('/api/settings/test-youtube-api', methods=['POST'])
