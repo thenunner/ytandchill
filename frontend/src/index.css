@@ -1003,3 +1003,8 @@
   @apply h-full bg-accent;
 }
 
+.mask-text {
+  -webkit-text-security: disc;
+  text-security: disc;
+}
+

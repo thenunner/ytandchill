@@ -747,12 +747,12 @@ export default function Settings() {
               <div className="flex items-center gap-2">
                 <div className="relative">
                   <input
-                    type={showApiKey ? 'text' : 'password'}
+                    type="text"
                     value={youtubeApiKey}
                     onChange={(e) => setYoutubeApiKey(e.target.value)}
                     placeholder="API key"
                     autoComplete="off"
-                    className="input text-sm py-1.5 px-2 pr-8 w-28 sm:w-40"
+                    className={`input text-sm py-1.5 px-2 pr-8 w-28 sm:w-40 ${!showApiKey ? 'mask-text' : ''}`}
                   />
                   <button
                     type="button"

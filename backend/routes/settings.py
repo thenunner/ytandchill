@@ -103,8 +103,8 @@ def get_settings():
     with get_session(_session_factory) as db_session:
         settings = db_session.query(Setting).all()
         result = {s.key: s.value for s in settings if s.key not in SENSITIVE_KEYS}
-        # Include youtube_api_key directly (user is authenticated, needed for settings display)
-        api_key = _settings_manager.get('youtube_api_key')
+        # Ensure youtube_api_key has a value (not None) for frontend display
+        api_key = result.get('youtube_api_key')
         result['youtube_api_key'] = api_key or ''
         result['has_youtube_api_key'] = bool(api_key and api_key.strip())
         return jsonify(result)
