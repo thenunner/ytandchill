@@ -171,7 +171,7 @@ export default function Settings() {
       setCookieSource(settings.cookie_source || 'file');
       setDefaultPlaybackSpeed(settings.default_playback_speed || '1');
       setDownloadSubtitles(settings.download_subtitles === 'true');
-      setYoutubeApiKey(''); // API key is not returned for security - only presence flag
+      setYoutubeApiKey(settings.youtube_api_key || '');
       setHasApiKey(!!settings.has_youtube_api_key);
       setHideWatched(settings.hide_watched === 'true');
       setHidePlaylisted(settings.hide_playlisted === 'true');
@@ -751,6 +751,7 @@ export default function Settings() {
                     value={youtubeApiKey}
                     onChange={(e) => setYoutubeApiKey(e.target.value)}
                     placeholder="API key"
+                    autoComplete="off"
                     className="input text-sm py-1.5 px-2 pr-8 w-28 sm:w-40"
                   />
                   <button
@@ -898,15 +899,15 @@ export default function Settings() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs text-text-secondary mb-1">Current Password</label>
-                      <input type="password" value={passwordChange.currentPassword} onChange={(e) => passwordChange.setCurrentPassword(e.target.value)} placeholder="Current password" className="input text-sm py-1.5 px-3 w-full" disabled={passwordChange.isLoading} autoComplete="current-password" autoFocus />
+                      <input type="password" value={passwordChange.currentPassword} onChange={(e) => passwordChange.setCurrentPassword(e.target.value)} placeholder="Current password" className="input text-sm py-1.5 px-3 w-full" disabled={passwordChange.isLoading} autoComplete="off" autoFocus />
                     </div>
                     <div>
                       <label className="block text-xs text-text-secondary mb-1">New Password</label>
-                      <input type="password" value={passwordChange.newPassword} onChange={(e) => passwordChange.setNewPassword(e.target.value)} placeholder="New password" className="input text-sm py-1.5 px-3 w-full" disabled={passwordChange.isLoading} autoComplete="new-password" />
+                      <input type="password" value={passwordChange.newPassword} onChange={(e) => passwordChange.setNewPassword(e.target.value)} placeholder="New password" className="input text-sm py-1.5 px-3 w-full" disabled={passwordChange.isLoading} autoComplete="off" />
                     </div>
                     <div>
                       <label className="block text-xs text-text-secondary mb-1">Confirm Password</label>
-                      <input type="password" value={passwordChange.confirmPassword} onChange={(e) => passwordChange.setConfirmPassword(e.target.value)} placeholder="Confirm password" className="input text-sm py-1.5 px-3 w-full" disabled={passwordChange.isLoading} autoComplete="new-password" />
+                      <input type="password" value={passwordChange.confirmPassword} onChange={(e) => passwordChange.setConfirmPassword(e.target.value)} placeholder="Confirm password" className="input text-sm py-1.5 px-3 w-full" disabled={passwordChange.isLoading} autoComplete="off" />
                     </div>
                   </div>
                   {passwordChange.error && (

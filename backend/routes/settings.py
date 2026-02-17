@@ -96,15 +96,16 @@ def is_authenticated():
 # =============================================================================
 
 # Keys that should never be exposed to the frontend
-SENSITIVE_KEYS = {'auth_username', 'auth_password_hash', 'youtube_api_key', 'anthropic_api_key', 'secret_key'}
+SENSITIVE_KEYS = {'auth_username', 'auth_password_hash', 'anthropic_api_key', 'secret_key'}
 
 @settings_bp.route('/api/settings', methods=['GET'])
 def get_settings():
     with get_session(_session_factory) as db_session:
         settings = db_session.query(Setting).all()
         result = {s.key: s.value for s in settings if s.key not in SENSITIVE_KEYS}
-        # Add boolean flags for sensitive keys (without exposing actual values)
+        # Include youtube_api_key directly (user is authenticated, needed for settings display)
         api_key = _settings_manager.get('youtube_api_key')
+        result['youtube_api_key'] = api_key or ''
         result['has_youtube_api_key'] = bool(api_key and api_key.strip())
         return jsonify(result)
 
