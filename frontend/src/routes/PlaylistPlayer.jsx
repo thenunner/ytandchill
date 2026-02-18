@@ -504,8 +504,14 @@ export default function PlaylistPlayer() {
   // Keep default speed ref in sync with settings
   defaultSpeedRef.current = parseFloat(settings?.default_playback_speed) || 1;
 
+  // SponsorBlock: only skip/show markers if at least one skip category is enabled
+  const sponsorblockEnabledRef = useRef(false);
+  sponsorblockEnabledRef.current = settings?.sponsorblock_remove_sponsor === 'true' ||
+    settings?.sponsorblock_remove_selfpromo === 'true' ||
+    settings?.sponsorblock_remove_interaction === 'true';
+
   // ==================== VIDEO.JS INITIALIZATION (Desktop + Mobile) ====================
-  // Following Stash's pattern: use video.js everywhere
+  // Use video.js everywhere
   // Uses isMobileRef to avoid re-init when media query settles
   useEffect(() => {
     const container = videoContainerRef.current;
@@ -761,9 +767,9 @@ export default function PlaylistPlayer() {
     player.one('loadedmetadata', () => {
       const duration = player.duration();
 
-      // Add SponsorBlock segment markers to progress bar (skip if segments were cut from file)
+      // Add SponsorBlock segment markers to progress bar (only if skip categories are enabled)
       const segments = Array.isArray(currentVideo.sponsorblock_segments) ? currentVideo.sponsorblock_segments : [];
-      if (segments.length > 0 && duration > 0) {
+      if (segments.length > 0 && duration > 0 && sponsorblockEnabledRef.current) {
         const progressHolder = player.el().querySelector('.vjs-progress-holder');
         if (progressHolder) {
           // Remove any existing markers
@@ -812,9 +818,9 @@ export default function PlaylistPlayer() {
         }
       }
 
-      // SponsorBlock skip (skip if segments were cut from file)
+      // SponsorBlock skip (only if skip categories are enabled in settings)
       const segments = Array.isArray(currentVideo.sponsorblock_segments) ? currentVideo.sponsorblock_segments : [];
-      if (segments.length > 0 && !player.seeking() && !player.paused()) {
+      if (segments.length > 0 && sponsorblockEnabledRef.current && !player.seeking() && !player.paused()) {
         const time = player.currentTime();
         for (const seg of segments) {
           if (time >= seg.start && time < seg.end - 0.5) {

@@ -1,8 +1,6 @@
 /**
- * Persist Volume Plugin - from Stash
- * https://github.com/stashapp/stash/blob/master/ui/v2.5/src/components/ScenePlayer/persist-volume.ts
- * Converted from TypeScript to JavaScript
- * Uses localStorage instead of localForage for simplicity
+ * Persist Volume Plugin
+ * Saves volume/mute state to localStorage
  */
 import videojs from 'video.js';
 

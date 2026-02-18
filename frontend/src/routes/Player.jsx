@@ -77,6 +77,12 @@ export default function Player() {
   // Keep default speed ref in sync with settings
   defaultSpeedRef.current = parseFloat(settings?.default_playback_speed) || 1;
 
+  // SponsorBlock: only skip/show markers if at least one skip category is enabled
+  const sponsorblockEnabledRef = useRef(false);
+  sponsorblockEnabledRef.current = settings?.sponsorblock_remove_sponsor === 'true' ||
+    settings?.sponsorblock_remove_selfpromo === 'true' ||
+    settings?.sponsorblock_remove_interaction === 'true';
+
   // Media queries - use ref to prevent player reinit on media query changes
   const isTouchDevice = useMediaQuery('(pointer: coarse)');
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
@@ -121,7 +127,7 @@ export default function Player() {
   }, [isTheaterMode]);
 
   // ==================== VIDEO.JS INITIALIZATION (Desktop + Mobile) ====================
-  // Following Stash's pattern: use video.js everywhere
+  // Use video.js everywhere
   // Uses isMobileRef to avoid re-init when media query settles
   useEffect(() => {
     const container = videoContainerRef.current;
@@ -403,9 +409,9 @@ export default function Player() {
       // Clear localStorage after successful resume (API will have synced by now)
       localStorage.removeItem(`video_progress_${playerVideoData.id}`);
 
-      // Add SponsorBlock segment markers to progress bar (skip if segments were cut from file)
+      // Add SponsorBlock segment markers to progress bar (only if skip categories are enabled)
       const segments = Array.isArray(playerVideoData.sponsorblock_segments) ? playerVideoData.sponsorblock_segments : [];
-      if (segments.length > 0 && duration > 0) {
+      if (segments.length > 0 && duration > 0 && sponsorblockEnabledRef.current) {
         const progressHolder = player.el().querySelector('.vjs-progress-holder');
         if (progressHolder) {
           // Remove any existing markers
@@ -474,9 +480,9 @@ export default function Player() {
         }
       }
 
-      // SponsorBlock skip (skip if segments were cut from file)
+      // SponsorBlock skip (only if skip categories are enabled in settings)
       const segments = Array.isArray(playerVideoData.sponsorblock_segments) ? playerVideoData.sponsorblock_segments : [];
-      if (segments.length > 0 && !player.seeking() && !player.paused()) {
+      if (segments.length > 0 && sponsorblockEnabledRef.current && !player.seeking() && !player.paused()) {
         const currentTime = player.currentTime();
         for (const segment of segments) {
           if (currentTime >= segment.start && currentTime < segment.end - 0.5) {

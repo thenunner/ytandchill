@@ -1,7 +1,6 @@
 /**
- * Media Session Plugin - from Stash
- * https://github.com/stashapp/stash/blob/master/ui/v2.5/src/components/ScenePlayer/media-session.ts
- * Converted from TypeScript to JavaScript
+ * Media Session Plugin
+ * Integrates with browser Media Session API for lock screen controls
  */
 import videojs from 'video.js';
 

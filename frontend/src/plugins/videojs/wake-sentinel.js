@@ -1,7 +1,6 @@
 /**
- * Wake Sentinel Plugin - from Stash
- * https://github.com/stashapp/stash/blob/master/ui/v2.5/src/components/ScenePlayer/wake-sentinel.ts
- * Converted from TypeScript to JavaScript
+ * Wake Sentinel Plugin
+ * Keeps screen awake during video playback
  */
 import videojs from 'video.js';
 

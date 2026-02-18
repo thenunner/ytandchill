@@ -1,6 +1,5 @@
 /**
- * Video.js plugins - based on Stash's implementation
- * https://github.com/stashapp/stash
+ * Video.js plugins
  */
 export { default as WakeSentinelPlugin } from './wake-sentinel';
 export { default as PersistVolumePlugin } from './persist-volume';
