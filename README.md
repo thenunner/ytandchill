@@ -165,6 +165,10 @@ For detailed troubleshooting, see [FAQ.md](FAQ.md).
 - [Video.js](https://github.com/videojs/video.js) - Video player
 - [Tailwind CSS](https://github.com/tailwindlabs/tailwindcss) - Styling
 
+## Release History
+
+Releases prior to v7.3.8 were removed. Early releases were poorly managed with many left in draft state, and the volume of changes made them obsolete. The changelog begins at v7.3.8.
+
 ## License
 
 MIT License
