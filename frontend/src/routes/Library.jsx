@@ -811,6 +811,12 @@ export default function Library() {
                     {channel.newVideoCount > 99 ? '99+' : channel.newVideoCount}
                   </div>
                 )}
+                {/* Video Search Match Badge */}
+                {searchInput && channel.videoMatchCount > 0 && (
+                  <div className="absolute top-0 right-0 bg-accent text-white font-bold text-sm px-2 py-1 rounded-tr-xl rounded-bl-lg leading-none z-20">
+                    {channel.videoMatchCount}
+                  </div>
+                )}
                 {/* Last Added Badge */}
                 {channel.lastAddedAt && (
                   <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-2 py-1 rounded">
@@ -842,11 +848,6 @@ export default function Library() {
                     <HeartIcon className="w-5 h-5" filled={channel.is_favorite} />
                   </button>
                 </div>
-                {searchInput && channel.videoMatchCount > 0 && (
-                  <p className="text-xs text-accent mt-0.5 truncate">
-                    {channel.videoMatchCount} video{channel.videoMatchCount !== 1 ? 's' : ''} match '{searchInput}'
-                  </p>
-                )}
                 <div className="text-sm text-text-secondary font-medium">
                   <span>
                     {channel.videoCount - channel.watchedCount} / {channel.videoCount} unwatched
