@@ -169,6 +169,17 @@ export function useVideos(params) {
   });
 }
 
+export function useVideoChannelMatches(search) {
+  return useQuery({
+    queryKey: ['video-channel-matches', search],
+    queryFn: () => api.getVideoChannelMatches(search),
+    enabled: !!search && search.trim().length >= 2,
+    staleTime: 30000,
+    refetchOnWindowFocus: false,
+    placeholderData: (prev) => prev,
+  });
+}
+
 export function useVideo(id) {
   return useQuery({
     queryKey: ['video', id],

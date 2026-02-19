@@ -115,6 +115,10 @@ class APIClient {
     return this.request(`/videos${query ? `?${query}` : ''}`);
   }
 
+  getVideoChannelMatches(search) {
+    return this.request(`/videos/channel-matches?search=${encodeURIComponent(search)}`);
+  }
+
   getVideo(id) {
     return this.request(`/videos/${id}`);
   }
