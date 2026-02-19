@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory, useSettings, useVideoChannelMatches } from '../api/queries';
+import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/PreferencesContext';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -42,7 +42,6 @@ export default function Discover() {
   const [menuOpen, setMenuOpen] = useState(null); // Track which channel's menu is open (grid view only)
   const [showDurationSettings, setShowDurationSettings] = useState(null); // Track which channel shows duration settings
   const [searchInput, setSearchInput] = useState(''); // Search filter
-  const [debouncedSearch, setDebouncedSearch] = useState(''); // Debounced for video search API
   const [sortBy, setSortBy] = useState(localStorage.getItem('channels_sortBy') || 'title-asc'); // Sort option
   const [selectedChannels, setSelectedChannels] = useState([]); // Selected channels for batch operations
   const [editMode, setEditMode] = useState(false); // Edit mode for bulk selection
@@ -405,39 +404,13 @@ export default function Discover() {
     localStorage.setItem('channels_categoryFilter', JSON.stringify(selectedCategories));
   }, [selectedCategories]);
 
-  // Debounce search input for video search API calls (300ms)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput.trim());
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
-
-  // Video title search — returns channels with matching videos
-  const { data: videoMatches, isFetching: isSearchingVideos } = useVideoChannelMatches(debouncedSearch);
-
-  // Build a map of channel_id -> match_count from video search results
-  const videoMatchMap = useMemo(() => {
-    if (!videoMatches) return {};
-    const map = {};
-    for (const match of videoMatches) {
-      map[match.channel_id] = match.match_count;
-    }
-    return map;
-  }, [videoMatches]);
-
   // Filter and sort channels (memoized for performance)
   const filteredAndSortedChannels = useMemo(() => {
-    // Filter by search: match channel title (client-side) OR video matches (server-side)
-    let filtered = channels?.filter(channel => {
-      if (channel.yt_id === SINGLES_CHANNEL_ID) return false;
-      if (!searchInput) return true;
-      // Match by channel title (instant, client-side)
-      if ((channel.title || '').toLowerCase().includes(searchInput.toLowerCase())) return true;
-      // Match by video titles (debounced, server-side)
-      if (videoMatchMap[channel.id]) return true;
-      return false;
-    }) || [];
+    // First filter by search (and exclude Singles pseudo-channel)
+    let filtered = channels?.filter(channel =>
+      channel.yt_id !== SINGLES_CHANNEL_ID &&
+      (channel.title || '').toLowerCase().includes(searchInput.toLowerCase())
+    ) || [];
 
     // Then filter by category if any categories are selected
     if (selectedCategories.length > 0) {
@@ -480,7 +453,7 @@ export default function Discover() {
     });
 
     return sorted;
-  }, [channels, searchInput, selectedCategories, sortBy, videoMatchMap]);
+  }, [channels, searchInput, selectedCategories, sortBy]);
 
   // Reset page when filters change
   useEffect(() => {
@@ -1083,10 +1056,7 @@ export default function Discover() {
               )}
 
               <Link
-                to={searchInput && videoMatchMap[channel.id]
-                  ? `/discover/${channel.id}?videoSearch=${encodeURIComponent(searchInput)}`
-                  : `/discover/${channel.id}`
-                }
+                to={`/discover/${channel.id}`}
                 className="block"
                 onClick={(e) => {
                   if (editMode) {
@@ -1156,11 +1126,6 @@ export default function Discover() {
                       </div>
                     )}
                   </div>
-                  {searchInput && videoMatchMap[channel.id] && (
-                    <p className="text-xs text-accent mt-1 truncate">
-                      {videoMatchMap[channel.id]} video{videoMatchMap[channel.id] !== 1 ? 's' : ''} match '{searchInput}'
-                    </p>
-                  )}
                 </div>
               </Link>
 
@@ -1189,7 +1154,7 @@ export default function Discover() {
           <EmptyState
             icon={<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />}
             title="No matching channels"
-            message={isSearchingVideos ? "Searching videos..." : "No channels or videos match your search"}
+            message="Try a different search term"
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-16 px-4">

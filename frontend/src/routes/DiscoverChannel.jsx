@@ -49,8 +49,7 @@ export default function DiscoverChannel() {
   const isScanRunning = currentOperation?.type === 'scanning';
 
   const [selectedVideos, setSelectedVideos] = useState([]);
-  const initialVideoSearch = searchParams.get('videoSearch') || '';
-  const [searchInput, setSearchInput] = useState(initialVideoSearch);
+  const [searchInput, setSearchInput] = useState('');
   const { showButton: showScrollTop, scrollToTop } = useScrollToTop();
   const [showDurationSettings, setShowDurationSettings] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
@@ -185,10 +184,10 @@ export default function DiscoverChannel() {
 
     return [...videos]
       .filter(video => {
-        if (!searchInput) return true;
-        const title = (video.title || '').toLowerCase();
-        const terms = searchInput.toLowerCase().split(/\s+/).filter(Boolean);
-        return terms.every(term => title.includes(term));
+        if (!(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
+          return false;
+        }
+        return true;
       })
       .sort((a, b) => {
         switch (sort) {

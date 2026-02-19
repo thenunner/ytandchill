@@ -12,7 +12,7 @@ Handles:
 
 from flask import Blueprint, jsonify, request
 from sqlalchemy.orm import joinedload
-from sqlalchemy import or_, and_, func
+from sqlalchemy import or_, and_
 from datetime import datetime, timezone
 import logging
 import os
@@ -193,50 +193,6 @@ def get_videos():
         result = [_serialize_video(v) for v in videos]
 
         return jsonify(result)
-
-
-@video_tools_bp.route('/api/videos/channel-matches', methods=['GET'])
-def get_video_channel_matches():
-    """Return channels that have videos matching the search term.
-
-    Lightweight endpoint for the Discover page video search — returns only
-    channel IDs and match counts (no full video objects). Uses the same
-    ILIKE word-splitting logic as GET /api/videos.
-    """
-    search = request.args.get('search')
-    if not search or len(search.strip()) < 2:
-        return jsonify([])
-
-    with get_session(_session_factory) as session:
-        query = session.query(
-            Video.channel_id,
-            func.count(Video.id).label('match_count')
-        ).join(Channel, Video.channel_id == Channel.id)
-
-        # Exclude deleted channels and Singles pseudo-channel
-        query = query.filter(Channel.deleted_at.is_(None))
-        query = query.filter(Channel.yt_id != '__singles__')
-
-        # Exclude hidden and ignored statuses (same as GET /api/videos)
-        HIDDEN_STATUSES = ['not_found', 'shorts']
-        IGNORED_STATUSES = ['ignored', 'geoblocked']
-        query = query.filter(~Video.status.in_(HIDDEN_STATUSES + IGNORED_STATUSES))
-
-        # Require channel_id
-        query = query.filter(Video.channel_id.isnot(None))
-
-        # Word-splitting AND ILIKE search (same as GET /api/videos)
-        search_terms = search.lower().split()
-        for term in search_terms:
-            query = query.filter(Video.title.ilike(f'%{term}%'))
-
-        query = query.group_by(Video.channel_id)
-        results = query.all()
-
-        return jsonify([
-            {'channel_id': row.channel_id, 'match_count': row.match_count}
-            for row in results
-        ])
 
 
 @video_tools_bp.route('/api/videos/<int:video_id>', methods=['GET'])

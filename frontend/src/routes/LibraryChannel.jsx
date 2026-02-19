@@ -47,7 +47,8 @@ export default function LibraryChannel() {
   );
 
   const [selectedVideos, setSelectedVideos] = useState([]);
-  const [searchInput, setSearchInput] = useState('');
+  const initialVideoSearch = searchParams.get('videoSearch') || '';
+  const [searchInput, setSearchInput] = useState(initialVideoSearch);
   const { showButton: showScrollTop, scrollToTop } = useScrollToTop();
   const [editMode, setEditMode] = useState(false);
   const [showPlaylistMenu, setShowPlaylistMenu] = useState(false);
@@ -163,8 +164,10 @@ export default function LibraryChannel() {
 
     return [...videos]
       .filter(video => {
-        if (!(video.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
-          return false;
+        if (searchInput) {
+          const title = (video.title || '').toLowerCase();
+          const terms = searchInput.toLowerCase().split(/\s+/).filter(Boolean);
+          if (!terms.every(term => title.includes(term))) return false;
         }
         if (hideWatched && video.watched) {
           return false;

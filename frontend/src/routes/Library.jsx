@@ -261,11 +261,26 @@ export default function Library() {
       if (channel.isPlaylistFolder) return false;
       // Hide fully-watched channels when setting is enabled
       if (hideWatched && channel.allWatched && channel.videoCount > 0) return false;
-      // Search filter
-      if (!(channel.title || '').toLowerCase().includes(searchInput.toLowerCase())) {
-        return false;
-      }
-      return true;
+      // No search term — show all
+      if (!searchInput) return true;
+      // Match by channel title
+      if ((channel.title || '').toLowerCase().includes(searchInput.toLowerCase())) return true;
+      // Match by video titles (word-splitting AND match, same as backend)
+      const terms = searchInput.toLowerCase().split(/\s+/).filter(Boolean);
+      if (channel.videos?.some(v => {
+        const title = (v.title || '').toLowerCase();
+        return terms.every(term => title.includes(term));
+      })) return true;
+      return false;
+    }).map(channel => {
+      // Compute video match count for badge display
+      if (!searchInput) return channel;
+      const terms = searchInput.toLowerCase().split(/\s+/).filter(Boolean);
+      const videoMatchCount = channel.videos?.filter(v => {
+        const title = (v.title || '').toLowerCase();
+        return terms.every(term => title.includes(term));
+      }).length || 0;
+      return { ...channel, videoMatchCount };
     });
 
     // Then sort based on selected option
@@ -768,7 +783,10 @@ export default function Library() {
           {paginatedChannelsList.map(channel => (
             <Link
               key={channel.id}
-              to={`/library/channel/${channel.id}`}
+              to={searchInput && channel.videoMatchCount
+                ? `/library/channel/${channel.id}?videoSearch=${encodeURIComponent(searchInput)}`
+                : `/library/channel/${channel.id}`
+              }
               className="group transition-colors rounded overflow-hidden"
             >
               {/* Thumbnail */}
@@ -824,6 +842,11 @@ export default function Library() {
                     <HeartIcon className="w-5 h-5" filled={channel.is_favorite} />
                   </button>
                 </div>
+                {searchInput && channel.videoMatchCount > 0 && (
+                  <p className="text-xs text-accent mt-0.5 truncate">
+                    {channel.videoMatchCount} video{channel.videoMatchCount !== 1 ? 's' : ''} match '{searchInput}'
+                  </p>
+                )}
                 <div className="text-sm text-text-secondary font-medium">
                   <span>
                     {channel.videoCount - channel.watchedCount} / {channel.videoCount} unwatched
