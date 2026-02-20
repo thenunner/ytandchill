@@ -101,6 +101,11 @@ export default function SelectionBar({
             {/* Right group: actions + Done */}
             <div className="flex items-center gap-2 sm:gap-2">
               {actions.map((action, index) => {
+                // Support custom rendered content in the actions row
+                if (action.render) {
+                  return <div key={index} className="flex items-center">{action.render}</div>;
+                }
+
                 const variantClasses = {
                   primary: 'bg-accent hover:bg-accent-hover !text-white font-medium',
                   accent: 'bg-accent/20 hover:bg-accent/30 text-accent-text border border-accent/40 font-medium',

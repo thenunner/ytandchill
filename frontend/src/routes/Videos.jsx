@@ -378,30 +378,6 @@ export default function Videos() {
         </StickyBar>
       )}
 
-      {/* Playlist Toggle */}
-      {scanResults?.playlist_title && scanResults.videos.length > 0 && (
-        <div className="bg-dark-secondary rounded-lg px-4 py-3 flex items-center gap-3 flex-wrap">
-          <label className="flex items-center gap-2 cursor-pointer shrink-0">
-            <input
-              type="checkbox"
-              checked={createPlaylist}
-              onChange={(e) => setCreatePlaylist(e.target.checked)}
-              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-accent focus:ring-offset-0 cursor-pointer"
-            />
-            <span className="text-sm text-text-secondary">Create playlist</span>
-          </label>
-          {createPlaylist && (
-            <input
-              type="text"
-              value={playlistName}
-              onChange={(e) => setPlaylistName(e.target.value)}
-              placeholder="Playlist name"
-              className="flex-1 min-w-[200px] bg-dark-tertiary border border-dark-border rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
-            />
-          )}
-        </div>
-      )}
-
       {/* Selection Bar for Videos */}
       {scanResults?.videos && scanResults.videos.length > 0 && (
         <SelectionBar
@@ -418,6 +394,35 @@ export default function Videos() {
               disabled: isRemoving,
               variant: 'warning'
             },
+            ...(scanResults.playlist_title ? [{
+              render: (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCreatePlaylist(!createPlaylist)}
+                    className={`px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                      createPlaylist
+                        ? 'bg-accent/20 text-accent-text border border-accent/40 font-medium'
+                        : 'bg-dark-tertiary hover:bg-dark-hover text-text-secondary'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span className="hidden sm:inline">Playlist</span>
+                  </button>
+                  {createPlaylist && (
+                    <input
+                      type="text"
+                      value={playlistName}
+                      onChange={(e) => setPlaylistName(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      placeholder="Playlist name"
+                      className="w-32 sm:w-48 bg-dark-tertiary border border-dark-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
+                    />
+                  )}
+                </div>
+              )
+            }] : []),
             {
               label: 'Queue',
               onClick: handleQueueSelected,
