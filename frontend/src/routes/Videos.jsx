@@ -84,10 +84,9 @@ export default function Videos() {
       // Save URL to history on successful scan
       saveUrlToHistory(playlistUrl);
 
-      // Auto-populate playlist name if available
+      // Pre-fill playlist name if available (toggle stays off by default)
       if (result.playlist_title) {
         setPlaylistName(result.playlist_title);
-        setCreatePlaylist(true);
       }
 
       if (result.videos.length === 0) {
@@ -399,10 +398,11 @@ export default function Videos() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setCreatePlaylist(!createPlaylist)}
+                    title={createPlaylist ? 'Playlist will be created on queue' : 'Create a local playlist from these videos'}
                     className={`px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                       createPlaylist
                         ? 'bg-accent hover:bg-accent-hover !text-white font-medium'
-                        : 'bg-dark-tertiary hover:bg-dark-hover text-text-secondary'
+                        : 'bg-accent/10 hover:bg-accent/20 text-accent-text'
                     }`}
                   >
                     <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
