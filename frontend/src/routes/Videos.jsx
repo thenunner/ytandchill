@@ -401,7 +401,7 @@ export default function Videos() {
                     onClick={() => setCreatePlaylist(!createPlaylist)}
                     className={`px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                       createPlaylist
-                        ? 'bg-accent/20 text-accent-text border border-accent/40 font-medium'
+                        ? 'bg-accent hover:bg-accent-hover !text-white font-medium'
                         : 'bg-dark-tertiary hover:bg-dark-hover text-text-secondary'
                     }`}
                   >
