@@ -14,7 +14,7 @@ import os
 import logging
 import requests as http_requests
 
-from database import Video, Channel, QueueItem, get_session
+from database import Video, Channel, QueueItem, Playlist, PlaylistVideo, get_session
 from scanner import extract_playlist_id, scan_playlist_videos, get_video_info
 from utils import download_thumbnail, sanitize_folder_name
 
@@ -191,6 +191,7 @@ def scan_youtube_playlist():
 
     try:
         videos = []
+        playlist_title = None
 
         if single_video_id:
             # Fetch single video metadata using yt-dlp
@@ -202,7 +203,7 @@ def scan_youtube_playlist():
                 return jsonify({'error': 'Could not fetch video information'}), 400
         else:
             # Fetch playlist/channel videos using yt-dlp
-            videos = scan_playlist_videos(url, max_results=500)
+            playlist_title, videos = scan_playlist_videos(url, max_results=500)
 
         with get_session(_session_factory) as session:
             # Get existing videos with their status
@@ -236,7 +237,8 @@ def scan_youtube_playlist():
             'total_in_playlist': len(videos),
             'new_videos_count': len(videos) - already_in_db,
             'already_in_db': already_in_db,
-            'videos': new_videos
+            'videos': new_videos,
+            'playlist_title': playlist_title
         })
 
     except Exception as e:
@@ -250,16 +252,19 @@ def queue_youtube_playlist_videos():
     """Queue videos from a YouTube playlist for download."""
     data = request.json
     videos_data = data.get('videos', [])
+    playlist_name = (data.get('playlist_name') or '').strip() or None
 
     if not videos_data:
         return jsonify({'error': 'No videos provided'}), 400
 
-    logger.info(f"Queueing {len(videos_data)} videos for download")
+    logger.info(f"Queueing {len(videos_data)} videos for download (playlist: {playlist_name})")
 
     with get_session(_session_factory) as session:
         added = 0
         skipped = 0
         channels_created = 0
+        # Track all video DB IDs for playlist creation (both new and existing)
+        all_video_db_ids = []
 
         # Cache for channels we've already looked up/created in this batch
         channel_cache = {}
@@ -271,6 +276,9 @@ def queue_youtube_playlist_videos():
             # Check if video already exists by yt_id
             existing = session.query(Video).filter(Video.yt_id == v['yt_id']).first()
             if existing:
+                # Track existing video for playlist regardless of queue status
+                all_video_db_ids.append(existing.id)
+
                 # Only allow queueing discovered or ignored videos
                 if existing.status in ['discovered', 'ignored']:
                     prior_status = existing.status
@@ -318,12 +326,29 @@ def queue_youtube_playlist_videos():
             session.add(video)
             session.flush()  # Get the video ID
 
+            # Track new video for playlist
+            all_video_db_ids.append(video.id)
+
             # Add to queue (prior_status=NULL for new videos)
             max_pos += 1
             queue_item = QueueItem(video_id=video.id, queue_position=max_pos, prior_status=None)
             session.add(queue_item)
             added += 1
             logger.debug(f"Queued video: {v['title']} to channel: {channel.title}")
+
+        # Create playlist if requested
+        playlist_id = None
+        if playlist_name and all_video_db_ids:
+            playlist = Playlist(name=playlist_name, channel_id=None)
+            session.add(playlist)
+            session.flush()
+            playlist_id = playlist.id
+
+            for position, video_id in enumerate(all_video_db_ids):
+                pv = PlaylistVideo(playlist_id=playlist.id, video_id=video_id, position=position)
+                session.add(pv)
+
+            logger.info(f"Created playlist '{playlist_name}' (ID: {playlist_id}) with {len(all_video_db_ids)} videos")
 
         session.commit()
 
@@ -334,10 +359,15 @@ def queue_youtube_playlist_videos():
         _download_worker.resume()
         logger.info("Auto-resumed download worker after queueing playlist videos")
 
-    return jsonify({
+    result = {
         'queued': added,
         'skipped': skipped
-    })
+    }
+    if playlist_id:
+        result['playlist_id'] = playlist_id
+        result['playlist_name'] = playlist_name
+
+    return jsonify(result)
 
 
 @videos_bp.route('/api/youtube-playlists/remove', methods=['POST'])

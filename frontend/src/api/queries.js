@@ -672,10 +672,13 @@ export function useScanYouTubePlaylist() {
 export function useQueuePlaylistVideos() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ videos }) => api.queuePlaylistVideos(videos),
-    onSuccess: () => {
+    mutationFn: ({ videos, playlistName }) => api.queuePlaylistVideos(videos, playlistName),
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['queue'] });
       queryClient.invalidateQueries({ queryKey: ['videos'] });
+      if (data?.playlist_id) {
+        queryClient.invalidateQueries({ queryKey: ['playlists'] });
+      }
     },
   });
 }

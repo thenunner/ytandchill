@@ -405,8 +405,10 @@ def scan_playlist_videos(playlist_url, max_results=500):
         max_results: Maximum number of videos to fetch (default: 500)
 
     Returns:
-        list: List of video dicts with keys: yt_id, title, duration_sec, upload_date, thumbnail, channel_title
-        Empty list on error
+        tuple: (playlist_title, videos)
+            playlist_title: Name of the YouTube playlist (or None for single videos/channels)
+            videos: List of video dicts with keys: yt_id, title, duration_sec, upload_date, thumbnail, channel_title
+        Returns (None, []) on error
     """
     logger.info(f'Scanning playlist: {playlist_url}')
 
@@ -421,12 +423,13 @@ def scan_playlist_videos(playlist_url, max_results=500):
 
     if not success:
         logger.error(f'Failed to scan playlist {playlist_url}: {stderr}')
-        return []
+        return None, []
 
     videos = []
     # Extract channel info from first video that has it (flat-playlist mode doesn't always include it)
     playlist_channel_title = None
     playlist_channel_id = None
+    playlist_title = None
 
     for line in stdout.strip().split('\n'):
         if not line:
@@ -436,6 +439,10 @@ def scan_playlist_videos(playlist_url, max_results=500):
             data = json.loads(line)
         except json.JSONDecodeError:
             continue
+
+        # Capture playlist title from first entry that has it
+        if playlist_title is None:
+            playlist_title = data.get('playlist_title')
 
         # Capture channel info from first video that has it
         if not playlist_channel_title:
@@ -464,8 +471,8 @@ def scan_playlist_videos(playlist_url, max_results=500):
             'channel_title': data.get('channel') or data.get('uploader') or playlist_channel_title or 'Unknown',
         })
 
-    logger.info(f'Playlist scan complete: {len(videos)} videos found')
-    return videos
+    logger.info(f'Playlist scan complete: {len(videos)} videos found (title: {playlist_title})')
+    return playlist_title, videos
 
 
 def extract_playlist_id(url):

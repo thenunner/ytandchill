@@ -58,6 +58,8 @@ export default function Videos() {
   const [filterMode, setFilterMode] = useState('new'); // 'new' or 'all'
   const [statusFilter, setStatusFilter] = useState('available'); // 'all', 'available', 'ignored', 'error'
   const [searchInput, setSearchInput] = useState(''); // Search filter for video titles
+  const [createPlaylist, setCreatePlaylist] = useState(false);
+  const [playlistName, setPlaylistName] = useState('');
 
   const handleScan = async (e, filter = filterMode) => {
     if (e) e.preventDefault();
@@ -72,6 +74,8 @@ export default function Videos() {
     setFilterMode(filter);
     setStatusFilter('available'); // Reset to available filter
     setSearchInput(''); // Clear search
+    setCreatePlaylist(false);
+    setPlaylistName('');
 
     try {
       const result = await scanPlaylist.mutateAsync({ url: playlistUrl, filter });
@@ -79,6 +83,12 @@ export default function Videos() {
 
       // Save URL to history on successful scan
       saveUrlToHistory(playlistUrl);
+
+      // Auto-populate playlist name if available
+      if (result.playlist_title) {
+        setPlaylistName(result.playlist_title);
+        setCreatePlaylist(true);
+      }
 
       if (result.videos.length === 0) {
         showNotification(
@@ -174,9 +184,14 @@ export default function Videos() {
 
     try {
       const videosToQueue = scanResults.videos.filter(v => selectedVideos.has(v.yt_id));
-      const result = await queueVideos.mutateAsync({ videos: videosToQueue });
+      const effectivePlaylistName = createPlaylist && playlistName.trim() ? playlistName.trim() : null;
+      const result = await queueVideos.mutateAsync({
+        videos: videosToQueue,
+        playlistName: effectivePlaylistName
+      });
 
-      showNotification(`Queued ${result.queued} videos`, 'success');
+      const playlistMsg = result.playlist_name ? ` + playlist "${result.playlist_name}" created` : '';
+      showNotification(`Queued ${result.queued} videos${playlistMsg}`, 'success');
 
       // Update local state
       if (filterMode === 'all') {
@@ -361,6 +376,30 @@ export default function Videos() {
             )}
           </div>
         </StickyBar>
+      )}
+
+      {/* Playlist Toggle */}
+      {scanResults?.playlist_title && scanResults.videos.length > 0 && (
+        <div className="bg-dark-secondary rounded-lg px-4 py-3 flex items-center gap-3 flex-wrap">
+          <label className="flex items-center gap-2 cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={createPlaylist}
+              onChange={(e) => setCreatePlaylist(e.target.checked)}
+              className="w-4 h-4 rounded border-dark-border bg-dark-tertiary text-accent focus:ring-accent focus:ring-offset-0 cursor-pointer"
+            />
+            <span className="text-sm text-text-secondary">Create playlist</span>
+          </label>
+          {createPlaylist && (
+            <input
+              type="text"
+              value={playlistName}
+              onChange={(e) => setPlaylistName(e.target.value)}
+              placeholder="Playlist name"
+              className="flex-1 min-w-[200px] bg-dark-tertiary border border-dark-border rounded-lg px-3 py-1.5 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          )}
+        </div>
       )}
 
       {/* Selection Bar for Videos */}

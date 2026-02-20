@@ -427,10 +427,12 @@ class APIClient {
     });
   }
 
-  queuePlaylistVideos(videos) {
+  queuePlaylistVideos(videos, playlistName = null) {
+    const payload = { videos };
+    if (playlistName) payload.playlist_name = playlistName;
     return this.request('/youtube-playlists/queue', {
       method: 'POST',
-      body: JSON.stringify({ videos }),
+      body: JSON.stringify(payload),
     });
   }
 
