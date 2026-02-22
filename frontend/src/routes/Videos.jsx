@@ -6,6 +6,7 @@ import { getGridClass, getUserFriendlyError, formatDuration, formatDate } from '
 import { useGridColumns } from '../hooks/useGridColumns';
 import { StickyBar, CollapsibleSearch, SelectionBar } from '../components/stickybar';
 import { EmptyState, useScrollToTop, ScrollToTopButton } from '../components/ListFeedback';
+import { ResponsiveModal } from '../components/ui/SharedModals';
 
 export default function Videos() {
   const { showNotification } = useNotification();
@@ -58,7 +59,7 @@ export default function Videos() {
   const [filterMode, setFilterMode] = useState('new'); // 'new' or 'all'
   const [statusFilter, setStatusFilter] = useState('available'); // 'all', 'available', 'ignored', 'error'
   const [searchInput, setSearchInput] = useState(''); // Search filter for video titles
-  const [createPlaylist, setCreatePlaylist] = useState(false);
+  const [showQueueModal, setShowQueueModal] = useState(false);
   const [playlistName, setPlaylistName] = useState('');
 
   const handleScan = async (e, filter = filterMode) => {
@@ -74,7 +75,6 @@ export default function Videos() {
     setFilterMode(filter);
     setStatusFilter('available'); // Reset to available filter
     setSearchInput(''); // Clear search
-    setCreatePlaylist(false);
     setPlaylistName('');
 
     try {
@@ -151,7 +151,7 @@ export default function Videos() {
       const videosToRemove = scanResults.videos.filter(v => selectedVideos.has(v.yt_id));
       await removeVideos.mutateAsync({ videos: videosToRemove });
 
-      showNotification(`Marked ${videosToRemove.length} videos as ignored`, 'success');
+      showNotification(`Skipped ${videosToRemove.length} ${videosToRemove.length === 1 ? 'video' : 'videos'}`, 'info');
 
       // Update local state - mark as ignored or remove from list
       if (filterMode === 'all') {
@@ -173,34 +173,45 @@ export default function Videos() {
     }
   };
 
-  const handleQueueSelected = async () => {
+  // Called when user clicks Queue in the selection bar
+  const handleQueueClick = () => {
     if (selectedVideos.size === 0) {
       showNotification('No videos selected', 'error');
       return;
     }
+    // If this scan came from a playlist/channel, open modal to offer playlist option
+    if (scanResults?.playlist_title) {
+      setShowQueueModal(true);
+    } else {
+      // Single video or no playlist context — queue directly, no playlist
+      handleQueueSelected(null);
+    }
+  };
+
+  // effectivePlaylistName: string = add to/create playlist, null = no playlist
+  const handleQueueSelected = async (effectivePlaylistName) => {
+    setShowQueueModal(false);
+    if (selectedVideos.size === 0) return;
 
     setIsQueueing(true);
 
     try {
       const videosToQueue = scanResults.videos.filter(v => selectedVideos.has(v.yt_id));
-      const effectivePlaylistName = createPlaylist && playlistName.trim() ? playlistName.trim() : null;
       const result = await queueVideos.mutateAsync({
         videos: videosToQueue,
-        playlistName: effectivePlaylistName
+        playlistName: effectivePlaylistName || null
       });
 
-      const playlistMsg = result.playlist_name ? ` + playlist "${result.playlist_name}" created` : '';
+      const playlistMsg = effectivePlaylistName ? ` · "${effectivePlaylistName}" will fill as they download` : '';
       showNotification(`Queued ${result.queued} videos${playlistMsg}`, 'success');
 
       // Update local state
       if (filterMode === 'all') {
-        // In "all" mode, update status to 'queued'
         const updatedVideos = scanResults.videos.map(v =>
           selectedVideos.has(v.yt_id) ? { ...v, status: 'queued' } : v
         );
         setScanResults({ ...scanResults, videos: updatedVideos });
       } else {
-        // In "new" mode, remove from list
         const remainingVideos = scanResults.videos.filter(v => !selectedVideos.has(v.yt_id));
         setScanResults({ ...scanResults, videos: remainingVideos });
       }
@@ -388,50 +399,55 @@ export default function Videos() {
           hideDone={true}
           actions={selectedVideos.size > 0 ? [
             {
-              label: 'Ignore',
+              label: 'Skip',
               onClick: handleRemoveSelected,
               disabled: isRemoving,
-              variant: 'warning'
+              variant: 'danger'
             },
-            ...(scanResults.playlist_title ? [{
-              render: (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setCreatePlaylist(!createPlaylist)}
-                    title={createPlaylist ? 'Playlist will be created on queue' : 'Create a local playlist from these videos'}
-                    className={`px-2.5 sm:px-3 py-2.5 sm:py-1.5 text-sm rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap ${
-                      createPlaylist
-                        ? 'bg-accent hover:bg-accent-hover !text-white font-medium'
-                        : 'bg-accent/10 hover:bg-accent/20 text-accent-text'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <span className="hidden sm:inline">Playlist</span>
-                  </button>
-                  {createPlaylist && (
-                    <input
-                      type="text"
-                      value={playlistName}
-                      onChange={(e) => setPlaylistName(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      placeholder="Playlist name"
-                      className="w-32 sm:w-48 bg-dark-tertiary border border-dark-border rounded-lg px-2.5 py-1.5 text-sm text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
-                    />
-                  )}
-                </div>
-              )
-            }] : []),
             {
-              label: 'Queue',
-              onClick: handleQueueSelected,
+              label: 'Download',
+              onClick: handleQueueClick,
               disabled: isQueueing,
               variant: 'primary'
             }
           ] : []}
         />
       )}
+
+      {/* Queue Modal — offers playlist option when scanning a playlist/channel */}
+      <ResponsiveModal
+        isOpen={showQueueModal}
+        onClose={() => setShowQueueModal(false)}
+        title="Queue Videos"
+      >
+        <p className="text-text-muted text-sm mb-3">
+          Add these {selectedVideos.size} video{selectedVideos.size !== 1 ? 's' : ''} to a playlist as they download, or just queue them.
+        </p>
+        <input
+          type="text"
+          value={playlistName}
+          onChange={(e) => setPlaylistName(e.target.value)}
+          placeholder="Playlist name"
+          className="w-full bg-white/5 rounded-xl px-4 py-3 text-sm text-text-primary placeholder-text-muted focus:outline-none focus:ring-2 focus:ring-accent/30 mb-4"
+          autoFocus
+        />
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => handleQueueSelected(playlistName.trim() || null)}
+            disabled={!playlistName.trim()}
+            className="w-full py-2.5 px-3 rounded-xl bg-accent hover:bg-accent/90 text-dark-deepest text-sm font-medium transition-colors disabled:opacity-50 truncate"
+            title={playlistName.trim() ? `Download: ${playlistName.trim()} Playlist` : ''}
+          >
+            {playlistName.trim() ? `Download: ${playlistName.trim()} Playlist` : 'Download: Playlist'}
+          </button>
+          <button
+            onClick={() => handleQueueSelected(null)}
+            className="w-full py-2.5 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-text-secondary text-sm transition-colors"
+          >
+            Download: No Playlist
+          </button>
+        </div>
+      </ResponsiveModal>
 
       {/* Video Grid */}
       {scanResults?.videos && scanResults.videos.length > 0 && (() => {

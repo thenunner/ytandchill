@@ -1,13 +1,14 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { Link, useSearchParams, useNavigate } from 'react-router-dom';
-import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings, useChannels, useToggleChannelFavorite } from '../api/queries';
+import { useVideos, usePlaylists, useDeletePlaylist, useUpdatePlaylist, useCategories, useCreateCategory, useUpdateCategory, useDeleteCategory, useBulkAssignCategory, useSettings, useChannels, useToggleChannelFavorite, useCreatePlaylist } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { getUserFriendlyError, getGridClass, getTextSizes, getEffectiveCardSize, formatFileSize, getNumericSetting } from '../utils/utils';
 import { useCardSize } from '../contexts/PreferencesContext';
 import { LoadingSpinner, Pagination, LoadMore, EmptyState } from '../components/ListFeedback';
 import { ConfirmModal, InputModal } from '../components/ui/SharedModals';
 import { CategorySelectorModal } from '../components/ui/LibraryModals';
-import { StickyBar, SelectionBar, CollapsibleSearch, TabGroup, EditButton, StickyBarRightSection } from '../components/stickybar';
+import { StickyBar, CollapsibleSearch, TabGroup, StickyBarRightSection } from '../components/stickybar';
 import { useGridColumns } from '../hooks/useGridColumns';
 import { SettingsIcon, PlayIcon, ShuffleIcon, ThreeDotsIcon, CheckmarkIcon, PlusIcon, TrashIcon, HeartIcon } from '../components/Icons';
 import { SORT_OPTIONS } from '../utils/stickyBarOptions';
@@ -22,8 +23,6 @@ export default function Library() {
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'channels');
   // Use 'channels' context for playlists tab (5 cols for large), 'library' for channels tab (4 cols)
   const gridColumns = useGridColumns(cardSize, activeTab === 'playlists' ? 'channels' : 'library');
-  const [editMode, setEditMode] = useState(false);
-  const [selectedPlaylists, setSelectedPlaylists] = useState([]);
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renamePlaylistId, setRenamePlaylistId] = useState(null);
   const [renameValue, setRenameValue] = useState('');
@@ -53,6 +52,11 @@ export default function Library() {
   const deleteCategory = useDeleteCategory();
   const bulkAssignCategory = useBulkAssignCategory();
   const toggleFavorite = useToggleChannelFavorite();
+  const createPlaylist = useCreatePlaylist();
+  const [showNewPlaylistModal, setShowNewPlaylistModal] = useState(false);
+  const [newPlaylistName, setNewPlaylistName] = useState('');
+  const [showPlusDropdown, setShowPlusDropdown] = useState(false);
+  const plusDropdownRef = useRef(null);
 
   const [showCreateCategoryModal, setShowCreateCategoryModal] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -76,7 +80,7 @@ export default function Library() {
   const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
-  const isMobile = window.innerWidth < 640;
+  const isMobile = useMediaQuery('(max-width: 639px)');
 
   // Wrapper to persist page to URL
   const setCurrentPage = (page) => {
@@ -312,12 +316,6 @@ export default function Library() {
     setLoadedPages(1); // Reset mobile infinite scroll
   }, [searchInput, channelSortBy, playlistSortBy, activeTab]);
 
-  // Clear edit mode and selections when switching tabs
-  useEffect(() => {
-    setEditMode(false);
-    setSelectedPlaylists([]);
-  }, [activeTab]);
-
   // Paginate channels list (mobile: infinite scroll, desktop: pagination)
   const paginatedChannelsList = useMemo(() => {
     if (isMobile) {
@@ -430,6 +428,17 @@ export default function Library() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Close + dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (plusDropdownRef.current && !plusDropdownRef.current.contains(e.target)) {
+        setShowPlusDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleDeletePlaylist = async (playlistId) => {
     setConfirmAction({ type: 'deletePlaylist', data: playlistId });
   };
@@ -454,27 +463,6 @@ export default function Library() {
     }
   };
 
-  const togglePlaylistSelection = (playlistId) => {
-    setSelectedPlaylists(prev =>
-      prev.includes(playlistId)
-        ? prev.filter(id => id !== playlistId)
-        : [...prev, playlistId]
-    );
-  };
-
-  const selectAllPlaylists = () => {
-    setSelectedPlaylists(filteredPlaylists.map(p => p.id));
-  };
-
-  const clearPlaylistSelection = () => {
-    setSelectedPlaylists([]);
-  };
-
-  const handleBulkDeletePlaylists = async () => {
-    if (selectedPlaylists.length === 0) return;
-    setConfirmAction({ type: 'deletePlaylists', data: selectedPlaylists.length });
-  };
-
   // Category handlers
   const handleCreateCategory = async (e) => {
     e.preventDefault();
@@ -490,6 +478,17 @@ export default function Library() {
       setNewCategoryName('');
     } catch (error) {
       showNotification(getUserFriendlyError(error.message, 'create category'), 'error');
+    }
+  };
+
+  const handleCreatePlaylist = async () => {
+    try {
+      await createPlaylist.mutateAsync({ name: newPlaylistName.trim() });
+      showNotification('Playlist created', 'success');
+      setShowNewPlaylistModal(false);
+      setNewPlaylistName('');
+    } catch (error) {
+      showNotification(getUserFriendlyError(error.message, 'create playlist'), 'error');
     }
   };
 
@@ -533,13 +532,6 @@ export default function Library() {
         await deletePlaylist.mutateAsync(confirmAction.data);
         showNotification('Playlist deleted', 'success');
         setActiveMenuId(null);
-      } else if (confirmAction.type === 'deletePlaylists') {
-        for (const playlistId of selectedPlaylists) {
-          await deletePlaylist.mutateAsync(playlistId);
-        }
-        showNotification(`${selectedPlaylists.length} playlists deleted`, 'success');
-        setSelectedPlaylists([]);
-        setEditMode(false);
       } else if (confirmAction.type === 'deleteCategory') {
         await deleteCategory.mutateAsync(confirmAction.data);
         showNotification('Category deleted', 'success');
@@ -570,21 +562,6 @@ export default function Library() {
         setCategoryActionType(null);
         setShowCreateInSelector(false);
         setNewCategoryInSelector('');
-      } else if (categoryActionType === 'bulk' && selectedPlaylists.length > 0) {
-        // Bulk - assign all to this category
-        await bulkAssignCategory.mutateAsync({
-          playlistIds: selectedPlaylists,
-          categoryId: categoryId,
-        });
-        showNotification(`${selectedPlaylists.length} playlists assigned to category`, 'success');
-        // Clear selection after bulk assignment
-        setSelectedPlaylists([]);
-        setEditMode(false);
-        setShowCategorySelectorModal(false);
-        setSelectedPlaylistForCategory(null);
-        setCategoryActionType(null);
-        setShowCreateInSelector(false);
-        setNewCategoryInSelector('');
       }
     } catch (error) {
       showNotification(getUserFriendlyError(error.message, 'update category'), 'error');
@@ -598,7 +575,7 @@ export default function Library() {
       {/* Header */}
       <StickyBar>
         <div className="flex items-center gap-2">
-          {/* Left: Tabs + Edit */}
+          {/* Left: Tabs + New button (playlists tab only) */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <TabGroup
               tabs={[
@@ -610,15 +587,42 @@ export default function Library() {
               showCountOnActive={false}
             />
 
-            {/* Edit Button - only on playlists tab */}
+            {/* + New dropdown - only on playlists tab */}
             {activeTab === 'playlists' && (
-              <EditButton
-                active={editMode}
-                onToggle={() => {
-                  setEditMode(!editMode);
-                  setSelectedPlaylists([]);
-                }}
-              />
+              <div className="relative" ref={plusDropdownRef}>
+                <button
+                  onClick={() => setShowPlusDropdown(prev => !prev)}
+                  className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-dark-tertiary hover:bg-dark-hover text-text-secondary hover:text-text-primary transition-colors text-sm font-medium"
+                  aria-label="New playlist or category"
+                >
+                  <PlusIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">New</span>
+                </button>
+                {showPlusDropdown && (
+                  <div className="absolute left-0 top-full mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50">
+                    <button
+                      onClick={() => {
+                        setShowPlusDropdown(false);
+                        setShowNewPlaylistModal(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      New Playlist
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowPlusDropdown(false);
+                        setShowCreateCategoryModal(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                    >
+                      <PlusIcon className="w-4 h-4" />
+                      New Category
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
           </div>
 
@@ -679,34 +683,6 @@ export default function Library() {
           </div>
         </div>
       </StickyBar>
-
-      {/* Floating Selection Bar for Playlists Edit Mode */}
-      <SelectionBar
-        show={editMode && activeTab === 'playlists' && filteredPlaylists.length > 0}
-        selectedCount={selectedPlaylists.length}
-        totalCount={filteredPlaylists.length}
-        onSelectAll={selectAllPlaylists}
-        onClear={clearPlaylistSelection}
-        onDone={() => {
-          setEditMode(false);
-          setSelectedPlaylists([]);
-        }}
-        actions={[
-          ...(selectedPlaylists.length > 0 ? [{
-            label: 'Category',
-            onClick: () => {
-              setCategoryActionType('bulk');
-              setShowCategorySelectorModal(prev => !prev);
-            },
-            variant: 'default'
-          }] : []),
-          ...(selectedPlaylists.length > 0 ? [{
-            label: 'Delete',
-            onClick: handleBulkDeletePlaylists,
-            variant: 'danger'
-          }] : [])
-        ]}
-      />
 
       {/* Channels Tab */}
       {activeTab === 'channels' && (
@@ -997,15 +973,12 @@ export default function Library() {
                       return (
                           <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                           {categoryPlaylists.map(playlist => {
-                            const isSelected = selectedPlaylists.includes(playlist.id);
                             return (
                               <div
                                 key={playlist.id}
                                 className="group cursor-pointer transition-colors rounded"
                                 onClick={(e) => {
-                                  if (editMode) {
-                                    togglePlaylistSelection(playlist.id);
-                                  } else if (!e.target.closest('button') && !e.target.closest('.menu')) {
+                                  if (!e.target.closest('button') && !e.target.closest('.menu')) {
                                     navigate(`/playlist/${playlist.id}`, {
                                       state: { from: '/library?tab=playlists' }
                                     });
@@ -1013,11 +986,7 @@ export default function Library() {
                                 }}
                               >
                                 {/* Playlist thumbnail */}
-                                <div className={`relative aspect-video bg-dark-tertiary overflow-hidden transition-all ${
-                                  isSelected
-                                    ? 'rounded-t-xl'
-                                    : 'rounded-t-xl rounded-b-xl group-hover:rounded-b-none'
-                                }`}>
+                                <div className="relative aspect-video bg-dark-tertiary overflow-hidden transition-all rounded-t-xl rounded-b-xl group-hover:rounded-b-none">
                                   {playlist.thumbnail ? (
                                     <img
                                       src={playlist.thumbnail}
@@ -1033,15 +1002,6 @@ export default function Library() {
                                     </div>
                                   )}
 
-                                  {/* Selection Checkmark */}
-                                  {isSelected && editMode && (
-                                    <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
-                                      <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                        <polyline points="20 6 9 17 4 12"></polyline>
-                                      </svg>
-                                    </div>
-                                  )}
-
                                   {/* Video count badge - bottom right */}
                                   <div className={`absolute bottom-1 right-1 bg-black/80 text-white ${textSizes.badge} font-semibold px-1.5 py-0.5 rounded z-20`}>
                                     {playlist.video_count || 0} videos
@@ -1049,16 +1009,14 @@ export default function Library() {
                                 </div>
 
                                 {/* Playlist info */}
-                                <div className={`p-3 space-y-1 rounded-b-xl transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
+                                <div className="p-3 space-y-1 rounded-b-xl transition-colors group-hover:bg-dark-tertiary">
                                   {/* Title + 3-Dot Menu (inline, vertically centered) */}
                                   <div className="flex items-center justify-between gap-2">
                                     <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 leading-tight flex-1`} title={playlist.title || playlist.name}>
                                       {playlist.title || playlist.name}
                                     </h3>
 
-                                    {/* 3-dot menu button - Only show when not in edit mode */}
-                                    {!editMode && (
-                                      <div className="relative flex-shrink-0" ref={activeMenuId === playlist.id ? menuRef : null}>
+                                    <div className="relative flex-shrink-0" ref={activeMenuId === playlist.id ? menuRef : null}>
                                         <button
                                           onClick={(e) => {
                                             e.stopPropagation();
@@ -1139,7 +1097,6 @@ export default function Library() {
                                           </div>
                                         )}
                                       </div>
-                                    )}
                                   </div>
 
                                   {/* Metadata - Channel title */}
@@ -1180,15 +1137,12 @@ export default function Library() {
                     return (
                       <div className={`grid ${getGridClass(gridColumns)} gap-4 w-full [&>*]:min-w-0`}>
                       {groupedPlaylists.uncategorized.map(playlist => {
-                        const isSelected = selectedPlaylists.includes(playlist.id);
                         return (
                           <div
                             key={playlist.id}
                             className="group cursor-pointer transition-colors rounded"
                             onClick={(e) => {
-                              if (editMode) {
-                                togglePlaylistSelection(playlist.id);
-                              } else if (!e.target.closest('button') && !e.target.closest('.menu')) {
+                              if (!e.target.closest('button') && !e.target.closest('.menu')) {
                                 navigate(`/playlist/${playlist.id}`, {
                                   state: { from: '/library?tab=playlists' }
                                 });
@@ -1196,11 +1150,7 @@ export default function Library() {
                             }}
                           >
                             {/* Playlist thumbnail */}
-                            <div className={`relative aspect-video bg-dark-tertiary overflow-hidden transition-all ${
-                              isSelected
-                                ? 'rounded-t-xl'
-                                : 'rounded-t-xl rounded-b-xl group-hover:rounded-b-none'
-                            }`}>
+                            <div className="relative aspect-video bg-dark-tertiary overflow-hidden transition-all rounded-t-xl rounded-b-xl group-hover:rounded-b-none">
                               {playlist.thumbnail ? (
                                 <img
                                   src={playlist.thumbnail}
@@ -1216,15 +1166,6 @@ export default function Library() {
                                 </div>
                               )}
 
-                              {/* Selection Checkmark - Show when in edit mode and selected */}
-                              {isSelected && editMode && (
-                                <div className="absolute top-2 right-2 bg-black/80 text-white rounded-full p-1.5 shadow-lg z-10">
-                                  <svg className="w-4 h-4 text-accent-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                  </svg>
-                                </div>
-                              )}
-
                               {/* Video count badge - bottom right */}
                               <div className={`absolute bottom-1 right-1 bg-black/80 text-white ${textSizes.badge} font-semibold px-1.5 py-0.5 rounded z-20`}>
                                 {playlist.video_count || 0} videos
@@ -1232,95 +1173,93 @@ export default function Library() {
                             </div>
 
                             {/* 3-Dot Menu - Outside thumbnail to avoid overflow clipping */}
-                            {!editMode && (
-                              <div className="absolute top-2 right-2 z-20" ref={activeMenuId === playlist.id ? menuRef : null}>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveMenuId(activeMenuId === playlist.id ? null : playlist.id);
-                                  }}
-                                  className="bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
-                                  aria-label="Playlist options"
-                                >
-                                  <ThreeDotsIcon />
-                                </button>
+                            <div className="absolute top-2 right-2 z-20" ref={activeMenuId === playlist.id ? menuRef : null}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveMenuId(activeMenuId === playlist.id ? null : playlist.id);
+                                }}
+                                className="bg-black/70 hover:bg-black/90 text-white rounded-full p-1.5 transition-colors"
+                                aria-label="Playlist options"
+                              >
+                                <ThreeDotsIcon />
+                              </button>
 
-                                {/* Dropdown Menu */}
-                                {activeMenuId === playlist.id && (
-                                  <div
-                                    className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50"
-                                    onMouseLeave={(e) => e.stopPropagation()}
+                              {/* Dropdown Menu */}
+                              {activeMenuId === playlist.id && (
+                                <div
+                                  className="menu absolute right-0 mt-1 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-1 min-w-[160px] z-50"
+                                  onMouseLeave={(e) => e.stopPropagation()}
+                                >
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/play/playlist/${playlist.id}`);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
                                   >
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/play/playlist/${playlist.id}`);
-                                        setActiveMenuId(null);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                    >
-                                      <PlayIcon />
-                                      Play All
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        navigate(`/play/playlist/${playlist.id}?shuffle=true`);
-                                        setActiveMenuId(null);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                    >
-                                      <ShuffleIcon className="w-4 h-4" />
-                                      Shuffle
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setRenamePlaylistId(playlist.id);
-                                        setRenameValue(playlist.title || playlist.name || '');
-                                        setShowRenameModal(true);
-                                        setActiveMenuId(null);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                    >
-                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                      </svg>
-                                      Rename
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedPlaylistForCategory(playlist.id);
-                                        setCategoryActionType('single');
-                                        setShowCategorySelectorModal(true);
-                                        setActiveMenuId(null);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                    >
-                                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-                                      </svg>
-                                      Category Options
-                                    </button>
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleDeletePlaylist(playlist.id);
-                                      }}
-                                      className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
-                                    >
-                                      <TrashIcon />
-                                      Delete
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            )}
+                                    <PlayIcon />
+                                    Play All
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigate(`/play/playlist/${playlist.id}?shuffle=true`);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                  >
+                                    <ShuffleIcon className="w-4 h-4" />
+                                    Shuffle
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setRenamePlaylistId(playlist.id);
+                                      setRenameValue(playlist.title || playlist.name || '');
+                                      setShowRenameModal(true);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                  >
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                                    </svg>
+                                    Rename
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setSelectedPlaylistForCategory(playlist.id);
+                                      setCategoryActionType('single');
+                                      setShowCategorySelectorModal(true);
+                                      setActiveMenuId(null);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-text-primary hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                  >
+                                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    Category Options
+                                  </button>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeletePlaylist(playlist.id);
+                                    }}
+                                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-dark-hover transition-colors flex items-center gap-2"
+                                  >
+                                    <TrashIcon />
+                                    Delete
+                                  </button>
+                                </div>
+                              )}
+                            </div>
 
                             {/* Playlist info */}
-                            <div className={`p-3 space-y-1 rounded-b-xl transition-colors ${isSelected ? 'bg-dark-tertiary' : 'group-hover:bg-dark-tertiary'}`}>
+                            <div className="p-3 space-y-1 rounded-b-xl transition-colors group-hover:bg-dark-tertiary">
                               <h3 className={`${textSizes.title} font-semibold text-text-primary line-clamp-2 leading-tight`} title={playlist.title || playlist.name}>
                                 {playlist.title || playlist.name}
                               </h3>
@@ -1425,25 +1364,29 @@ export default function Library() {
         createCategoryMutation={createCategory}
       />
 
+      {/* New Playlist Modal */}
+      <InputModal
+        isOpen={showNewPlaylistModal}
+        onClose={() => {
+          setShowNewPlaylistModal(false);
+          setNewPlaylistName('');
+        }}
+        title="New Playlist"
+        label="Playlist name"
+        value={newPlaylistName}
+        onChange={setNewPlaylistName}
+        onSubmit={handleCreatePlaylist}
+        placeholder="Playlist name"
+        submitText="Create"
+        loadingText="Creating..."
+        isLoading={createPlaylist.isPending}
+      />
+
       {/* Confirmation Modals */}
       <ConfirmModal
         isOpen={confirmAction?.type === 'deletePlaylist'}
         title="Delete Playlist"
         message="Delete this playlist? Videos will not be deleted."
-        confirmText="Delete"
-        confirmStyle="danger"
-        onConfirm={handleConfirmAction}
-        onCancel={() => setConfirmAction(null)}
-      />
-
-      <ConfirmModal
-        isOpen={confirmAction?.type === 'deletePlaylists'}
-        title="Delete Playlists"
-        message={
-          <>
-            Delete <span className="font-semibold">{confirmAction?.data} playlists</span>? Videos will not be deleted.
-          </>
-        }
         confirmText="Delete"
         confirmStyle="danger"
         onConfirm={handleConfirmAction}

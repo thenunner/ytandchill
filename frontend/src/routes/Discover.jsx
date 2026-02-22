@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useChannels, useCreateChannel, useDeleteChannel, useScanChannel, useUpdateChannel, useQueue, useChannelCategories, useCreateChannelCategory, useUpdateChannelCategory, useDeleteChannelCategory, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
 import { useCardSize } from '../contexts/PreferencesContext';
@@ -76,7 +77,7 @@ export default function Discover() {
   const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1); // For mobile infinite scroll
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
-  const isMobile = window.innerWidth < 640;
+  const isMobile = useMediaQuery('(max-width: 639px)');
 
   // Wrapper to persist page to URL
   const setCurrentPage = (page) => {

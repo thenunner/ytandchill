@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, useChannels, useBulkDeleteVideos, useQueue, useSettings, useMarkChannelVisited, useThumbnailBatch } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
@@ -71,7 +72,7 @@ export default function LibraryChannel() {
   };
   const currentPage = currentPageState;
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
-  const isMobile = window.innerWidth < 640;
+  const isMobile = useMediaQuery('(max-width: 639px)');
   const [deleteVideosConfirm, setDeleteVideosConfirm] = useState(null);
 
   const channel = channels?.find(c => c.id === Number(channelId));

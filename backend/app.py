@@ -567,27 +567,27 @@ init_settings()
 
 # Helper functions
 def serialize_channel(channel):
-    # Calculate video counts based on status
-    library_videos = [v for v in channel.videos if v.status == 'library']
-    discovered_count = len([v for v in channel.videos if v.status == 'discovered'])
-    downloaded_count = len(library_videos)
-    ignored_count = len([v for v in channel.videos if v.status in ['ignored', 'geoblocked']])
-
-    # Calculate new video count (videos downloaded since last visit)
-    if channel.last_visited_at is None:
-        # Never visited - all library videos are "new"
-        new_video_count = downloaded_count
-    else:
-        # Count videos downloaded after last visit
-        new_video_count = len([v for v in library_videos if v.downloaded_at and v.downloaded_at > channel.last_visited_at])
-
-    # Get the most recent video upload date
+    # Calculate video counts in a single pass to avoid N+1 iteration overhead
+    discovered_count = 0
+    downloaded_count = 0
+    ignored_count = 0
+    new_video_count = 0
     last_video_date = None
-    if channel.videos:
-        videos_with_dates = [v for v in channel.videos if v.upload_date]
-        if videos_with_dates:
-            most_recent = max(videos_with_dates, key=lambda v: v.upload_date)
-            last_video_date = most_recent.upload_date
+
+    for v in channel.videos:
+        if v.status == 'library':
+            downloaded_count += 1
+            if channel.last_visited_at is None:
+                new_video_count += 1
+            elif v.downloaded_at and v.downloaded_at > channel.last_visited_at:
+                new_video_count += 1
+        elif v.status == 'discovered':
+            discovered_count += 1
+        elif v.status in ('ignored', 'geoblocked'):
+            ignored_count += 1
+
+        if v.upload_date and (last_video_date is None or v.upload_date > last_video_date):
+            last_video_date = v.upload_date
 
     # Convert local thumbnail path to URL, or keep YouTube URL if still remote
     thumbnail_url = None

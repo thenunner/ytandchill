@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { createPortal } from 'react-dom';
 
 /**
@@ -26,7 +27,7 @@ export default function ActionDropdown({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 640;
+  const isMobile = useMediaQuery('(max-width: 639px)');
 
   // Close on click outside (desktop only)
   useEffect(() => {

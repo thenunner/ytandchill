@@ -8,7 +8,7 @@ import logging
 import psutil
 import yt_dlp
 from yt_dlp.utils import GeoRestrictedError
-from database import Video, QueueItem, Setting, get_session
+from database import Video, QueueItem, Setting, Playlist, PlaylistVideo, get_session
 from utils import download_thumbnail, makedirs_777
 from events import queue_events
 
@@ -1375,6 +1375,20 @@ class DownloadWorker:
             video.file_size_bytes = os.path.getsize(video_file_path) if os.path.exists(video_file_path) else 0
             video.status = 'library'
             video.downloaded_at = datetime.now(timezone.utc)
+
+            # Add to playlist if one was requested at queue time
+            if queue_item.pending_playlist_name:
+                playlist_name = queue_item.pending_playlist_name
+                playlist = session.query(Playlist).filter(Playlist.name == playlist_name).first()
+                if not playlist:
+                    playlist = Playlist(name=playlist_name, channel_id=None)
+                    session.add(playlist)
+                    session.flush()
+                    logger.info(f"Created playlist '{playlist_name}' on first completed download")
+                next_pos = len(playlist.playlist_videos)
+                pv = PlaylistVideo(playlist_id=playlist.id, video_id=video.id, position=next_pos)
+                session.add(pv)
+                logger.debug(f"Added video {video.yt_id} to playlist '{playlist_name}' (position {next_pos})")
 
             # Update thumb_url to local path (folder/videoId.jpg)
             folder_name = channel.folder_name if channel else (video.folder_name or 'Singles')

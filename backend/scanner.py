@@ -22,7 +22,7 @@ MIN_DURATION_SECONDS = 0
 def get_cookies_path():
     """Get the cookies.txt path if it exists."""
     data_dir = os.environ.get('DATA_DIR', '/appdata/data')
-    cookies_path = os.path.join(data_dir, 'backend', 'cookies.txt')
+    cookies_path = os.path.join(data_dir, 'cookies.txt')
     if os.path.exists(cookies_path):
         return cookies_path
     return None

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useParams, useNavigate, Link, useLocation, useSearchParams } from 'react-router-dom';
 import { usePlaylist, useRemoveVideoFromPlaylist, useDeleteVideo, useBulkUpdateVideos, useSettings, useDeletePlaylist, useUpdatePlaylist, useThumbnailBatch } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
@@ -56,7 +57,7 @@ export default function Playlist() {
   };
   const currentPage = currentPageState;
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
-  const isMobile = window.innerWidth < 640;
+  const isMobile = useMediaQuery('(max-width: 639px)');
   const [confirmAction, setConfirmAction] = useState(null); // { type: 'remove' | 'delete' | 'deletePlaylist', count: number }
   const [showRenameModal, setShowRenameModal] = useState(false);
   const [renameValue, setRenameValue] = useState('');
@@ -231,14 +232,13 @@ export default function Playlist() {
   // Playlist action handlers
   const handlePlayAll = () => {
     if (playableVideos.length > 0) {
-      navigate(`/video/${playableVideos[0].id}`, { state: { playlistId: id, playlistVideos: playableVideos.map(v => v.id) } });
+      navigate(`/play/playlist/${id}`);
     }
   };
 
   const handleShuffle = () => {
     if (playableVideos.length > 0) {
-      const shuffled = [...playableVideos].sort(() => Math.random() - 0.5);
-      navigate(`/video/${shuffled[0].id}`, { state: { playlistId: id, playlistVideos: shuffled.map(v => v.id), shuffle: true } });
+      navigate(`/play/playlist/${id}?shuffle=true`);
     }
   };
 

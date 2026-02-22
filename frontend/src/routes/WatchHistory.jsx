@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useWatchHistory, useClearWatchHistory, useChannels, useSettings, useThumbnailBatch } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
@@ -27,7 +28,7 @@ export default function WatchHistory() {
   const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1);
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
-  const isMobile = window.innerWidth < 640;
+  const isMobile = useMediaQuery('(max-width: 639px)');
 
   // Wrapper to persist page to URL
   const setCurrentPage = (page) => {

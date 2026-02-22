@@ -126,6 +126,7 @@ class QueueItem(Base):
     queue_position = Column(Integer, nullable=True, index=True)  # Position in queue for ordering
     status = Column(String(20), default='pending', index=True)  # pending, downloading, paused, completed, failed, cancelled
     prior_status = Column(String(20), nullable=True)  # Video's status before queueing (discovered, ignored, removed, NULL)
+    pending_playlist_name = Column(String(200), nullable=True)  # Playlist to add video to on successful download
     progress_pct = Column(Float, default=0.0)
     speed_bps = Column(Float, default=0.0)
     eta_seconds = Column(Integer, default=0)
@@ -207,6 +208,13 @@ def init_db(database_url=None):
         # Add last_watched_at column for watch history
         if 'last_watched_at' not in video_columns:
             conn.execute(text("ALTER TABLE videos ADD COLUMN last_watched_at DATETIME"))
+            conn.commit()
+
+        # Add pending_playlist_name column for progressive playlist creation
+        result = conn.execute(text("PRAGMA table_info(queue_items)"))
+        queue_columns = [row[1] for row in result]
+        if 'pending_playlist_name' not in queue_columns:
+            conn.execute(text("ALTER TABLE queue_items ADD COLUMN pending_playlist_name VARCHAR(200)"))
             conn.commit()
 
     # Initialize default settings including auth credentials

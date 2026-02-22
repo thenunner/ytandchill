@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useVideos, useChannels, useAddToQueue, useAddToQueueBulk, useBulkUpdateVideos, useQueue, useDeleteChannel, useScanChannel, useUpdateChannel, useSettings } from '../api/queries';
 import { useNotification } from '../contexts/NotificationContext';
@@ -61,7 +62,7 @@ export default function DiscoverChannel() {
   const [currentPageState, setCurrentPageState] = useState(initialPage);
   const [loadedPages, setLoadedPages] = useState(1);
   const itemsPerPage = getNumericSetting(settings, 'items_per_page', 50);
-  const isMobile = window.innerWidth < 640;
+  const isMobile = useMediaQuery('(max-width: 639px)');
 
   // Wrapper to persist page to URL
   const setCurrentPage = (page) => {
@@ -289,7 +290,7 @@ export default function DiscoverChannel() {
             videoIds: selectedVideos,
             updates: { status: 'ignored' },
           });
-          showNotification(`${selectedVideos.length} videos ignored`, 'success');
+          showNotification(`Skipped ${selectedVideos.length} ${selectedVideos.length === 1 ? 'video' : 'videos'}`, 'info');
           if (contentFilter === 'to-review') setAutoNavOnEmpty(true);
           break;
         case 'unignore':
@@ -401,8 +402,8 @@ export default function DiscoverChannel() {
 
             <TabGroup
               tabs={[
-                { id: 'to-review', label: 'Review', count: channel?.video_count },
-                { id: 'ignored', label: 'Ignored', count: channel?.ignored_count },
+                { id: 'to-review', label: 'New Videos', count: channel?.video_count },
+                { id: 'ignored', label: 'Skipped', count: channel?.ignored_count },
               ]}
               active={contentFilter}
               onChange={(tabId) => {
@@ -578,13 +579,14 @@ export default function DiscoverChannel() {
         onDone={clearSelection}
         actions={contentFilter === 'to-review' ? [
           {
+            label: 'Skip',
+            onClick: () => handleBulkAction('ignore'),
+            variant: 'danger'
+          },
+          {
             label: 'Download',
             onClick: () => handleBulkAction('queue'),
             primary: true
-          },
-          {
-            label: 'Ignore',
-            onClick: () => handleBulkAction('ignore')
           }
         ] : [
           {
