@@ -222,16 +222,22 @@ export default function Playlist() {
   const videoIds = useMemo(() => paginatedVideos.map(v => v.id), [paginatedVideos]);
   const { data: thumbnails } = useThumbnailBatch(videoIds);
 
+  // Only downloaded videos can be played
+  const playableVideos = useMemo(
+    () => sortedVideos.filter(v => v.status === 'library' && v.file_path),
+    [sortedVideos]
+  );
+
   // Playlist action handlers
   const handlePlayAll = () => {
-    if (sortedVideos.length > 0) {
-      navigate(`/video/${sortedVideos[0].id}`, { state: { playlistId: id, playlistVideos: sortedVideos.map(v => v.id) } });
+    if (playableVideos.length > 0) {
+      navigate(`/video/${playableVideos[0].id}`, { state: { playlistId: id, playlistVideos: playableVideos.map(v => v.id) } });
     }
   };
 
   const handleShuffle = () => {
-    if (sortedVideos.length > 0) {
-      const shuffled = [...sortedVideos].sort(() => Math.random() - 0.5);
+    if (playableVideos.length > 0) {
+      const shuffled = [...playableVideos].sort(() => Math.random() - 0.5);
       navigate(`/video/${shuffled[0].id}`, { state: { playlistId: id, playlistVideos: shuffled.map(v => v.id), shuffle: true } });
     }
   };
@@ -318,7 +324,7 @@ export default function Playlist() {
                     </svg>
                   ),
                   onClick: handlePlayAll,
-                  disabled: sortedVideos.length === 0,
+                  disabled: playableVideos.length === 0,
                 },
                 {
                   label: 'Shuffle',
@@ -332,7 +338,7 @@ export default function Playlist() {
                     </svg>
                   ),
                   onClick: handleShuffle,
-                  disabled: sortedVideos.length === 0,
+                  disabled: playableVideos.length === 0,
                 },
                 { divider: true },
                 {

@@ -297,20 +297,12 @@ def queue_youtube_playlist_videos():
                     skipped += 1
                 continue
 
-            # Get or create the channel for this video
-            yt_channel_id = v.get('channel_id')
-            channel_title = v.get('channel_title', 'Unknown')
-
-            # Use cache to avoid repeated lookups
-            cache_key = yt_channel_id or '__singles__'
-            if cache_key not in channel_cache:
-                channel = _get_or_create_channel(session, yt_channel_id, channel_title)
-                channel_cache[cache_key] = channel
-                if channel.yt_id != '__singles__' and channel.id:
-                    # Check if this is a newly created channel (not in DB before this batch)
-                    channels_created += 1
+            # Always use Singles channel for Add Once imports — never create Discover channels
+            if '__singles__' not in channel_cache:
+                channel = _get_or_create_singles_channel(session)
+                channel_cache['__singles__'] = channel
             else:
-                channel = channel_cache[cache_key]
+                channel = channel_cache['__singles__']
 
             # Create video record (new videos have NULL prior_status)
             video = Video(

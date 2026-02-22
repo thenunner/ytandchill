@@ -174,7 +174,7 @@ class AutoRefreshScheduler:
 
             logger.info(f"Auto-scan: Updating yt-dlp (current version: {current_version})...")
 
-            # Check if Deno is available
+            # Check if Deno is available (informational only — yt-dlp-ejs handles JS extraction as fallback)
             try:
                 deno_result = subprocess.run(
                     ['deno', '--version'],
@@ -186,9 +186,9 @@ class AutoRefreshScheduler:
                     deno_version = deno_result.stdout.split('\n')[0].strip()
                     logger.info(f"Auto-scan: Deno available - {deno_version}")
                 else:
-                    logger.warning("Auto-scan: Deno not found - YouTube downloads may fail")
+                    logger.info("Auto-scan: Deno not found (not required — yt-dlp-ejs is used as JS runtime)")
             except Exception:
-                logger.warning("Auto-scan: Deno not found - YouTube downloads may fail")
+                logger.info("Auto-scan: Deno not found (not required — yt-dlp-ejs is used as JS runtime)")
 
             # Run pip upgrade using --user flag for non-root permissions
             # Use [default] extras to include yt-dlp-ejs for JavaScript runtime support
