@@ -486,6 +486,7 @@ export default function Discover() {
               items={[
                 {
                   label: 'Follow Channel',
+                  description: 'Track a channel and auto-discover new uploads',
                   icon: (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
@@ -499,6 +500,7 @@ export default function Discover() {
                 { divider: true },
                 {
                   label: 'Add Once',
+                  description: 'Download specific videos without tracking their channel',
                   icon: (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polygon points="23 7 16 12 23 17 23 7" />
@@ -509,6 +511,7 @@ export default function Discover() {
                 },
                 {
                   label: 'Import Existing',
+                  description: 'Add already-downloaded files to your library',
                   icon: (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
@@ -529,6 +532,7 @@ export default function Discover() {
               items={[
                 {
                   label: selectedChannels.length > 0 ? 'Scan Selected (New)' : 'Scan New Videos',
+                  description: 'Check for uploads added since the last scan',
                   icon: (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="23 4 23 10 17 10" />
@@ -539,6 +543,7 @@ export default function Discover() {
                 },
                 {
                   label: selectedChannels.length > 0 ? 'Scan Selected (All)' : 'Scan All Videos',
+                  description: 'Re-scan from the beginning, catching everything',
                   icon: (
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="23 4 23 10 17 10" />

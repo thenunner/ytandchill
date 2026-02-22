@@ -98,7 +98,12 @@ export default function ActionDropdown({
         } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         {item.icon && <span className="w-5 h-5 flex-shrink-0">{item.icon}</span>}
-        <span className="flex-1 font-medium">{item.label}</span>
+        <span className="flex-1">
+          <span className="font-medium block">{item.label}</span>
+          {item.description && (
+            <span className="text-xs text-text-muted leading-tight block mt-0.5">{item.description}</span>
+          )}
+        </span>
       </button>
     );
   };
@@ -163,7 +168,7 @@ export default function ActionDropdown({
 
       {/* Desktop dropdown */}
       {isOpen && !isMobile && (
-        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} mt-2 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 min-w-[180px] z-50 animate-scale-in`}>
+        <div className={`absolute ${align === 'right' ? 'right-0' : 'left-0'} mt-2 bg-dark-secondary border border-dark-border rounded-lg shadow-xl py-2 min-w-[220px] z-50 animate-scale-in`}>
           {items.map((item, index) => {
             // Render divider
             if (item.divider) {
@@ -210,7 +215,12 @@ export default function ActionDropdown({
                 } ${item.disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {item.icon && <span className="w-4 h-4 flex-shrink-0">{item.icon}</span>}
-                <span className="flex-1">{item.label}</span>
+                <span className="flex-1">
+                  <span className="block">{item.label}</span>
+                  {item.description && (
+                    <span className="text-xs text-text-muted leading-tight block mt-0.5">{item.description}</span>
+                  )}
+                </span>
               </button>
             );
           })}
