@@ -50,6 +50,7 @@ export default function DiscoverChannel() {
 
   const [selectedVideos, setSelectedVideos] = useState([]);
   const [searchInput, setSearchInput] = useState('');
+  const [autoNavOnEmpty, setAutoNavOnEmpty] = useState(false);
   const { showButton: showScrollTop, scrollToTop } = useScrollToTop();
   const [showDurationSettings, setShowDurationSettings] = useState(false);
   const [editingChannel, setEditingChannel] = useState(null);
@@ -220,6 +221,13 @@ export default function DiscoverChannel() {
     setSelectedVideos([]);
   }, [contentFilter]);
 
+  // Auto-navigate back when all to-review videos are gone after queue/ignore
+  useEffect(() => {
+    if (autoNavOnEmpty && !isLoading && contentFilter === 'to-review' && videos?.length === 0) {
+      navigate('/discover');
+    }
+  }, [autoNavOnEmpty, isLoading, videos, contentFilter]);
+
   // Adjust page if current page is now empty
   useEffect(() => {
     const totalPages = Math.ceil(sortedVideos.length / itemsPerPage);
@@ -274,6 +282,7 @@ export default function DiscoverChannel() {
           } else {
             showNotification(`${result.added_count} videos added to queue`, 'success');
           }
+          if (contentFilter === 'to-review') setAutoNavOnEmpty(true);
           break;
         case 'ignore':
           await bulkUpdate.mutateAsync({
@@ -281,6 +290,7 @@ export default function DiscoverChannel() {
             updates: { status: 'ignored' },
           });
           showNotification(`${selectedVideos.length} videos ignored`, 'success');
+          if (contentFilter === 'to-review') setAutoNavOnEmpty(true);
           break;
         case 'unignore':
           const unignoreResult = await addToQueueBulk.mutateAsync(selectedVideos);
